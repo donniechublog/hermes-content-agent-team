@@ -19,6 +19,33 @@ import env_load
 
 DRAFTS = env_load.ROOT / "drafts"
 
+# Draft da duoc Ong Chu duyet/len lich/dang: caption da CHOT, writer khong duoc
+# ghi de nua (LOW-296). Truoc day nop lai sau khi Duyet van ghi de caption va
+# dat lai status pending, bai dang ra khac ban Ong Chu da duyet tren the.
+LOCKED_STATUSES = ("scheduled", "publishing", "published")
+
+# Dau vet the duyet dang song tren Telegram (approve_service push ghi). Mang qua
+# lan ghi lai draft de lan push sau biet xoa the cu thay vi them the moi.
+PUSH_KEYS = ("tg_card_message_id", "tg_extra_message_ids", "tg_push_fingerprint")
+
+
+def _read_prev(draft_id):
+    p = DRAFTS / f"{draft_id}.json"
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def locked_reason(draft_id):
+    """Ly do khong cho nop lai (chuoi), hoac None neu nop duoc."""
+    st = _read_prev(draft_id).get("status")
+    if st in LOCKED_STATUSES:
+        return (f"Bài này đã được duyệt/lên lịch/đăng (trạng thái {st}): caption đã chốt, "
+                "KHÔNG nộp lại được. Dừng ở đây, kết thúc task. Cần sửa thì báo Ông Chủ "
+                "bấm Huỷ lịch rồi giao lại.")
+    return None
+
 
 def main():
     ap = argparse.ArgumentParser(
@@ -44,6 +71,10 @@ def main():
     elif not (a.source_url and a.category):
         sys.exit(f"Khong tim thay {meta_path} va cung khong co --source-url/"
                  f"--category truyen tay. Khong du du lieu de ghi draft.")
+
+    khoa = locked_reason(a.draft_id)
+    if khoa:
+        sys.exit("[LOI] " + khoa)
 
     caption = Path(a.caption_file).read_text(encoding="utf-8").strip()
     if not caption:
@@ -83,6 +114,13 @@ def main():
         "brand": a.brand or meta.get("brand", "donniechublog"),
         "status": "pending",
     }
+
+    # Draft con pending: giu dau vet the dang song de push sau xoa the cu (LOW-296).
+    # Trang thai khac (rejected/cancelled/...): the cu da doi thanh "da bo/huy",
+    # khong xoa.
+    prev = _read_prev(a.draft_id)
+    if prev.get("status") == "pending":
+        draft.update({k: prev[k] for k in PUSH_KEYS if k in prev})
 
     missing = [k for k in ("source_url", "category") if not draft[k]]
     if missing:

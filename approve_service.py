@@ -54,7 +54,7 @@ from approve_pick import (  # noqa: E402
 )
 from approve_post import (  # noqa: E402
     _redo_all_done_limit, _label_reason_redo, _process_button, already_len_channel, draft_push,
-    handle_reply_approval,
+    handle_reply_approval, push_fingerprint, delete_messages,
 )
 from approve_chat import (  # noqa: E402
     handle_chat,
@@ -475,6 +475,36 @@ def loop():
             time.sleep(min(60, 5 * loi_lien_tiep))
 
 
+def _live_card(draft_id):
+    """(draft, [id tin]) cua the duyet dang SONG (draft con pending), hoac
+    (None, []). The da chuyen thanh "da duyet/da bo" thi khong dong vao."""
+    try:
+        d = json.loads((DRAFTS / (draft_id + ".json")).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None, []
+    if d.get("status") != "pending" or not d.get("tg_card_message_id"):
+        return None, []
+    ids = [d["tg_card_message_id"]] + list(d.get("tg_extra_message_ids") or [])
+    return d, ids
+
+
+def _push_replace(tok, grp, draft_id, thread, force=False):
+    """Nhanh CLI `push`, tach ra de test (LOW-296). Mot draft chi co MOT the song
+    trong topic: y het lan truoc thi bo qua; khac thi gui the moi roi xoa the cu.
+    Tra ve ma thoat."""
+    live, old_ids = _live_card(draft_id)
+    if live and not force and live.get("tg_push_fingerprint") == push_fingerprint(live):
+        print("[push] bản nháp y hệt thẻ đã ở topic " + str(thread) + ", không đẩy lại "
+              "(thêm --force nếu thật sự cần gửi lại).")
+        return 0
+    res = draft_push(tok, grp, draft_id, thread_id=thread)
+    rc = _finish_push_cli(res, draft_id, thread)
+    if rc == 0 and old_ids:
+        n = delete_messages(tok, grp, old_ids)
+        print(f"[push] đã thay thẻ cũ: xoá {n}/{len(old_ids)} tin của bản trước.")
+    return rc
+
+
 def _finish_push_cli(res, draft_id, thread):
     """Ket thuc lenh CLI `push`: luu message_id (best-effort), in ket qua, tra
     ve ma thoat.
@@ -492,6 +522,8 @@ def _finish_push_cli(res, draft_id, thread):
             _dp = DRAFTS / (draft_id + ".json")
             _d = json.loads(_dp.read_text(encoding="utf-8"))
             _d["tg_card_message_id"] = _mid
+            _d["tg_extra_message_ids"] = (res.get("extra_ids") or []) if isinstance(res, dict) else []
+            _d["tg_push_fingerprint"] = push_fingerprint(_d)
             _write_json(_dp, _d)
     except Exception as _e:                              # noqa: BLE001
         print(f"[push] khong luu message_id: {type(_e).__name__}: {_e}")
@@ -529,9 +561,10 @@ if __name__ == "__main__":
             else:
                 key = submit_common.writer_for_article(draft_id, env_load.brand_long())
             thread = topics.get(key)
-        if len(sys.argv) > 3:
-            thread = int(sys.argv[3])
-        res = draft_push(tok, grp, draft_id, thread_id=thread)
-        sys.exit(_finish_push_cli(res, draft_id, thread))
+        force = "--force" in sys.argv
+        extra = [x for x in sys.argv[3:] if x != "--force"]
+        if extra:
+            thread = int(extra[0])
+        sys.exit(_push_replace(tok, grp, draft_id, thread, force))
     else:
         loop()
