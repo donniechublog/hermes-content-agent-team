@@ -55,7 +55,7 @@ def test_detail_under_first_text_line_is_cleared():
     truoc = _row_energy(cv, TEXT_TOP + 10)
     assert truoc > 20, truoc
     carousel._layer_if_can(cv, cv.convert("RGB"), TEXT_TOP, carousel.TEXT_BASE,
-                           max_share=carousel.SOLID_BG_MAX_SHARE)
+                           overlay_only=True)
     for y in (TEXT_TOP + 10, TEXT_TOP + 60, carousel.TEXT_BASE - 10):
         assert _row_energy(cv, y) < truoc * 0.1, (y, truoc, _row_energy(cv, y))
 
@@ -65,7 +65,7 @@ def test_body_still_within_solid_cap():
     carousel.set_background("dark")
     cv = _detailed_under_text()
     touched = carousel._layer_if_can(cv, cv.convert("RGB"), TEXT_TOP, carousel.TEXT_BASE,
-                                     max_share=carousel.SOLID_BG_MAX_SHARE)
+                                     overlay_only=True)
     assert touched is not None
     assert touched >= carousel.H * 0.5, touched
 
@@ -76,7 +76,7 @@ def test_bright_page_under_white_text_becomes_dark_zone():
     carousel.set_background("dark")
     cv = Image.new("RGBA", (carousel.W, carousel.H), (245, 245, 245, 255))
     carousel._layer_if_can(cv, cv.convert("RGB"), TEXT_TOP, carousel.TEXT_BASE,
-                           max_share=carousel.SOLID_BG_MAX_SHARE)
+                           overlay_only=True)
     for y in (TEXT_TOP + 10, TEXT_TOP + 80, carousel.TEXT_BASE - 10):
         assert sum(cv.getpixel((500, y))[:3]) / 3 < 60, (y, cv.getpixel((500, y)))
 
@@ -87,7 +87,7 @@ def test_smooth_image_keeps_light_layer():
     cv = _smooth()
     goc = cv.copy()
     touched = carousel._layer_if_can(cv, cv.convert("RGB"), TEXT_TOP, carousel.TEXT_BASE,
-                                     max_share=carousel.SOLID_BG_MAX_SHARE)
+                                     overlay_only=True)
     assert touched is None, touched
     # anh giu nguyen o vung ngay duoi chu (khong thanh mau BG dac)
     assert cv.getpixel((500, carousel.TEXT_BASE))[:3] != tuple(carousel.BG)

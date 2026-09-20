@@ -3,6 +3,7 @@
 
 Tach tu image_prepare.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
 """
+import http.client
 import os
 import re
 import sys
@@ -23,9 +24,16 @@ from prepare.download_filter import _chart_by_figure, _save_crop
 
 
 VISION_MODEL = env_load.VISION_MODEL
+VISION_FALLBACK_MODEL = env_load.VISION_FALLBACK_MODEL
 
 
 VISION_URL = env_load.ROUTER_URL
+
+# Loi "model khong tra loi duoc" (truyen tai / hinh dang cau tra loi): mang, HTTP, timeout
+# (URLError, HTTPError, socket.timeout deu la OSError), HTTPException cua http.client, JSON
+# hong, thieu `choices`. Co y KHONG dung `Exception` tran: loi lap trinh (AttributeError,
+# NameError...) khong duoc lam engine hoi doi so luot roi che mat loi.
+_ASK_FAIL = (OSError, http.client.HTTPException, ValueError, KeyError, IndexError, TypeError)
 
 
 # LOW-47 (Ong Chu 13/09/2026): "khong uu tien su dung tat ca nhung anh nhin
@@ -37,7 +45,8 @@ VISION_URL = env_load.ROUTER_URL
 # LOW-165 (15/09/2026): mo rong dinh nghia them nhanh "mang sang/toi/mau lech
 # tong cuc bo trai rong hang tram px" — GaussianBlur cuc bo (card._open_region_text)
 # chi san phang chi tiet ~QUOTE_BLUR px, KHONG xoa duoc mot mang lon nhu vay du
-# blur bao nhieu, nen anh loai nay phai di duong nen dac (_text_bg_strict) thay vi
+# blur bao nhieu, nen anh loai nay phai di duong nen DAM hon (card._text_bg_overlay,
+# carousel.OVERLAY_CLUTTERED — dam hon, khong phai dac: LOW-330) thay vi
 # blur mac dinh — truoc day chi "chu in san/chup man hinh/cat ghep" moi duoc gan cluttered,
 # nen loai mang mau nay lot qua, blur nhe khong xoa het, con "sot" lai.
 #
@@ -156,7 +165,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
     luong nao. Nhanh nay dong no lai."""
     import base64, json as _j, urllib.request
     # `ket_qua` (LOW-47, 13/09/2026): dict nguoi goi truyen vao de nhan them
-    # co "roi" (anh nhin roi) ma KHONG doi so phan tu tuple tra ve — Bob va
+    # co "cluttered" (anh nhin roi) ma KHONG doi so phan tu tuple tra ve — Bob va
     # test deu mo goi 2/3 phan tu.
     # env_load.required nem SystemExit, ma SystemExit KHONG phai con cua
     # Exception — `except Exception` o day khong bat duoc. Thieu OPENAI_API_KEY
@@ -217,24 +226,41 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             # chung nhat (09/09/2026).
             import image_brand
             hoi = image_brand.sentence_ask_vision(tieu_de, thuong_hieu)
-        # Moi nhanh deu hoi them dong ROI (LOW-47): anh roi khong bi cam, chi
+        # Moi nhanh deu hoi them dong CLUTTERED (LOW-47): anh roi khong bi cam, chi
         # xuong cuoi hang uu tien — xem submit_common.check_image_fall.
         hoi = (hoi.replace("DUNG 2 dong", "DUNG 7 dong") + "\n" + SENTENCE_CLUTTERED + "\n" + SENTENCE_KEYWORD
                + "\n" + SENTENCE_SUBJECT + "\n" + SENTENCE_EMPTY + "\n" + SENTENCE_PRINTED_NAME)
         if hoi_them and nhan_them:
             hoi = hoi.replace("DUNG 7 dong", "DUNG 8 dong") + f"\n{nhan_them}: {hoi_them}"
-        body = {"model": VISION_MODEL, "thinking": {"type": "disabled"}, "max_tokens": 400,
-                "stream": False, "temperature": 0,
-                "messages": [{"role": "user", "content": [
-                    {"type": "text", "text": hoi},
-                    {"type": "image_url", "image_url": {"url": "data:image/png;base64," + b64}}]}]}
-        req = urllib.request.Request(VISION_URL, data=_j.dumps(body).encode(),
-                                     headers={"Content-Type": "application/json",
-                                              "Authorization": "Bearer " + key})
-        raw = _call_router(req).read().decode().strip()
-        if raw.startswith("data:"):
-            raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
-        txt = _j.loads(raw)["choices"][0]["message"]["content"]
+        def _ask(model):
+            body = {"model": model, "thinking": {"type": "disabled"}, "max_tokens": 400,
+                    "stream": False, "temperature": 0,
+                    "messages": [{"role": "user", "content": [
+                        {"type": "text", "text": hoi},
+                        {"type": "image_url", "image_url": {"url": "data:image/png;base64," + b64}}]}]}
+            req = urllib.request.Request(VISION_URL, data=_j.dumps(body).encode(),
+                                         headers={"Content-Type": "application/json",
+                                                  "Authorization": "Bearer " + key})
+            raw = _call_router(req).read().decode().strip()
+            if raw.startswith("data:"):
+                raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
+            return _j.loads(raw)["choices"][0]["message"]["content"]
+
+        # LOW-326 (20/09/2026): model chinh KHONG TRA LOI DUOC (router/mang/HTTP loi sau khi
+        # `_call_router` het luot thu, JSON hong) thi hoi model du phong, dung MOT lan. Truoc
+        # day DeepSeek het tien -> moi anh thanh CHUA AI NHIN (engine mu). Cau tra loi "khong
+        # lien quan" that cua model chinh KHONG di qua day: chi loi truyen tai moi vao nhanh nay,
+        # va loi lap trinh (_ASK_FAIL khong bao gom) van lo ra nhu cu.
+        model = VISION_MODEL
+        try:
+            txt = _ask(model)
+        except _ASK_FAIL as e:
+            if not VISION_FALLBACK_MODEL or VISION_FALLBACK_MODEL == VISION_MODEL:
+                raise
+            print(f"[vision] {Path(path).name}: {VISION_MODEL} khong tra loi duoc "
+                  f"({type(e).__name__}: {e!r}) -> hoi {VISION_FALLBACK_MODEL}", file=sys.stderr)
+            model = VISION_FALLBACK_MODEL
+            txt = _ask(model)
         mo_ta = re.search(r"MO_TA\s*:\s*(.+)", txt)
         # LI[EÊ]N: model tra loi tieng Viet nen hay tu danh dau ca NHAN
         # "LIÊN_QUAN" (dung dau, khac de bai "LIEN_QUAN" khong dau) — regex cu
@@ -298,7 +324,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         return mt, lqv, them, {"cluttered": cluttered, "has_keywords": du_tk,
                                **subject_fit.parse_subject(txt), "printed_name": parse_printed_name(txt),
                                "vision_said": lqv_vision, "override": override,
-                               "vision_raw": {"model": VISION_MODEL, "question": hoi, "answer": txt[:2000]}}
+                               "vision_raw": {"model": model, "question": hoi, "answer": txt[:2000]}}
 
     try:
         mt, lqv, them, phu = _mot_lan()

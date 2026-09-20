@@ -49,7 +49,20 @@ if _OPENSSL_CONF.exists():
     os.environ.setdefault("OPENSSL_CONF", str(_OPENSSL_CONF))
 
 ROUTER_URL = "http://127.0.0.1:20128/v1/chat/completions"   # 9router cuc bo, chung hai brand
-VISION_MODEL = "ds/deepseek-v4-flash-vision-exp"            # con mat cua engine anh (image_prepare)
+# Con mat cua engine anh (image_prepare). LOW-326 (20/09/2026): DeepSeek het tien hai lan
+# (05/09, 20/09) thi engine "mu" — moi anh thanh CHUA AI NHIN. Do cung ham
+# `vision.description_image` tren 300 anh co nhan Ong Chu: gemini-3.8-flash loai oan 39%
+# (DeepSeek 52%), lot rac ngang nhau (6% / 5%), doc bbox 300/300, cham hon ~5 lan (6,2s
+# so voi 1,3s moi anh). Grok 16-100s moi anh, khong dung duoc.
+VISION_MODEL = "ag/gemini-3.8-flash"
+# CHI hoi khi VISION_MODEL KHONG TRA LOI DUOC (router/mang/HTTP loi, JSON hong, noi dung
+# rong) — mot cau tra loi "khong lien quan" that thi khong bi hoi lai. Rong hoac trung
+# VISION_MODEL = khong co du phong.
+VISION_FALLBACK_MODEL = "ds/deepseek-v4-flash-vision-exp"
+# Model gom tin CUNG SU KIEN o ca lung chung (LLM sau luat code): article_sources va
+# scan_business dung chung mot cho. Chua do lai tren Gemini (bo vang:
+# tests/golden/same_story_golden.json), nen van la DeepSeek pro.
+SAME_STORY_MODEL = "ds/deepseek-v4-pro"
 
 # User-Agent RIENG cho moi thu goi Wikimedia (API commons + tai anh tu
 # upload.wikimedia.org). Robot policy cua Wikimedia doi UA co TEN cong cu va

@@ -222,10 +222,10 @@ def main():
 
     # NaN (model chua co gia) khong duoc du giai "re nhat" — min() voi NaN
     # cho ket qua tuy thu tu, co the len nham.
-    sach = [h for h in hang if h[1] == 0 and h[3] == h[3]]
+    clean = [h for h in hang if h[1] == 0 and h[3] == h[3]]
     print("\n" + "=" * 68)
-    if sach:
-        tot = min(sach, key=lambda h: h[3])
+    if clean:
+        tot = min(clean, key=lambda h: h[3])
         print(f"RE NHAT ma khong truot lan nao: {tot[0]}  ({tot[3]:.2f} USD/1000)")
     else:
         it = min(hang, key=lambda h: (h[1], h[3]))

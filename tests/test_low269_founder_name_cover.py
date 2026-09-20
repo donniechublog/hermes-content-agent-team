@@ -100,14 +100,14 @@ def test_het_nguon_founder_hang_kia_khong_chan():
 
 # ------------------------------------------------ 3. bia khoi tit
 def _anh_bia():
-    sach = {"relevant": True, "cluttered": False, "faces": 0, "kind": "photo",
+    clean = {"relevant": True, "cluttered": False, "faces": 0, "kind": "photo",
             "uses": ["stack_vertical"], "source": "other_outlet"}
     return {
         "A8": {"relevant": True, "cluttered": True, "faces": 0, "kind": "photo",
                "uses": ["cover_headline_block", "body"], "source": "capture_source"},
-        "A2": dict(sach), "A4": dict(sach),
-        "A3": dict(sach, faces=1),
-        "A9": dict(sach, cluttered=True),
+        "A2": dict(clean), "A4": dict(clean),
+        "A3": dict(clean, faces=1),
+        "A9": dict(clean, cluttered=True),
     }
 
 

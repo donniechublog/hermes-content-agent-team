@@ -142,8 +142,9 @@ def string_already_config() -> dict:
                 nhan = f"{brand}/{vai}:{'chinh' if i == 0 else f'du phong {i}'}"
                 for ten in _each_name(m):
                     ra.setdefault(ten, []).append(nhan)
-    for ten in _each_name(env_load.VISION_MODEL):
-        ra.setdefault(ten, []).append("engine anh:vision")
+    for vision_model in filter(None, (env_load.VISION_MODEL, env_load.VISION_FALLBACK_MODEL)):
+        for ten in _each_name(vision_model):
+            ra.setdefault(ten, []).append("engine anh:vision")
     return ra
 
 

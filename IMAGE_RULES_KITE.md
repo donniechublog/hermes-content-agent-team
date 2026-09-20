@@ -813,7 +813,7 @@ mảng nhìn tách rời:
 - **Không làm tối riêng một mảng** quanh chart để "cho nổi": mảng tối có mép
   thẳng chính là vùng thứ hai.
 
-### 7.1 Ảnh rối: chỉ dùng khi hết ảnh sạch, dùng thì nền chữ phải đặc
+### 7.1 Ảnh rối: chỉ dùng khi hết ảnh sạch, dùng thì nền chữ đậm hơn (vẫn là overlay)
 
 Ông Chủ 13/09/2026 (LOW-47), nguyên văn: *"không ưu tiên sử dụng tất cả những
 ảnh nhìn rối, trong trường hợp buộc phải dùng, thì lớp nền của text phải làm
@@ -842,15 +842,26 @@ cho nghiêm chỉnh, đừng nham nhở"*.
   `has_keywords`; ảnh rối có cờ này được miễn `check_image_fall`, được làm bìa (kể cả
   khi đo ra là chart), và bìa hiện **nguyên bề ngang** như slide thân —
   cover-crop cắt hai mép là mất chữ khoá ở mép.
-- **Buộc dùng thì nền chữ đặc**, không phải lớp mờ 55% như mặc định: chữ in sẵn
-  trong ảnh vẫn lộ lem nhem qua lớp mờ. Carousel `_background_solid_below_text`, thẻ
-  Ethan `_text_bg_strict`: nền đặc bắt đầu ở **khoảng lặng gần nhất phía trên
-  chữ** (`card._timestamp_background_solid` đo chi tiết ngang từng hàng pixel), dải smoothstep
-  nằm trong khoảng lặng đó — nên chữ in sẵn của ảnh bị phủ trọn, không bị cắt
-  nửa dòng, và **không có đường kẻ ngang**. Không bao giờ phủ cao hơn 40% khung
-  từ trên xuống. Đo thật 13/09: đồ hoạ "Nvidia Weighs $10B..." có tiêu đề in sẵn
-  ở hàng 690–989; nếu chỉ phủ dưới chữ của ta thì tiêu đề đó lộ nửa mờ nửa rõ.
-  Đây là ngoại lệ có chủ đích của mục 7 — chỉ cho ảnh rối.
+- **Buộc dùng thì nền chữ đậm hơn — nhưng vẫn chỉ là OVERLAY** (LOW-330, Ông Chủ
+  20/09/2026, xem bìa dcgr "Anthropic tự đặt thước đo": *"đừng để cho nền đặc, trông
+  rất thiếu chuyên nghiệp"*). Chữ in sẵn trong ảnh vẫn lộ lem nhem qua lớp mờ mặc
+  định, nên ảnh rối được phủ đậm nhất (80%: `carousel.OVERLAY_CLUTTERED`, thẻ Ethan
+  `card.TEXT_OVERLAY_CLUTTERED`) — **đậm hơn, không phải đặc**. Ảnh luôn còn lộ qua.
+  Áp cho **mọi** đường ra hình: slide thân, slide quote, **bìa** và **thẻ Ethan**.
+  Đường nền đặc cũ (`_background_solid_below_text`, `_text_bg_strict`, máy tìm khoảng
+  lặng `_timestamp_background_solid`) đã **gỡ khỏi code** — không còn chỗ nào sinh ra
+  mảng màu đặc nữa.
+- **Overlay TỰ LÙI, không để thành mảng màu.** Mức tối cố định vẫn thoái hoá thành nền
+  đặc trên ảnh SÁNG và nhiều chi tiết: đo thật hai slide dcgr 20/09, vùng dưới chữ đi từ
+  độ lệch 99,7 xuống 3,5 — mất 96% chi tiết, mắt nhìn ra một mảng trắng. Từ LOW-330
+  `_overlay_text` đo lại chính kết quả trên pixel; còn đặc hơn `TEXT_BG_SAFE_OPACITY`
+  (82%) thì hạ cả mờ lẫn tinh theo `OVERLAY_BACKOFF` rồi vẽ lại. Ảnh bình thường dùng
+  ngay bước đầu (hệ số 1.0) nên **không** nhạt đi.
+- **Cổng đo trên pixel thật:** `carousel._text_bg_report` + `_gate_text_background`
+  chấm mọi slide VÀ bìa trước khi vẽ chữ. Phủ đặc hơn `TEXT_BG_MAX_OPACITY` (88%) là
+  **lỗi CODE**, không phải lỗi spec: dừng, không gửi album. Trần diện tích: slide thân
+  `TEXT_BG_MAX_SHARE` (42%), bìa `TEXT_BG_MAX_SHARE_COVER` (68%) vì hook cao hơn đoạn
+  văn — trần **độ đặc** thì bìa và slide thân như nhau.
 
 **Tự soi trước khi giao:** nhìn có thấy **một đường ranh ngang** nào không. Thấy
 là hỏng, dựng lại — đừng gửi đi.

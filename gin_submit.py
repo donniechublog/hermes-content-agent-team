@@ -98,9 +98,9 @@ def single(id_: str, wd: Path, spec: dict) -> tuple:
         mask[y:y + h, x:x + w] = 255
     if not mask.any():
         sys.exit("[LOI] Không có vùng nào để xoá (mọi vùng đều nằm trong `mask_keep`, hoặc OCR không thấy chữ).")
-    sach = swap_image_text.inpaint(img, mask, verbose=False)
+    cleaned = swap_image_text.inpaint(img, mask, verbose=False)
     nen = wd / state_paths.GIN_CLEAN_BACKGROUND_FILE
-    cv2.imwrite(str(nen), sach)
+    cv2.imwrite(str(nen), cleaned)
     image_provenance.stamp_file(nen, "image_text_swap")
     vis = img.copy()
     vis[mask > 0] = (0, 0, 255)
@@ -280,7 +280,7 @@ def make_card(id_: str, wd: Path, spec: dict, bo_qua_dau: bool) -> tuple:
     # vien va con lai mot bong ma xam hinh chu — thay ro tren tieu de condensed
     # anh TECHS 07/09/2026. Vung da xac dinh la nen phang thi mau nen la mot so
     # DA BIET, to thang vao la sach tuyet doi, khong phai doan.
-    sach = img.copy()
+    cleaned = img.copy()
     mask = np.zeros(img.shape[:2], np.uint8)
     # CHUA vung khong phai cua minh. Mask no rong de nuot vien chu co the tran
     # sang hop ben canh; hop ben canh lai la vung Itachi giu nguyen, va Gin to
@@ -314,9 +314,9 @@ def make_card(id_: str, wd: Path, spec: dict, bo_qua_dau: bool) -> tuple:
     # mang toi hinh chu (do that 07/09/2026). Telea lan mau tu vien nen bam
     # theo chuyen mau; bong ma truoc day la do VIEN chu chua vao mask, da sua
     # bang cach no mask theo chieu cao chu.
-    sach = cv2.inpaint(img, mask, BAN_KINH_TRAM, cv2.INPAINT_TELEA)
+    cleaned = cv2.inpaint(img, mask, BAN_KINH_TRAM, cv2.INPAINT_TELEA)
 
-    im = Image.fromarray(cv2.cvtColor(sach, cv2.COLOR_BGR2RGB))
+    im = Image.fromarray(cv2.cvtColor(cleaned, cv2.COLOR_BGR2RGB))
     dd = ImageDraw.Draw(im)
     for kh in khoi:
         co = about_text.has_by_original(dd, kh["ocr_text"], kh["ink_height"], kh["font"])

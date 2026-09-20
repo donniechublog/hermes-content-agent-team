@@ -500,7 +500,7 @@ def _unmerged_pairs(n, root):
 # "code truoc, LLM sau" (17/09): code gom phan tat dinh o tren, LLM gom phan con
 # lai. Do 18/09 tren lo that: flash gop bua (Snapdragon voi Tesla AI5, Mistral voi
 # Cohere); pro dung het 12 nhom, ~2 giay.
-SAME_STORY_MODEL = "ds/deepseek-v4-pro"
+SAME_STORY_MODEL = env_load.SAME_STORY_MODEL
 SAME_STORY_LOOKBACK_SECONDS = 3 * 86400
 SAME_STORY_MAX_PRIOR = 200
 SAME_STORY_TIMEOUT = 120
