@@ -604,13 +604,13 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
     van qua cong nhung khong len duoc bia (IMAGE_RULES §6 doi khai "subject" ma
     Kite chua co truong do), giu lam `than` thay vi bo phi. Tra (anh, dung_duoc,
     chua_nhin)."""
-    def _ra():
+    def _result():
         return anh, [a for a in anh if a["uses"] and a.get("relevant") is not False], \
             [a["id"] for a in anh if a.get("relevant") is None]
 
     if khong_browser:
         print("[chup nguon] --khong-browser: bo qua vong nay", file=sys.stderr)
-        return _ra()
+        return _result()
     import capture_page
     urls, da = [], set()
     for u in [link] + [t.get("url", "") for t in (trang or [])]:
@@ -772,7 +772,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
               "(thiếu \"subject\") — không tấm nào lên bìa, giữ làm thân", file=sys.stderr)
     if not any(a.get("capture_kind") == "headline" for a in anh) and not ung_vien:
         print("[chup nguon] khong trang nao do duoc khoi lead", file=sys.stderr)
-    return _ra()
+    return _result()
 
 
 def capability_block_headline(anh: list) -> tuple:

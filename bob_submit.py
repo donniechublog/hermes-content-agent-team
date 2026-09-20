@@ -89,8 +89,8 @@ def is_url(s: str) -> bool:
     return urlparse(s).scheme in ("http", "https")
 
 
-def take_image(nguon: str, ra: Path) -> str:
-    """Dua anh goc ve `ra`. Tra ve mot dong mo ta cach lay duoc (de in ra).
+def take_image(nguon: str, out_path: Path) -> str:
+    """Dua anh goc ve `out_path`. Tra ve mot dong mo ta cach lay duoc (de in ra).
 
     Thu tu la LUAT, khong phai lua chon cua vai: ban CDN goc truoc, chup man
     hinh chi khi trang khong co anh don nao."""
@@ -98,12 +98,12 @@ def take_image(nguon: str, ra: Path) -> str:
         p = Path(nguon).expanduser()
         if not p.exists():
             sys.exit(f"[LOI] khong thay tep: {p}")
-        shutil.copyfile(p, ra)
+        shutil.copyfile(p, out_path)
         return f"tep co san: {p}"
 
-    r = subprocess.run([sys.executable, str(GET_SOURCE), nguon, str(ra)],
+    r = subprocess.run([sys.executable, str(GET_SOURCE), nguon, str(out_path)],
                        capture_output=True, text=True, timeout=180)
-    if r.returncode == 0 and ra.exists() and ra.stat().st_size > 0:
+    if r.returncode == 0 and out_path.exists() and out_path.stat().st_size > 0:
         return "anh goc tu CDN (get_source.py)"
     if r.returncode != RC_NO_HAS_IMAGE:
         cuoi = [d for d in (r.stderr or "").strip().splitlines() if d.strip()]
@@ -111,21 +111,21 @@ def take_image(nguon: str, ra: Path) -> str:
                  + (cuoi[-1][:200] if cuoi else "khong co stderr"))
 
     # Trang khong co anh don (tweet toan chu, bai bao) -> chup man hinh DPR cao.
-    if not capture_page.capture(nguon, ra):
+    if not capture_page.capture(nguon, out_path):
         sys.exit("[LOI] khong lay duoc anh lan chup man hinh (xem stderr o tren)")
     return "chup man hinh (trang khong co anh don)"
 
 
-def line_frame(src: Path, ra: Path, emoji: str, handle: str) -> None:
+def line_frame(src: Path, out_path: Path, emoji: str, handle: str) -> None:
     """Goi thang image_frame trong CUNG tien trinh, thay vi shell ra node frame.js.
 
     Het mot lop subprocess nghia la loi hien nguyen van (traceback that) chu
     khong con phai doan tu vai dong stderr cuoi cua Node."""
     try:
-        image_frame.line_frame(src, ra, emoji=emoji, handle=handle)
+        image_frame.line_frame(src, out_path, emoji=emoji, handle=handle)
     except Exception as e:                                   # noqa: BLE001
         sys.exit(f"[LOI] khong dong duoc khung: {type(e).__name__}: {e}")
-    if not Path(ra).exists():
+    if not Path(out_path).exists():
         sys.exit("[LOI] dong khung xong ma khong thay tep ra")
 
 

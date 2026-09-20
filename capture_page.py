@@ -32,13 +32,13 @@ PICK = ("[data-testid=\"tweet\"]", "article", "main", ".entry-content")
 MIN = 200
 
 
-def capture(url: str, ra, phien=None) -> bool:
-    """Chup `url` ra `ra`. True neu ra tep khac rong.
+def capture(url: str, out_path, phien=None) -> bool:
+    """Chup `url` ra `out_path`. True neu ra tep khac rong.
 
     `phien` (PhienBrowser, tuy chon): dung chung tien trinh Chromium voi cac
     buoc khac; khong truyen thi tu mo va tu dong."""
-    ra = Path(ra)
-    ra.parent.mkdir(parents=True, exist_ok=True)
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         with session_or_new(phien) as ph:
             with ph.trang(viewport=FRAME, device_scale_factor=DPR, user_agent=UA) as page:
@@ -62,13 +62,13 @@ def capture(url: str, ra, phien=None) -> bool:
                         khoi = el
                         break
                 if khoi is not None:
-                    khoi.screenshot(path=str(ra))
+                    khoi.screenshot(path=str(out_path))
                 else:
-                    page.screenshot(path=str(ra), full_page=True)
+                    page.screenshot(path=str(out_path), full_page=True)
     except Exception as e:                                   # noqa: BLE001
         print(f"[chup_trang] {url[:70]}: {type(e).__name__}: {e!r}", file=sys.stderr)
         return False
-    return ra.exists() and ra.stat().st_size > 0
+    return out_path.exists() and out_path.stat().st_size > 0
 
 
 # ---- KHOI LEAD o khung mobile ----------------------------------------------
@@ -244,7 +244,7 @@ def _variable_text_card_x(im):
     return (trai / (w - 1), phai / (w - 1))
 
 
-def count_background(anh_vao, ra, mau_nen: str, ti_le: float = 0.8, cao_tren: float = 0.15,
+def count_background(anh_vao, out_path, mau_nen: str, ti_le: float = 0.8, cao_tren: float = 0.15,
            lap_day: float = 0.78):
     """Dat anh chup vao khung `ti_le` (4:5) — CAT BOT HAI BEN neu anh qua ngang
     (quanh tam THI GIAC cua chu the — xem `_tam_chu_the_x` — toi da `CROP_MAX`
@@ -298,13 +298,13 @@ def count_background(anh_vao, ra, mau_nen: str, ti_le: float = 0.8, cao_tren: fl
     nen = _Im.new("RGB", (W, H), _out_rgb(mau_nen))
     y = int(round((H - h) * cao_tren))
     nen.paste(im, ((W - w) // 2, max(0, min(y, H - h))))
-    ra = Path(ra)
-    ra.parent.mkdir(parents=True, exist_ok=True)
-    nen.save(ra, "PNG")
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    nen.save(out_path, "PNG")
     return nen.size
 
 
-def capture_lead_mobile(url: str, ra, phien=None) -> dict | None:
+def capture_lead_mobile(url: str, out_path, phien=None) -> dict | None:
     """Chup KHOI LEAD cua `url` o khung mobile. -> dict mo ta, hoac None.
 
     None = trang chan bot, khong do duoc khoi lead (khong tit, khong anh lead),
@@ -317,8 +317,8 @@ def capture_lead_mobile(url: str, ra, phien=None) -> dict | None:
     lazy-load cua techcrunch chua bao gio tai, khoi lead chi con tit va mot o
     trong; (3) `_JS_AN_LOP_NOI` — banner dieu khoan cua theverge che kin nua duoi
     khoi lead."""
-    ra = Path(ra)
-    ra.parent.mkdir(parents=True, exist_ok=True)
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     tit_trang = ""
     try:
         with session_or_new(phien) as ph:
@@ -390,11 +390,11 @@ def capture_lead_mobile(url: str, ra, phien=None) -> dict | None:
                     # dau), dung nhu tam Wikipedia 1242x1242 do sang 12/09.
                     print(f"[chup_lead] {url[:70]}: khong co anh hero, chup khoi tit", file=sys.stderr)
                     clip = {"x": 0, "y": max(0, r["top"]), "width": r["w"], "height": r["w"]}
-                page.screenshot(path=str(ra), full_page=True, clip=clip)
+                page.screenshot(path=str(out_path), full_page=True, clip=clip)
     except Exception as e:                                   # noqa: BLE001
         print(f"[chup_lead] {url[:70]}: {type(e).__name__}: {e!r}", file=sys.stderr)
         return None
-    if not (ra.exists() and ra.stat().st_size > 0):
+    if not (out_path.exists() and out_path.stat().st_size > 0):
         return None
     # `page_title` de nguoi goi doi chieu "co cung tin khong" (LOW-33) — trang
     # trong `page_url` co the la bao khac khop NHAM, khong duoc mac dinh la bai goc.

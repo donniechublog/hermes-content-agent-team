@@ -257,7 +257,7 @@ def _text_share(muc: dict, la_bia: bool) -> float:
     return image_rules_dre.TEXT_SHARE_BODY
 
 
-def _place_subject(bo: Context, a: dict, ma: str, muc: dict, nhan: str, la_bia: bool, ra: dict) -> None:
+def _place_subject(bo: Context, a: dict, ma: str, muc: dict, nhan: str, la_bia: bool, slide: dict) -> None:
     """CHU THE CHINH phai dat vua khung 4:5 va nam TREN vung chu (LOW-273, Ong Chu
     19/09/2026: "tim hinh co main character dat vua trong 4:5"). Do that tren slide bi
     loai: mat Altman nam duoi khung quote (y=780); trang bao Hyperscale dan full khung,
@@ -273,8 +273,8 @@ def _place_subject(bo: Context, a: dict, ma: str, muc: dict, nhan: str, la_bia: 
         return                                   # bang xep hang: engine khoanh hang, luat rieng
     share = _text_share(muc, la_bia)
     goc = a["original_path"]
-    if ra.get("chart") or a.get("kind") == "chart":
-        if ra.get("image") != goc or not a.get("subject_box"):
+    if slide.get("chart") or a.get("kind") == "chart":
+        if slide.get("image") != goc or not a.get("subject_box"):
             return                               # hop vision do tren tep goc
         import carousel
         w, h = Image.open(goc).size
@@ -303,7 +303,7 @@ def _place_subject(bo: Context, a: dict, ma: str, muc: dict, nhan: str, la_bia: 
     out = bo.wd / state_paths.READY_DIR / f"{ma}{state_paths.SUBJECT_SUFFIX}"
     out.parent.mkdir(parents=True, exist_ok=True)
     img.crop(win).save(out, "PNG")
-    ra["image"] = str(out)
+    slide["image"] = str(out)
 
 
 # Cac truong CHU vai viet, di thang sang spec cua carousel.py khong doi.
