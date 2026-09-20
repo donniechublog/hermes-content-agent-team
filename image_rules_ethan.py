@@ -24,7 +24,7 @@ import re
 import threading
 from pathlib import Path
 
-from PIL import Image, ImageOps, ImageStat
+from PIL import Image, ImageOps
 
 # IMAGE_PHRASES_SCREENSHOT (LOW-45, 13/09/2026) DA GO 16/09/2026 (LOW-201, dao
 # LOW-45): tieu chi "trong giong chup lai man hinh" loai oan anh dung chu de
@@ -316,26 +316,6 @@ def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
             return [f"{nhan}: TRUNG anh da dung o bai '{d.get('draft_id')}' ({d.get('role')}, {khi}) — "
                     "moi tin mot anh, nguoi doc kenh nhan ra anh lap lai ngay. Tim anh khac."], []
     return [], []
-
-
-def tone_mismatch(ims, nguong_sang=60, nguong_mau=70):
-    """Hai anh ghep chung khung ma TONE lech nhau nhieu thi doc ra nhu HAI VUNG
-    rieng biet (Ong Chu chot 03/09/2026, siet thanh cong chan 04/09)."""
-    ds = []
-    for im in ims:
-        nho = im.resize((64, 64))
-        ds.append((ImageStat.Stat(nho.convert("L")).mean[0],
-                   ImageStat.Stat(nho).mean))
-    ra = []
-    for i in range(len(ds) - 1):
-        (l1, c1), (l2, c2) = ds[i], ds[i + 1]
-        d_sang = abs(l1 - l2)
-        d_mau = sum((a - b) ** 2 for a, b in zip(c1, c2)) ** 0.5
-        if d_sang > nguong_sang or d_mau > nguong_mau:
-            ra.append(f"anh {i+1} va {i+2} lech tone (sang {l1:.0f} vs {l2:.0f}, "
-                      f"mau lech {d_mau:.0f}) — hai vung nhin tach roi; uu tien "
-                      "hai anh CUNG tone (cung nen sang/toi, cung gam mau)")
-    return ra
 
 
 _YUNET = None

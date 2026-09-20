@@ -74,21 +74,6 @@ def filter(urls: list, so: int, tu: str, q: str) -> list:
     return ra
 
 
-def _bing(page, q: str, so: int) -> list:
-    # Ghe trang ket qua that TRUOC (dat ngu canh truy van + cookie), roi moi goi
-    # /images/async cung q. Goi async tran tu trang chu, Bing thinh thoang tra
-    # ket qua cua truy van KHAC (do 12/09: "semiconductor cleanroom" -> meo).
-    page.goto(f"https://www.bing.com/images/search?q={up.quote(q)}&mkt=en-US&setlang=en&form=HDRSC2",
-              timeout=30000)
-    page.wait_for_timeout(2500)
-    ra = bing_murl(page.content())
-    page.goto(f"https://www.bing.com/images/async?q={up.quote(q)}&first=0&count=35&mkt=en-US&adlt=off",
-              timeout=30000, referer=f"https://www.bing.com/images/search?q={up.quote(q)}")
-    page.wait_for_timeout(2000)
-    ra += bing_murl(page.content())
-    return filter(ra, so, "web_bing", q)
-
-
 def _yandex(page, q: str, so: int) -> list:
     page.goto(f"https://yandex.com/images/search?text={up.quote(q)}", timeout=30000)
     page.wait_for_timeout(5000)
@@ -96,7 +81,8 @@ def _yandex(page, q: str, so: int) -> list:
     return filter(yandex_img_url(hrefs), so, "web_yandex", q)
 
 
-# Bing giu code de bat lai khi IP doi; hien tai lech de 3/5 (xem docstring).
+# Bing TAT (xem docstring: lech de 3/5). `_bing` da go o LOW-299, code cu nam trong
+# lich su git (`git log -S"def _bing" -- find_image_web.py`) neu IP doi ma muon bat lai.
 SOURCE = (("Yandex", lambda page, q, so: _yandex(page, q, so)),)
 
 

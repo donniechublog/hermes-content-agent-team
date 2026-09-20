@@ -121,44 +121,43 @@ def _find_report_gnews(page, ra, mien_goc, het_gio, JS):
     theo chuyen huong tung link /read/, giu toi da 3 bao lien quan."""
     import urllib.parse as up
     # 2) tim bao khac (bo nguon mong)
-    if True:
-        try:
-            q = re.sub(r"^\[[^\]]{1,20}\]\s*", "", ra["title_en"])[:120]
-            _open_page(page, "https://news.google.com/search?q=" + up.quote(q)
-               + "&hl=en-US&gl=US&ceid=US:en", cho_yen=6000)
-            links, thay = [], set()
-            for h in page.evaluate(JS["GNEWS"]) or []:
-                k = h.split("?")[0]
-                if k not in thay:
-                    thay.add(k)
-                    links.append(h)
-            for h in links[:5]:
-                if het_gio() or len(ra["extra_pages"]) >= 3:
-                    break
-                try:
-                    page.goto(h, wait_until="domcontentloaded", timeout=25000)
-                    t1 = time.time()
-                    while "news.google.com" in page.url and time.time() - t1 < 12:
-                        page.wait_for_timeout(500)
-                    u = page.url
-                    if "news.google.com" in u or _domain(u) == mien_goc \
-                            or any(_domain(u) == _domain(x["url"]) for x in ra["extra_pages"]):
-                        continue
-                    td = (page.title() or "")[:160]
-                    # Google News tra ca bai KHONG lien quan (cung tu "AI"):
-                    # bai benh than, letsdatascience (Gimlet 05/09). Phai
-                    # chung >= 2 tu dac trung voi tieu de goc, nhu Bing da loc.
-                    import article_images as _ab
-                    if len(_ab._tu_dac_trung(ra["title_en"]) & _ab._tu_dac_trung(td)) < 2:
-                        print(f"[browser] bo bao khong lien quan: {td[:60]!r}", file=sys.stderr)
-                        continue
-                    ra["extra_pages"].append({"url": u, "kind": "other_outlet",
-                                              "title": td,
-                                              "outlet_url": "https://" + _domain(u)})
-                except Exception:                # noqa: BLE001
+    try:
+        q = re.sub(r"^\[[^\]]{1,20}\]\s*", "", ra["title_en"])[:120]
+        _open_page(page, "https://news.google.com/search?q=" + up.quote(q)
+           + "&hl=en-US&gl=US&ceid=US:en", cho_yen=6000)
+        links, thay = [], set()
+        for h in page.evaluate(JS["GNEWS"]) or []:
+            k = h.split("?")[0]
+            if k not in thay:
+                thay.add(k)
+                links.append(h)
+        for h in links[:5]:
+            if het_gio() or len(ra["extra_pages"]) >= 3:
+                break
+            try:
+                page.goto(h, wait_until="domcontentloaded", timeout=25000)
+                t1 = time.time()
+                while "news.google.com" in page.url and time.time() - t1 < 12:
+                    page.wait_for_timeout(500)
+                u = page.url
+                if "news.google.com" in u or _domain(u) == mien_goc \
+                        or any(_domain(u) == _domain(x["url"]) for x in ra["extra_pages"]):
                     continue
-        except Exception as e:                   # noqa: BLE001
-            print(f"[browser] gnews search: {type(e).__name__}: {e!r}", file=sys.stderr)
+                td = (page.title() or "")[:160]
+                # Google News tra ca bai KHONG lien quan (cung tu "AI"):
+                # bai benh than, letsdatascience (Gimlet 05/09). Phai
+                # chung >= 2 tu dac trung voi tieu de goc, nhu Bing da loc.
+                import article_images as _ab
+                if len(_ab._tu_dac_trung(ra["title_en"]) & _ab._tu_dac_trung(td)) < 2:
+                    print(f"[browser] bo bao khong lien quan: {td[:60]!r}", file=sys.stderr)
+                    continue
+                ra["extra_pages"].append({"url": u, "kind": "other_outlet",
+                                          "title": td,
+                                          "outlet_url": "https://" + _domain(u)})
+            except Exception:                # noqa: BLE001
+                continue
+    except Exception as e:                   # noqa: BLE001
+        print(f"[browser] gnews search: {type(e).__name__}: {e!r}", file=sys.stderr)
 
 
 def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None) -> dict:

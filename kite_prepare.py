@@ -89,13 +89,6 @@ def figure_real(m: dict) -> list:
     return ra
 
 
-def figure_open_mark(ht: list) -> dict | None:
-    """Hinh MO DAU cua paper trong danh sach hinh that (Figure 1, hoac hinh paper
-    dau tien boc duoc), hoac None. Do la tam dung lam hero cua bia."""
-    paper = [a for a in ht if a.get("paper_figure")]
-    return paper[0] if paper else None
-
-
 def figure_hero(m: dict) -> dict | None:
     """Tam duoc chon lam HERO cua bia, hoac None khi bia ve vector.
 

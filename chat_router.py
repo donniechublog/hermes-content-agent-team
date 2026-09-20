@@ -36,7 +36,6 @@ HERMES_HOME = str(env_load.hermes_home())
 import role as _vai                                            # noqa: E402
 TOPIC_PROFILE = {v.slug: v.slug for v in _vai.ROLE.values()}
 
-REPLY_LIMIT = 4000          # chua toi 4096 cua Telegram, chua cho phan hau to
 TIMEOUT_SEC = 600           # agent chay lau; 10 phut la du cho hau het viec
 
 # Loi nhac che do HOI THOAI, ghep truoc moi tin nhan chat cho MOI vai.
@@ -67,10 +66,6 @@ def chat_hint() -> str:
         "cầu rõ ràng làm việc đó. Việc cần chạy lâu thì nói ngắn cách làm và hỏi "
         "lại trước. Nếu cần tra cứu thì tối đa 2-3 lệnh đọc nhanh, rồi trả lời.\n\n"
     )
-
-
-# Tuong thich: ma cu tham chieu CHAT_HINT (hang). Gia tri that lay luc goi.
-CHAT_HINT = chat_hint()
 
 
 def profile_missing(profile, home: Path = None) -> bool:

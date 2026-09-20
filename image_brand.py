@@ -180,12 +180,6 @@ def _has_phrase(tus: list, vb: str) -> bool:
     return bool(re.search(r"(?<!\w)" + r"\W+".join(re.escape(t) for t in tus) + r"(?!\w)", vb))
 
 
-def _has_word(tu: str, vb: str) -> bool:
-    """Khớp theo BIÊN GIỚI TỪ: "arm" không được khớp "harm"/"Armstrong", "meta"
-    không được khớp "metal", "intel" không được khớp "intelligence"."""
-    return bool(re.search(r"(?<!\w)" + re.escape(tu) + r"(?!\w)", vb))
-
-
 def _many(ten: str):
     """Regex nhiễu của một tên hãng, hoặc None."""
     tu = _from_distinctive(ten)
@@ -484,7 +478,6 @@ PATH_STORY = ("/news/", "/en/news/", "/blog/", "/news", "/blog", "/research/")
 # Trang HTML bị chặn bot (openai.com trả 0 byte cho httpx, đo 11/09/2026) thì
 # RSS công khai vẫn mở — cùng bài học với `article_sources._title_rss` (Economist).
 PATH_FEED = ("/news/rss.xml", "/rss.xml", "/blog/rss.xml", "/blog/feed.xml", "/feed.xml")
-MAX_ANNOUNCEMENT_PAGE = 1
 
 
 def _slug(t: str) -> str:

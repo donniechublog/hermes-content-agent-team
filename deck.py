@@ -69,11 +69,11 @@ def legacy_slide(s):
 
 
 # ---- helper chung ---------------------------------------------------------
-def _grow(d, text, path, max_w, hi, lo=None, weight=None, italic=False):
+def _grow(d, text, path, max_w, hi, lo=None, weight=None):
     """Wrap text o co `hi`. Ten cu hua "co lon nhat vua max_w" nhung vong lap
     luon tra ve ngay co dau tien (_wrap luon co ket qua khi text khong rong),
     nen hanh vi that la CO DINH `hi` — giu nguyen de khong doi layout cac deck
-    da xuat. `lo`/`italic` giu cho tuong thich, khong dung."""
+    da xuat. `lo` giu cho tuong thich, khong dung."""
     f = _f(path, hi, weight)
     return f, _wrap(d, text, f, max_w)
 
@@ -109,7 +109,7 @@ def _two_tone_title(d, x, y, serif_text, sans_text, max_w,
                     serif_col=CORAL, sans_col=WHITE, hi=104):
     """Tieu de hai tang: dong serif nghieng o tren, dong sans dam o duoi, hoi
     chong len nhau nhu carousel goc."""
-    sf, sl = _grow(d, serif_text, F_SERIF, max_w, hi, 48, italic=True)
+    sf, sl = _grow(d, serif_text, F_SERIF, max_w, hi, 48)
     y = _draw_lines(d, x, y, sl, sf, serif_col, lead=1.0)
     nf, nl = _grow(d, sans_text, F_SANS, max_w, hi + 4, 48)
     y2 = _draw_lines(d, x, y - int(_line_h(sf) * 0.12), nl, nf, sans_col, lead=1.0)
