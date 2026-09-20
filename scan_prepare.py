@@ -27,6 +27,7 @@ sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
 import required                                              # noqa: E402
 import role                                                   # noqa: E402
+import scan_common                                            # noqa: E402
 import state_paths                                           # noqa: E402
 
 VN = timezone(timedelta(hours=7))
@@ -167,8 +168,9 @@ def brief_scout(wd: Path, lam_moi: bool) -> str:
                                           "funding round/drama/dự đoán thì trừ nặng>",
                        "score_reason": "<1 câu vì sao điểm này>",
                        "summary_vi": "<MỘT mệnh đề ≤ 15 từ, dữ kiện thuần; chỉ làm ngữ cảnh cho vai viết, KHÔNG lên báo cáo>"}], ensure_ascii=False, indent=1),
-          "Điểm tổng = điểm cơ học (script) + technical + relevance. Không tin nào ≥ 50 điểm thì chạy bước 3 với "
-          "--khong-co (script gửi dòng 'hôm nay không có gì' kèm số tin đã quét).",
+          f"Điểm tổng = điểm cơ học (script) + technical + relevance. Không tin nào ≥ {scan_common.SCORE_PASS} "
+          "điểm thì chạy bước 3 với --khong-co (script gửi dòng 'hôm nay không có gì' kèm số tin đã quét). "
+          f"Tin đã ≥ {scan_common.SCORE_PASS} điểm CƠ HỌC thì --khong-co bị script từ chối.",
           "", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python scan_submit.py --vai scout",
           "Script tự ghép manifest (đối chiếu số thứ tự, cộng điểm, đánh số), tự thêm mục bắt buộc còn thiếu, viết báo cáo đánh số, "

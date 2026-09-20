@@ -134,6 +134,32 @@ def filter_warning(stderr: str) -> list:
                               or d.strip().startswith("- "))]
 
 
+def nothing_found_block(candidates: list) -> list:
+    """Cac dong khien "hom nay khong co tin nao dat nguong" KHONG duoc gui (LOW-317).
+
+    Diem CO HOC (`score_partial` = moi + lan, script tu cham) la SAN TREN cua
+    diem tong: vai chi cong them technical (0-30) va relevance (0-20), khong bao
+    gio tru. Nen mot tin da >= `SCORE_PASS` diem co hoc thi CHAC CHAN dat nguong
+    du vai cham the nao — noi "khong co tin nao dat nguong" luc do la sai, kiem
+    duoc bang may, khong can phan doan.
+
+    Su co 20/09/2026: Finn chay `--khong-co` khi chua viet picks.json; topic blog
+    nhan "hom nay khong co tin nao dat nguong (da quet 35 tin)" trong khi 3 tin
+    da 50 diem co hoc. Blog mat tron mot ngay tin."""
+    cao = sorted((c for c in candidates if (c.get("score_partial") or 0) >= scan_common.SCORE_PASS),
+                 key=lambda c: -(c.get("score_partial") or 0))
+    if not cao:
+        return []
+    dong = [f"[LOI] KHONG gui 'hom nay khong co gi': {len(cao)} tin da >= "
+            f"{scan_common.SCORE_PASS} diem CO HOC truoc khi cong technical + relevance, "
+            "tuc chac chan dat nguong."]
+    for c in cao[:3]:
+        dong.append(f"  {c.get('score_partial')}d | {str(c.get('title', ''))[:70]}")
+    if len(cao) > 3:
+        dong.append(f"  ... va {len(cao) - 3} tin nua")
+    return dong
+
+
 def _run(args: list, timeout=300):
     return subprocess.run([sys.executable] + args, cwd=str(ROOT), capture_output=True, text=True, timeout=timeout)
 
@@ -183,6 +209,13 @@ def main() -> int:
         if a.vai == "finn":
             d = json.loads((wd / "candidates.json").read_text(encoding="utf-8")) if (wd / "candidates.json").exists() else {}
             so = len(d.get("candidates", []))
+            chan = nothing_found_block(d.get("candidates") or [])
+            if chan:
+                for dong in chan:
+                    print(dong)
+                print(f"\nCham diem roi viet {wd / 'picks.json'} theo khung trong {wd / 'brief.md'}, "
+                      f"roi chay lai: venv/bin/python scan_submit.py --vai {a.vai}")
+                return 1
         elif a.vai in ("vera", "qinn"):
             d = json.loads((wd / state_paths.SCAN_RESULT_FILE).read_text(encoding="utf-8")) if (wd / state_paths.SCAN_RESULT_FILE).exists() else {}
             so = d.get("scanned_total", "?")
