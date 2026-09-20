@@ -269,6 +269,13 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   `approve_post` / `approve_chat` / `approve_command`. Mọi tin nhắn vào đều có log
   (`state/<brand>/approve.log`, xoay vòng 5 MB×3) theo nhãn
   `vao → route → chat/chon/lenh → tele`, và mọi nhánh kết thúc bằng một tin trả về.
+  Mỗi dòng có **mức** (`INFO`/`WARNING`/`ERROR`) từ LOW-305 — trước đó mọi dòng kể cả
+  `[loi]` đều là INFO, nên không lọc được "chỉ lỗi". Nhãn `loi` tự lên ERROR qua
+  `write_log.LEVEL_BY_LABEL`; nhãn dùng chung cho cả dòng tốt lẫn dòng hỏng
+  (`tele`, `kanban`, `start`) thì gọi thẳng `write_log.error()` / `write_log.warn()`
+  tại chỗ. Dưới systemd, dòng ra stdout mang tiền tố mức syslog (`<3>`/`<4>`) nên
+  `journalctl -p err -u hermes-approve@<brand>` lọc ra đúng dòng lỗi; chạy tay không
+  có `JOURNAL_STREAM` nên không thấy tiền tố đó.
   Lệnh chọn số còn báo **ngay khi nhận** (`_report_already_label`, kèm tiêu đề từng số)
   trước khi vào việc — `create_pair` mất tới 180 giây một tin, đo thật 157 giây
   im lặng ngày 11/09/2026.

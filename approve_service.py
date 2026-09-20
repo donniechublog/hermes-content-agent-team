@@ -298,9 +298,11 @@ def _audit_tirith():
     if shutil.which(duong):
         return
     mo = "tirith_fail_open: true" in chu
-    log("start", f"⚠️ tirith_enabled: true nhung KHONG co binary '{duong}' trong PATH — "
-                 f"quet prompt-injection dang TAT"
-                 + (" (fail_open: true nen lenh van chay tiep)" if mo else ""))
+    # WARNING chu khong INFO (LOW-305): dich vu van chay, nhung mot cong bao mat dang
+    # TAT — dung loai dong phai loc ra duoc bang `journalctl -p warning`.
+    write_log.warn("start", f"⚠️ tirith_enabled: true nhung KHONG co binary '{duong}' "
+                            f"trong PATH — quet prompt-injection dang TAT"
+                            + (" (fail_open: true nen lenh van chay tiep)" if mo else ""))
 
 
 END_PUBLISHING_SECONDS = 15 * 60          # qua ngan nay ma con "publishing" = ket
@@ -359,8 +361,10 @@ def _rescue_article_end_publishing(token, group):
         dich.append(p.stem)
     if not cuu and not da_len:
         return
-    log("start", f"cuu {len(cuu)} bai ket o publishing, {len(da_len)} bai da len "
-                 f"channel: {', '.join(cuu + da_len)}")
+    # WARNING (LOW-305): dich vu tat giua luc dang dang — chay tiep duoc nhung la
+    # trang thai bat thuong, Ong Chu phai kiem channel, nen phai loc ra duoc.
+    write_log.warn("start", f"cuu {len(cuu)} bai ket o publishing, {len(da_len)} bai da len "
+                            f"channel: {', '.join(cuu + da_len)}")
     phan = []
     if da_len:
         phan.append("✅ " + str(len(da_len)) + " bài ĐÃ lên channel trước khi dịch vụ tắt "

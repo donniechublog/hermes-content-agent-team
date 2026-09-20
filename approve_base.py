@@ -80,8 +80,11 @@ def call(token, method, **kw):
     except Exception as e:                                   # noqa: BLE001
         res = {"ok": False, "description": f"{type(e).__name__}: {e}"}
     if not res.get("ok") and method != "getUpdates":
-        log("tele", f"{method} tu choi: {res.get('description')} | "
-                    f"thread={kw.get('message_thread_id')} text={rut(kw.get('text'), 60)}")
+        # ERROR (LOW-305): Telegram tu choi la tin KHONG den noi — nhan `tele` dung
+        # chung cho ca dong binh thuong nen phai khai muc ngay tai cho.
+        write_log.error("tele", f"{method} tu choi: {res.get('description')} | "
+                                f"thread={kw.get('message_thread_id')} "
+                                f"text={rut(kw.get('text'), 60)}")
     return res
 
 # Nghi giua cac lan thu lai khi upload anh loi (LOW-155). Test dat ve rong.
@@ -118,8 +121,9 @@ def call_upload(token, method, data, open_files, *, timeout=180):
             for fh in handles.values():
                 (fh[1] if isinstance(fh, tuple) else fh).close()
         if attempt < len(UPLOAD_RETRY_DELAYS):
-            log("tele", f"{method} loi ket noi (lan {attempt + 1}), thu lai sau "
-                        f"{UPLOAD_RETRY_DELAYS[attempt]}s: {type(err).__name__}")
+            # WARNING chu khong ERROR: con luot thu nua, chua chac hong that.
+            write_log.warn("tele", f"{method} loi ket noi (lan {attempt + 1}), thu lai sau "
+                                   f"{UPLOAD_RETRY_DELAYS[attempt]}s: {type(err).__name__}")
             time.sleep(UPLOAD_RETRY_DELAYS[attempt])
     return {"ok": False, "description": f"Mang loi khi {method} sau "
                                         f"{len(UPLOAD_RETRY_DELAYS) + 1} lan thu: "
