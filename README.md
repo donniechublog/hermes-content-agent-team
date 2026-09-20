@@ -347,6 +347,15 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   gặp — `tests/` phải nằm trong `PYTHONPATH`; đừng đưa mẫu chứa `.claude` vào `omit` — ghi ở đầu
   `.coveragerc`.
 
+  **Nhóm module logic từng 0% (LOW-307).** `draft_write`, `material`, `article_extract`,
+  `dre_prepare`, `miles_prepare`, `social_post`, `cape_prepare`/`cape_submit`, `check_env` và
+  cặp `jika_*` giờ có `tests/test_<module>.py` riêng, chạy **offline** bằng dữ liệu tổng hợp.
+  Cách dùng lại cho module sau: thay tệp ở **cạnh tiến trình con** (viết một script giả rồi trỏ
+  `<module>.ROOT` / `SCRIPT` vào thư mục tạm) thay vì mock `subprocess` — đường mã thoát, `--out`,
+  stdout-không-phải-JSON vẫn chạy thật. Mỗi tệp test đã được **đo đột biến**: phá một dòng của
+  module thì test phải đỏ (15/15 chỗ thử đều bị bắt) — test "gọi cho có" thì độ phủ đẹp mà
+  không giữ được gì.
+
   **Hàm chạy thật thì đối chiếu bằng VẾT.** Bảy hàm không chạy offline được
   (duyệt ảnh, router Telegram, tạo cặp task, moat, và ba hàm lái Chromium) đã
   được tách 07/09/2026 bằng cách thay mọi cạnh I/O — `call` Telegram, kanban,
