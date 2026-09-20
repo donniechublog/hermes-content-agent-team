@@ -835,6 +835,18 @@
    ],
    "logs": [
     [
+     "loi",
+     "doc reported_progress.json hong (JSONDecodeError), coi nhu rong"
+    ],
+    [
+     "loi",
+     "doc task_result_messages.json hong (JSONDecodeError), coi nhu rong"
+    ],
+    [
+     "loi",
+     "doc reported_stalled.json hong (JSONDecodeError), coi nhu rong"
+    ],
+    [
      "tiendo",
      "t1 dre -> running (thread=11) gui=ok"
     ]

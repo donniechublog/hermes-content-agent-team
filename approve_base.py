@@ -222,9 +222,17 @@ def _extract_line(body: str, nhan: str) -> str:
 BOSS_IDS = STATE_DIR / state_paths.BOSS_IDS_FILE    # [user_id...] duoc phep ra lenh
 
 def _load_json(path, mac_dinh):
+    """Doc JSON; loi gi cung tra `mac_dinh`.
+
+    THIEU tep la binh thuong (chua co luot nao), HONG thi khong — nen chi ban hong
+    moi ghi mot dong log (LOW-306). Truoc day hai truong hop cam nhu nhau, nen mot
+    sidecar hong doc ra y het mot sidecar chua bao gio ton tai."""
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    except FileNotFoundError:
+        return mac_dinh
+    except (OSError, ValueError) as e:
+        log("loi", f"doc {getattr(path, 'name', path)} hong ({type(e).__name__}), coi nhu rong")
         return mac_dinh
 
 
