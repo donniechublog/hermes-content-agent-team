@@ -106,7 +106,7 @@ flowchart TB
     hermesPlatform["Hermes Agent Platform"]:::external
 
     subgraph BLOG["Container: brand BLOG — ~/.hermes-blog"]
-        gwB["hermes-gateway@blog<br/>chat routing + kanban dispatcher<br/>max_in_progress: 1"]:::container
+        gwB["hermes-gateway@blog<br/>chat routing + kanban dispatcher<br/>max_in_progress: 3 (đo 20/09/2026)"]:::container
         apB["hermes-approve@blog<br/>approve_service + duyet_*"]:::container
         dashB["hermes-dashboard-blog :9120"]:::container
         cronB{{"cron: finn-scan, qinn-scan @05:00<br/>daily-log @06:00 · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:00"}}:::cron
@@ -155,7 +155,8 @@ flowchart TB
 script Python duy nhất ("Cùng một script phục vụ cả hai brand"), nhưng chạy
 thành **hai container hoàn toàn tách biệt** — mỗi bên một bộ systemd unit, một
 `state/<brand>/` riêng, một cấu hình cron riêng, chạy **tuần tự** trong nội bộ
-brand (`kanban.max_in_progress: 1`) nhưng **độc lập song song** giữa hai
+brand (`kanban.max_in_progress`, đo trên máy chủ 20/09/2026 là **3** mỗi brand — trần
+engine ảnh `image_prepare.COUNT_ENGINE_PARALLEL` bằng tổng hai brand, LOW-290) nhưng **độc lập song song** giữa hai
 brand. Chỉ `drafts/`, `state/9router/`, `state/cron_audit.json` và
 `journal-web` là dùng chung.
 

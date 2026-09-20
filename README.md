@@ -359,8 +359,11 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 
 Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**:
 
-- `kanban.max_in_progress: 1` trong `~/.hermes-<brand>/config.yaml` — dispatcher mỗi
-  container chỉ chạy một task tại một thời điểm, FIFO theo `created_at`.
+- `kanban.max_in_progress` trong `~/.hermes-<brand>/config.yaml` — dispatcher mỗi
+  container chạy tối đa ngần ấy task một lúc, FIFO theo `created_at`. Ban đầu (03/09)
+  là **1** mỗi brand; đo trên máy chủ 20/09/2026 thì **cả hai brand đang là 3**, tức
+  tối đa 6 task chạy song song toàn máy — trần engine ảnh
+  (`image_prepare.COUNT_ENGINE_PARALLEL`) phải bằng số này, xem LOW-290.
 - Lệnh chọn nhiều tin nhiều vai ("1, 3 - Ethan, 2 - Dre") được **sắp theo vai** trước
   khi tạo task, nên vai xuất hiện trước làm hết bài của mình rồi vai sau mới bắt đầu.
 - Hàng đợi có tiếng nói: mỗi task bắt đầu / xong / dừng, approve_service đưa một dòng
@@ -376,7 +379,7 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
     9router/DeepSeek, **không** phải thứ làm reply đợi nhau — một người gõ thực tế không
     hỏi quá 3–4 vai cùng lúc; đặt `=1` trong unit systemd là về hành vi cũ.
   - **Nguyên tắc (Ông Chủ, 04/09): task làm lần lượt được, reply phải song song và
-    nhanh** — reply đơ là công việc treo theo hết. Task kanban vẫn `max_in_progress: 1`.
+    nhanh** — reply đơ là công việc treo theo hết.
   - **Nguyên tắc (Ông Chủ, 08/09): vai cần phản hồi ngay khi được giao task là đã
     nhận task** — trước đó `_report_receive_job` chỉ bắn khi việc CHUYỂN giữa hai vai
     (Dre→Miles, →Kite); task MỚI tạo trong `approve_pick.py` (Ông Chủ chọn tin) thì

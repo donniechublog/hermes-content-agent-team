@@ -253,7 +253,18 @@ def load_meta(draft_id: str) -> dict:
 # Tran so engine chay CUNG LUC tren ca may (chung hai brand): moi engine mo mot
 # Chromium 1600x1200 DPR2 + goi vision tung anh. Ong Chu chon 7 tin la 7 engine
 # khoi chay cung luc (audit 05/09/2026). Het cho thi doi, khong bo.
-COUNT_ENGINE_PARALLEL = max(1, int(os.environ.get("CT_PREPARE_PARALLEL", "2") or 2))
+#
+# 2 -> 6 (LOW-290, Ong Chu chot 20/09/2026). So 2 dat ngay 05/09 KHOP dung muc song
+# song hoi do: moi brand chay MOT task mot luc (`kanban.max_in_progress: 1`) x 2 brand.
+# Ngay 14/09 cau hinh hai brand doi thanh `max_in_progress: 3` -> toi 6 worker co the
+# cung can engine, ma tran van 2. Do tren log may chu 20/09: 7 ngay gan nhat 95/126
+# draft phai xep hang, 56 draft chet o moc WAIT_SLOT_SECONDS; dong loi dau tien xuat
+# hien dung ngay 14/09. Viec that chi ~100 giay, phan lon la cho mang + vision.
+# Do RAM that 20/09 (mo dung loai phien Chromium cua engine, may 8GB/44 nhan):
+# 1 phien -1088MB kha dung, 2 phien -770MB, 4 phien -1152MB, 6 phien -1900MB (con
+# ~2.7GB + swap 3.3GB, 14 ngay khong co OOM nao). Dat bang so worker toi da de hang
+# khong bao gio dai hon so cho; hon nua thi tu doi nhu cu.
+COUNT_ENGINE_PARALLEL = max(1, int(os.environ.get("CT_PREPARE_PARALLEL", "6") or 6))
 
 # Doi khoa `running.pid` cua MOT draft toi da bay nhieu giay (LOW-26, 12/09/2026).
 # Truoc do la 300 — bang dung tran bash tool cua vai (~300s), nen lan chay dau
