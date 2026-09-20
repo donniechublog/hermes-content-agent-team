@@ -605,7 +605,6 @@ Q_TEXT_X = Q_FRAME_X + 50        # chu thut vao trong khung
 Q_AVAIL = W - 2 * Q_TEXT_X
 Q_LEAD = 14                      # gian dong quote (theo px, giong card.py)
 Q_LINES = 7                      # cau dai hon la nen cat — xem cong chan
-Q_BOTTOM = 1150                  # day cum quote
 # LOW-286 (Ong Chu 19/09/2026: "text chi duoc chiem khoang 20% dien tich"): khoi chu
 # quote cao toi da 20% khung. Truoc day chon co lon nhat con vua Q_LINES dong -> cau
 # 4 dong co 60 cao 336px (25%) va nen chu mo tu dinh khung quote (~47% khung).

@@ -158,7 +158,6 @@ KICKER_FAMILY = 20          # ho giua chu va hai duong ke
 # Gian dong: chu display co to thi khoang ho mac dinh nhin ra roi rac. Bo sat
 # lai cho khoi chu doc thanh MOT mang, dung nhu cac mau tham khao.
 LEAD, TRAN_LEAD = 6, 2
-SUB_SIZE = 31
 VIA_SIZE = 29
 BRAND_SIZE = 27   # ten kenh nho hon dong via mot chut
 

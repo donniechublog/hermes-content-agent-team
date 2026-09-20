@@ -217,20 +217,6 @@ class SidecarWrite(TypedDict, total=False):
     writer_task: str               # id task viet, khi da tao
 
 
-class LineImageUsed(TypedDict):
-    """MOT DONG trong `state/<brand>/used_images.jsonl` (noi them, khong sua).
-
-    Khoa theo TIN chu khong theo draft: cung mot tin giao cho hai vai ra hai
-    draft_id nhung dung chung bo anh engine tai ve."""
-    dhash: str
-    draft_id: str
-    role: str                      # vai tao album (LOW-242, truoc: `vai`)
-    story_key: str                 # khoa on dinh cua tin, xem image_provenance.story_key (truoc: `tin`)
-    file_name: str                 # ten tep anh goc (truoc: `ten`)
-    md5: str
-    used_at: int                   # epoch giay, de xet cua so 14 ngay (truoc: `luc`)
-
-
 # ---------------------------------------------------------------- dan xuat
 # Anh NGANG thap hon nguong nay khong cat doc 4:5 duoc (con ~80% chieu cao roi
 # phong len 1080 se nhoe) — chi con duong "ghep" voi mot anh ngang khac. MOT ban

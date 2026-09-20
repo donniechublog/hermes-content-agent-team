@@ -19,7 +19,7 @@
     "loi_cuoi": "last_errors"
   },
   "used_images_line": {
-    "_where": "state/<brand>/used_images.jsonl (USED_IMAGES_FILE) — image_rules_{dre,ethan,kite} record_used/check_not_reused, image_provenance, cleanup, schema.LineImageUsed",
+    "_where": "state/<brand>/used_images.jsonl (USED_IMAGES_FILE) — image_rules_{dre,ethan,kite} record_used/check_not_reused, image_provenance, cleanup",
     "vai": "role",
     "tin": "story_key",
     "ten": "file_name",

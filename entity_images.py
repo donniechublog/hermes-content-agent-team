@@ -120,7 +120,7 @@ def entity_images(tieu_de: str, models: list | None = None) -> list:
     chọn làm đại diện), rồi Commons theo cụm. Không bao giờ ném."""
     ra, da = [], set()
     for ten in entity_within_title(tieu_de, models):
-        for c in ([pageimages(ten)] if True else []) + commons_by_phrase(ten):
+        for c in [pageimages(ten)] + commons_by_phrase(ten):
             if c and c["image_url"] not in da:
                 da.add(c["image_url"])
                 ra.append(c)

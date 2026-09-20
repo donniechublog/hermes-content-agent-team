@@ -62,12 +62,3 @@ def block_material(m: dict, tieu_de: str = "## Tư liệu", nhan: str = "Finn",
     if not cs and not tl.get("lead_paragraph"):
         L.append(dong_thieu)
     return L
-
-
-def below(lenh: str, cam: list = ()) -> list:
-    """Doan ket: mot lenh duy nhat, va danh sach thu KHONG duoc lam."""
-    L = ["", "## Rồi chạy đúng MỘT lệnh", lenh]
-    if cam:
-        L.append("")
-        L += [f"KHÔNG {c}" for c in cam]
-    return L
