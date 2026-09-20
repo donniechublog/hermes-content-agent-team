@@ -692,6 +692,93 @@ def write_timestamp(khoa: dict):
     os.replace(tmp, STATE)
 
 
+def _merge_same_story_llm(moi: list, cu: dict, now: float) -> tuple:
+    """Buoc 2 cua loc trung (LOW-253): LLM gom nhom cung su kien ma luat code bo
+    sot, va so voi tieu de DA BAO 3 ngay qua.
+
+    Khoa da thay la `standard_ify(tieu de)` — chu thuong, bo dau cau — van du de
+    LLM doc. LLM loi (mot trong cac lan hoi tra None) thi GIU NGUYEN ket qua buoc
+    1, khong doan. Tra `(nhom moi, nhom da bao)`. Tach khoi `main` o LOW-309.
+    """
+    prior = [k for k, ts in sorted(cu.items(), key=lambda kv: -kv[1])
+             if ts >= now - SAME_STORY_LOOKBACK_SECONDS][:SAME_STORY_MAX_PRIOR]
+    reported: list = []
+    if not moi:
+        return moi, reported
+    today = [t["title"] for t in moi]
+    txts = [ask_same_story(today, prior) for _ in range(SAME_STORY_ASKS)]
+    if all(x is not None for x in txts):
+        truoc = len(moi)
+        moi, reported = merge_same_story(moi, consensus_groups(txts, today, prior))
+        print(f"  same_story: {truoc} -> {len(moi)} nhom moi, {len(reported)} nhom da bao "
+              f"({SAME_STORY_MODEL})", file=sys.stderr)
+    return moi, reported
+
+
+def _slim_for_vera(chon: list) -> list:
+    """Gon tung item truoc khi ghi tep cho Vera — prompt cua no an theo KICH THUOC
+    tep nay (audit 01/09). `outlet_count` du de danh gia do nong; danh sach ten bao
+    cap 3 (du cho source_note); `watchlist_company` trung y voi `watchlist` thi bo.
+    KHONG sua `chon` goc: no con dung nguyen cho `write_timestamp` o cuoi main."""
+    xuat = []
+    for t in chon:
+        t2 = {k: v for k, v in t.items() if k not in ("watchlist_company", "seen_keys")}
+        t2["outlets"] = t.get("outlets", [])[:3]
+        xuat.append(t2)
+    return xuat
+
+
+def _extra_watchlist_required(chon: list) -> None:
+    """BAT BUOC (luat Ong Chu 04/09/2026): tin watchlist (top brand nganh AI) PHAI
+    co trong manifest cua Vera, tich luy sang hom sau neu sot.
+
+    MOT muc moi HANG moi NGAY (khong phai moi bai bao): Nvidia mua Hugging Face co
+    3 bao thi Vera chon 1 bai la du. Chi hang LOI, hoac tin >= 2 bao. Khop bang TEN
+    HANG trong tieu de/tom tat cua Vera (keywords), khong theo link.
+    """
+    nhom: dict = {}
+    for t in chon:
+        hang = (t.get("watchlist_company") or "").lower()
+        if not (t["watchlist"] and hang):
+            continue
+        if hang not in RANK_ERROR and (t.get("outlet_count") or 0) < 2:
+            continue
+        k = f"hang|{hang}|{t['date']}"
+        # KHONG dung ten `cu`: o `main` do la bo nho da-thay (already_see()) dung cho
+        # write_timestamp. Ghi de no o day lam write_timestamp nhan None -> crash SAU
+        # khi da ghi --out, tuc Vera co tep ma moc khong duoc cap nhat (tin bao lai
+        # hom sau). Bat 04/09/2026 khi chay thu scan_prepare.
+        cu_nhom = nhom.get(k)
+        if not cu_nhom or (t.get("outlet_count") or 0) > (cu_nhom.get("outlet_count") or 0):
+            nhom[k] = t
+    muc = [(k, f"{t['watchlist_company']}: {t['title']}", "watchlist",
+            f"{t['outlet_count']} bao; {t['date']}", t.get("link", ""), [t["watchlist_company"]])
+           for k, t in nhom.items()]
+    so_moi = required.extra_many("vera", muc)
+    print(f"  bat buoc: {len(muc)} tin watchlist, {so_moi} moi; tong dang cho "
+          f"{len(required.read('vera'))} ({required.file('vera').name})", file=sys.stderr)
+
+
+def _report(a, tin: list, chon: list, xuat: list) -> None:
+    """Ghi tep JSON cho Vera (`--out`), hoac in bang doc bang mat khi chay tay."""
+    ket = {"scanned_at": datetime.now(timezone.utc).isoformat(),
+           "scanned_total": len(tin),
+           "watchlist_count": sum(1 for t in chon if t["watchlist"]),
+           "new_stories": xuat}
+    if a.out:
+        Path(a.out).write_text(json.dumps(ket, ensure_ascii=False, indent=2),
+                               encoding="utf-8")
+        print(a.out)
+        return
+    wl = sum(1 for t in chon if t["watchlist"])
+    print(f"=== {len(chon)}/{len(tin)} tin (sau gom trung, bo da bao) "
+          f"| {wl} tin watchlist ===\n")
+    for t in chon:
+        dau = "[W]" if t["watchlist"] else "   "
+        print(f"  {dau} {t['date']}  ({t['feed_group']})  {t['outlet_count']} báo")
+        print(f"        {t['title'][:100]}")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Quet tin kinh doanh/dau tu quanh AI")
     ap.add_argument("--gio", type=int, default=72, help="Chi lay tin trong N gio (mac dinh 72)")
@@ -729,20 +816,7 @@ def main():
     # hom sau dai dien doi sang ban khac (Euclyd, Glass Imaging 17/09) va tin cu
     # lot lai vao danh sach.
     moi = [t for t in tin if not any(k in cu for k in t["seen_keys"])]
-    # LOW-253: buoc 2, LLM gom nhom cung su kien ma luat code bo sot, va so voi
-    # tieu de da bao 3 ngay qua. Khoa da thay la standard_ify(tieu de) — chu
-    # thuong, bo dau cau — van du de LLM doc. LLM loi thi giu nguyen buoc 1.
-    prior = [k for k, ts in sorted(cu.items(), key=lambda kv: -kv[1])
-             if ts >= now - SAME_STORY_LOOKBACK_SECONDS][:SAME_STORY_MAX_PRIOR]
-    reported = []
-    if moi:
-        today = [t["title"] for t in moi]
-        txts = [ask_same_story(today, prior) for _ in range(SAME_STORY_ASKS)]
-        if all(x is not None for x in txts):
-            truoc = len(moi)
-            moi, reported = merge_same_story(moi, consensus_groups(txts, today, prior))
-            print(f"  same_story: {truoc} -> {len(moi)} nhom moi, {len(reported)} nhom da bao "
-                  f"({SAME_STORY_MODEL})", file=sys.stderr)
+    moi, reported = _merge_same_story_llm(moi, cu, now)
     for t in moi:
         # watchlist_company da duoc gather_duplicate tinh tren TUNG bien the truoc khi gop.
         t["watchlist"] = bool(t.get("watchlist_company"))
@@ -764,59 +838,11 @@ def main():
     chon = wl + thuong[:max(0, a.top - len(wl))]
     chon.sort(key=lambda t: -(t["ts"] or 0))
 
-    # Gon tung item truoc khi ghi tep cho Vera — prompt cua no an theo kich
-    # thuoc tep nay (audit 01/09). `outlet_count` du de danh gia do nong; danh sach
-    # ten bao cap 3 (du cho source_note); `watchlist_company` trung y voi `watchlist`
-    # thi bo. `chon` goc van dung nguyen cho write_timestamp ben duoi.
-    xuat = []
-    for t in chon:
-        t2 = {k: v for k, v in t.items() if k not in ("watchlist_company", "seen_keys")}
-        t2["outlets"] = t.get("outlets", [])[:3]
-        xuat.append(t2)
-    # BAT BUOC (luat Ong Chu 04/09/2026): tin watchlist (top brand nganh AI)
-    # la PHAI co trong manifest cua Vera, tich luy sang hom sau neu sot.
-    # MOT muc moi HANG moi NGAY (khong phai moi bai bao): Nvidia mua Hugging
-    # Face co 3 bao thi Vera chon 1 bai la du. Chi hang LOI, hoac tin >= 2 bao.
-    # Khop bang ten hang trong tieu de/tom tat cua Vera (keywords), khong theo link.
+    xuat = _slim_for_vera(chon)
     if not a.lan_dau:
-        nhom = {}
-        for t in chon:
-            hang = (t.get("watchlist_company") or "").lower()
-            if not (t["watchlist"] and hang):
-                continue
-            if hang not in RANK_ERROR and (t.get("outlet_count") or 0) < 2:
-                continue
-            k = f"hang|{hang}|{t['date']}"
-            # KHONG dung ten `cu`: do la bo nho da-thay (da_thay()) dung o cuoi
-            # main cho write_timestamp. Ghi de no o day lam write_timestamp nhan None -> crash
-            # sau khi da ghi --out, tuc Vera co tep ma moc khong duoc cap nhat
-            # (tin bao lai hom sau). Bat 04/09/2026 khi chay thu scan_prepare.
-            cu_nhom = nhom.get(k)
-            if not cu_nhom or (t.get("outlet_count") or 0) > (cu_nhom.get("outlet_count") or 0):
-                nhom[k] = t
-        muc = [(k, f"{t['watchlist_company']}: {t['title']}", "watchlist",
-                f"{t['outlet_count']} bao; {t['date']}", t.get("link", ""), [t["watchlist_company"]])
-               for k, t in nhom.items()]
-        so_moi = required.extra_many("vera", muc)
-        print(f"  bat buoc: {len(muc)} tin watchlist, {so_moi} moi; tong dang cho "
-              f"{len(required.read('vera'))} ({required.file('vera').name})", file=sys.stderr)
+        _extra_watchlist_required(chon)
 
-    ket = {"scanned_at": datetime.now(timezone.utc).isoformat(),
-           "scanned_total": len(tin),
-           "watchlist_count": sum(1 for t in chon if t["watchlist"]),
-           "new_stories": xuat}
-    if a.out:
-        Path(a.out).write_text(json.dumps(ket, ensure_ascii=False, indent=2),
-                               encoding="utf-8")
-        print(a.out)
-    else:
-        wl = sum(1 for t in chon if t["watchlist"])
-        print(f"=== {len(chon)}/{len(tin)} tin (sau gom trung, bo da bao) "
-              f"| {wl} tin watchlist ===\n")
-        for t in chon:
-            dau = "[W]" if t["watchlist"] else "   "
-            print(f"  {dau} {t['date']}  ({t['feed_group']})  {t['outlet_count']} báo")
-            print(f"        {t['title'][:100]}")
+    _report(a, tin, chon, xuat)
     # CHI danh dau tin DA DUA cho Vera (chon), khong phai tat ca tin quet duoc.
     # Truoc day danh dau het: ngay dot bien, phan bi van --top cat van vao seen
     # -> lan sau bi loc "da thay" -> khong bao gio toi Vera nua. Van an toan
