@@ -222,6 +222,8 @@ def test_brief_noi_ro_nhac_khong_phai_loi():
     import miles_prepare
     src = (ROOT / "miles_prepare.py").read_text(encoding="utf-8")
     assert "KHÔNG cần cắt cho ngắn lại" in src and "KHÔNG phải lỗi" in src and "kết thúc task ngay" in src
+    assert "ĐẦY ĐỦ" in src and "KHÁCH QUAN" in src and "CẬP NHẬT" in src, "brief phai neo vao dau du/khach quan/cap nhat"
+    assert "800" not in src.split("Độ dài")[1].split("Thẻ HTML")[0], "brief khong con muc nham do dai"
     assert "1024" not in src and "caption_check.LIMIT" not in src, "brief khong con nhac gioi han 1024"
     assert hasattr(miles_prepare, "write_brief")
 

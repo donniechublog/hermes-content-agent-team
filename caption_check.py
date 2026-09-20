@@ -36,7 +36,6 @@ from pathlib import Path
 # tai lieu vi trang cua ho la SPA) — de thap hon that mot chut thi an toan.
 # Caption thuong hien trung binh 962 ky tu nen tran nay khong vuong gi.
 CEILING_BACKGROUND_LAYER = 2200
-BACKGROUND_SET = 700          # duoi muc nay thi nhac: con nhieu cho ma chua dung het
 CARD_ALLOW = {"b", "i", "code", "strong", "em", "a"}
 
 TIME_ROOM = ("gây chấn động", "thay đổi mọi thứ", "cuộc cách mạng", "đột phá",
@@ -146,15 +145,14 @@ def count_is(chu: str, tu_lieu: str) -> list:
 
 
 def _check_measure_long(caption: str) -> tuple:
-    """Hai nguong do dai: tran nen tang (loi) va muc nen dat (chi nhac). Khong
-    con nguong chu thich anh 1024 (LOW-296): dai thi publish() tu tach."""
+    """Chi con MOT nguong do dai: tran nen tang (loi). Ong Chu 20/09 (LOW-296):
+    ngan hay dai khong quan trong, quan trong la du thong tin/khach quan/cap nhat
+    (do bang cong RONG SO, SO LA, tu cong bo, khong bang so ky tu). Khong con
+    nguong 1024 (dai thi publish() tu tach) va khong con muc nen dat 700."""
     loi, canh = [], []
     if len(caption) > CEILING_BACKGROUND_LAYER:
         loi.append(f"Dài {len(caption)} ký tự, vượt trần {CEILING_BACKGROUND_LAYER} của "
                    "Instagram và TikTok. Bài sẽ bị cắt hoặc từ chối khi moat đẩy đi.")
-    elif len(caption) < BACKGROUND_SET:
-        canh.append(f"Mới {len(caption)} ký tự, dưới mức nên đạt {BACKGROUND_SET}. "
-                    "Khai thác thêm số liệu hoặc bối cảnh từ tư liệu.")
     return loi, canh
 
 

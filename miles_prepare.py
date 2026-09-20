@@ -75,8 +75,11 @@ def write_brief(m: dict, meta: dict, wd: Path, persona: str = "miles") -> str:
           "  2. So sánh: hơn/kém cái gì, cách biệt bao nhiêu; nguồn nói chỗ THUA thì phải nói.",
           "  3. Hạn chế hoặc điều kiện kèm theo, nếu nguồn có.",
           "  4. Ý nghĩa: vì sao quan trọng (theo lý do chấm điểm), nói thẳng bằng thông tin cụ thể.",
-          "Độ dài: từ khoảng 800 ký tự trở lên cho đủ ý, trần cứng "
-          f"{caption_check.CEILING_BACKGROUND_LAYER}. Caption dài script tự tách khi đăng, KHÔNG cần cắt cho ngắn lại. "
+          "Độ dài KHÔNG quan trọng, ngắn hay dài đều được (trần cứng "
+          f"{caption_check.CEILING_BACKGROUND_LAYER}; caption dài script tự tách khi đăng, KHÔNG cần cắt cho ngắn lại). "
+          "Quan trọng là: ĐẦY ĐỦ (mọi con số và ý chính của tư liệu có mặt), KHÁCH QUAN (nói cả chỗ thua/hạn chế, "
+          "số hãng tự công bố phải ghi rõ, giả thuyết gắn nhãn chưa kiểm chứng) và CẬP NHẬT (dùng thông tin mới nhất "
+          "trong tư liệu, ghi rõ mốc thời gian của số liệu; tư liệu nói số cũ đã bị thay thì nêu số mới). "
           f"Thẻ HTML chỉ <b> <i> <code>. Không em-dash (— –). Không URL/tên miền sống (viết z . ai). "
           f"Cấm cụm: {', '.join(caption_check.STAR_EMPTY)}; cấm thổi phồng: {', '.join(caption_check.TIME_ROOM[:6])}… "
           "Số liệu hãng tự công bố phải ghi rõ \"hãng tự công bố\". Không lặp một cụm 6 từ hai lần. "
