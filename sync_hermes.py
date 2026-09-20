@@ -14,7 +14,8 @@ muc hermes/ trong repo la ban chep co lich su, to chuc theo container:
     hermes/profiles/blog/<slug>.SOUL.md    -> ~/.hermes-blog/profiles/<slug>/
     hermes/profiles/dcgr/<slug>.SOUL.md    -> ~/.hermes-dcgr/profiles/<slug>/
     hermes/profiles/shared/<slug>.SOUL.md  -> CA HAI home
-    hermes/plugins/kanban/dashboard/*      -> <home>/plugins/kanban/dashboard/*  (ca hai)
+    ban goc hermes-agent + hermes/plugins/kanban/patches/*.patch
+                                           -> <home>/plugins/kanban/dashboard/*  (ca hai)
 
 Slug la ten thu muc THAT trong home (generic: carousel, designer, writer...),
 khong phai ten nhan vat cu (heller/dre...). Profile co trong git ma home khong
@@ -26,15 +27,16 @@ Dung:
     venv/bin/python sync_hermes.py --ra-hermes      # repo -> home (sau khi sua trong git)
     venv/bin/python sync_hermes.py --kiem-upstream  # hermes-agent doi gi o kanban ke tu UPSTREAM
     venv/bin/python sync_hermes.py --chot-upstream  # da port xong: ghi HEAD hermes-agent vao UPSTREAM
+    venv/bin/python sync_hermes.py --refresh-patches  # sua plugin trong home xong: lam lai ban va tu home
 """
 import argparse
-import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 import env_load
+import kanban_plugin_build
 
 ROOT = env_load.ROOT
 REPO = ROOT / "hermes"
@@ -61,9 +63,13 @@ HOMES = env_load.hermes_homes()
 # (--kiem-upstream), khong con la diem dong bo. Dieu kien de API cua plugin
 # nguoi dung duoc mount: `plugins.enabled` trong config.yaml cua home phai co
 # "kanban" (hermes gate theo GHSA-mcfc-hp25-cjv7) — script kiem va nhac.
-HERMES_AGENT = Path(os.environ.get("HERMES_AGENT_DIR") or (Path.home() / "hermes-agent"))
-PLUGIN_FILE = ["manifest.json", "plugin_api.py", "dist/index.js", "dist/style.css"]
-PLUGIN_REPO = REPO / "plugins" / "kanban" / "dashboard"
+#
+# Tu 20/09/2026 (LOW-313) repo KHONG con chep ca tep: ben "repo" cua moi muc plugin
+# la ban DUNG = ban goc trong git cua hermes-agent + ban va `plugins/kanban/patches/`
+# (kanban_plugin_build.py). Ban va khong ap duoc thi khong ghi gi va thoat khac 0.
+HERMES_AGENT = kanban_plugin_build.HERMES_AGENT
+PLUGIN_FILE = kanban_plugin_build.PLUGIN_FILES
+PLUGIN_REPO = REPO / "plugins" / "kanban" / "dashboard"     # chi con la TEN muc, khong co tep
 # Ghi lai ban va dang dung tren commit upstream nao, de lan sau con rebase 3
 # chieu duoc thay vi doan. Xem chu thich trong chinh tep UPSTREAM.
 FILE_UPSTREAM = REPO / "plugins" / "kanban" / "UPSTREAM"
@@ -272,6 +278,29 @@ def cap_file():
 
 IS_PLUGIN = "kanban "
 
+_PLUGIN_BUILD = {}            # {"built": {tep: {...}}} hoac {"error": str} — dung MOT lan moi lan chay
+
+
+def plugin_build() -> dict:
+    """Ban dung cua ca bo plugin (xem kanban_plugin_build.build), nho lai trong
+    tien trinh. Hong thi tra {"error": ly do} — nguoi goi quyet dinh bao va dung."""
+    if not _PLUGIN_BUILD:
+        try:
+            _PLUGIN_BUILD["built"] = kanban_plugin_build.build(HERMES_AGENT)
+        except kanban_plugin_build.PluginPatchError as e:
+            _PLUGIN_BUILD["error"] = str(e)
+    return _PLUGIN_BUILD
+
+
+def read_repo_side(ten: str, repo: Path):
+    """Ben "repo" cua mot muc: tep trong git, rieng plugin kanban la ban DUNG.
+    Plugin khong dung duoc -> None (muc do bi bo qua, loi bao mot lan o main)."""
+    tep = _file_plugin(ten)
+    if not tep:
+        return read(repo)
+    built = plugin_build().get("built")
+    return built[tep]["data"] if built else None
+
 # Dau vet cua tung ban va doi tu sua trong plugin kanban. Van giu du ban va da
 # ra khoi ban cai hermes: no la cong "khong thut lui" — mot lan --vao-repo keo
 # tu mot home vua bi ai do chep nham ban upstream vao van bi chan, thay vi lang
@@ -338,18 +367,19 @@ def two_home_offset(tep: str, doc_fn=None) -> str | None:
 
 
 COLOR_UPSTREAM = """\
-# Xuất xứ bản chép plugin kanban trong repo này. TỆP DO MÁY GHI, đừng sửa tay.
+# Xuất xứ bản vá plugin kanban trong repo này. TỆP DO MÁY GHI, đừng sửa tay.
 #
-# `hermes/plugins/kanban/dashboard/` là plugin NGƯỜI DÙNG (che plugin đi kèm
-# cùng tên, hermes update không đụng), gồm bản upstream CỘNG bốn bản vá của đội.
-# Vì bị che nên upstream đổi gì ở dashboard kanban đội cũng không tự nhận được —
-# đó là cái giá đổi lấy việc không còn mất bản vá. Muốn nhận thì port có chủ ý:
+# Repo KHÔNG còn chép cả plugin (LOW-313). `hermes/plugins/kanban/patches/` chỉ giữ
+# BẢN VÁ của đội; plugin người dùng trong <home>/plugins/kanban/dashboard/ được
+# DỰNG = bản gốc trong git của ~/hermes-agent + bản vá (kanban_plugin_build.py).
+# Bản vá không áp được thì sync_hermes/check_hermes báo HỎNG, không im lặng.
 #
-#   venv/bin/python sync_hermes.py --kiem-upstream   # upstream đổi gì kể từ hash dưới
-#   # vá lại bốn bản vá lên bản mới, --ra-hermes, restart dashboard, rồi:
-#   venv/bin/python sync_hermes.py --chot-upstream   # ghi HEAD mới vào đây
+#   venv/bin/python sync_hermes.py --kiem-upstream     # upstream đổi gì kể từ hash dưới
+#   venv/bin/python sync_hermes.py --ra-hermes         # dựng lại + ghi vào hai home
+#   # bản vá hết áp được: port tay trong home, restart dashboard, kiểm, rồi:
+#   venv/bin/python sync_hermes.py --refresh-patches   # làm lại bản vá + ghi hash dưới
 #
-# `commit:` là HEAD của ~/hermes-agent lúc port lần cuối.
+# `commit:` là HEAD của ~/hermes-agent mà bản vá được làm ra trên đó.
 
 commit: {hash}
 ghi_luc: {ngay}
@@ -386,6 +416,53 @@ def write_upstream() -> str | None:
         COLOR_UPSTREAM.format(hash=h, ngay=time.strftime("%d/%m/%Y")),
         encoding="utf-8")
     return h
+
+
+def report_plugin_build(chi=None) -> int:
+    """In ket qua dung plugin; tra ma thoat (1 = ban va khong ap duoc). Khong im
+    lang: day la cho LOW-313 sinh ra de bao."""
+    if chi and not any(chi in f"kanban {hk} {f}" for hk in HOMES for f in PLUGIN_FILE):
+        return 0                                    # lan chay nay khong dung toi plugin
+    st = plugin_build()
+    if "error" in st:
+        print("\n[!] PLUGIN KANBAN KHONG DUNG DUOC — khong ghi tep plugin nao vao home:",
+              file=sys.stderr)
+        print("    " + st["error"].replace("\n", "\n    "), file=sys.stderr)
+        return 1
+    doi = sorted(f for f, v in st["built"].items() if v["drifted"])
+    if doi:
+        print("\n[i] Ban goc hermes-agent DA DOI o " + ", ".join(doi) + " ke tu lan lam ban va; "
+              "ban va van ap sach. Mo dashboard kiem roi chay --refresh-patches de chot.")
+    return 0
+
+
+def refresh_patches(chi=None) -> int:
+    """Home -> ban va. Doc plugin dang chay trong home, so voi ban goc, ghi lai
+    patches/ + MANIFEST.json + UPSTREAM."""
+    ket_qua = {}
+    for f in PLUGIN_FILE:
+        ly_do = None if chi else two_home_offset(f)
+        if ly_do:
+            print(f"[!] {f}: {ly_do}", file=sys.stderr)
+            return 1
+        for hk, H in HOMES.items():
+            if chi and chi not in f"kanban {hk} {f}":
+                continue
+            b = read(plugin_home(H) / f)
+            if b is not None:
+                ket_qua[f] = standard(b)
+                break
+    if not ket_qua:
+        print("[!] Khong home nao co plugin kanban de lam ban va.", file=sys.stderr)
+        return 1
+    try:
+        da_ghi = kanban_plugin_build.refresh(ket_qua, HERMES_AGENT)
+    except kanban_plugin_build.PluginPatchError as e:
+        print(f"[!] {e}", file=sys.stderr)
+        return 1
+    write_upstream()
+    print("Da lam lai ban va: " + (", ".join(p.name for p in da_ghi) or "(khong con khac biet nao)"))
+    return 0
 
 
 def check_upstream() -> int:
@@ -578,6 +655,9 @@ def main():
                    help="chup cac khoa cau hinh quyet dinh prompt cua moi profile vao git")
     g.add_argument("--chot-upstream", action="store_true",
                    help="Da port xong upstream: ghi HEAD hermes-agent vao UPSTREAM")
+    g.add_argument("--refresh-patches", action="store_true",
+                   help="Lam lai hermes/plugins/kanban/patches/ tu plugin dang o home "
+                        "(hai home phai giong nhau, hoac chon mot bang --chi 'kanban <home>')")
     ap.add_argument("--ep", action="store_true",
                     help="Ghi de ke ca khi ben nguon thieu ban va cua tep plugin "
                          "(dung sau khi da xem bang tay va chac chan)")
@@ -595,12 +675,17 @@ def main():
         print(f"UPSTREAM = {h}" if h else f"[!] Khong doc duoc HEAD cua {HERMES_AGENT}")
         return 0 if h else 1
 
+    if a.refresh_patches:
+        return refresh_patches(a.chi)
+
     khac, thieu, bo_qua, da_chep = [], [], [], 0
     plugin_da_chep = set()      # --vao-repo: moi tep plugin chep MOT lan du hai home
     for ten, that, repo in cap_file():
         if a.chi and a.chi not in ten:
             continue
-        a_b, b_b = read(that), read(repo)
+        a_b, b_b = read(that), read_repo_side(ten, repo)
+        if _file_plugin(ten) and b_b is None:
+            continue                    # plugin khong dung duoc: bao mot lan o cuoi, khong ghi gi
         if a_b is None:
             thieu.append(f"{ten}: khong co ban that ({that})")
             continue
@@ -611,12 +696,13 @@ def main():
         if a.vao_repo:
             tep = _file_plugin(ten)
             if tep:
-                if tep in plugin_da_chep:
-                    continue                          # home kia da chep roi
-                ly_do = None if a.chi else two_home_offset(tep)
-                if ly_do and not a.ep:
-                    bo_qua.append((ten, ly_do))
-                    continue
+                # LOW-313: repo khong con giu ca tep plugin de ma chep vao. Home
+                # khac ban dung = ai do sua truc tiep trong home -> lam lai BAN VA.
+                if tep not in plugin_da_chep:
+                    plugin_da_chep.add(tep)
+                    bo_qua.append((ten, "plugin kanban khong chep vao repo nua — neu ban trong "
+                                        "home la ban DUNG thi chay --refresh-patches"))
+                continue
             # Chieu nay truoc day khong co cong nao — chinh no lam mat hai ban
             # va hom 04/09/2026. Nguon = ban that, dich = ban repo.
             ly_do = missing_trace(ten, a_b, b_b)
@@ -626,8 +712,6 @@ def main():
             repo.parent.mkdir(parents=True, exist_ok=True)
             repo.write_bytes(standard(a_b))          # ghi LF vao repo
             da_chep += 1
-            if tep:
-                plugin_da_chep.add(tep)
         elif a.ra_hermes:
             if b_b is None:
                 continue                # khong co ban repo thi khong ghi de
@@ -650,10 +734,10 @@ def main():
             if not H.exists():
                 continue
             for f in PLUGIN_FILE:
-                dich, nguon = plugin_home(H) / f, PLUGIN_REPO / f
-                if not dich.exists() and nguon.exists() and (not a.chi or a.chi in f"kanban {hk} {f}"):
+                dich, nguon = plugin_home(H) / f, read_repo_side(f"kanban {hk} {f}", PLUGIN_REPO / f)
+                if not dich.exists() and nguon is not None and (not a.chi or a.chi in f"kanban {hk} {f}"):
                     dich.parent.mkdir(parents=True, exist_ok=True)
-                    dich.write_bytes(standard(nguon.read_bytes()))
+                    dich.write_bytes(standard(nguon))
                     da_chep += 1
                     print(f"  TAO   kanban {hk} {f} -> home")
 
@@ -662,10 +746,12 @@ def main():
     tat_khac, tat_chep = sync_all_gate_old(a.vao_repo, a.ra_hermes, a.chi)
     da_chep += tat_chep
 
+    ma = report_plugin_build(a.chi)
     if not khac and not da_chep and not tat_khac:
-        print("Hai ben khop nhau, khong co gi de dong bo.")
+        print("Hai ben khop nhau, khong co gi de dong bo." if not ma else
+              "Phan con lai khop nhau; plugin kanban KHONG kiem duoc (xem [!] o tren).")
         mention_catch_plugin()
-        return 0
+        return ma
 
     huong = "-> repo" if a.vao_repo else ("-> home" if a.ra_hermes else "")
     for ten, _, _, moi in khac:
@@ -684,7 +770,7 @@ def main():
         print(f"\n{len(khac) + tat_khac} tep lech. Chay voi --vao-repo hoac --ra-hermes de dong bo.")
     mention_catch_plugin()
     mention_single_copy_item()
-    return 0
+    return ma
 
 
 if __name__ == "__main__":

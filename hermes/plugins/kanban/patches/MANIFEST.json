@@ -1,0 +1,21 @@
+{
+  "upstream_commit": "866332bfb52c46e543143b2620a9aeee8bce9c77",
+  "files": {
+    "manifest.json": {
+      "upstream_sha256": "2c037543d30ddee524d6a1bd38cbd2345d01f1c8bf678d4ee464da4074266e1e",
+      "built_sha256": "2c037543d30ddee524d6a1bd38cbd2345d01f1c8bf678d4ee464da4074266e1e"
+    },
+    "plugin_api.py": {
+      "upstream_sha256": "5f18b6c6eb77ac9171c19db7fbea03b4298990b497eafb6c2bb0517f3a72a0e8",
+      "built_sha256": "f900269a1a227f777c4eff0c7abdee6e9da5b4dfa000314012c8183614860539"
+    },
+    "dist/index.js": {
+      "upstream_sha256": "61143313ba6ff6529f9a62cc2a615851a45c29f87db17b009392bad6f3fe1c6c",
+      "built_sha256": "aabdac0444ca3ffdf629e5760194c42f7d96efbaf3680bd2c234ea4f21209703"
+    },
+    "dist/style.css": {
+      "upstream_sha256": "35b4a8088f3ebd478ae7326cf476eab513d0bf40397463a16fa7c213d62269fe",
+      "built_sha256": "ef121929b813f701abecd59d26c39f98593b6819aeef00f60c58152b33a5b8f9"
+    }
+  }
+}

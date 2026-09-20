@@ -138,6 +138,17 @@ def check_swarm() -> list:
     return [] if out == "OK" else [f"kanban_swarm {out}"]
 
 
+def check_kanban_plugin_patch() -> list:
+    """LOW-313: plugin kanban cua doi = ban goc hermes-agent + ban va. `hermes
+    update` doi dung cho doi sua thi ban va het ap duoc — phai BAO o day, khong
+    doi toi luc ai do chay --ra-hermes moi biet."""
+    import kanban_plugin_build
+    ok, dong = kanban_plugin_build.check()
+    if ok and "DA DOI" in dong:
+        print(f"        ~ plugin kanban: {dong}")
+    return [] if ok else [f"plugin kanban: {dong}"]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Kiem cac cho le thuoc noi bo hermes")
     ap.add_argument("--day-du", action="store_true",
@@ -148,7 +159,8 @@ def main() -> int:
     tat_ca = []
     for ten, ham in (("schema kanban.db", check_column),
                      ("co CLI cua `hermes chat`", check_has_chat),
-                     ("ham private kanban_swarm", check_swarm)):
+                     ("ham private kanban_swarm", check_swarm),
+                     ("ban va plugin kanban", check_kanban_plugin_patch)):
         loi = ham()
         print(f"{'OK  ' if not loi else 'HONG'}  {ten}")
         for d in loi:
