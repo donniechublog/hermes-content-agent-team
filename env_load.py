@@ -59,6 +59,10 @@ VISION_MODEL = "ag/gemini-3.8-flash"
 # rong) — mot cau tra loi "khong lien quan" that thi khong bi hoi lai. Rong hoac trung
 # VISION_MODEL = khong co du phong.
 VISION_FALLBACK_MODEL = "ds/deepseek-v4-flash-vision-exp"
+# Model gom tin CUNG SU KIEN o ca lung chung (LLM sau luat code): article_sources va
+# scan_business dung chung mot cho. Chua do lai tren Gemini (bo vang:
+# tests/golden/same_story_golden.json), nen van la DeepSeek pro.
+SAME_STORY_MODEL = "ds/deepseek-v4-pro"
 
 # User-Agent RIENG cho moi thu goi Wikimedia (API commons + tai anh tu
 # upload.wikimedia.org). Robot policy cua Wikimedia doi UA co TEN cong cu va

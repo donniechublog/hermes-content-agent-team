@@ -110,7 +110,7 @@ def story_tokens(t: str) -> set:
 # ca CHAC, chi ca lung chung (chung 2-3 tu) hoi LLM — MOT lan cho ca danh sach.
 # Bo mau 180 cap: tests/golden/same_story_golden.json.
 SAME_STORY_SURE = 4                          # chung >= 4 tu: chac cung tin, khong hoi
-SAME_STORY_MODEL = "ds/deepseek-v4-pro"      # cung model Vera gom tin (scan_business)
+SAME_STORY_MODEL = env_load.SAME_STORY_MODEL  # cung model Vera gom tin (scan_business)
 SAME_STORY_TIMEOUT = 40
 
 
