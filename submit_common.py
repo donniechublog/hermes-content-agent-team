@@ -535,10 +535,23 @@ def check_quote_translated(chu: str, nhan: str) -> list:
     if len(t) < 25:
         return []
     import caption_check
+    import vietnamese
     if caption_check.billion_odd_mark(t) >= 0.02:
         return []
     tu = re.findall(r"[A-Za-z']+", t.lower())
-    if sum(1 for w in tu if w in _TU_ANH) < 2:
+    anh_tu = {w for w in tu if w in _TU_ANH}
+    if len(anh_tu) < 2:
+        return []
+    # TIENG VIET GO MAT DAU khong phai viec cua ham nay (dung y docstring tren): de cong
+    # mat dau bao, no bao DUNG ten loi. LOW-289 (20/09/2026): cau Dre viet khong dau
+    # "…cong nghe that su van hanh the nao" co "the"/"that" trong _TU_ANH nen bi bao
+    # "con nguyen tieng Anh"; Dre viet lai quote hai lan roi block, trong khi viec phai
+    # lam la go lai CO DAU. Do tren cau that: tieng Viet mat dau co 11-13 dau hieu Viet
+    # va 0-2 tu chuc nang Anh; cau tieng Anh nguoc lai (1-2 va 5-8) — nen dem CA HAI,
+    # khong dung mot dieu kien. Cum quen thuoc ("cong nghe", "cap nhat") la du chac.
+    viet_tu = {w for w in tu if w in vietnamese.NEGATIVE_FACE_MARK}
+    cum_viet = any(" " in x for x in vietnamese.find_face_mark(t))
+    if cum_viet or (len(viet_tu) >= 3 and len(viet_tu) > len(anh_tu)):
         return []
     return [f"{nhan}: \"{t[:60]}…\" trông như còn nguyên tiếng Anh — phải DỊCH sang "
             "tiếng Việt (giữ nguyên tên riêng, thuật ngữ)"]
