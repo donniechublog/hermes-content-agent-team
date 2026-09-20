@@ -84,9 +84,9 @@ def find_voice_wall_technique(title: str, paragraphs: list) -> list:
 
 # Tu qua chung, xuat hien o moi bai — khong dung lam neo doi chieu dan y.
 _TU_CHUNG = {"cua", "va", "voi", "cho", "the", "nhu", "khi", "mot", "cac", "nay",
-             "the", "duoc", "khong", "trong", "tren", "gioi", "thieu", "phan",
-             "the", "nhung", "hon", "sao", "vi", "gi", "lam", "the", "day",
-             "the", "moi", "tai", "tu", "den", "ra", "vao", "la", "co"}
+             "duoc", "khong", "trong", "tren", "gioi", "thieu", "phan",
+             "nhung", "hon", "sao", "vi", "gi", "lam", "day",
+             "moi", "tai", "tu", "den", "ra", "vao", "la", "co"}
 
 
 def _item_no_ok_mention(outline: list, paragraphs: list) -> list:

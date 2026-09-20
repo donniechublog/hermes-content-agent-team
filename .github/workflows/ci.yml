@@ -36,10 +36,10 @@ jobs:
       # Cài từ requirements.lock (LOW-300), không phải requirements.txt: `>=` để CI mỗi
       # lần cài có thể ra bản khác máy chủ. Lock sinh từ venv máy chủ (Python 3.11, cùng
       # bản CI), cách làm mới ở đầu requirements.txt. `pip check` bắt lock thiếu một
-      # phụ thuộc bắc cầu. pyflakes là công cụ lint, không thuộc lock.
+      # phụ thuộc bắc cầu. pyflakes và ruff là công cụ lint, không thuộc lock.
       - name: Cài gói
         run: |
-          python -m pip install -q -r requirements.lock pyflakes
+          python -m pip install -q -r requirements.lock pyflakes ruff
           python -m pip check
           python -m playwright install --with-deps chromium
       # Chỉ báo cáo (LOW-300): continue-on-error nên lỗ hổng tìm thấy làm bước này báo lỗi
@@ -55,6 +55,12 @@ jobs:
       # import vẫn qua CI suốt 12 ngày (08/09 → 20/09/2026). pyflakes tự đệ quy thư mục.
       - name: pyflakes
         run: python -m pyflakes *.py prepare tests hermes
+      # Cổng lint thứ hai (LOW-304): bộ luật chọn lọc trong ruff.toml — B023 (hàm dùng
+      # biến vòng lặp), B904 (mất dấu vết lỗi gốc), B033 (set trùng) — những loại lỗi
+      # pyflakes không bắt. Thêm BƯỚC, KHÔNG đổi tên job `check`: ruleset yêu cầu
+      # required check theo tên job.
+      - name: ruff
+        run: python -m ruff check --output-format concise .
       # Đo độ phủ test (LOW-301) — CHỈ BÁO CÁO, chưa đặt ngưỡng. coverage cài riêng, không
       # nằm trong gói chạy của content-team. Cấu hình và các bẫy: xem .coveragerc.
       - name: Cài coverage

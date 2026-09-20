@@ -356,6 +356,20 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   bước) — nay truyền `lay_emoji=`; và `image_rules._used_images_log` bị gán đè không trả
   lại, khiến `check_not_reused` trả rỗng vô điều kiện trong mọi test sau đó — nay
   qua `_so_tam()`. Thêm test mới thì giữ đúng hai lối này.
+- `ruff.toml` — **cổng lint thứ hai** (LOW-304). Bộ luật *chọn lọc*, không phải
+  ruff mặc định (bộ rộng cho 1.885 báo, gần hết là kiểu cách): `F` + `E9` — trùng
+  pyflakes nhưng chạy trên **cả cây**, còn bước `pyflakes` ở CI chỉ liệt kê vài
+  thư mục và LOW-298 lọt lưới 12 ngày đúng vì thế — cộng `B023` (hàm dùng biến
+  vòng lặp, giá trị bị chốt muộn), `B904` (`raise` trong `except` không `from`,
+  mất dấu vết lỗi gốc), `B033` (set trùng giá trị, thường là gõ nhầm chữ khác).
+  Chạy: `venv/bin/ruff check .` (chưa có thì `venv/bin/pip install ruff`, như
+  `pyflakes` — công cụ dev, không nằm trong `requirements.txt`; CI tự cài).
+  Không `exclude` gì — 21/22 báo B904 từng nằm ở bản chép tay của plugin kanban,
+  nhưng LOW-313 đã thay bản chép đó bằng bản vá. **Không** bật `ruff format`: nó
+  sửa 260/342 tệp, đè lên mọi nhánh đang mở của các phiên khác.
+  Chỗ B023 đã xét là vô hại (hàm được gọi ngay trong cùng lần lặp) đánh dấu
+  `# noqa: B023` kèm một câu lý do — thêm chỗ mới thì cũng xét rồi ghi lý do,
+  đừng gỡ cổng.
 - `check_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
 - `requirements.txt` — venv dùng chung với hermes nên `hermes update` có thể làm
   mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`.

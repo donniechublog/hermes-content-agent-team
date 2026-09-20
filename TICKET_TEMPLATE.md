@@ -32,7 +32,8 @@ Những gì đã đọc và đã đo **trước khi sửa**, để kết luận 
 Checklist, tick được:
 
 - [ ] Test mới `tests/test_<tên>.py` **fail trên code cũ**, pass trên code mới.
-- [ ] `bash tests/run.sh` xanh, `pyflakes` sạch trên tệp đã sửa.
+- [ ] `bash tests/run.sh` xanh, `pyflakes` sạch trên tệp đã sửa, `ruff check .`
+      sạch (bộ luật chọn lọc trong `ruff.toml`, xem README mục `Tệp`).
 - [ ] Bảng trước/sau bằng số đo cùng lệnh ở bước 2.
 - [ ] **Chạy thử trên MÁY CHỦ** (mục 6) — số đo từ máy dev không tính,
       trừ khi bản vá thuộc nhóm được miễn và đã ghi rõ lý do.

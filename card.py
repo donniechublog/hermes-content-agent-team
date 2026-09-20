@@ -1203,7 +1203,7 @@ def _phase(mau, do_sang: float, nen=None):
 from vietnamese import (  # noqa: E402
     NEGATIVE_FACE_MARK, PHRASE_FACE_MARK, MARK_FORBID, drop_mark_forbid, find_face_mark,
 )
-# pyflakes khong hieu `# noqa` (chi flake8 hieu) nen ba ten re-export tren bao
+# pyflakes khong hieu `noqa` (chi flake8/ruff hieu) nen ba ten re-export tren bao
 # "imported but unused" o moi lan lint — cham vao de cong pyflakes (CI) sach.
 _RE_EXPORT = (NEGATIVE_FACE_MARK, PHRASE_FACE_MARK, MARK_FORBID)
 
