@@ -124,7 +124,7 @@ def _open_bg(layout):
         img = Image.open(layout["bg_image"]).convert("RGB")
         scale = max(W / img.width, H / img.height)
         nw, nh = round(img.width * scale), round(img.height * scale)
-        img = img.resize((nw, nh), Image.LANCZOS)
+        img = img.resize((nw, nh), Image.Resampling.LANCZOS)
         x, y = (nw - W) // 2, (nh - H) // 2
         canvas = img.crop((x, y, x + W, y + H)).convert("RGBA")
         fg = CREAM if layout.get("fg") == "cream" else WHITE
@@ -291,7 +291,7 @@ def take_cover(s):
             dl.text((10, cy), ln, font=cf, fill=(255, 255, 255, 255))
             cy += clh
         if gc.get("tilt"):
-            lop = lop.rotate(gc["tilt"], resample=Image.BICUBIC, expand=True)
+            lop = lop.rotate(gc["tilt"], resample=Image.Resampling.BICUBIC, expand=True)
         cap_y = max(60, title_top - 40 - lop.height)
         canvas.alpha_composite(lop, (gc.get("x", 640), cap_y))
     return canvas

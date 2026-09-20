@@ -815,7 +815,8 @@ def create_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
         co = [a["id"] for a in mm.get("images", []) if a.get("uses") and a.get("relevant") is not False]
         so_that = int(mm.get("usable_count", 0))
     if ly_do:
-        body += f"\n\n== CHUYEN TU {NAME_ROLE_IMAGE.get(im.get('image_role'), im.get('image_role'))} ==\n{ly_do}."
+        _vai_cu = str(im.get("image_role") or "")
+        body += f"\n\n== CHUYEN TU {NAME_ROLE_IMAGE.get(_vai_cu, _vai_cu)} ==\n{ly_do}."
         if so_that:
             body += (f" Engine tim duoc {so_that} anh THAT dung duoc (ma: {', '.join(co)}, xem brief): "
                      "BAT BUOC dua vao slide (bia image hoac figure), phan con lai ve vector.")

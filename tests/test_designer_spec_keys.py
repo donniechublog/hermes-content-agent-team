@@ -85,7 +85,7 @@ def _photo(path, w, h, seed):
     from PIL import Image
     rng = np.random.default_rng(seed)
     lo = rng.integers(0, 255, (6, 5, 3), dtype=np.uint8)
-    base = np.asarray(Image.fromarray(lo).resize((w, h), Image.BICUBIC), dtype=np.int16)
+    base = np.asarray(Image.fromarray(lo).resize((w, h), Image.Resampling.BICUBIC), dtype=np.int16)
     noise = rng.integers(-25, 25, (h, w, 3), dtype=np.int16)
     Image.fromarray(np.clip(base + noise, 0, 255).astype(np.uint8)).save(path)
 

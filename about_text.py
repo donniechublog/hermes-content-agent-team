@@ -37,7 +37,7 @@ def font_default(h_vung: int, h_anh: int) -> str:
     return "bold" if h_vung >= 0.045 * h_anh else "regular"
 
 
-def height_item(d: ImageDraw.ImageDraw, text: str, font) -> int:
+def height_item(d: ImageDraw.ImageDraw, text: str, font) -> float:
     """Chieu cao MUC that cua mot dong khi ve (bbox chu, khong phai bbox font)."""
     bb = d.textbbox((0, 0), text, font=font)
     return max(1, bb[3] - bb[1])

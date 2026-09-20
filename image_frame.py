@@ -119,7 +119,7 @@ def line_frame(nguon, ra, emoji: str = "", handle: str = "@donniechublog",
         pass
     im = _about_rgb(im)
     if im.width > MAXW:
-        im = im.resize((MAXW, _make_full(im.height * MAXW / im.width)), Image.LANCZOS)
+        im = im.resize((MAXW, _make_full(im.height * MAXW / im.width)), Image.Resampling.LANCZOS)
     # Unsharp nhe — bu lai do net mat khi thu nho. KHONG khop chinh xac
     # `sharp.sharpen({sigma: 0.8})`; xem docstring dau tep.
     im = im.filter(ImageFilter.UnsharpMask(radius=0.8, percent=100, threshold=0))
@@ -195,13 +195,13 @@ def line_frame(nguon, ra, emoji: str = "", handle: str = "@donniechublog",
                font=_font(FONT_DIR / "JetBrainsMono-Regular.ttf", co_footer * N),
                fill=_color(COLOR_PROMPT), anchor="ls")
 
-    khung = lop.resize((CW, CH), Image.LANCZOS)
+    khung = lop.resize((CW, CH), Image.Resampling.LANCZOS)
 
     # --- anh nguon: bo tron, KHONG vien, tha noi trong the (dan o 1x) ---
     mat_na = Image.new("L", (W * N, H * N), 0)
     ImageDraw.Draw(mat_na).rounded_rectangle([0, 0, W * N - 1, H * N - 1],
                                              radius=bo_tron * N, fill=255)
-    khung.paste(im, (canh, anh_top), mat_na.resize((W, H), Image.LANCZOS))
+    khung.paste(im, (canh, anh_top), mat_na.resize((W, H), Image.Resampling.LANCZOS))
 
     # --- mascot: cuoi NGANG mep duoi anh, goc duoi-phai ---
     da_chon = None
@@ -211,7 +211,7 @@ def line_frame(nguon, ra, emoji: str = "", handle: str = "@donniechublog",
             da_chon = Path(p_av)
             av = Image.open(p_av).convert("RGBA")
             cao = R(ngan * 0.16)
-            av = av.resize((_make_full(av.width * cao / av.height), cao), Image.LANCZOS)
+            av = av.resize((_make_full(av.width * cao / av.height), cao), Image.Resampling.LANCZOS)
             mep = the_h - footer_h                 # mep duoi anh = dinh footer
             khung.paste(av, (max(0, the_w - canh - av.width), max(0, mep - R(av.height / 2))), av)
         elif emoji:
@@ -255,10 +255,14 @@ def main() -> int:
     # Console Windows hay dung codepage cu (cp1252): in JSON co emoji la
     # UnicodeEncodeError, tuc anh DA dung xong ma lenh van bao that bai.
     for _s in (sys.stdout, sys.stderr):
-        try:
-            _s.reconfigure(errors="replace")
-        except Exception:                                    # noqa: BLE001
-            pass
+        # `reconfigure` chi co tren TextIOWrapper; stdout co the da bi thay bang
+        # StringIO (test) hoac mot ong khac — hoi truoc thay vi de except nuot.
+        doi = getattr(_s, "reconfigure", None)
+        if doi is not None:
+            try:
+                doi(errors="replace")
+            except (ValueError, OSError):
+                pass
     if not Path(a.image).exists():
         print(f"Image not found: {a.image}", file=sys.stderr)
         return 1

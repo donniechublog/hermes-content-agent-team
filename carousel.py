@@ -535,7 +535,7 @@ def _body_image(canvas, img):
     canvas.paste(cover.filter(ImageFilter.GaussianBlur(BG_BLUR)), (0, 0))
     scale = W / img.width
     nh = round(img.height * scale)
-    resized = img.resize((W, nh), Image.LANCZOS)
+    resized = img.resize((W, nh), Image.Resampling.LANCZOS)
     y0 = 0
     if nh > H:                                    # cao hon khung: cat giua doc, full be ngang
         top = (nh - H) // 2

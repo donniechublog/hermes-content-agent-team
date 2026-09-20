@@ -1095,7 +1095,7 @@ _DAN_NGUON_SAI = re.compile(
 # render_edu, `--spec -`) thi truoc gio khong co cong nao.
 #
 # `fields`: truong bat buoc; `nested`: (ten danh sach, cac khoa moi phan tu phai co).
-REQUIRED_KIND = {
+REQUIRED_KIND: dict[str, dict] = {
     "cover":     {"fields": ("eyebrow", "title", "standfirst")},
     "statement": {"fields": ("eyebrow", "title", "standfirst"),
                   "nested": ("cards", ("num", "text"))},
@@ -1332,7 +1332,7 @@ def color_say_catch(path) -> tuple | None:
             im = im.convert("RGB").resize((80, 80))
             n = im.width * im.height
             dem: dict = {}
-            for r, g, b in im.getdata():
+            for r, g, b in list(im.getdata()):   # list(): getdata() tra ImagingCore, stub khong coi la iterable
                 h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
                 # s < 0.35 da loai trang/xam; KHONG loai them v > 0.97 — do la
                 # loai moi mau bao hoa thuan (do (255,0,0), vang, chinh accent

@@ -445,7 +445,7 @@ def check_image_fall(anh: dict, dung: dict, m: dict) -> list:
             for nhan, ma in cluttered]
 
 
-def check_empty_image(a: dict, nhan: str, limit: float) -> list:
+def check_empty_image(a: dict | None, nhan: str, limit: float) -> list:
     """Anh ma phan lon la nen tron (logo/bieu tuong nho tren nen trang) -> loi, o MOI
     designer (LOW-273, Ong Chu 19/09/2026: "ko chap nhan nhung hinh nhu the nay o moi
     designer"). `limit` = nguong rieng cua vai (image_rules_<vai>.EMPTY_SHARE_MAX).
@@ -518,7 +518,7 @@ def check_stack_last_resort(anh: dict, dung_anh: list, dung: dict, m: dict) -> l
             for nhan, mas in ghep]
 
 
-def check_quote_translated(chu: str, nhan: str) -> list:
+def check_quote_translated(chu: str | None, nhan: str) -> list:
     """Quote/hook CON NGUYEN TIENG ANH -> loi. Luat "quote phai DICH sang tieng
     Viet" tu truoc chi nam trong SOUL/brief, khong cong nao kiem (06/09/2026).
 
@@ -637,7 +637,7 @@ def check_no_repeat_image_redo(anh: dict, dung_anh: list, m: dict, drafts_dir) -
     return loi
 
 
-def check_guide_source_compact(chu: str, nhan: str) -> list:
+def check_guide_source_compact(chu: str | None, nhan: str) -> list:
     """Dan nguon KHONG duoc co "đọc bài"/"xem bài"... (Ong Chu 13/09/2026: thua,
     carousel da co dau doc bai chinh la cai slide) va KHONG duoc co ten mien
     dang "tenbao.com" — nen tang (FB/IG/Telegram) quet chu do la lien ket va

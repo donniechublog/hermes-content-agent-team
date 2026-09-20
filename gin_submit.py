@@ -69,6 +69,12 @@ def single(id_: str, wd: Path, spec: dict) -> tuple:
     d = json.loads((wd / state_paths.GIN_REGIONS_OCR_FILE).read_text(encoding="utf-8"))
     anh = Path(d["image_path"])
     img = cv2.imread(str(anh))
+    # `imread` tra None khi tep khong con/khong doc duoc (link tam het han, tai
+    # hong). Truoc day None di tiep vao `use_mask` roi no ra mot loi numpy kho
+    # hieu o giua chung — noi thang o day (LOW-308).
+    if img is None:
+        sys.exit(f"[LOI] khong doc duoc anh goc {anh} — tep khong con hoac khong phai anh. "
+                 "Chay lai gin_prepare.py de tai lai.")
     giu_stt = {int(x) for x in (spec.get("mask_keep") or []) if str(x).isdigit()}
     # STT LA thi truoc 06/09/2026 bi bo IM LANG: vai go nham mot so, vung do
     # khong duoc giu, chu bi xoa mat — va vai tuong da giu duoc. Khac han y dinh.
