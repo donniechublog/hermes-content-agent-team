@@ -329,6 +329,33 @@ def fetch_lobsters() -> list:
 _norm_url = scan_common.standard_link
 
 
+def drop_duplicate_link(items: list) -> tuple:
+    """Gop ban sao CUNG MOT LINK trong CUNG mot lan quet; tra (danh sach, so ban bo).
+
+    Truoc LOW-321 khong can: HN va arXiv khong bao gio dang cung mot duong dan.
+    Gio HN va Lobste.rs la hai cong dong doc cung mot web — do that 20/09/2026:
+    bai "Laya — 33ms Multilingual System 1 Decision Engine" nam o CA HAI (HN
+    1094 diem, Lobste.rs 3 diem), tuc Finn nhan hai dong y het nhau va co the
+    cham diem hai lan cho mot bai.
+
+    Giu ban DAU theo thu tu quet (HN -> HF Papers -> Lobste.rs): HN la noi co
+    thao luan day nhat. Cac nguon con lai ghi vao `also_on` — xuat hien o nhieu
+    cong dong la mot tin hieu that, dung vut di.
+
+    `seen_keys` la viec KHAC: no chan tin da len manifest NHUNG NGAY TRUOC."""
+    giu = {}
+    bo = 0
+    for it in items:
+        k = _norm_url(it["link"])
+        cu = giu.get(k)
+        if cu is None:
+            giu[k] = it
+            continue
+        bo += 1
+        cu.setdefault("also_on", []).append(it["source"])
+    return list(giu.values()), bo
+
+
 def seen_keys() -> set:
     """Gom URL da tung xuat hien trong cac manifest truoc va cac draft da tao."""
     keys = set()
@@ -446,6 +473,10 @@ def main():
             continue
         print(f"  {name}: {len(got)} bai", file=sys.stderr)
         items.extend(got)
+
+    items, trung = drop_duplicate_link(items)
+    if trung:
+        print(f"  trung giua cac nguon: gop {trung} ban sao (xem `also_on`)", file=sys.stderr)
 
     seen = seen_keys()
     fresh = [it for it in items if _norm_url(it["link"]) not in seen]

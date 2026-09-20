@@ -106,6 +106,26 @@ def test_lobsters_drops_old_and_broken():
     assert ss.lobsters_items([{"title": ""}, {}, None]) == []
 
 
+# ------------------------------------------------------------ trung giua hai nguon
+def test_same_link_from_two_sources_is_merged_keeping_the_first():
+    """Do that 20/09: bai "Laya" nam o CA HN (1094 diem) lan Lobste.rs (3 diem).
+    Truoc LOW-321 chuyen nay khong xay ra duoc (HN vs arXiv khong trung link)."""
+    hn = {"source": "hackernews", "link": "https://laya.convaiinnovations.com/", "points": 1094}
+    lb = {"source": "lobsters", "link": "https://laya.convaiinnovations.com", "points": 3}
+    ra, bo = ss.drop_duplicate_link([hn, lb])
+    assert bo == 1 and len(ra) == 1, ra
+    assert ra[0]["source"] == "hackernews", "giu ban co thao luan day nhat"
+    assert ra[0]["also_on"] == ["lobsters"], ra[0]
+
+
+def test_different_links_are_kept():
+    a = {"source": "hackernews", "link": "https://a.vn/1", "points": 5}
+    b = {"source": "lobsters", "link": "https://b.vn/2", "points": 7}
+    ra, bo = ss.drop_duplicate_link([a, b])
+    assert bo == 0 and len(ra) == 2
+    assert not any("also_on" in x for x in ra)
+
+
 # ------------------------------------------------------------ bo arXiv / doi sub
 def test_arxiv_branch_is_gone():
     src = (ROOT / "scan_sources.py").read_text(encoding="utf-8")
