@@ -131,9 +131,16 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     (ten moi, LOW-248)."""
     anh = {a["id"]: a for a in m["images"]}
     loi = []
-    kieu = (spec.get("card_style") or "quote").strip().lower()
-    if kieu not in role_spec.CARD_STYLES:
-        loi.append("\"card_style\" phải là \"quote\" (mặc định) hoặc \"full_bleed\"")
+    # LOW-343: kieu the khoa theo VAI (role.card_styles_for) — Ethan chi khung chu nhat;
+    # `quote` la phong cach cua Dre. Spec cu ghi "quote" bi tu choi (khong tu doi): vai phai
+    # viet lai "title"/"kicker", mot cau hook kieu quote khong tu thanh tieu de duoc.
+    duoc = role.card_styles_for("ethan")
+    kieu = role_spec.card_style_value((spec.get("card_style") or duoc[0]).strip().lower())
+    if kieu not in duoc:
+        vi_sao = " — quote là phong cách của Dre" if kieu == "quote" else ""
+        loi.append(f"\"card_style\": \"{kieu}\" không phải kiểu của Ethan{vi_sao}. "
+                   f"Ethan chỉ dùng \"{duoc[0]}\" (khung chữ nhật): viết \"title\" (một câu hoàn chỉnh) "
+                   "+ \"kicker\", bỏ hook/tagline/attrib.")
     ma, ma2 = spec.get("image"), spec.get("image2")
     if not ma or ma not in anh:
         loi.append(f"\"image\" không tồn tại: {ma} (có: {', '.join(anh) or 'không có ảnh nào'})")

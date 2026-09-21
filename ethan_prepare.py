@@ -3,8 +3,8 @@
 
 Phan co hoc (nguon, anh, do, cat, tu lieu) nam o image_prepare.py — dung chung
 voi Dre. Tep nay chi in ban chuan bi theo cach nhin cua HERO CARD: mot tam anh
-lam nen, mot cau hook de len (kieu `quote`, mac dinh) hoac mot tieu de + kicker
-(kieu `full_bleed`). Nhan "dung duoc o dau" khac Dre vi card.py khoa kho 4:5:
+lam nen, mot tieu de + kicker trong khung chu nhat (kieu `full_bleed` — kieu DUY NHAT
+cua Ethan tu LOW-343; `quote` la phong cach cua Dre). Nhan "dung duoc o dau" khac Dre vi card.py khoa kho 4:5:
 
   - anh chup ti le <= 1.6 (card.kiem_anh_thap: trai full be ngang 1200 phai cao
     >= 750px): dung mot minh duoc;
@@ -100,10 +100,10 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     import brief_common
     L = brief_common.mark(
         m, "ETHAN",
-        f"Brand: {m['brand']} | draft: {m['draft_id']} | kiểu mặc định: quote (thẻ HOOK 4:5)")
+        f"Brand: {m['brand']} | draft: {m['draft_id']} | kiểu: full_bleed (khung chữ nhật)")
     L += brief_common.block_redo(
-        da_dung, f"ảnh {da_dung.get('image')}, hook “{da_dung.get('hook', '')}”. "
-                 "Lần này ẢNH và HOOK phải khác." if da_dung else "")
+        da_dung, f"ảnh {da_dung.get('image')}, tiêu đề “{da_dung.get('title') or da_dung.get('hook', '')}”. "
+                 "Lần này ẢNH và TIÊU ĐỀ phải khác." if da_dung else "")
     L += brief_common.block_material(m, nhan="Finn/Vera", n_cau=15, n_doan=800)
     L += ["", "## Ảnh đã tải & xử lý — chỉ dùng MÃ ẢNH, không tải/crop/mở gì thêm"]
     if not m["images"]:
@@ -158,21 +158,17 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     L += ["", f"## Viết spec vào: {m['workdir']}/spec.json"]
     khung = {
         "image": (goi_y[0][3] if goi_y else "A?"),
-        "card_style": "quote",
-        "hook": "<một câu ĐẬP VÀO MẮT trong 3 giây, có dấu, ≤ 120 ký tự: tiêu đề/góc giật có CON SỐ, hoặc lời có thật>",
-        "tagline": "<" + " | ".join(TAGLINE_CALL_Y) + ">",
-        "attrib": "<'via <báo>' nếu hook là câu bạn soạn; 'Phát biểu của <tên>, <chức/hãng>' CHỈ khi là lời có thật>",
+        "card_style": "full_bleed",
+        "title": "<MỘT câu hoàn chỉnh bao quát tin, ĐẬP VÀO MẮT trong 3 giây, có dấu, có CON SỐ nếu tin có số>",
+        "kicker": "<" + " | ".join(TAGLINE_CALL_Y) + ">",
         "image2": "<mã ảnh ngang thứ hai để ghép dọc, hoặc bỏ trường này>",
         "subject": "<tên người trong ảnh nếu ảnh có mặt, hoặc bỏ trường này>",
     }
     L.append(json.dumps(khung, ensure_ascii=False, indent=1))
-    L.append("Kiểu \"full_bleed\" (đổi không khí, hiếm dùng): {\"image\": \"A?\", \"card_style\": \"full_bleed\", \"title\": \"<MỘT câu "
-             "hoàn chỉnh bao quát tin, có số nếu tin có số>\", \"kicker\": \"<≤ 2 từ tiếng Anh: BREAKING, MODEL "
-             "RELEASE, FUNDING...>\"}")
-    L.append("Luật: hook là MỘT câu, tiếng Việt có dấu, không em-dash, không gán câu tự soạn thành lời một người; "
-             "tên hãng trong câu tự tô màu. Chart/ảnh ngang >1.6 phải có image2. Ảnh có mặt phải có subject. "
-             "Kiểu quote: CHỦ THỂ (mặt người, sản phẩm) phải nằm TRÊN khung quote — câu càng dài khung càng cao, "
-             "cổng chặn đo đúng vị trí; không dùng ảnh gần như trống (logo nhỏ trên nền trơn).")
+    L.append("Luật: Ethan CHỈ dùng kiểu \"full_bleed\" (khung chữ nhật) — kiểu quote là phong cách của Dre, "
+             "ethan_submit từ chối. Tiêu đề là MỘT câu, tiếng Việt có dấu, không em-dash; tên hãng trong câu tự tô "
+             "màu. Kicker tiếng Anh ngắn, chọn trong danh sách trên. Chart/ảnh ngang >1.6 phải có image2. Ảnh có "
+             "mặt phải có subject. Không dùng ảnh gần như trống (logo nhỏ trên nền trơn).")
     L += ["", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python ethan_submit.py {m['draft_id']}",
           "Script tự ghép/cắt, chạy mọi cổng chặn của card.py, dựng thẻ, gửi lên topic kèm nút duyệt, ghi bàn "

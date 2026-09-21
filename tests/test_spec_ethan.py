@@ -33,8 +33,11 @@ def _m(wd, anh, **k):
 
 
 def _spec(ma="A1", **k):
-    d = {"image": ma, "card_style": "quote", "hook": "Nvidia mở kho mô hình Nemotron",
-         "tagline": "MODEL RELEASE", "attrib": "via Reuters"}
+    # LOW-343: Ethan chi con kieu full_bleed; `hook=` trong test cu = `title`.
+    d = {"image": ma, "card_style": "full_bleed", "title": "Nvidia mở kho mô hình Nemotron",
+         "kicker": "MODEL RELEASE"}
+    if "hook" in k:
+        k["title"] = k.pop("hook")
     d.update(k)
     return d
 
@@ -56,7 +59,7 @@ def test_spec_du_thi_tra_ve_anh_da_giai():
         anh, wd = _bo(t)
         kq, loi, _c = _chay(_spec(), _m(wd, anh), wd)
         assert loi == [], loi
-        assert kq["card_style"] == "quote" and kq["image"]["id"] == "A1" and kq["image2"] is None
+        assert kq["card_style"] == "full_bleed" and kq["image"]["id"] == "A1" and kq["image2"] is None
 
 
 def test_kieu_tran_can_title_khong_can_hook():
@@ -75,14 +78,23 @@ def test_kieu_la_thi_bao():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
         _kq, loi, _c = _chay(_spec(card_style="banner"), _m(wd, anh), wd)
-        assert _co(loi, "card_style", "quote", "full_bleed"), loi
+        assert _co(loi, "card_style", "full_bleed"), loi
 
 
-def test_quote_thieu_hook_tagline_attrib_bao_du_ba():
+def test_ethan_quote_is_dre_style_and_rejected():
+    """LOW-343 (Ong Chu 21/09/2026): quote la phong cach cua Dre — Ethan bi tu choi, ke ca spec
+    cu ghi quote day du hook/tagline/attrib."""
+    import role
+    assert role.card_styles_for("ethan") == ("full_bleed",)
+    assert "quote" not in role.card_styles_for("ethan")
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
-        _kq, loi, _c = _chay(_spec(hook=" ", tagline="", attrib=None), _m(wd, anh), wd)
-        assert _co(loi, "hook") and _co(loi, "tagline") and _co(loi, "attrib"), loi
+        _kq, loi, _c = _chay({"image": "A1", "card_style": "quote", "hook": "Nvidia mở kho mô hình",
+                              "tagline": "MODEL RELEASE", "attrib": "via Reuters"}, _m(wd, anh), wd)
+        assert _co(loi, "quote", "Dre", "full_bleed"), loi
+        kq, loi2, _c = _chay({"image": "A1", "title": "Nvidia mở kho mô hình Nemotron cho mọi người"},
+                             _m(wd, anh), wd)
+        assert loi2 == [] and kq["card_style"] == "full_bleed", loi2   # khong ghi kieu -> full_bleed
 
 
 # ---------------------------------------------------------------- ma anh

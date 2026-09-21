@@ -1004,3 +1004,19 @@ riêng biệt"*. Thứ tự: **logo > bảng benchmark** (rộng hơn cho vai kh
   social-publishing dừng từ 13/09/2026 và không theo dõi riêng @arena); model không có logo trên
   Wikidata/bảng (Xingchen, lab nhỏ) thì Ethan báo thiếu ảnh.
 
+
+## LOW-343 (21/09/2026): Ethan chỉ dùng kiểu khung chữ nhật — quote là của Dre
+
+Ông Chủ, khi duyệt hai thẻ Qwen-Image-2.1: *"phong cách ở trên là của Dre, phong cách dưới là
+của Ethan. đó là lý do vì sao chúng ta cần tách một số phần trong engine của từng Designer"*.
+
+- Kiểu thẻ gắn với VAI trong code: `role.Role.card_styles` (Ethan = `("full_bleed",)`),
+  đọc qua `role.card_styles_for`. `ethan_submit` từ chối `"card_style": "quote"` với câu báo
+  "quote là phong cách của Dre"; spec không ghi kiểu thì mặc định `full_bleed`; giá trị cũ
+  `tran` vẫn đọc là `full_bleed`.
+- Spec cũ ghi `quote` KHÔNG tự đổi sang `full_bleed`: một câu hook kiểu quote (kèm attrib
+  "via …") không tự thành tiêu đề được, vai phải viết lại `title` + `kicker`.
+- Brief, task body, SOUL (`hermes/profiles/shared/ethan.SOUL.md`) và skill `hero-image` chỉ
+  còn kiểu khung chữ nhật. Cổng chống trôi: `tests/test_low343_card_style_by_role.py`.
+- `card.py` vẫn giữ `_render_quote` (chưa gỡ): không vai nào của `card.py` còn dùng nó,
+  gỡ hay giữ phải hỏi Ông Chủ trước.
