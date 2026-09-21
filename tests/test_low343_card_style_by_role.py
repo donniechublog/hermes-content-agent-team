@@ -57,6 +57,28 @@ def test_ethan_full_bleed_is_locked_4_5():
     assert 'args += ["--ratio", "4:5", "--title", hook, "--kicker"' in src
 
 
+
+def _marked(title):
+    import card
+    return [w for w, c in zip(title.split(), card.model_marks(title)) if c is not None]
+
+
+def test_full_model_name_is_colored_not_just_the_brand():
+    """Ong Chu 21/09/2026: "ko thay doi mau keyword quan trong?" — to NGUYEN CUM ten model."""
+    assert _marked("Vừa lên bảng đã nhất: Fable 5 hạ giá 25% mà vẫn đứng #1") == ["Fable", "5"]
+    assert _marked("Gemini Omni Flash #2 bảng đấu video") == ["Gemini", "Omni", "Flash"]
+    assert _marked("Alibaba ra mắt Qwen-Image-2.1 đóng gói sẵn") == ["Qwen-Image-2.1"]
+    assert _marked("Grok Voice Transcribe 2.0 vào bảng nghe") == ["Grok", "Voice", "Transcribe", "2.0"]
+    assert _marked("GPT-6 Astra Max dẫn đầu, Claude Fable 5.1 Max theo sau") ==         ["GPT-6", "Astra", "Max", "Claude", "Fable", "5.1", "Max"]
+    assert _marked("Philippines muốn AI, Wanda không phải model") == []
+
+
+def test_model_color_is_the_family_color():
+    import card
+    m = card.model_marks("Alibaba ra mắt Qwen-Image-2.1 cho Fable 5")
+    assert m[3] == card.COLOR_RANK["QWEN"] and m[5] == card.COLOR_RANK["CLAUDE"], m
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca
     chay_tat_ca(globals())
