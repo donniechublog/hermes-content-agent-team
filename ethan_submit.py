@@ -118,6 +118,11 @@ def cover_focus(a: dict, has_image2: bool):
     if not box:
         return (0.5, 0.5, 0.0)
     x0, y0, x1, y1 = box
+    if a.get("subject_kind") == "building":
+        # Toa nha/khuon vien: vision hay khoanh ca khung (rong 100%) nen khong cat duoc, the
+        # con dai nen mo (Alibaba 21/09). Cat bot hai canh cua toa nha khong mat gi -> dat khung
+        # theo vung nhieu chi tiet nhat (`card._densest_center`), khong rang buoc be rong.
+        return ((x0 + x1) / 2, (y0 + y1) / 2, 0.0)
     return ((x0 + x1) / 2, (y0 + y1) / 2, max(0.0, x1 - x0))
 
 

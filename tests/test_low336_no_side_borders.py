@@ -297,6 +297,9 @@ def test_cover_only_for_plain_photos():
                   {**photo, "ranking": {"kind": "table"}}, {**photo, "subject_kind": "screen"}):
         assert ethan_submit.cover_focus(khong, False) is None, khong
     assert ethan_submit.cover_focus(photo, True) is None, "anh ghep doc giu full be ngang"
+    # Toa nha khoanh ca khung (rong 100%) van phu kin duoc: cat canh toa nha khong mat gi.
+    toa = ethan_submit.cover_focus({**photo, "subject_kind": "building", "subject_box": [0, 0, 1, 1]}, False)
+    assert toa is not None and toa[2] == 0.0, toa
 
 
 def test_flat_bottom_extends_own_background_no_blur():
