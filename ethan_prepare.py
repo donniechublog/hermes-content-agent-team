@@ -221,7 +221,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
              "ethan_submit từ chối. Tiêu đề là MỘT câu, tiếng Việt có dấu, không em-dash; tên hãng trong câu tự tô "
              "màu. Kicker tiếng Anh ngắn, chọn trong danh sách trên. Chart/ảnh ngang >1.6 phải có image2. Ảnh có "
              "mặt phải có subject. Không dùng ảnh gần như trống (logo nhỏ trên nền trơn).")
-    L.append("Tô màu: tên hãng và cụm tên model họ đã biết tự tô; cụm KEY "
+    L.append("Tô màu: tên hãng, cụm tên model họ đã biết và mã model chữ lẫn số (NEEDLE3, H100) tự tô; cụm KEY "
              "khác (tên hãng/sản phẩm chưa có trong danh sách) ghi vào \"highlight\": [\"<1-3 cụm chép đúng từ title>\"].")
     L += ["", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python ethan_submit.py {m['draft_id']}",

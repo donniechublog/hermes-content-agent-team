@@ -190,15 +190,18 @@ def test_carousel_body_capture_no_bars():
 
 # ---- Tu khoa to mau rieng tren tit the tran (Ong Chu 21/09: "mark key quan trong") ----
 
-def test_key_terms_marked_by_spec_highlight():
-    """Cum Ethan khai trong `highlight` (hang chua co trong bang mau) duoc danh dau de to; chu
-    khac khong. Ten model ho da biet do `brand_names` (LOW-344) lo, khong danh dau o day."""
-    import card
-    kq = card._extract_label("CACTUS COMPUTE RA MẮT NEEDLE3 TỐI ƯU TRUY XUẤT",
-                             card.key_words(["Cactus Compute"]))
-    to = [t for t, k in kq if k == card.KEY_MARK]
-    assert to == ["CACTUS", "COMPUTE"], to
-    assert not [t for t, k in card._extract_label("H100 B200 CHẠY TỐT") if k], "ma chip khong tu to"
+def test_key_role_for_highlight_and_model_codes():
+    """Vai "key" (brand_names.line_segments, chi the Ethan): cum `highlight` Ethan khai va ma
+    model chu lan so khong kem ten hang. Hang/ho model van thang truoc (LOW-344)."""
+    import brand_names
+
+    def vai(text, **k):
+        return [(t, r) for w in brand_names.line_segments(text, **k) for t, r, _k in w if r]
+    kq = vai("CACTUS COMPUTE RA MẮT NEEDLE3 TỐI ƯU", keys=brand_names.key_words(["Cactus Compute"]),
+             codes=True)
+    assert kq == [("CACTUS", "key"), ("COMPUTE", "key"), ("NEEDLE3", "key")], kq
+    assert ("DEEPSEEK-V4.1-FLASH", "name") in vai("DEEPSEEK-V4.1-FLASH RA MẮT", codes=True)
+    assert vai("H100 B200 CHẠY TỐT") == [], "mac dinh (Kite/Dre) khong to ma chip"
 
 
 def test_ethan_highlight_must_be_in_title():

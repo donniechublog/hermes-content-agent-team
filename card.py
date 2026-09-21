@@ -383,25 +383,7 @@ def _color_of_rank(tu_sach: tuple):
     return None
 
 
-# LOW-336 (Ong Chu 21/09/2026, chot style the tran): "mark key quan trong voi mau khac". Ten
-# hang / ten model thuoc ho da biet do `brand_names` (LOW-343/344) tu to; cum KEY khac (hang
-# chua co trong bang, vd "Cactus Compute") Ethan khai trong spec `highlight` -> danh dau
-# KEY_MARK, khong co mau hang rieng nen lay mau du phong cua kenh.
-KEY_MARK = ("*",)
-
-
-def key_words(highlight) -> frozenset:
-    """Cac tu (da lam sach, viet hoa) cua nhung cum `highlight` trong spec."""
-    tu = set()
-    for cum in highlight or ():
-        for t in str(cum).split():
-            t = t.strip(_RIA).upper()
-            if len(t) >= 2:
-                tu.add(t)
-    return frozenset(tu)
-
-
-def _extract_label(dong: str, keys: frozenset = frozenset()):
+def _extract_label(dong: str):
     """Tach mot dong thanh [(tu, khoa_hang)]. Giu nguyen tu goc de ve.
 
     `khoa_hang` la tuple cac tu da lam sach cua ten hang khop duoc, hoac None.
@@ -432,8 +414,6 @@ def _extract_label(dong: str, keys: frozenset = frozenset()):
         else:
             if cleaned[i] in BRAND_FROM:
                 khoa[i] = (cleaned[i],)
-            elif cleaned[i] in keys:
-                khoa[i] = KEY_MARK
             i += 1
     return list(zip(tu, khoa))
 
@@ -476,7 +456,10 @@ def brand_fill(key, role, nen_sang=False, fallback=None, bg_level=None):
     cua dai nen dong (`bg_level`, tu `_can_board_line`) thi keo toi/sang toi khi dat
     tuong phan BRAND_MIN_CONTRAST(_LARGE) — nen xam trung binh (L~170) lam mau hang da
     ep toi 42% van chi con CR 2.2 (test_gate bat, 21/09/2026)."""
-    ten, org = brand_names.colors_for(key, fallback or BRAND_NAME_FALLBACK)
+    if role == "key":                  # LOW-336: ma model / cum `highlight` khong co hang -> mau du phong
+        ten = org = fallback or BRAND_NAME_FALLBACK
+    else:
+        ten, org = brand_names.colors_for(key, fallback or BRAND_NAME_FALLBACK)
     goc = org if role == "org" else ten
     goc = _enough_dark(goc) if nen_sang else _enough_bright(goc)
     if bg_level is None:
@@ -1626,7 +1609,8 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
     # Dong tieu de la cac lat LIEN TIEP cua `title.split()` (_wrap, da viet hoa), nen cum
     # ten model tinh MOT lan tren tieu de GOC (con phan biet hoa/thuong — LOW-343) roi cat
     # theo dong — cum vat qua hai dong van to.
-    cac_tu, dau = brand_names.line_segments(" ".join(title.split()), key_words(highlight)), 0
+    cac_tu, dau = brand_names.line_segments(" ".join(title.split()), brand_names.key_words(highlight),
+                                             codes=True), 0
     for ln, mau_ln, sg in zip(title_lines, mau_dong, sang_dong, strict=False):
         n = len(ln.split(" "))
         tu_dong = brand_names.restyle(cac_tu[dau:dau + n], ln)
@@ -1706,7 +1690,7 @@ def main():
                         "Khong dung cho anh co chu (chup trang, bang, chart) — LOW-336")
     p.add_argument("--highlight", action="append", default=[],
                    help="Cum TU KHOA trong tieu de to mau rieng (lap lai duoc; LOW-336). Ten hang da biet "
-                        "va ten model ho da biet tu to (brand_names), khong can khai")
+                        "va ten model ho da biet, ma model chu lan so tu to (brand_names), khong can khai")
     a = p.parse_args()
     build([a.image, a.image2] if a.image2 else a.image, a.title, a.out,
           handle=a.handle, ratio=a.ratio, tagline=a.tagline, brand=a.brand,

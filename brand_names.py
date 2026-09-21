@@ -52,6 +52,23 @@ _MODEL_TAIL = re.compile(r"^[A-Z0-9][A-Za-z0-9.\-+]*$")
 # chu dinh so phien ban ("QWEN3.8" -> QWEN, 3.8; "LLAMA4" -> LLAMA, 4).
 _SPLIT = re.compile(r"[-/:_.+]+")
 _LETTER_DIGIT = re.compile(r"(?<=[A-Za-z])(?=\d)")
+# LOW-336: ma model/san pham khong kem ten hang — co ca chu lan so ("NEEDLE3", "H100",
+# "XING4.0-29B-A4B"). Chi dung khi `line_segments(..., codes=True)` (the Ethan).
+MODEL_CODE = re.compile(r"^(?=[A-Z0-9.+-]*[A-Z])(?=[A-Z0-9.+-]*\d)[A-Z0-9][A-Z0-9.+-]*$")
+
+
+def key_words(highlight) -> frozenset:
+    """Cac tu (viet hoa, bo dau cau o mep) cua nhung cum `highlight` trong spec Ethan."""
+    import card
+    tu = set()
+    for cum in highlight or ():
+        for t in str(cum).split():
+            t = t.strip(card._RIA).upper()
+            if len(t) >= 2:
+                tu.add(t)
+    return frozenset(tu)
+
+
 ORG_TINT = 0.45            # tien to: `a` pha trang bay nhieu khi `b` khong du mau
 MIN_ORG_SATURATION = 0.3   # `b` duoi muc nay (xam/nga/trang) -> dung `a` pha nhat
 
@@ -90,7 +107,7 @@ def _split_punct(word: str) -> tuple:
     return word[:i], core, word[i + len(core):]
 
 
-def line_segments(line: str, keys: frozenset = frozenset()) -> list:
+def line_segments(line: str, keys: frozenset = frozenset(), codes: bool = False) -> list:
     """Cat mot doan chu thanh TU (theo dau cach, nhu cach Ethan ve), moi tu la danh
     sach khuc `(chu, vai, khoa_hang)` noi lien lai dung bang tu goc.
 
@@ -103,11 +120,15 @@ def line_segments(line: str, keys: frozenset = frozenset()) -> list:
     — luc do chi noi them tu co so ("V4", "5.1"). Nen tinh tren tieu de GOC roi
     `restyle` sang dong da viet hoa (the Ethan).
 
-    `keys` (LOW-336): tu cua cac cum `highlight` Ethan khai trong spec — to nhu ten hang
-    (mau du phong cua kenh)."""
+    Vai "key" (LOW-336, the Ethan — Ong Chu 21/09/2026 "mark key quan trong voi mau khac"): tu
+    KHONG nhan ra hang/ho model nhung la tu Ethan khai trong spec `highlight` (`keys`, tu
+    `key_words`) hoac — khi `codes=True` — MA model/san pham chu lan so (`MODEL_CODE`: NEEDLE3,
+    XING4.0-29B-A4B, H100). Hang/ho model luon thang truoc (DEEPSEEK-V4.1-FLASH theo palette
+    hang); vai "key" lay mau du phong cua kenh (`card.brand_fill`). Mac dinh tat — Kite/Dre khong
+    doi."""
     import card
     words = line.split(" ")
-    exact = card._extract_label(line, keys)    # cum nhieu tu cach dau cach: HUGGING FACE, META AI
+    exact = card._extract_label(line)          # cum nhieu tu cach dau cach: HUGGING FACE, META AI
     all_upper = line == line.upper()
     out, cluster = [], None                    # cluster: khoa cua cum ten model dang mo
     for word, (_w, key) in zip(words, exact, strict=True):
@@ -131,6 +152,8 @@ def line_segments(line: str, keys: frozenset = frozenset()) -> list:
             if key is None and cluster and not lead and _MODEL_TAIL.match(core)                     and (not all_upper or any(c.isdigit() for c in core)):
                 key = cluster                   # tu noi tiep cum ten model
             segs = [(core, "name", key)] if key else [(core, None, None)]
+            if not key and (core.upper() in keys or (codes and MODEL_CODE.match(core.upper()))):
+                segs = [(core, "key", None)]    # LOW-336: khong phai hang -> khong mo cum ten model
         cluster = key if (key and (family or cluster == key) and not trail) else None
         if lead:
             segs.insert(0, (lead, None, None))
