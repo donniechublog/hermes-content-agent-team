@@ -173,6 +173,15 @@ phần thừa chạm vào text để layer của text phủ lên"*.
 - Cổng nộp còn chặn khi khối chữ dài đẩy lên đè đáy hình đã co (đáy cố định ở 63% khung).
 - Khoá bằng `tests/test_low339_contain_fit.py` (gồm cổng đo pixel trên render Chromium thật).
 
+### 1.2b4 Kicker phải đọc được trên ảnh sáng phủ xuống sau chữ (LOW-345)
+
+Đo thật 21/09/2026 (theme ink, kicker xanh nhạt): tương quan WCAG kicker/nền quanh chữ chỉ 1,09 (Pirate Face đường ảnh chụp), 1,29 (bảng benchmark), 2,0 (bìa Qwen); chữ nhỏ cần >= 4,5. Hai nguyên nhân:
+
+- Ảnh chụp/ảnh sáng: dải phủ dưới chữ bắt đầu ĐÚNG mép trên khối chữ mà kicker là dòng đầu nên nằm ở chỗ độ phủ ~0. Dải phủ giờ bắt đầu `VEIL_LEAD` (48px) SỚM hơn và kín trong nửa đầu dòng kicker (`VEIL_SPAN - VEIL_LEAD <= 24`). Vẫn chỉ là dải phủ hẹp dưới chữ, không nền đặc (LOW-286/330).
+- Ảnh bảng nền phẳng: ảnh chỉ tan dần ở 63% khung, khối chữ dài bắt đầu sớm hơn nên hàng bảng lọt ra sau kicker (bìa Qwen: hàng `flux-2-klein-9b`). Ảnh phẳng giờ kết thúc và tan TRÊN dòng chữ đầu (`FLAT_TEXT_GAP` = 8px, script `__datMan` đo bằng Chromium).
+
+Khoá bằng `tests/test_low345_kicker_contrast.py` (đo tương quan và pixel trên render Chromium thật).
+
 ### 1.2c Ảnh khái niệm: tin không có ảnh riêng thì tìm theo chủ đề, không bỏ
 
 Ông Chủ 07/09/2026: *"trong resource gốc không có hình hoặc hình không đạt là bỏ

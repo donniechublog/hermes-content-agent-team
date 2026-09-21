@@ -560,6 +560,8 @@ FIG_BOTTOM_FLAT = 0.63   # anh nen PHANG dung o day; duoi la mat phang sach cho 
 # blur ca anh lam nen = KHONG BAO GIO, mo phan anh nam duoi tit/subtitle = CO.
 DARK_MAX_OPEN = 0.93   # do dac toi da cua lop tint mau theme phu len phan mo
 VEIL_SPAN = 64         # px: be day duong cong chuyen tiep, bat dau NGAY tai dong chu dau
+VEIL_LEAD = 48         # px: dai phu bat dau SOM hon dong chu dau chung nay, de kicker nam tren phan da phu (LOW-345)
+FLAT_TEXT_GAP = 8       # px: anh nen phang ket thuc TREN dong chu dau it nhat chung nay (LOW-345)
 
 
 # Mot tam anh bi soi di soi lai: cong chan doc no, cong chan 2 dong dung slide
@@ -1195,6 +1197,16 @@ def image_make_background(sl, th, ten):
                f'<img class="fig-sac fig-doi" src="{uri}" alt="" '
                f'style="top:{y0}px;height:{cao}px;object-position:top;{mo_day}">'
                f'</div>')
+        # LOW-345: khoi chu dai co the bat dau SOM hon FIG_BOTTOM_FLAT; anh phang chi duoc ket thuc
+        # (va tan dan) TREN dong chu dau, khong thi hang cuoi cua bang lot ra sau kicker.
+        nen += (f'<script>window.__datMan=function(){{'
+                f'var im=document.querySelector(".figwrap .fig-doi"),t=document.getElementById("figtxt");'
+                f'if(!im||!t)return;'
+                f'var lim=t.getBoundingClientRect().top-{FLAT_TEXT_GAP};'
+                f'if({y0}+{cao}<=lim)return;'
+                f'im.style.height=Math.max(1,Math.floor(lim-{y0}))+"px";'
+                f'var g="linear-gradient(to bottom,#000 calc(100% - 130px),transparent 100%)";'
+                f'im.style.maskImage=g;im.style.webkitMaskImage=g;}};</script>')
         if nen_sang:
             nen += _css_mast_dark() + _css_text_dark_region("#figtxt", th)
         return nen, ""
@@ -1228,7 +1240,7 @@ def image_make_background(sl, th, ten):
            f'var top=t?t.getBoundingClientRect().top:H*0.58;'
            f'if(Y0+CAO<=top){{v.style.display="none";m.style.display="none";return;}}'
            f'v.style.display="block";m.style.display="block";'
-           f'var tren=top,day=Math.min(H,top+{VEIL_SPAN});'
+           f'var tren=Math.max(0,top-{VEIL_LEAD}),day=Math.min(H,top+{VEIL_SPAN}-{VEIL_LEAD});'
            f'var span=Math.max(1,H-tren);var st=[],sm=[];'
            f'for(var i=0;i<=16;i++){{'
            f'var q=i/16,ss=q*q*(3-2*q),y=tren+(day-tren)*q,'
