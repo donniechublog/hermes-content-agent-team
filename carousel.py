@@ -486,6 +486,12 @@ def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False, ov
     canvas.paste(lop, (0, 0), _ramp_mask(top_y, full_y, hi=int(do), ease=VEIL_EASE))
 
 
+# LOW-336: anh chup trang nguon tren slide Dre dung TREN vung chu mot khoang ho, cat o
+# dai trong tim trong [CAPTURE_CUT_MIN * moc, moc] — khong de lop sac chay duoi chu.
+CAPTURE_TEXT_GAP = 36
+CAPTURE_CUT_MIN = 0.55
+
+
 def _is_source_capture(path) -> bool:
     """Anh chup trang nguon (dau `source_capture`, LOW-336)."""
     try:
@@ -536,8 +542,8 @@ def _body_image(canvas, img, content_bottom=None):
     y0 = 0
     if content_bottom is not None and nh > content_bottom:
         # LOW-336: anh chup trang nguon khong chay xuong duoi chu — cat o HANG TRONG
-        # (giua hai khoi), khong cat ngang dong chu cua trang. Xem card._layer_image.
-        cut = image_rules_common.quiet_cut_row(resized, int(content_bottom * card.CAPTURE_CUT_MIN),
+        # (giua hai khoi), khong cat ngang dong chu cua trang.
+        cut = image_rules_common.quiet_cut_row(resized, int(content_bottom * CAPTURE_CUT_MIN),
                                                content_bottom)
         resized, nh = resized.crop((0, 0, W, cut)), cut
         canvas.paste(resized, (0, 0), _bottom_fade(W, nh))
@@ -565,7 +571,7 @@ def build_body(img_path, text, handle, out, cluttered=False, report=None, logo_b
     else:
         # Anh chup trang nguon dung tren dinh cao nhat co the cua khoi chu (LOW-336).
         base = _body_image(canvas, _open(img_path),
-                           content_bottom=(TEXT_BASE - TEXT_MAX_H - card.CAPTURE_TEXT_GAP
+                           content_bottom=(TEXT_BASE - TEXT_MAX_H - CAPTURE_TEXT_GAP
                                            if _is_source_capture(img_path) else None))
     truoc_nen = canvas.copy() if report is not None else None
 
@@ -665,7 +671,7 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, repo
 
     # Anh chup trang nguon dung TREN khung quote va chip ten kenh cam o net tren.
     base = _body_image(canvas, _open(img_path),
-                       content_bottom=(frame_top - 30 - card.CAPTURE_TEXT_GAP
+                       content_bottom=(frame_top - 30 - CAPTURE_TEXT_GAP
                                        if _is_source_capture(img_path) else None))
     truoc_nen = canvas.copy() if report is not None else None
 
@@ -742,7 +748,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
         # Anh chup trang nguon cung vay (LOW-336): cover-crop cat hai canh vao chu
         # cua trang; lop sac dung TREN hook.
         cover = _body_image(canvas, _open(img_path),
-                            content_bottom=(y - card.CAPTURE_TEXT_GAP) if capture else None)
+                            content_bottom=(y - CAPTURE_TEXT_GAP) if capture else None)
     else:
         cover = _fit_cover(_open(img_path), W, H).convert("RGB")
         canvas.paste(cover, (0, 0))

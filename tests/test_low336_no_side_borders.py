@@ -132,10 +132,14 @@ def _col_energy_band(img, y0, y1):
     return max(e) if e else 0
 
 
-def test_card_capture_full_width_and_stops_above_text_frame():
+def test_card_capture_fills_card_no_bars_text_is_overlay():
+    """Style the Ethan Ong Chu chot 21/09: anh LAP KIN the, khung quote la lop overlay
+    DE LEN anh (khong tach chu khoi hinh) — chi bo vien hai ben. Anh chup cao hon the
+    thi giu DINH trang (tit nam o tren)."""
     import card
-    # Trang VUONG kin chu tu tren xuong day: ban cu cho no chay xuong duoi khung tit.
-    src = _page(1000, 1000, [(20, 330), (400, 700), (760, 1000)])
+    src = _page(1000, 2000, [(20, 330), (400, 2000)])
+    d = ImageDraw.Draw(src)
+    d.rectangle([0, 0, 999, 12], fill=(220, 20, 20))         # dau do o DINH trang
     with tempfile.TemporaryDirectory() as t:
         p = _capture_file(t, src)
         out = Path(t) / "card.png"
@@ -143,13 +147,13 @@ def test_card_capture_full_width_and_stops_above_text_frame():
                    kieu="full_bleed", kicker="MODEL RELEASE", brand="dcgr", bo_qua_anh=True)
         im = Image.open(out).convert("RGB")
         assert not image_rules_common.has_side_bars(im)[0], image_rules_common.has_side_bars(im)[1]
+        r, g, _ = im.getpixel((600, 4))
+        assert r > 180 and g < 80, "anh chup cao phai giu DINH trang, khong cat giua"
+        # Anh sac chay toi SAT vung chu (vung chu chi lam mo cuc bo tu frame_top - 110,
+        # `_open_region_text`) — khong dung som o mot moc tren chu nhu ban dung-tren-chu.
         H = im.height
         split = H - int(H * card.CEILING_TEXTBOX)
-        # Mot dai ngay tren khung chu: KHONG con net chu sac cua trang (chi nen mo).
-        y1 = split + card.PAD - card.CEILING_FRAME_PAD - card.CAPTURE_TEXT_GAP
-        assert _col_energy_band(im, y1 - 30, y1) < 20, "lop sac cua trang con chay sat xuong khung chu"
-        # Nguoc lai phan tren the van la chu sac (khong bi thu nho vao giua).
-        assert _col_energy_band(im, 60, 300) > 20
+        assert _col_energy_band(im, split - 190, split - 130) > 20, "anh bi tach khoi vung chu"
 
 
 def test_carousel_cover_capture_not_cover_cropped_and_no_bars():
