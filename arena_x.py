@@ -49,9 +49,10 @@ def _norm(t: str) -> str:
 def model_keys(models: list) -> list:
     """Các tên được phép khớp, DÀI trước. Tên đầy đủ có số phiên bản thì tên ngắn cũng phải
     còn số — 'Qwen-Image' không được khớp thay 'Qwen-Image-2.1' (sai model)."""
-    ra = [_norm(m) for m in models or [] if m]
-    if ra and re.search(r"\d", ra[0]):
-        ra = [k for k in ra if re.search(r"\d", k)]
+    ra = [_norm(re.sub(r"\(.*?\)", " ", m)) for m in models or [] if m]
+    # Ten day du co so phien ban: ten ngan cung phai con so. Khong co so: CHI ten day du —
+    # "gemini omni" rut gon tu "Gemini Omni Flash" khop nham "Gemini Omni 1.1 Flash".
+    ra = [k for k in ra if re.search(r"\d", k)] if ra and re.search(r"\d", ra[0]) else ra[:1]
     return [k for k in dict.fromkeys(ra) if len(k) >= 4]
 
 
@@ -63,7 +64,7 @@ def tweet_matches(text: str, models: list) -> str:
     dau = re.split(r"\n\s*\n", (text or "").strip(), maxsplit=1)[0]
     vb = _norm(re.sub(r"https?://\S+", " ", dau))
     for k in model_keys(models):
-        if re.search(r"(?<![a-z0-9.])" + re.escape(k) + r"(?![a-z0-9]|\.\d)", vb):
+        if re.search(r"(?<![a-z0-9.])" + re.escape(k) + r"(?![a-z0-9]|\.\d| \d)", vb):
             return k
     return ""
 

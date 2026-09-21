@@ -37,8 +37,9 @@ def test_only_the_headline_counts():
     assert not arena_x.tweet_matches(t, ["Gemini Omni Flash", "Gemini Omni"]), "ban cu chi duoc nhac de so sanh"
 
 
-def test_short_names_without_version_allowed_when_full_has_none():
-    assert arena_x.model_keys(["Gemini Omni Flash", "Gemini Omni"]) == ["gemini omni flash", "gemini omni"]
+def test_short_names_only_when_they_keep_the_version():
+    assert arena_x.model_keys(["Gemini Omni Flash", "Gemini Omni"]) == ["gemini omni flash"]
+    assert not arena_x.tweet_matches("Gemini Omni 2 Flash lands #1", ["Gemini Omni", "Gemini"])
     assert arena_x.model_keys(["GPT-6 Astra (max)", "GPT-6 Astra", "GPT-6"])[-1] == "gpt 6"
 
 
