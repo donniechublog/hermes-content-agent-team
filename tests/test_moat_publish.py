@@ -297,6 +297,47 @@ def test_poll_bo_qua_file_meta_json_khong_parse_thanh_draft():
         assert lines == [], f".meta.json phai bi bo qua hoan toan: {lines}"
 
 
+def test_intake_day_lai_mot_nen_tang_van_goi_api_du_da_co_workflow():
+    """Nut "Day lai Facebook" truyen external_id moi + platforms -> KHONG duoc
+    dung o "da day truoc do", phai goi moat that de sinh task moi."""
+    draft = {
+        "brand": "donniechublog",
+        "caption": "abc",
+        "images": ["http://x.test/anh.jpg"],
+        "moat": {"workflow_id": "wf-cu"},
+    }
+    goi = []
+
+    class FakeResp:
+        status_code = 201
+        text = ""
+        def json(self):
+            return {"workflowId": "wf-moi", "externalId": "draft-lai2", "tasks": [{"id": "t1"}]}
+
+    class FakeClient:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def post(self, url, json=None, headers=None):
+            goi.append(json)
+            return FakeResp()
+
+    cu_read, cu_write, cu_config, cu_httpx = mp.read_draft, mp.write_draft, mp.config, mp.httpx
+    mp.read_draft = lambda draft_id: dict(draft)
+    mp.write_draft = lambda draft_id, d: None
+    mp.config = lambda brand=None: ("http://fake-moat.test", "fake-key")
+    mp.httpx = types.SimpleNamespace(Client=FakeClient)
+    try:
+        ok, note = mp.intake("draft-lai", platforms=["facebook_post"],
+                             external_id="draft-lai-lai2")
+    finally:
+        mp.read_draft, mp.write_draft, mp.config, mp.httpx = cu_read, cu_write, cu_config, cu_httpx
+
+    assert ok is True, f"phai day duoc: {note!r}"
+    assert note != "da day truoc do", "khong duoc dung o nhanh idempotent"
+    assert len(goi) == 1, f"phai goi moat dung 1 lan: {goi!r}"
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())
