@@ -183,11 +183,14 @@ def test_anh_bi_danh_dau_khong_lien_quan_thi_chan():
 
 # ------------------------------------------------------------ chart / xep hang
 def test_chart_khong_duoc_lam_bia_va_goi_y_bia_khac():
-    """Hook de len nua duoi chart la mat nua duoi bang so."""
+    """Hook de len nua duoi chart la mat nua duoi bang so. Chart NEN PHANG thi lam bia duoc
+    (LOW-341: anh 90% be ngang tren chinh mau nen, hook khong de len) — o day chart co nen
+    CHUYEN MAU, khong phang."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         anh = [_anh(wd, "A1", 1200, 900, loai="chart")] + \
               [_anh(wd, f"A{i}", 1000, 1250) for i in range(2, 6)]
+        Image.linear_gradient("L").resize((1200, 900)).convert("RGB").save(anh[0]["original_path"])
         _ra, loi, _c, _d = _chay(_spec(_bia("A1"), _du_slide(["A2", "A3", "A4", "A5"])),
                                  _m(wd, anh, cover_suggestions=["A3", "A4"]), wd)
         assert _co(loi, "bìa", "A1", "CHART"), loi
