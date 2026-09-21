@@ -99,6 +99,13 @@ FLAT_TOLERANCE = 12              # lech toi da moi kenh so voi mau nen van tinh 
 # mau thuan nen siet xuong 12 hinh gan nhu khong doi. Hai nguong nam giua hai nhom.
 FLAT_MIN_SHARE = 0.90            # phan diem VIEN trung mau nen de anh la nen phang
 FLAT_SIDE_MIN_SHARE = 0.70       # ... va MOI canh rieng cung phai dat muc nay
+# Nguong NOI — CHI cho anh loai chart (bang, so do, chup man hinh: vision/manifest da xep).
+# So do / bang cat sat mep thi vien khong con phang (MiniMax A25 0.712, bang SoL-Pi A38 0.428)
+# nhung nen van la mot mau chiem da so ca anh (0.577 / 0.729). Do 21/09 tren 5429 anh goc cua
+# may chu: nguong nay them 151/276 chart dang truot (bang, UI, so do). KHONG ap cho anh chup:
+# o 0.55/0.60 no keo ca chan dung nen xam/den (Musk, Altman) vao.
+FLAT_RELAXED_RIM = 0.40
+FLAT_RELAXED_GLOBAL = 0.45
 CONTENT_TOLERANCE = 28           # diem lech hon muc nay so voi nen la noi dung
 CONTENT_MIN_PIXELS = 2           # hang/cot co it nhat chung nay diem noi dung moi tinh
 FLAT_PROBE = 640                 # do tren ban thu nho (canh dai) — nhanh, va lam mo nhieu JPEG
@@ -112,13 +119,16 @@ def _probe(im: Image.Image) -> Image.Image:
     return im
 
 
-def flat_background(im: Image.Image):
+def flat_background(im: Image.Image, relaxed: bool = False):
     """Mau NEN (r, g, b) neu VIEN anh la mot mau phang, None neu khong (LOW-341).
 
     Do ca bon canh chu khong chi bon goc nhu `background_color`: anh chup co goc trung mau
     (troi, tuong) van khong phai nen phang. Mau nen = nhom mau hay gap nhat tren vien. Chu
     lac o mep (so hieu arXiv doc canh trai, dong chu bi cat o mep tren) chiem it diem vien
-    nen van qua duoc, con anh chup (gradient, chu the cham mep) thi khong."""
+    nen van qua duoc, con anh chup (gradient, chu the cham mep) thi khong.
+
+    `relaxed`: CHI truyen cho anh loai chart — them duong nguong noi FLAT_RELAXED_* (bang/so do
+    cat sat mep ma nen van la mot mau chiem da so)."""
     import numpy as np
     a = np.asarray(_probe(im), dtype=np.int16)
     h, w = a.shape[:2]
@@ -135,9 +145,12 @@ def flat_background(im: Image.Image):
 
     def share(px):
         return float((np.abs(px - bg).max(axis=1) <= FLAT_TOLERANCE).mean())
-    if share(rim) < FLAT_MIN_SHARE or min(share(s) for s in sides) < FLAT_SIDE_MIN_SHARE:
-        return None
-    return tuple(int(round(v)) for v in bg)
+    ra = tuple(int(round(v)) for v in bg)
+    if share(rim) >= FLAT_MIN_SHARE and min(share(s) for s in sides) >= FLAT_SIDE_MIN_SHARE:
+        return ra
+    if relaxed and share(rim) >= FLAT_RELAXED_RIM and share(a.reshape(-1, 3)) >= FLAT_RELAXED_GLOBAL:
+        return ra
+    return None
 
 
 def content_box(im: Image.Image, bg) -> tuple:

@@ -286,6 +286,9 @@ def _stack_if_can(muc, nhan, stem):
     stacked = card.stack_read(ds)
     stacked.save(ra, "PNG", pnginfo=_meta)
     muc["image"] = str(ra)
+    # LOW-341: giu tung tam thanh phan (va tam nao la chart) cho `_flat_plan`.
+    kinds = muc.get("image_kinds") or []
+    muc["_parts"] = [(q, i < len(kinds) and kinds[i] == "chart") for i, q in enumerate(ds)]
     # LOW-215: vi tri anh CUOI trong khung sau khi _body_image dan full be ngang
     # (cat giua doc neu cao hon H) — de cong sau do anh do con ro bao nhieu.
     last = Image.open(ds[-1])
@@ -582,14 +585,51 @@ def _flat_layout(canvas, img, bg, bottom) -> tuple:
     y = FLAT_TOP
     part = part.crop((0, 0, nw, min(nh, H - y)))
     canvas.paste(part, (x, y))
-    dac = max(y + 1, int(bottom) - FLAT_COVER_BEFORE)
-    tren = max(y, dac - FLAT_FADE)
+    dac = _cover_below(canvas, mau, bottom, y)
+    return (x, y, x + nw, y + part.height), dac
+
+
+def _cover_below(canvas, mau, bottom, min_top=0) -> int:
+    """Phu MAU NEN `mau` len vung chu: trong suot o `dac - FLAT_FADE`, dac tu
+    `dac = bottom - FLAT_COVER_BEFORE` toi day khung (smoothstep — khong sinh mep). Khong bat
+    dau cao hon `min_top`. Tra ve `dac`: tu do tro xuong la mot mat phang mau `mau`."""
+    mau = tuple(mau[:3])
+    dac = max(min_top + 1, int(bottom) - FLAT_COVER_BEFORE)
+    tren = max(min_top, dac - FLAT_FADE)
     lop = Image.new("L", (1, H), 0)
     for yy in range(tren, H):
         t = min(1.0, (yy - tren + 1) / max(1, dac - tren))
-        lop.putpixel((0, yy), int(255 * t * t * (3 - 2 * t)))       # smoothstep: khong sinh mep
+        lop.putpixel((0, yy), int(255 * t * t * (3 - 2 * t)))
     canvas.paste((*mau, 255) if canvas.mode == "RGBA" else mau, (0, 0, W, H), lop.resize((W, H)))
-    return (x, y, x + nw, y + part.height), dac
+    return dac
+
+
+def _flat_plan(muc) -> tuple:
+    """(flat_bg, zone_bg) cho mot bia/slide cua spec — xem tung ANH THANH PHAN.
+
+      - flat_bg: ca khung di duong nen phang (`_flat_layout`). Anh don nen phang; hoac anh
+        GHEP ma moi thanh phan deu nen phang CUNG mot mau (bang SoL-Pi cat sat mep lam vien cua
+        ca tam ghep khong phang, nhung tung tam van la giay trang).
+      - zone_bg: anh GHEP hai nen KHAC mau (hinh trang + tranh nen kem): giu anh full be ngang
+        nhu cu, nhung vung chu phu MAU NEN cua tam DUOI cung (tam chu de len) thay cho lop
+        toi, chu doi mau tuong phan — Ong Chu 21/09: "phu len mot layer cung mau voi mau nen".
+      - (None, None): anh chup — duong cu.
+
+    Nguong noi (`relaxed`) chi cho thanh phan ma vai/manifest xep la chart: `"chart": true`
+    (anh don) hoac `"image_kinds"` (anh ghep, dre_submit ghi)."""
+    parts = muc.get("_parts") or [(muc["image"], bool(muc.get("chart")))]
+    try:
+        bgs = [logo_card.flat_background(_open(p), relaxed=chart) for p, chart in parts]
+    except OSError:
+        return None, None
+    if len(bgs) == 1:
+        return bgs[0], None
+    if all(bgs) and all(max(abs(a - b) for a, b in zip(bg, bgs[0])) <= logo_card.FLAT_TOLERANCE for bg in bgs):
+        return bgs[0], None
+    ca = logo_card.flat_background(_open(muc["image"]))
+    if ca:
+        return ca, None
+    return None, bgs[-1]
 
 
 def _flat_palette(bg) -> dict:
@@ -647,10 +687,31 @@ def _gate_flat(nhan, report) -> str:
 
 
 # ---- Dung tung slide ------------------------------------------------------
-def build_body(img_path, text, handle, out, cluttered=False, report=None, logo_bg=None):
+def _place_image(canvas, img, plan, bottom):
+    """Dan anh theo ke hoach nen phang (LOW-341) -> (base, mau nen, layout).
+
+    `plan` = (flat_bg, zone_bg) tu `_flat_plan` (qua `_build_slide`); None thi tu do anh (goi
+    thang / test). `bottom`: dinh cua thu dau tien ve ben duoi anh (dong chu, khung quote).
+      - flat_bg: `_flat_layout` — base None.
+      - zone_bg: anh full be ngang nhu anh chup (`_body_image`), roi phu vung chu MAU `zone_bg`.
+      - khong: duong cu — tra ve base de `_layer_if_can` lam overlay.
+    `layout` = (hop anh, y tu do tro xuong la mat phang mau nen) cho `_note_flat`.
+    `touched`: y dau tien lop mau nen an vao anh (cong LOW-215, anh ghep bi che) — chi zone."""
+    flat, zone = plan if plan is not None else (_flat_source(img), None)
+    if flat:
+        return None, flat, _flat_layout(canvas, img, flat, bottom), None
+    base = _body_image(canvas, img)
+    if zone:
+        dac = _cover_below(canvas, zone, bottom)
+        return base, zone, ((0, 0, W, H), dac), dac - FLAT_FADE
+    return base, None, None, None
+
+
+def build_body(img_path, text, handle, out, cluttered=False, report=None, logo_bg=None, plan=None):
     """`logo_bg` (LOW-295): slide LOGO — anh dua vao da la khung dung san (logo 90% be ngang
     tren chinh mau nen cua no, xem logo_card.py). Luc do dan NGUYEN khung, chu lay mau tuong
-    phan voi nen va KHONG co overlay (Ong Chu 20/09/2026: "dung co them nen text, rat la phen")."""
+    phan voi nen va KHONG co overlay (Ong Chu 20/09/2026: "dung co them nen text, rat la phen").
+    `plan`: ke hoach nen phang (LOW-341) — xem `_place_image`."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     # Do khoi chu TRUOC (tran 30%), NEO TU DUOI: mep duoi luon o TEXT_BASE, chu
     # cao bao nhieu day len bay nhieu — luon sat day, khong tran len qua 30%,
@@ -663,18 +724,12 @@ def build_body(img_path, text, handle, out, cluttered=False, report=None, logo_b
         d, paras, W - 2 * PAD, TEXT_MAX_H, BODY_HI, BODY_LO)
     text_top = TEXT_BASE - total
 
-    flat = hop = None
+    flat = hop = touched = None
     if logo_bg:
         canvas.paste(_open(img_path).convert("RGB").resize((W, H)), (0, 0))
         base = None
     else:
-        img = _open(img_path)
-        flat = _flat_source(img)
-        if flat:
-            hop = _flat_layout(canvas, img, flat, text_top)
-            base = None
-        else:
-            base = _body_image(canvas, img)
+        base, flat, hop, touched = _place_image(canvas, _open(img_path), plan, text_top)
     truoc_nen = canvas.copy() if report is not None else None
 
     # Chi them lop khi do THAT tren pixel thay vung duoi chu khong du tuong
@@ -682,7 +737,7 @@ def build_body(img_path, text, handle, out, cluttered=False, report=None, logo_b
     if logo_bg:
         touched, fg = None, logo_card.text_color(tuple(logo_bg))
     elif flat:
-        touched, fg = None, _flat_palette(flat)["fg"]     # LOW-341: doi mau chu, khong phu lop
+        fg = _flat_palette(flat)["fg"]                  # LOW-341: doi mau chu, khong phu lop toi
     else:
         touched = _layer_if_can(canvas, base, text_top, TEXT_BASE, image_cluttered=cluttered,
                                 overlay_only=True)
@@ -735,7 +790,7 @@ def _fit_quote(d, quote):
     return f, lines, buoc, tren, False
 
 
-def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, report=None):
+def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, report=None, plan=None):
     """Slide than dang pull-quote — dung chung khung + bo cuc voi card.py --kieu
     quote. MAU: net khung + brand text CO DINH xanh Apple; DAU " doi theo hang
     duoc nhac. Duoi khung: chip ten kenh canh trai, roi dong nguon canh giua sat day."""
@@ -766,21 +821,14 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, repo
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
 
-    img = _open(img_path)
-    flat = _flat_source(img)
-    hop = None
-    if flat:
-        # LOW-341: anh nen phang nam tron TREN khung quote (dau " va chip ten kenh cuoi len
-        # net ngang tren, cao ~Q_MARK_CLEAR px phia tren net) — khong gi de len anh.
-        hop = _flat_layout(canvas, img, flat, frame_top - Q_MARK_CLEAR)
-        base = None
-    else:
-        base = _body_image(canvas, img)
+    # LOW-341: voi anh nen phang, "dinh vung chu" la dinh dau " va chip ten kenh — hai thu
+    # cuoi len net ngang tren cua khung, cao ~Q_MARK_CLEAR px phia tren net.
+    base, flat, hop, touched = _place_image(canvas, _open(img_path), plan, frame_top - Q_MARK_CLEAR)
     truoc_nen = canvas.copy() if report is not None else None
 
     if flat:
         pal = _flat_palette(flat)
-        touched, fg, muted, net = None, pal["fg"], pal["muted"], pal["net"]
+        fg, muted, net = pal["fg"], pal["muted"], pal["net"]
     else:
         # Chi them lop khi do THAT can (xem _layer_if_can). Overlay neo o DONG CHU DAU
         # (LOW-286), khong phai dinh khung: truoc day tu frame_top nen nen chu phu ~47% khung.
@@ -825,14 +873,14 @@ CATEGORY_CALL_Y = ["MODEL RELEASE", "MODEL UPDATE", "PRODUCT", "RESEARCH",
 
 
 def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE", cluttered=False,
-                report=None):
+                report=None, plan=None):
     """Bia: hang chip duoi cung = chip CATEGORY (cyan, thay cho ten kenh — Ong
     Chu chot 03/09/2026: hero slide KHONG dung chip 'donniechublog', phai la
     'MODEL RELEASE' / 'MODEL UPDATE'...) + chip label trang (ten model/hang).
     Ten kenh chi xuat hien tren cac slide than."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     img = _open(img_path)
-    flat = _flat_source(img)
+    flat, zone = plan if plan is not None else (_flat_source(img), None)     # LOW-341
     if flat:
         cover = None                              # LOW-341: dan SAU khi biet dinh hook (ben duoi)
     elif cluttered:
@@ -861,19 +909,25 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
         d, [hook], W - 2 * PAD, int(H * 0.5), HOOK_HI, HOOK_LO,
         weight=HOOK_WEIGHT, lead=HOOK_LEAD)
     y = hook_bottom - total
-    # Anh NEN PHANG (LOW-341, Ong Chu 21/09: "bia cung ap dung"): anh nam tron TREN hook,
-    # tren chinh mau nen cua no; hook va chip label doi mau theo nen do, khong lop phu.
-    hop = _flat_layout(canvas, img, flat, y) if flat else None
-    fg, bg_chu = (_flat_palette(flat)["fg"], tuple(flat[:3])) if flat else (FG, BG)
+    # Anh NEN PHANG (LOW-341, Ong Chu 21/09: "bia cung ap dung"): anh 90% be ngang tren chinh
+    # mau nen cua no, phan lan vao hook phu mau nen; anh ghep hai nen thi phu vung hook bang mau
+    # nen cua tam duoi. Hook va chip label doi mau theo nen do, khong lop phu toi.
+    hop = None
+    if flat:
+        hop = _flat_layout(canvas, img, flat, y)
+    elif zone:
+        hop = ((0, 0, W, H), _cover_below(canvas, zone, y))
+    nen = flat or zone
+    fg, bg_chu = (_flat_palette(nen)["fg"], tuple(nen[:3])) if nen else (FG, BG)
     # Do vi tri hook TRUOC roi moi quyet dinh co can lop khong (xem
     # _layer_if_can) — the tich category/label o duoi la chip dac, tu doc duoc,
     # khong can lop bao ve.
     truoc_nen = canvas.copy() if report is not None else None
-    if not flat:
+    if not nen:
         _layer_if_can(canvas, cover, y, H, image_cluttered=cluttered)
     if report is not None:                      # LOW-330: bia cung bi do nhu slide than
         report.update(_text_bg_report(truoc_nen, canvas))
-        _note_flat(report, canvas, flat, hop)
+        _note_flat(report, canvas, nen, hop)
     _draw_paragraphs(d, PAD, y, wrapped, hf, lh, fg)
     if label:
         # Hang duoi cung: chip CATEGORY (cyan) + chip label (trang), cung y.
@@ -969,7 +1023,7 @@ def _gate_image(paths):
         # "chart" (phang 100%, 2 mau), de sau thi thong bao thanh "thieu co".
         if not collect(image_rules_dre.check_blank_image(nhan, img)):
             continue
-        if _flat_source(img):
+        if _flat_plan(dict(muc, image=p))[0]:
             # LOW-341: anh nen phang duoc dan NGUYEN noi dung, 90% be ngang, TREN chu, tren
             # chinh mau nen cua no — khong cat, khong ep ti le, chu khong de len. Ba cong ti le /
             # chart / cat ngang canh chung chinh nhung thu do nen khong ap. Van xet phan giai,
@@ -1154,7 +1208,8 @@ def _build_slide(cover: dict, slides: list, out: Path, stem, handle: str) -> lis
     """
     bao_bia = {}
     build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out), handle,
-                category=cover["category"], cluttered=bool(cover.get("cluttered")), report=bao_bia)
+                category=cover["category"], cluttered=bool(cover.get("cluttered")), report=bao_bia,
+                plan=_flat_plan(cover))
     paths = [str(out)]
     loi_ghep, loi_nen = [], []
     loi = _gate_text_background("bia", bao_bia, max_share=TEXT_BG_MAX_SHARE_COVER) or _gate_flat("bia", bao_bia)
@@ -1163,12 +1218,13 @@ def _build_slide(cover: dict, slides: list, out: Path, stem, handle: str) -> lis
     for i, s in enumerate(slides, start=2):
         p = f"{stem}_{i}.png"
         bao = {}
+        plan = None if s.get("logo_bg") else _flat_plan(s)
         if s.get("quote"):
             touched = build_body_quote(s["image"], s["quote"], s.get("attrib", ""), handle, p,
-                                       cluttered=bool(s.get("cluttered")), report=bao)
+                                       cluttered=bool(s.get("cluttered")), report=bao, plan=plan)
         else:
             touched = build_body(s["image"], s["text"], handle, p, cluttered=bool(s.get("cluttered")),
-                                 report=bao, logo_bg=s.get("logo_bg"))
+                                 report=bao, logo_bg=s.get("logo_bg"), plan=plan)
         paths.append(p)
         loi = _gate_stack_last_hidden(f"slide {i}", s, touched)
         if loi:

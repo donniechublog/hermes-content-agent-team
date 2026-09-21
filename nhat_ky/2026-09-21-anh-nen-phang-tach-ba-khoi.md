@@ -46,10 +46,25 @@ Sửa (Dre):
 - Cổng `carousel._gate_flat`: ảnh nguồn nền phẳng mà slide không phải một mặt phẳng màu nền
   ngoài ảnh và trong vùng chữ → dừng, không gửi album.
 
+Dựng lại HAI ALBUM THẬT trên máy chủ (`dc-group`, spec trong state, ra `/tmp/low341`) lộ
+thêm 4 slide cùng loại mà bản đầu bỏ sót: MiniMax slide 2 (sơ đồ chạm mép, viền 0.71), SoL-Pi
+slide 5 (hình + bảng cắt sát lề, viền 0.43), SoL-Pi slide 4 và 6 (ghép hai ảnh KHÁC màu nền).
+Ông Chủ chọn làm luôn trước khi deploy. Nới theo tỉ lệ màu nền toàn ảnh cho MỌI ảnh là sai —
+đo trên 5429 ảnh gốc, ở 0.55/0.60 nó kéo chân dung nền xám/đen (Musk, Altman) vào. Nên:
+
+- Ngưỡng nới (viền ≥ 0.40, cả ảnh ≥ 0.45) CHỈ cho ảnh vision xếp `chart` — gom 151/276 chart
+  đang trượt (bảng, UI, sơ đồ).
+- Ảnh ghép xét từng tấm (`carousel._flat_plan`; `dre_submit` ghi `image_kinds`): cùng nền →
+  nền phẳng; khác nền → giữ full bề ngang, vùng chữ phủ màu nền của tấm dưới.
+
+Kết quả trên máy chủ: MiniMax slide 2–4 và cả 6 slide SoL-Pi đổi; 4 slide ảnh chụp của
+MiniMax (bìa, 5, 6, 7) giống hệt từng pixel.
+
 Chưa làm: Kite (`render_edu.set_image` cắt mép dưới ảnh phẳng cao thay vì thu — LOW-339,
 cần đo slide Pirate Face trên máy chủ), thẻ Ethan (LOW-287).
 
 Ghi chú vận hành: production đã chuyển sang máy `dc-group` từ 20/09; remote `deploy` trên máy
 Windows vẫn trỏ `donniechu-01` (thư mục `content-team` ở đó đã bị xoá 21/09), và máy Windows
-không thấy `dc-group` trong mạng NetBird. Số đo ở đây dựng từ hình gốc arXiv
-(`arxiv_figures.py`, 2609.18323 và 2609.20519), chưa từ state trên máy chủ.
+không thấy `dc-group` trong mạng NetBird — vào được bằng ProxyJump qua `donniechu-01` theo IP
+`100.87.212.236` (host key đã có trong known_hosts của `donniechu-01`; gọi bằng tên máy thì
+"Host key verification failed").

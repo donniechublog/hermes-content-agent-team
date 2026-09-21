@@ -880,8 +880,17 @@ rồi đặt quote màu đen lên nền trắng là được"*. Cùng ngày: *"b
   bị phủ **đúng màu nền của ảnh** (tan dần 120px, đặc từ 24px trên dòng chữ đầu) — đọc ra
   "hình tan vào giấy", không ra khối riêng, và chữ luôn nằm trên giấy chứ không đè lên hình.
   Bản đầu (thu cả cặp ghép cho vừa trên hook → còn ~55% bề ngang) bị bác cùng ngày.
+- **Chart cắt sát mép** (bảng/sơ đồ/chụp màn hình mà vision xếp `chart`): viền không còn
+  phẳng nhưng nền vẫn là một màu chiếm đa số → ngưỡng nới (viền ≥ 0.40, cả ảnh ≥ 0.45,
+  `FLAT_RELAXED_*`). Đo 21/09 trên 5429 ảnh gốc máy chủ: gom thêm 151/276 chart. **Không**
+  áp cho ảnh chụp — ở 0.55/0.60 nó kéo cả chân dung nền xám/đen vào.
+- **Ảnh ghép dọc** xét TỪNG tấm (`carousel._flat_plan`, `dre_submit` ghi `image_kinds`):
+  mọi tấm nền phẳng cùng một màu → cả tấm ghép đi đường nền phẳng; hai tấm khác màu nền
+  (hình trắng + tranh nền kem) → ảnh giữ full bề ngang như cũ, vùng chữ phủ **màu nền của
+  tấm dưới** (tấm chữ đè lên) thay cho overlay tối, chữ đổi màu tương phản.
 - `dre_submit` dùng ảnh GỐC cho ảnh nền phẳng (không bản cắt 4:5), và không áp các luật
   "ảnh ngang phải ghép / chart không làm bìa" — những luật đó canh chuyện chữ đè lên ảnh.
+  Chart NỀN CHUYỂN MÀU vẫn không làm bìa được như cũ.
 - **Cổng đo trên pixel thật** (`carousel._gate_flat`): ảnh nguồn nền phẳng mà slide ra
   không đi đường nền phẳng, hoặc > 0,5% điểm ngoài ảnh / trong vùng chữ lệch màu nền (dải
   mờ/lớp phủ tối lọt vào, hoặc chữ đè lên hình) → `carousel.py` dừng, không gửi album. Lỗi

@@ -169,6 +169,10 @@ def test_dre_submit_graphic_fall_chart_make_cover_ok():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = ts._du(t)
         m["images"][0].update({"kind": "chart", "cluttered": True, "has_keywords": True})      # A1 la bia
+        # LOW-341: chart NEN PHANG lam bia duoc (anh tren chu, phan lan hook phu mau nen) — o day
+        # nen CHUYEN MAU de van canh luat chart thuong khong lam bia.
+        from PIL import Image
+        Image.linear_gradient("L").resize((1000, 1250)).convert("RGB").save(m["images"][0]["original_path"])
         ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert not ts._co(loi, "bìa", "CHART"), loi
         assert ra["cover"].get("cluttered") is True and ra["cover"]["image"] == m["images"][0]["original_path"]

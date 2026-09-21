@@ -805,8 +805,9 @@ mảng nhìn tách rời:
 
 Ông Chủ 21/09/2026: *"luôn ưu tiên đặt chữ màu tương phản với màu nền trước khi phải dùng
 tới nền chữ"*. Luật chung cho mọi vai, chi tiết và số đo ở `IMAGE_RULES_DRE.md` §7.0b
-(ảnh nền phẳng: khung là màu nền của ảnh, nội dung 90% bề ngang TRÊN chữ, chữ đổi màu,
-không dải mờ/lớp phủ). Thẻ Ethan (`card.py`) CHƯA áp — theo dõi ở LOW-287.
+(ảnh nền phẳng: khung là màu nền của ảnh, nội dung 90% bề ngang — không thu cho vừa —,
+phần lấn vào vùng chữ phủ đúng màu nền, chữ đổi màu; không dải mờ/lớp phủ tối). Thẻ Ethan
+(`card.py`) CHƯA áp — theo dõi ở LOW-287.
 
 ### 7.1 Ảnh rối: chỉ dùng khi hết ảnh sạch, dùng thì nền chữ đậm hơn (vẫn là overlay)
 

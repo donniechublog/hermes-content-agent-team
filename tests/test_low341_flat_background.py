@@ -239,6 +239,65 @@ def test_photo_keeps_old_path():
         assert "source_flat" not in rep and rep["bg_opacity"] > 0, rep
 
 
+# ------------------------------------------- chart cat sat mep / anh ghep
+def _table(w=1500, h=1100, bg=(255, 255, 255), ink=(40, 40, 40)):
+    """Bang chup tu trang web, CAT SAT MEP (bang SoL-Pi A38): ke ngang chay het be ngang, chu
+    cham mep trai — vien khong phang, nhung nen trang van chiem da so ca anh."""
+    im = Image.new("RGB", (w, h), bg)
+    d = ImageDraw.Draw(im)
+    for k in range(12):
+        y = 40 + k * 88
+        d.rectangle([0, y, w, y + 2], fill=ink)
+        d.rectangle([0, y + 30, 90, y + 50], fill=ink)                 # nhan cot dau cham mep
+        for c in range(6):
+            d.rectangle([260 + c * 200, y + 30, 330 + c * 200, y + 50], fill=ink)
+    d.rectangle([0, h - 70, w, h], fill=(200, 230, 170))                   # hang to mau o day
+    return im
+
+
+def test_relaxed_threshold_only_for_charts():
+    """Nguong noi chi cho anh vai/manifest xep la chart — anh chup nen xam khong duoc keo vao."""
+    import logo_card
+    t = _table()
+    assert logo_card.flat_background(t) is None
+    assert logo_card.flat_background(t, relaxed=True) == (255, 255, 255)
+    assert logo_card.flat_background(_photo(), relaxed=True) is None
+
+
+def test_stack_of_flat_parts_same_bg_is_flat():
+    """Hinh paper + bang cat sat mep, cung nen trang (SoL-Pi slide 5): ca tam ghep di nen phang."""
+    import card
+    with tempfile.TemporaryDirectory() as t:
+        a, b = _save(_figure(cut_line=False), t, "a.png"), _save(_table(2000, 1100), t, "b.png")
+        ghep = _save(card.stack_read([a, b]), t, "ghep.png")
+        assert carousel._flat_plan({"image": ghep, "_parts": [(a, False), (b, True)]}) == ((255, 255, 255), None)
+        # Khong khai bang la chart thi khong xet nguong noi — tam ghep di duong cu.
+        assert carousel._flat_plan({"image": ghep, "_parts": [(a, False), (b, False)]}) == (None, None)
+
+
+def test_stack_mixed_bg_covers_text_zone_with_bottom_color():
+    """Hinh nen trang + tranh nen kem (SoL-Pi slide 4/6): anh giu full be ngang, vung chu phu
+    MAU NEN cua tam DUOI (Ong Chu: "phu len mot layer cung mau voi mau nen"), chu toi."""
+    import card
+    import numpy as np
+    _setup()
+    kem = (248, 245, 236)
+    with tempfile.TemporaryDirectory() as t:
+        a = _save(_figure(w=2000, h=1100, cut_line=False), t, "a.png")
+        b = _save(_figure(w=2000, h=1300, bg=kem, cut_line=False), t, "b.png")
+        ghep = _save(card.stack_read([a, b]), t, "ghep.png")
+        plan = carousel._flat_plan({"image": ghep, "_parts": [(a, False), (b, False)]})
+        assert plan == (None, kem), plan
+        out, rep = str(Path(t) / "s.png"), {}
+        carousel.build_body(ghep, TEXT, "donniechublog", out, report=rep, plan=plan)
+        arr = np.asarray(Image.open(out).convert("RGB"), dtype=np.int16)
+        vung = arr[1290:1345, 600:1040]                           # day khung, ben phai chip ten kenh
+        assert np.abs(vung - np.array(kem)).max() <= 2, "vung chu phai la mau nen cua tam duoi"
+        assert rep["flat_bg"] == list(kem) and rep["flat_off_plane"] == 0.0, rep
+        _assert_dark_text(out, 1030, 1230, "anh ghep hai nen")
+        assert np.abs(arr[100:300] - 255).max(axis=2).mean() < 60, "tam tren van hien (nen trang)"
+
+
 # ------------------------------------------------------------------ cong
 def test_gate_flat():
     ok = {"source_flat": [255, 255, 255], "flat_bg": [255, 255, 255], "flat_off_plane": 0.0}
@@ -277,6 +336,20 @@ def test_dre_uses_original_for_flat_image():
         assert not [x for x in loi if "A1" in x or "A2" in x or "bìa" in x], loi
         assert ra["cover"]["image"] == anh[0]["original_path"]
         assert ra["slides"][0]["image"] == anh[1]["original_path"]
+
+
+def test_dre_stack_passes_image_kinds():
+    """Anh ghep mang theo loai tung tam de carousel._flat_plan biet tam nao la chart."""
+    from tam import so_tam
+    from test_spec_dre import _anh, _m, _spec, _bia, _slide, _chay
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        anh = [_anh(wd, f"A{i}", 1000, 1250) for i in range(1, 6)] + \
+              [_anh(wd, "A6", 1600, 1000, loai="chart"), _anh(wd, "A7", 1600, 1000)]
+        slides = [_slide("A2", quote="Câu một", attrib="X"), _slide("A3", quote="Câu hai", attrib="Y"),
+                  _slide("A4"), {"stack": ["A6", "A7"], "text": "Một câu"}]
+        ra, _loi, _c, _d = _chay(_spec(_bia("A1"), slides), _m(wd, anh), wd)
+        assert ra["slides"][3]["image_kinds"] == ["chart", "photo"], ra["slides"][3]
 
 
 if __name__ == "__main__":
