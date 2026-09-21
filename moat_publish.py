@@ -50,7 +50,11 @@ STATE_DIR = env_load.state_dir()          # state/<brand>/ theo container (fallb
 # Mo lai khi extension co luong dang anh cho TikTok.
 PLATFORMS = ["facebook_post", "instagram_carousel"]
 
-TIMEOUT = 60
+TIMEOUT = httpx.Timeout(60.0, connect=5.0)
+# Mot con so cho ca connect/read/write thi mot lan bat tay roi vao ho den
+# ngon TRON 60 giay. Do tren dc-group 21/09/2026: ~1/30 lan connect bi nuot
+# goi SYN, trong khi request ngay truoc va ngay sau chi mat 0,25s. Connect
+# ngan de loi mang lo som; read van dai vi moat tra cham khi hang doi day.
 
 # Rieng luc DAY bai thi khong dung TIMEOUT chung duoc. Uplink cua may nay do
 # duoc ~50 KB/s (7 MB het 136 giay, moat tra 400 chu khong tu choi -- ca body
@@ -531,17 +535,21 @@ def bottom_again():
     return lines
 
 
-def _fetch_status(base, key, ref):
+def _fetch_status(base, key, ref, c):
     """`ref` nen la workflow_id: ben moat do la khoa chinh, con external_id phai
-    quet bang workflows. Chay moi phut thi khac biet do tich lai."""
-    with httpx.Client(timeout=TIMEOUT) as c:
-        r = c.get(base + "/publish-intake/" + ref, headers={"X-API-Key": key})
+    quet bang workflows. Chay moi phut thi khac biet do tich lai.
+
+    `c` la httpx.Client CUA CA LUOT poll, khong phai cua rieng bai nay: mo
+    client mot lan cho moi draft nghia la mot bat tay TCP moi cho moi bai,
+    75 bai/phut = 75 co hoi dinh ho den. Dung chung thi ca luot chi bat tay
+    mot lan roi giu keep-alive."""
+    r = c.get(base + "/publish-intake/" + ref, headers={"X-API-Key": key})
     if r.status_code != 200:
         raise RuntimeError("HTTP " + str(r.status_code) + ": " + r.text[:200])
     return r.json().get("tasks", [])
 
 
-def _poll_one_article(path, d, cua_toi, lines):
+def _poll_one_article(path, d, cua_toi, lines, c):
     """Mot draft: bo qua neu khong phai bai da day / khac brand / da xong / het
     han theo doi; hoi moat mot lan, bao MOI trang thai moi mot lan, ghi nguoc
     vao draft. `lines` la danh sach dong thong bao, ghi them vao."""
@@ -585,7 +593,8 @@ def _poll_one_article(path, d, cua_toi, lines):
         return
 
     try:
-        tasks = _fetch_status(base, key, moat.get("workflow_id") or moat["external_id"])
+        tasks = _fetch_status(base, key,
+                              moat.get("workflow_id") or moat["external_id"], c)
     except Exception as e:                               # noqa: BLE001
         # Chi bao MOT lan cho moi loai loi. Cron chay moi phut: moat sap
         # 6 tieng ma bao moi lan la 360 tin rac vao topic Miles. Nho loai
@@ -658,14 +667,15 @@ def poll():
     cua_toi = brand_container()
 
     lines = []
-    for path in sorted(DRAFTS.glob("*.json")):
-        if path.name.endswith(".meta.json"):
-            continue
-        try:
-            d = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:                                    # noqa: BLE001
-            continue
-        _poll_one_article(path, d, cua_toi, lines)
+    with httpx.Client(timeout=TIMEOUT) as c:
+        for path in sorted(DRAFTS.glob("*.json")):
+            if path.name.endswith(".meta.json"):
+                continue
+            try:
+                d = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:                                # noqa: BLE001
+                continue
+            _poll_one_article(path, d, cua_toi, lines, c)
 
     return lines
 
@@ -800,7 +810,9 @@ if __name__ == "__main__":
         base, key = config(brand)
         if not base:
             sys.exit("chua cau hinh MOAT_BASE_URL/" + name_lock(brand))
-        print(json.dumps(_fetch_status(base, key, sys.argv[2]), ensure_ascii=False, indent=2))
+        with httpx.Client(timeout=TIMEOUT) as c:
+            print(json.dumps(_fetch_status(base, key, sys.argv[2], c),
+                             ensure_ascii=False, indent=2))
         sys.exit(0)
     out = bottom_again() + poll()
     _notify(out)

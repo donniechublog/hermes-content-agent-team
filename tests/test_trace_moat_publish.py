@@ -916,6 +916,46 @@ def test_notify_missing_bot_token_PIN_kills_the_process_and_loses_the_lines():
     finally:
         h.__exit__()
 
+# =========================================================================
+# poll — ngan sach ket noi (21/09/2026)
+# =========================================================================
+def test_poll_opens_one_http_client_for_the_whole_sweep():
+    """Moi draft mot httpx.Client = mot bat tay TCP moi. Do duoc tren dc-group
+    21/09/2026: ~1/30 lan bat tay roi vao ho den va ngon TRON connect timeout.
+    Voi 75 draft con theo doi, cron moi phut mo 75 ket noi => moi luot dinh vai
+    lan treo 60s, luot chay dai hon chu ky cron nen cac luot chong len nhau.
+    Mot luot poll chi duoc mo MOT client va dung lai ket noi cho ca luot."""
+    h = _harness()
+    try:
+        dem = []
+        goc = mp.httpx.Client
+
+        def dem_client(*a, **kw):
+            dem.append(1)
+            return goc(*a, **kw)
+
+        h.patch(mp.httpx, "Client", dem_client)
+        for i in range(3):
+            _pushed(h, "c%d" % i)
+        mp.poll()
+        assert len(dem) == 1, "mo %d client cho 3 draft (phai dung chung MOT)" % len(dem)
+        assert _http(h) == ["GET /publish-intake/wf-c%d" % i for i in range(3)], _http(h)
+    finally:
+        h.__exit__()
+
+
+def test_poll_connect_budget_is_short_even_though_read_budget_stays_long():
+    """TIMEOUT ap MOT con so cho ca connect/read/write: mot lan bat tay roi vao
+    ho den ngon tron 60 giay, du cac request ngay truoc va ngay sau do chi mat
+    0,25s (do duoc luc 22:01:30 ngay 21/09/2026). Tach ra: connect ngan de loi
+    mang lo som, read van dai vi moat tra cham khi hang doi day."""
+    assert isinstance(mp.TIMEOUT, httpx.Timeout), \
+        "TIMEOUT phai la httpx.Timeout de tach rieng ngan sach connect"
+    assert mp.TIMEOUT.connect is not None and mp.TIMEOUT.connect <= 5.0, \
+        "connect=%r — mot bat tay ho den van ngon qua lau" % (mp.TIMEOUT.connect,)
+    assert mp.TIMEOUT.read is not None and mp.TIMEOUT.read >= 60.0, \
+        "read=%r — cat ngan read se lam hong cac lan moat tra cham" % (mp.TIMEOUT.read,)
+
 
 if __name__ == "__main__":
     sys.exit(run_tests(globals()))
