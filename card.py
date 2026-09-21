@@ -792,6 +792,29 @@ def _text_bg_overlay(canvas, frame_top):
                  (0, 0), mat_na)
 
 
+# LOW-336 (Ong Chu 21/09/2026, 5 the tran bi bac): *"nen cua text bi loang lo la ko duoc
+# phep"*. `_open_region_text` chi lam MO — mang lon cua anh (nut toi, la co, dai mau) van
+# lo ra trong khung chu thanh vet; `_can_board_line` con va them dai rieng TUNG DONG.
+# Nay BEN TRONG khung chu la MOT lop overlay mot mau deu (sang hoac toi theo nen da mo),
+# alpha tran TEXT_BOX_OPACITY = 84% — duoi tran overlay 88% cua LOW-286/330, anh van
+# hien nhe qua nhung khong con mang. Khung phang roi thi ca khoi mot mau chu.
+TEXT_BOX_OPACITY = 215
+
+
+def _text_box_overlay(canvas, box, radius):
+    """Phu lop overlay mot mau deu vao TRONG khung chu `box` (bo goc `radius`). Tra ve
+    mau chu tuong phan voi lop do (FG tren lop toi, BG tren lop sang)."""
+    x0, y0, x1, y1 = _within_card(canvas, box)
+    sang = _bright_region(canvas, (x0, y0, x1, y1))
+    toi = sang < THRESHOLD_BACKGROUND_BRIGHT
+    tone = tuple(BG[:3]) if toi else tuple(FG[:3])
+    mask = Image.new("L", canvas.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle([x0, y0, x1, y1], radius=radius, fill=TEXT_BOX_OPACITY)
+    canvas.paste(Image.new(canvas.mode, canvas.size,
+                           tone + ((255,) if canvas.mode == "RGBA" else ())), (0, 0), mask)
+    return FG if toi else BG
+
+
 def _open_region_text(canvas, frame_top):
     """Lam MO CUC BO vung anh nam duoi chu, sua canvas tai cho (Ong Chu 06/09/2026:
     chu co vien "phen nhu karaoke" — bo vien, thay bang lam mo).
@@ -1333,22 +1356,15 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
     frame_top = max(CEILING_FRAME_PAD, cum_top - CEILING_FRAME_PAD)
     frame_bot = min(bottom_y - 16, cum_bot + CEILING_FRAME_PAD)
     (_text_bg_overlay if cluttered else _open_region_text)(canvas, frame_top)
+    mau_khoi = _text_box_overlay(canvas, (CEILING_FRAME_X, frame_top, W - CEILING_FRAME_X, frame_bot),
+                                 CEILING_FRAME_R)
 
-    # DO THEO TUNG DAI DONG, khong phai mot trung binh cho ca khoi: ranh
-    # sang/toi ngang cat qua khoi chu la ca rat thuong (anh chup hero toi tren
-    # nen trang duoi, anh ghep doc hai tone). Mot phep trung binh thi nua khoi
-    # thanh trang-tren-trang hoac den-tren-den. `_can_board_line` (khong phai
-    # `_bright_region` truc tiep) vi mot dai RONG van co the co diem sang/toi cuc
-    # bo du trung binh ca dai dung phe — xem ghi chu tai dinh nghia ham.
     buoc, tren = _step_line(f_title, title_lines, lead)
-    dau_tieu_de = cum_top + (kick_h + KICKER_GAP if kicker else 0)
-    dai_dong = [(CEILING_TEXT_X, dau_tieu_de + i * buoc,
-                 W - CEILING_TEXT_X, dau_tieu_de + (i + 1) * buoc)
-                for i in range(len(title_lines))]
-    sang_dong = [_can_board_line(canvas, b) for b in dai_dong] or [0.0]
-    mau_dong = [FG if sg < THRESHOLD_BACKGROUND_BRIGHT else BG for sg in sang_dong]
+    # LOW-336: khung da la MOT lop overlay deu (`_text_box_overlay`) -> ca khoi mot mau
+    # chu, khong con do/tinh rieng tung dai dong (dai tinh tung dong la mot nguon loang lo).
+    mau_dong = [mau_khoi] * max(1, len(title_lines))
     # Phe cua CA KHOI — dung cho net khung, kicker, va mau ten hang trong tieu de.
-    nen_sang = sum(1 for sg in sang_dong if sg >= THRESHOLD_BACKGROUND_BRIGHT) * 2 >= len(sang_dong)
+    nen_sang = mau_khoi == BG
     mau_net = _enough_dark(CYAN) if nen_sang else CYAN
 
     # Khung chu nhat bo goc, bon net day du. Ve TRUOC chu de chu nam tren net
@@ -1357,11 +1373,8 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
                         radius=CEILING_FRAME_R, outline=mau_net, width=CEILING_FRAME_LW)
 
     if kicker:
-        # Kicker do RIENG dai cua chinh no: no nam tren cung khoi chu, tuc o
-        # phan anh sang/toi khac voi may dong tieu de duoi.
-        mau_kick = _color_change_background_hide_whole(
-            canvas, (CEILING_TEXT_X, cum_top, W - CEILING_TEXT_X, cum_top + max(kick_h, 8)))
-        mau_kick = _enough_dark(CYAN) if mau_kick == BG else CYAN
+        # Kicker nam TRONG khung da phu overlay deu -> cung phe voi ca khoi (LOW-336).
+        mau_kick = _enough_dark(CYAN) if nen_sang else CYAN
         rong_chu = _empty_tracked(d, kicker, f_kick, KICKER_TRACK)
         # Tru _kb[1] de DINH chu roi dung vao y, khong phai goc ascender.
         _about_tracked(d, (W - rong_chu) / 2, y - _kb[1], kicker, f_kick,
