@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""dispatch_shadow.py — CHẠY BÓNG tự giao việc (LOW-349).
+"""dispatch_shadow.py — CHẠY BÓNG tự chọn tin (LOW-349).
 
-Mỗi ngày chấm cho từng tin quét hai gợi ý: có nên chọn không, và giao designer
-nào (Ethan / Dre / Kite). KHÔNG giao gì — chỉ ghi gợi ý rồi đo độ trùng với lựa
-chọn thật của Ông Chủ, theo từng loại tin. Loại tin nào trùng đủ cao thì mới
-tính chuyện bật tự giao cho riêng loại đó (ticket sau).
+Mỗi ngày chấm cho từng headline mà vai quét (Finn/Qinn/Vera/Nova) research ra:
+Ông Chủ có chọn headline này không. KHÔNG chọn gì — chỉ ghi gợi ý rồi đo độ trùng
+với lựa chọn thật, theo vai quét và theo loại tin. Loại tin nào trùng đủ cao thì
+mới tính chuyện bật tự chọn cho riêng loại đó (ticket sau).
+
+Giao designer nào KHÔNG đo ở đây (Ông Chủ 21/09/2026): đó chỉ là xếp hàng task —
+tin benchmark model mặc định Ethan, còn lại luân phiên Dre/Kite — không phải gu.
 
 Ba luật giữ cho số đo là số thật:
   - Gợi ý của một tin chỉ dùng thứ CÓ LÚC QUÉT: loại tin chuẩn
-    (`story_type.standard_type`), bậc điểm và vai quét. Không đọc
-    `picked`/`assignments` của chính tin đó.
+    (`story_type.standard_type`) và bậc điểm. Không đọc `picked` của chính tin đó.
   - Bảng học chỉ lấy từ các lượt quét TRƯỚC tin đó (theo `scanned_at`), nên lần
     chạy đầu chấm lùi được cả lịch sử mà không rò kết quả.
   - Gợi ý đóng băng trong `dispatch_shadow.jsonl` lúc chấm; kết quả thật đọc lại
@@ -22,8 +24,13 @@ Hai chỗ dữ liệu thô dễ đánh lừa:
   - Lượt quét mà cả ngày không chọn tin nào thường là Ông Chủ chưa xem, không
     phải chê cả lượt. Những tin đó không tính là "không chọn".
 
-Không hiện gợi ý trong báo cáo quét: Ông Chủ thấy "gợi ý: Dre" thì dễ chọn theo,
-số đo độ trùng sẽ ảo.
+Đo trên lịch sử thật 21/09/2026 (79 manifest, hai brand): chỉ ĐIỂM của Finn đoán
+được (80–89 được chọn 83%, 90+ 94%). Loại tin, nguồn và chữ trong headline không
+hơn đoán mò, nên không dùng. Vera/Nova không chấm điểm, nên tin của họ chưa có gợi
+ý chọn — báo cáo theo vai quét cho thấy điều đó mỗi ngày.
+
+Không hiện gợi ý trong báo cáo quét: Ông Chủ thấy gợi ý thì dễ chọn theo, số đo
+độ trùng sẽ ảo.
 
 Dùng:
     venv/bin/python dispatch_shadow.py            # chấm tin mới + in báo cáo
@@ -49,7 +56,6 @@ import story_type                                            # noqa: E402
 VERSION = 1                       # tăng khi đổi thuật toán — mỗi dòng log ghi bản đã chấm nó
 MANIFEST_GLOB = "*_candidates_*.json"                # cùng mẫu với cleanup.py
 
-# ---- có chọn tin không --------------------------------------------------------
 LEARN_WINDOW_DAYS = 60            # chỉ học 60 ngày gần nhất: gu có thể đổi
 # Ô (loại tin, bậc điểm) cần ≥ 10 tin đã quyết mới tin tỉ lệ của ô. Đo trên lịch sử thật
 # 21/09/2026: với 5 thì 4/5 may rủi đã qua 70% — dcgr ra 24 gợi ý chọn sai cả 24 (Vera/Nova
@@ -59,22 +65,9 @@ PICK_RATE = 0.7                   # Ông Chủ đã chọn ≥ 70% số tin tron
 DECISION_HOURS = 24               # tin chưa chọn sau 24h mới tính là "không chọn"
 DECIDED = ("picked", "not_picked")
 
-# ---- giao designer nào ---------------------------------------------------------
-MIN_DESIGNER_SAMPLES = 3          # (vai quét, loại tin) hoặc loại tin cần ≥ 3 lần giao thật mới theo lịch sử
-# Bảng khởi đầu, suy từ khả năng từng vai trong role.py (21/09/2026) — CHƯA phải gu
-# của Ông Chủ; lịch sử giao thật đè lên khi đủ MIN_DESIGNER_SAMPLES:
-#   Kite   tin kiến thức/giải thích (vẽ vector, chỉ cần 1 ảnh thật cho bìa). BENCHMARK
-#          cũng về Kite: ảnh chính là bảng xếp hạng, mà card của Ethan không cho chart
-#          đứng một mình (`chart_don=False`).
-#   Dre    INFRA: datacenter, nhà máy thường nhiều ảnh (Dre cần ≥ 6 ảnh thật).
-#   Ethan  tin xoay quanh một hãng (logo/founder/trụ sở); điểm cao thì lên Dre.
-PRIOR_DESIGNER = {"ARXIV": "kite", "TOOL": "kite", "BENCHMARK": "kite", "INFRA": "dre",
-                  "MODEL": "ethan", "BUSINESS": "ethan", "M&A": "ethan", "LAB": "ethan",
-                  "SECURITY": "ethan"}
-UPGRADE_TO_DRE_SCORE = 90
-
-# ---- đủ điều kiện bật tự giao (chỉ BÁO, script này không bật gì) ------------------
-READY_WINDOW = 20                 # xét 20 lần gần nhất của loại tin
+# Đủ điều kiện bật tự chọn (chỉ BÁO, script này không bật gì): trong READY_WINDOW lần
+# gần nhất gợi ý chọn của loại tin, ≥ READY_AGREEMENT là tin Ông Chủ cũng chọn.
+READY_WINDOW = 20
 READY_MIN_SAMPLES = 10
 READY_AGREEMENT = 0.9
 
@@ -127,7 +120,7 @@ def story_key(item: dict) -> str:
 
 def gather_stories(scans: list) -> list:
     """Gộp mọi lần một tin xuất hiện thành MỘT tin: đặc trưng lấy từ lần đầu,
-    được chọn nếu được chọn ở bất kỳ bản nào, designer là mọi vai đã được giao."""
+    được chọn nếu được chọn ở bất kỳ bản nào."""
     stories = {}
     for s in scans:
         for it in s["items"]:
@@ -141,12 +134,9 @@ def gather_stories(scans: list) -> list:
                     "scan_role": s["scan_role"], "scanned_at": s["scanned_at"],
                     "title": str(it.get("title") or "")[:90],
                     "category": story_type.standard_type(it.get("category")),
-                    "score": it.get("score"), "picked": False, "designers": set()}
+                    "score": it.get("score"), "picked": False}
             if it.get("picked"):
                 st["picked"] = True
-            for a in it.get("assignments") or []:
-                if a.get("image_role"):
-                    st["designers"].add(role.canonical_slug(a["image_role"]))
     return list(stories.values())
 
 
@@ -172,12 +162,10 @@ def outcome(st: dict, reviewed: set, now: datetime) -> str:
 
 
 def learn(stories: list, before: datetime, reviewed: set, now: datetime) -> dict:
-    """Bảng học từ các tin quét TRƯỚC `before` (trong LEARN_WINDOW_DAYS) đã có quyết định."""
+    """Tỉ lệ chọn từ các tin quét TRƯỚC `before` (trong LEARN_WINDOW_DAYS) đã có quyết định."""
     since = before - timedelta(days=LEARN_WINDOW_DAYS)
     by_cell = collections.defaultdict(lambda: [0, 0])      # (loại tin, bậc) -> [đã quyết, được chọn]
     by_tier = collections.defaultdict(lambda: [0, 0])
-    designers = collections.defaultdict(collections.Counter)            # loại tin -> designer
-    designers_by_role = collections.defaultdict(collections.Counter)    # (vai quét, loại tin) -> designer
     for st in stories:
         if not since <= st["scanned_at"] < before:
             continue
@@ -188,60 +176,19 @@ def learn(stories: list, before: datetime, reviewed: set, now: datetime) -> dict
         for cell in (by_cell[(st["category"], tier)], by_tier[tier]):
             cell[0] += 1
             cell[1] += int(o == "picked")
-        for d in st["designers"]:
-            designers[st["category"]][d] += 1
-            designers_by_role[(st["scan_role"], st["category"])][d] += 1
-    return {"by_cell": by_cell, "by_tier": by_tier, "designers": designers,
-            "designers_by_role": designers_by_role}
+    return {"by_cell": by_cell, "by_tier": by_tier}
 
 
-def prior_designer(category: str, score, available: set):
-    d = PRIOR_DESIGNER.get(category, role.DEFAULT_IMAGE)
-    if d == "ethan" and _as_int(score) >= UPGRADE_TO_DRE_SCORE:
-        d = "dre"
-    if d in available:
-        return d
-    return role.DEFAULT_IMAGE if role.DEFAULT_IMAGE in available else None
-
-
-def suggest_designer(category: str, score, table: dict, available: set, scan_role: str = "") -> tuple:
-    """(designer, "history" | "prior"). Học theo (vai quét, loại tin) trước, rồi mới
-    theo loại tin: cùng là MODEL nhưng tin của Nova (tin tức) hay về Ethan, của Finn
-    (kỹ thuật) hay về Dre/Kite. Đo trên lịch sử blog 21/09/2026: tách theo vai quét
-    nâng độ trùng designer từ 43% lên 53%. Hoà phiếu thì ưu tiên bảng khởi đầu."""
-    prior = prior_designer(category, score, available)
-    for counts in (table.get("designers_by_role", {}).get((scan_role, category), {}),
-                   table["designers"].get(category, {})):
-        counts = {d: n for d, n in counts.items() if d in available}
-        if sum(counts.values()) >= MIN_DESIGNER_SAMPLES:
-            best = max(counts.values())
-            top = sorted(d for d, n in counts.items() if n == best)
-            return (prior if prior in top else top[0]), "history"
-    return prior, "prior"
-
-
-def suggest(st: dict, table: dict, available: set) -> dict:
+def suggest(st: dict, table: dict) -> dict:
+    """Theo ô (loại tin, bậc điểm); ô thiếu mẫu thì theo bậc điểm; vẫn thiếu thì chưa gợi ý."""
     tier = score_tier(st["score"])
     seen, picked = table["by_cell"].get((st["category"], tier), (0, 0))
     basis = "category_tier"
     if seen < MIN_PICK_SAMPLES:
         (seen, picked), basis = table["by_tier"].get(tier, (0, 0)), "tier"
     pick = None if seen < MIN_PICK_SAMPLES else picked / seen >= PICK_RATE
-    designer, designer_basis = suggest_designer(st["category"], st["score"], table, available,
-                                                st.get("scan_role", ""))
     return {"suggested_pick": pick, "pick_basis": basis if pick is not None else "",
-            "pick_rate": round(picked / seen, 2) if seen else None, "pick_samples": seen,
-            "suggested_designer": designer, "designer_basis": designer_basis}
-
-
-def designers_available() -> set:
-    """Designer có profile trong brand này — cùng phép kiểm của
-    `approve_dispatch.standard_assignee` (không import nó: kéo theo cả Telegram lẫn
-    kanban). Máy không có HERMES_HOME (máy dev, test) thì không lọc."""
-    profiles = env_load.hermes_home() / "profiles"
-    if not profiles.is_dir():
-        return set(role.NAME_ROLE_IMAGE)
-    return {d for d in role.NAME_ROLE_IMAGE if (profiles / d).is_dir()}
+            "pick_rate": round(picked / seen, 2) if seen else None, "pick_samples": seen}
 
 
 def load_log(path: Path) -> dict:
@@ -260,7 +207,7 @@ def load_log(path: Path) -> dict:
     return out
 
 
-def score_new(stories: list, logged: dict, reviewed: set, available: set, now: datetime) -> list:
+def score_new(stories: list, logged: dict, reviewed: set, now: datetime) -> list:
     """Chấm các tin chưa có trong log, cũ -> mới; mỗi tin chỉ học từ lượt quét trước nó."""
     tables, new = {}, []
     for st in sorted(stories, key=lambda s: s["scanned_at"]):
@@ -272,13 +219,11 @@ def score_new(stories: list, logged: dict, reviewed: set, available: set, now: d
         new.append({"key": st["key"], "manifest": st["manifest"], "index": st["index"],
                     "scan_role": st["scan_role"], "scanned_at": at.isoformat(),
                     "title": st["title"], "category": st["category"], "score": st["score"],
-                    **suggest(st, tables[at], available),
-                    "scored_at": now.isoformat(), "version": VERSION})
+                    **suggest(st, tables[at]), "scored_at": now.isoformat(), "version": VERSION})
     return new
 
 
 def _tally(rows: list) -> collections.Counter:
-    """Designer đo ĐỘC LẬP với gợi ý chọn: mọi tin Ông Chủ đã chọn đều có gợi ý designer."""
     t = collections.Counter()
     for r in rows:
         if r["outcome"] not in DECIDED:
@@ -286,9 +231,6 @@ def _tally(rows: list) -> collections.Counter:
         yes, s = r["outcome"] == "picked", r["suggested_pick"]
         t["decided"] += 1
         t["picked"] += yes
-        if yes and r["suggested_designer"] and r["actual_designers"]:
-            t["designer_n"] += 1
-            t["designer_ok"] += r["suggested_designer"] in r["actual_designers"]
         if s is None:
             t["no_suggestion"] += 1
             continue
@@ -299,37 +241,17 @@ def _tally(rows: list) -> collections.Counter:
 
 
 def _readiness(rows: list) -> dict:
-    """Loại tin này đủ điều kiện bật tự giao chưa: trong READY_WINDOW lần gần nhất,
-    gợi ý chọn đúng và designer trùng đều ≥ READY_AGREEMENT. `rows` xếp cũ -> mới."""
-    decided = [r for r in rows if r["outcome"] in DECIDED]
-    picks = [r for r in decided if r["suggested_pick"]][-READY_WINDOW:]
-    des = [r for r in decided if r["outcome"] == "picked" and r["suggested_designer"]
-           and r["actual_designers"]][-READY_WINDOW:]
-    pick_ok = sum(r["outcome"] == "picked" for r in picks)
-    designer_ok = sum(r["suggested_designer"] in r["actual_designers"] for r in des)
-    enough = len(picks) >= READY_MIN_SAMPLES and len(des) >= READY_MIN_SAMPLES
-    ready = (enough and pick_ok >= READY_AGREEMENT * len(picks)
-             and designer_ok >= READY_AGREEMENT * len(des))
-    return {"ready": ready, "enough": enough, "pick_n": len(picks), "pick_ok": pick_ok,
-            "designer_n": len(des), "designer_ok": designer_ok}
+    """Loại tin này đủ điều kiện bật tự chọn chưa. `rows` xếp cũ -> mới."""
+    picks = [r for r in rows if r["outcome"] in DECIDED and r["suggested_pick"]][-READY_WINDOW:]
+    ok = sum(r["outcome"] == "picked" for r in picks)
+    return {"n": len(picks), "ok": ok,
+            "ready": len(picks) >= READY_MIN_SAMPLES and ok >= READY_AGREEMENT * len(picks)}
 
 
 def _is_miss(r: dict) -> bool:
-    """Chỉ lỗi SẼ TỐN CÔNG khi tự giao: chọn nhầm tin Ông Chủ bỏ, hoặc giao sai designer.
-    "Gợi ý bỏ mà Ông Chủ chọn" thì rẻ — Ông Chủ vẫn tự chọn được như bây giờ."""
-    if r["outcome"] not in DECIDED:
-        return False
-    if r["outcome"] == "not_picked":
-        return r["suggested_pick"] is True
-    return (bool(r["actual_designers"]) and bool(r["suggested_designer"])
-            and r["suggested_designer"] not in r["actual_designers"])
-
-
-def _describe_miss(r: dict) -> str:
-    mine = role.display_name(r["suggested_designer"]) if r["suggested_designer"] else "?"
-    if r["outcome"] == "not_picked":
-        return f"gợi ý chọn → {mine}, bạn bỏ"
-    return f"gợi ý {mine}, bạn giao {'/'.join(role.display_name(d) for d in r['actual_designers'])}"
+    """Chỉ lỗi SẼ TỐN CÔNG khi tự chọn: gợi ý chọn một tin Ông Chủ đã bỏ. "Gợi ý bỏ mà
+    Ông Chủ chọn" thì rẻ — Ông Chủ vẫn tự chọn được như bây giờ."""
+    return r["outcome"] == "not_picked" and r["suggested_pick"] is True
 
 
 def evaluate(logged: dict, stories: dict, reviewed: set, now: datetime, days: int) -> dict:
@@ -340,15 +262,17 @@ def evaluate(logged: dict, stories: dict, reviewed: set, now: datetime, days: in
         st = stories.get(key)
         if st is None:                               # manifest đã bị cleanup.py xoá
             continue
-        rows.append({**s, "outcome": outcome(st, reviewed, now),
-                     "actual_designers": sorted(st["designers"]), "at": st["scanned_at"]})
+        rows.append({**s, "outcome": outcome(st, reviewed, now), "at": st["scanned_at"]})
     rows.sort(key=lambda r: r["at"])
     since = now - timedelta(days=days)
     recent = [r for r in rows if r["at"] >= since]
-    by_category = collections.defaultdict(list)
+    by_role, by_category = collections.defaultdict(list), collections.defaultdict(list)
+    for r in recent:
+        by_role[r["scan_role"]].append(r)
     for r in rows:
         by_category[r["category"]].append(r)
     return {"total": _tally(recent),
+            "roles": {k: _tally(rs) for k, rs in by_role.items()},
             "categories": {c: {"tally": _tally([r for r in rs if r["at"] >= since]),
                                "ready": _readiness(rs)} for c, rs in by_category.items()},
             "misses": [r for r in recent if _is_miss(r)][-5:][::-1],
@@ -361,54 +285,54 @@ def _ratio(a: int, b: int) -> str:
 
 def _status(r: dict) -> str:
     if r["ready"]:
-        return "✅ đủ điều kiện tự giao"
-    lacking = [f"{name} {n}/{READY_MIN_SAMPLES}" for name, n in
-               (("gợi ý chọn", r["pick_n"]), ("designer", r["designer_n"])) if n < READY_MIN_SAMPLES]
-    if lacking:
-        return "chưa đủ mẫu: " + ", ".join(lacking)
-    return (f"chưa khớp (chọn đúng {r['pick_ok']}/{r['pick_n']}, "
-            f"designer {r['designer_ok']}/{r['designer_n']})")
+        return "✅ đủ điều kiện tự chọn"
+    if r["n"] < READY_MIN_SAMPLES:
+        return f"chưa đủ mẫu ({r['n']}/{READY_MIN_SAMPLES})"
+    return f"chưa khớp ({r['ok']}/{r['n']})"
 
 
 def render(summary: dict, brand: str, days: int) -> str:
     t = summary["total"]
-    L = [f"<b>Ada · chạy bóng tự giao việc</b> ({html_escape(brand, quote=False)}, {days} ngày)",
-         "Chưa giao gì, chỉ so gợi ý với lựa chọn của bạn."]
+    L = [f"<b>Ada · chạy bóng tự chọn tin</b> ({html_escape(brand, quote=False)}, {days} ngày)",
+         "Chưa chọn gì, chỉ so gợi ý với lựa chọn của bạn."]
     if not t["decided"]:
-        L.append("Chưa có tin nào đã quyết để so.")
+        L.append("Chưa có headline nào đã quyết để so.")
         return "\n".join(L)
-    L += ["", f"<b>Tổng:</b> {t['decided']} tin đã quyết, bạn chọn {t['picked']}.",
+    L += ["", f"<b>Tổng:</b> {t['decided']} headline đã quyết, bạn chọn {t['picked']}.",
           f"• Gợi ý chọn đúng {_ratio(t['hit'], t['suggested'])}.",
-          f"• Bắt được {_ratio(t['hit'], t['picked_scored'])} tin bạn chọn.",
-          f"• Designer trùng {_ratio(t['designer_ok'], t['designer_n'])}."]
+          f"• Bắt được {_ratio(t['hit'], t['picked_scored'])} headline bạn chọn."]
     if t["no_suggestion"]:
-        L.append(f"• {t['no_suggestion']} tin chưa có gợi ý (thiếu dữ liệu).")
-    L += ["", "<b>Theo loại tin</b> (chọn đúng · bắt được · designer trùng)"]
+        L.append(f"• {t['no_suggestion']} headline chưa có gợi ý (thiếu dữ liệu).")
+    L += ["", "<b>Theo vai quét</b> (bạn chọn · gợi ý chọn đúng · bắt được)"]
+    for slug, rt in sorted(summary["roles"].items(), key=lambda kv: -kv[1]["decided"]):
+        if rt["decided"]:
+            L.append(f"• {html_escape(role.display_name(slug), quote=False)}: {rt['picked']}/{rt['decided']} · "
+                     f"{_ratio(rt['hit'], rt['suggested'])} · {_ratio(rt['hit'], rt['picked_scored'])}")
+    L += ["", "<b>Theo loại tin</b> (gợi ý chọn đúng · bắt được)"]
     for cat, c in sorted(summary["categories"].items(), key=lambda kv: -kv[1]["tally"]["decided"]):
         ct = c["tally"]
-        if not ct["decided"]:
-            continue
-        L.append(f"• {html_escape(cat or 'KHÁC', quote=False)}: {_ratio(ct['hit'], ct['suggested'])} · "
-                 f"{_ratio(ct['hit'], ct['picked_scored'])} · "
-                 f"{_ratio(ct['designer_ok'], ct['designer_n'])} → {_status(c['ready'])}")
+        if ct["decided"]:
+            L.append(f"• {html_escape(cat or 'KHÁC', quote=False)}: {_ratio(ct['hit'], ct['suggested'])} · "
+                     f"{_ratio(ct['hit'], ct['picked_scored'])} → {_status(c['ready'])}")
     if summary["misses"]:
-        L += ["", "<b>Gợi ý sai gần nhất</b> (chọn nhầm hoặc sai designer)"]
+        L += ["", "<b>Gợi ý chọn mà bạn đã bỏ</b> (gần nhất)"]
         for r in summary["misses"]:
             score = r["score"] if r["score"] is not None else "?"
-            L.append(f"• {html_escape(r['title'][:60], quote=False)} "
-                     f"({html_escape(r['category'] or 'KHÁC', quote=False)}, {score}): {_describe_miss(r)}")
+            L.append(f"• {html_escape(r['title'][:70], quote=False)} "
+                     f"({html_escape(r['category'] or 'KHÁC', quote=False)}, {score} điểm, "
+                     f"{html_escape(role.display_name(r['scan_role']), quote=False)})")
     if summary["pending"]:
-        L += ["", f"{summary['pending']} tin còn chờ bạn chọn, chưa tính."]
+        L += ["", f"{summary['pending']} headline còn chờ bạn chọn, chưa tính."]
     return "\n".join(L)
 
 
-def run(state: Path, now: datetime, available: set, days: int) -> tuple:
+def run(state: Path, now: datetime, days: int) -> tuple:
     """(số tin chấm mới, tóm tắt). Tách khỏi main để test chạy thẳng trên thư mục tạm."""
     stories = gather_stories(load_scans(state))
     reviewed = reviewed_days(stories)
     path = state / state_paths.DISPATCH_SHADOW_FILE
     logged = load_log(path)
-    new = score_new(stories, logged, reviewed, available, now)
+    new = score_new(stories, logged, reviewed, now)
     if new:
         with open(path, "a", encoding="utf-8") as fh:
             fh.writelines(json.dumps(r, ensure_ascii=False) + "\n" for r in new)
@@ -427,17 +351,17 @@ def send(text: str) -> bool:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Chạy bóng tự giao việc: chấm gợi ý, đo độ trùng với Ông Chủ")
+    ap = argparse.ArgumentParser(description="Chạy bóng tự chọn tin: chấm gợi ý, đo độ trùng với Ông Chủ")
     ap.add_argument("--days", type=int, default=30, help="khung ngày của số tổng (mặc định 30)")
     ap.add_argument("--send", action="store_true", help="gửi báo cáo vào topic Ada")
     a = ap.parse_args()
-    n, summary = run(env_load.state_dir(), datetime.now(timezone.utc), designers_available(), a.days)
+    n, summary = run(env_load.state_dir(), datetime.now(timezone.utc), a.days)
     text = render(summary, env_load.brand_long(), a.days)
     print(f"chấm {n} tin mới\n\n{text}")
     if not a.send:
         return 0
     if not summary["total"]["decided"]:
-        print("chưa có tin nào đã quyết, không gửi")
+        print("chưa có headline nào đã quyết, không gửi")
         return 0
     return 0 if send(text) else 1
 

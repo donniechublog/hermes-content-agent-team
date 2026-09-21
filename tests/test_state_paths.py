@@ -322,7 +322,7 @@ def test_scan_overflow_constants_are_declared():
 
 
 def _rows_dispatch_shadow() -> dict:
-    """LOW-349 (21/09/2026): log goi y chay bong tu giao viec — sinh ra da English
+    """LOW-349 (21/09/2026): log goi y chay bong tu chon tin — sinh ra da English
     san, cung kieu `_rows_publish_schedule`."""
     return {"DISPATCH_SHADOW_FILE": ("dispatch_shadow.jsonl", "state/<brand>/dispatch_shadow.jsonl")}
 
