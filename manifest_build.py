@@ -46,24 +46,6 @@ MAX_PICK = 8
 _norm = scan_common.standard_link          # mot ban duy nhat, xem scan_common
 
 
-def _score(gt, ten: str, hi: int, problems: list, tieu_de: str) -> tuple:
-    """Doc mot thanh phan diem cua vai: (diem da cat ve dai 0..hi, da_sua?).
-
-    Truoc 06/09/2026: `int(p.get(...))` no thang khi vai ghi "24 diem" hoac
-    null, va diem ngoai dai chi ghi mot dong stderr roi VAN vao manifest —
-    ma scan_submit nuot stderr khi rc=0 nen khong ai thay. Gio cat ve dai va ghi
-    chu tren bao cao, khong bao im lang, khong bat vai sua them mot vong."""
-    try:
-        d = int(gt)
-    except (TypeError, ValueError):
-        problems.append(f"{ten} khong phai so: {gt!r} -> 0 (bai: {tieu_de[:40]})")
-        return 0, True
-    if d < 0 or d > hi:
-        problems.append(f"{ten} phai 0-{hi}, nhan {d} -> cat ve dai (bai: {tieu_de[:40]})")
-        return max(0, min(hi, d)), True
-    return d, False
-
-
 def _item_from_pick(p: dict, c: dict, problems: list) -> dict:
     """Mot muc danh gia cua Finn + mot ung vien tu candidates.json -> mot muc
     manifest. Khong doc dia, khong ghi gi; moi thu can sua deu ghi vao
@@ -73,8 +55,8 @@ def _item_from_pick(p: dict, c: dict, problems: list) -> dict:
     if cat_xau:
         problems.append(f"category khong hop le: {cat!r} -> TOOL (bai: {c['title'][:40]})")
 
-    tech, sua_t = _score(p.get("score_technical", 0), "score_technical", 30, problems, c["title"])
-    rel, sua_r = _score(p.get("score_relevance", 0), "score_relevance", 20, problems, c["title"])
+    tech, sua_t = mc.score_part(p.get("score_technical", 0), "score_technical", 30, problems, c["title"])
+    rel, sua_r = mc.score_part(p.get("score_relevance", 0), "score_relevance", 20, problems, c["title"])
     ghi_chu = p.get("score_reason", "")
     if sua_t or sua_r or cat_xau:
         ghi_chu = (ghi_chu + " | script sua: "

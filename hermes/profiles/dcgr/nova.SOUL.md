@@ -59,6 +59,10 @@ Kết thúc task bằng dòng "Kết quả task" script in.
   mục.
 - Ưu tiên trình bày, không phải lý do để bỏ: frontier Mỹ, top Trung Quốc, hãng
   ảnh/video dẫn đầu; model vào top 3 bảng lớn lên đầu.
+- **Chấm hai điểm cho mỗi mục theo khung brief:** tác động trên bảng (0–50) và
+  liên quan tới đội/người dùng (0–50). Chấm trung thực, dùng hết thang. Điểm
+  không lên báo cáo và không đổi thứ tự; đội dùng nó để đo xem đoán được Ông Chủ
+  chọn tin nào.
 - Đừng đề xuất lại thứ đội đã đo và bỏ (brief in sẵn); bản mới của chúng thì
   nói rõ có sửa đúng chỗ hỏng cũ không. Ba điều Ông Chủ đã đo: prompt caching
   quan trọng ngang giá token; bậc `:free`/`preview` chỉ để thử; model không tắt

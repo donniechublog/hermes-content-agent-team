@@ -21,6 +21,11 @@ import scan_common                                            # noqa: E402
 VN = scan_common.VN
 NAME_ROLE = scan_common.NAME_ROLE
 
+# Vai duoc in diem "[85đ]" canh so thu tu. Nova/Vera co diem tu LOW-352 nhung CO Y
+# khong in: Ong Chu thay diem thi de chon theo, va chay bong (dispatch_shadow) do
+# sai do trung giua diem va lua chon that. Finn giu nhu truoc.
+SCORE_IN_REPORT = ("finn",)
+
 MENTION = ("Trả lời số thứ tự để tạo bài. Thêm tên vai dựng ảnh nếu muốn:\n"
         "<code>1</code> · <code>1, 2</code> · <code>1, 2 - Ethan</code>")
 
@@ -39,7 +44,7 @@ def use(items: list, vai: str, ngay: str = None, tieu_de_phu: str = "") -> str:
     # doc khi tao task, nhung KHONG len bao cao — Ong Chu doc luot 12 tin trong
     # mot man hinh.
     for it in items:
-        diem = it.get("score")
+        diem = it.get("score") if vai in SCORE_IN_REPORT else None
         dau = f"<b>{it['index']}.</b>" + (f" [{diem}đ]" if diem is not None else "")
         phu = " · ".join(x for x in (it.get("via"), it.get("source_note")) if x)
         d.append(f"{dau} {it.get('title', '')}" + (f" <i>({phu})</i>" if phu else "")

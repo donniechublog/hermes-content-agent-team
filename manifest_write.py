@@ -13,7 +13,8 @@ nguon, dong dau thoi gian.
 Dung:
     venv/bin/python manifest_write.py --vai nova --in /tmp/nova.json
     (tep vao: [{"title":..., "link":..., "summary_vi":..., "score_reason":...,
-                "category":..., "source_note":...}, ...])
+                "category":..., "source_note":...}, ...]; Nova/Vera them
+                "score_impact" + "score_relevance" 0-50 — LOW-352)
 """
 import argparse
 import json
@@ -41,6 +42,14 @@ PREFIX = {"nova": "nova_candidates", "market": "vera_candidates",
 # BUSINESS.
 LABEL_DEFAULT = {"nova": "MODEL", "qinn": "TOOL"}
 
+# LOW-352 (21/09/2026): Nova/Vera tu cham diem 0-100 = hai thanh phan 0-50 vai
+# viet trong list.json, de chay bong (dispatch_shadow, LOW-349) doan duoc tin nao
+# Ong Chu chon o dcgr. KHONG co phan co hoc nhu Finn: do tren lich su that, so bao
+# va do moi khong doan duoc gi (tin 1 bao duoc chon 22%, 2 bao 12%, 3-4 bao 27%);
+# con o Finn thanh phan LLM "lien quan" doan manh nhat (18-20 diem -> 85%).
+SCORED_ROLES = ("nova", "vera")
+SCORE_PARTS = (("score_impact", 50), ("score_relevance", 50))
+
 
 import required                                             # noqa: E402
 import vietnamese                                           # noqa: E402
@@ -58,6 +67,27 @@ def _count_report(t: dict) -> str:
         ai = t.get("author") or ""
         return f"{ai} · {t['x_source']}" if ai else str(t["x_source"])
     return f"{t.get('outlet_count', 1)} báo: {', '.join(t.get('outlets', [])[:3]) or t.get('outlet', '')}"
+
+
+def role_score(it: dict, i: int) -> tuple:
+    """(score | None, score_reason, {thanh phan}) cho mot muc Nova/Vera nop.
+
+    Thieu ca hai thanh phan -> score None: bao cao sang van phai di, mot muc
+    khong diem chi lam chay bong thieu mot mau. Diem sai dai / khong phai so thi
+    cat ve dai va ghi "script sua" vao score_reason, cung luat voi Finn."""
+    reason = str(it.get("score_reason") or "")
+    if not any(key in it for key, _ in SCORE_PARTS):
+        print(f"[canh bao] muc {i} thieu diem ({', '.join(k for k, _ in SCORE_PARTS)}) — "
+              "manifest ghi score null", file=sys.stderr)
+        return None, reason, {}
+    problems, parts = [], {}
+    for key, high in SCORE_PARTS:
+        parts[key], _ = mc.score_part(it.get(key), key, high, problems, str(it.get("title") or ""))
+    for p in problems:
+        print(f"[canh bao] muc {i}: {p}", file=sys.stderr)
+    if problems:
+        reason = (reason + " | script sua: " + "; ".join(problems)).strip(" |")
+    return sum(parts.values()), reason, parts
 
 
 def _item_from_submit(it: dict, i: int, nguon: list, vai: str, vai_bb: str) -> dict | None:
@@ -106,6 +136,9 @@ def _item_from_submit(it: dict, i: int, nguon: list, vai: str, vai_bb: str) -> d
     tom, canh = mc.single_summary(it.get("summary_vi"), f"muc {i}")
     for c in canh:
         print(f"[canh bao] {c}", file=sys.stderr)
+    score, reason, parts = it.get("score"), it.get("score_reason") or "", {}
+    if vai_bb in SCORED_ROLES:
+        score, reason, parts = role_score(it, i)
     return {
         "title": it["title"],
         "link": link,
@@ -113,8 +146,9 @@ def _item_from_submit(it: dict, i: int, nguon: list, vai: str, vai_bb: str) -> d
         "via": it.get("via") or source_original(link) or "",
         "source_note": it.get("source_note") or "",
         "summary_vi": tom,
-        "score": it.get("score"),
-        "score_reason": it.get("score_reason") or "",
+        "score": score,
+        "score_reason": reason,
+        **parts,
         "category": it.get("category") or LABEL_DEFAULT.get(vai, "BUSINESS"),
         "image_url": it.get("image_url"),
         "picked": False,
