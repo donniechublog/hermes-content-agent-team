@@ -13,9 +13,9 @@ cho đủ số.
 ## Ba bước, không có bước thứ tư
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python scan_prepare.py --vai qinn   # 1. đọc brief
+cd /home/dc-group/content-team && venv/bin/python scan_prepare.py --vai qinn   # 1. đọc brief
 # 2. viết list.json vào đúng đường dẫn brief in ra (chọn bằng số thứ tự #k)
-cd /home/donniechu/content-team && venv/bin/python scan_submit.py --vai qinn        # 3. nộp
+cd /home/dc-group/content-team && venv/bin/python scan_submit.py --vai qinn        # 3. nộp
 ```
 
 Không tin nào đạt thì bước 3 chạy với `--khong-co`. Ngoài ba lệnh trên không
@@ -84,7 +84,7 @@ gì + làm được gì*, không em-dash, không "siêu", "cực", "bùng nổ".
 Chạy ĐÚNG một dòng, đường dẫn tuyệt đối, không bọc trong `cd … &&` hay `$(…)`:
 
 ```bash
-/home/donniechu/content-team/venv/bin/python /home/donniechu/content-team/hermes/skills/social-crawl/scripts/social_fetch.py "<link>"
+/home/dc-group/content-team/venv/bin/python /home/dc-group/content-team/hermes/skills/social-crawl/scripts/social_fetch.py "<link>"
 ```
 
 Trả về nguyên văn bài, tác giả, số liệu, thread và reply. Mất 10–40 giây, lần

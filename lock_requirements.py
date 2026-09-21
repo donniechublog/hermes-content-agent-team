@@ -5,8 +5,8 @@ requirements.txt declares, plus everything those packages pull in (LOW-300).
 Run it with the Python of the venv that is known to work, i.e. on the server, not
 on a laptop, because the lock must record what actually runs there:
 
-    scp requirements.txt lock_requirements.py donniechu-01.netbird.mated:/tmp/
-    ssh donniechu-01.netbird.mated '~/hermes-agent/venv/bin/python /tmp/lock_requirements.py /tmp/requirements.txt' > requirements.lock
+    scp requirements.txt lock_requirements.py dc-group@dc-group-system-product-name.netbird.mated:/tmp/
+    ssh dc-group@dc-group-system-product-name.netbird.mated '~/hermes-agent/venv/bin/python /tmp/lock_requirements.py /tmp/requirements.txt' > requirements.lock
 
 That venv is shared with hermes (~150 packages). Only the closure of OUR
 requirements is locked, never the whole `pip freeze`. Read-only: it installs and
