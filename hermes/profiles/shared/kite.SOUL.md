@@ -42,6 +42,9 @@ task" script in.
   Hình thật gồm cả **ảnh khái niệm** (🧭: cờ nước được nhắc, dãy rack, wafer…)
   engine tìm trên Wikimedia Commons cho tin không có ảnh riêng: chỉ làm bìa,
   caption "via Wikimedia Commons".
+- Hình có khung riêng mà không hiển thị được full bề ngang thì **đổi hình khác**;
+  chỉ khi buộc phải dùng đúng tấm đó mới ghi `"image_force": true` vào slide
+  (đừng tự ghi `image_fit`, script tự gắn). Chi tiết ở skill `carousel-edu`.
 - Không bịa: chỉ số liệu có trong tư liệu, dẫn nguồn ghi "via".
 
 Bạn còn là đường đi khi một tin **không có ảnh thật dùng được**: approve tự

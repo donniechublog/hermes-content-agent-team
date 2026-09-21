@@ -560,6 +560,8 @@ FIG_BOTTOM_FLAT = 0.63   # anh nen PHANG dung o day; duoi la mat phang sach cho 
 # blur ca anh lam nen = KHONG BAO GIO, mo phan anh nam duoi tit/subtitle = CO.
 DARK_MAX_OPEN = 0.93   # do dac toi da cua lop tint mau theme phu len phan mo
 VEIL_SPAN = 64         # px: be day duong cong chuyen tiep, bat dau NGAY tai dong chu dau
+VEIL_LEAD = 48         # px: dai phu bat dau SOM hon dong chu dau chung nay, de kicker nam tren phan da phu (LOW-345)
+FLAT_TEXT_GAP = 8       # px: anh nen phang ket thuc TREN dong chu dau it nhat chung nay (LOW-345)
 
 
 # Mot tam anh bi soi di soi lai: cong chan doc no, cong chan 2 dong dung slide
@@ -1038,6 +1040,42 @@ def _artifact_depth(g, side, ground_luma):
     return depth
 
 
+HAIRLINE_MAX = 0.006        # vien hairline: day toi da 0,6% canh (>= 2px)
+HAIRLINE_STD_MAX = 12       # dong ngoai cung phai gan nhu MOT MAU (vach ke, khong phai nen anh)
+
+
+def hairline_box(p):
+    """(x0, y0, x1, y1) sau khi bo VIEN HAIRLINE o mep, hoac None neu khong co (LOW-347).
+
+    Ap cho MOI anh Kite (khong chi anh trong che do co). Do tren 133 anh Kite that (21/09/2026):
+    bo dai mep tong quat (`_artifact_depth` toi 6% canh) danh dau 23 anh, phan lon la NOI DUNG
+    that (le dem 4:5, chu thich duoi bieu do, nhan truc, vien giao dien, mep anh chup nguoi) nen
+    khong ap dai tra. Chi nhom hairline (<= 0,6% canh, dong ngoai cung mot mau, lech manh so
+    voi long anh) moi an toan: 3/5 anh trong nhom la vach thua that (vien hong 2px bang
+    ukisai, vach do 13px bang paper bellman, vach do 1px anh chup Gemini); thanh nhan cam 7px
+    cua anh Elon (1,1% canh) va vet toi 25px anh Infineon (khong deu mau) thi GIU."""
+    from PIL import Image, ImageStat
+    try:
+        with Image.open(p) as im:
+            g = im.convert("L")
+    except OSError:                      # tep cut cut/hong: de duong cu tu xu ly, khong lam sap render
+        return None
+    w, h = g.size
+    sides = {}
+    for side in ("top", "bottom", "left", "right"):
+        span = h if side in ("top", "bottom") else w
+        depth = _artifact_depth(g, side, -1000)
+        if not depth or depth > max(2, int(span * HAIRLINE_MAX)):
+            continue
+        outer = {"top": (0, 0, w, 1), "bottom": (0, h - 1, w, h),
+                 "left": (0, 0, 1, h), "right": (w - 1, 0, w, h)}[side]
+        if ImageStat.Stat(g.crop(outer)).stddev[0] <= HAIRLINE_STD_MAX:
+            sides[side] = depth
+    if not sides:
+        return None
+    return (sides.get("left", 0), sides.get("top", 0), w - sides.get("right", 0), h - sides.get("bottom", 0))
+
+
 def content_box(p, ground):
     """Hop noi dung (x0, y0, x1, y1, toa do pixel anh goc) sau khi bo (1) vien PHANG cung mau
     `ground` va (2) dai vien THUA (thanh trang, vach mong o mep — Ong Chu 21/09/2026: "nhung
@@ -1167,6 +1205,11 @@ def image_make_background(sl, th, ten):
             force_photo, crop_box = True, fit["box"]
             if crop_box:
                 iw, ih = crop_box[2] - crop_box[0], crop_box[3] - crop_box[1]
+    if crop_box is None:
+        # LOW-347: vien hairline (vach 1-13px o mep) bo cho MOI anh, khong chi anh trong che do co.
+        crop_box = _small(("hairline", str(p)), lambda: hairline_box(p))
+        if crop_box:
+            iw, ih = crop_box[2] - crop_box[0], crop_box[3] - crop_box[1]
     kieu, mau_nen, nen_sang = read_background(p)
     if force_photo:
         kieu = "mo"
@@ -1195,6 +1238,16 @@ def image_make_background(sl, th, ten):
                f'<img class="fig-sac fig-doi" src="{uri}" alt="" '
                f'style="top:{y0}px;height:{cao}px;object-position:top;{mo_day}">'
                f'</div>')
+        # LOW-345: khoi chu dai co the bat dau SOM hon FIG_BOTTOM_FLAT; anh phang chi duoc ket thuc
+        # (va tan dan) TREN dong chu dau, khong thi hang cuoi cua bang lot ra sau kicker.
+        nen += (f'<script>window.__datMan=function(){{'
+                f'var im=document.querySelector(".figwrap .fig-doi"),t=document.getElementById("figtxt");'
+                f'if(!im||!t)return;'
+                f'var lim=t.getBoundingClientRect().top-{FLAT_TEXT_GAP};'
+                f'if({y0}+{cao}<=lim)return;'
+                f'im.style.height=Math.max(1,Math.floor(lim-{y0}))+"px";'
+                f'var g="linear-gradient(to bottom,#000 calc(100% - 130px),transparent 100%)";'
+                f'im.style.maskImage=g;im.style.webkitMaskImage=g;}};</script>')
         if nen_sang:
             nen += _css_mast_dark() + _css_text_dark_region("#figtxt", th)
         return nen, ""
@@ -1228,7 +1281,7 @@ def image_make_background(sl, th, ten):
            f'var top=t?t.getBoundingClientRect().top:H*0.58;'
            f'if(Y0+CAO<=top){{v.style.display="none";m.style.display="none";return;}}'
            f'v.style.display="block";m.style.display="block";'
-           f'var tren=top,day=Math.min(H,top+{VEIL_SPAN});'
+           f'var tren=Math.max(0,top-{VEIL_LEAD}),day=Math.min(H,top+{VEIL_SPAN}-{VEIL_LEAD});'
            f'var span=Math.max(1,H-tren);var st=[],sm=[];'
            f'for(var i=0;i<=16;i++){{'
            f'var q=i/16,ss=q*q*(3-2*q),y=tren+(day-tren)*q,'

@@ -146,8 +146,10 @@ def test_real_render_whole_figure_stays_above_text_zone():
     assert top is not None and bottom / h <= limit + 0.01, (top, bottom, h, limit)
     assert top / h >= re_.FIG_FIXED / re_.H - 0.01, "hình không được tràn lên masthead"
     _, old_bottom, old_h = _red_rows(_render_slide(art, image_fit=False))
-    assert old_bottom / old_h > limit + 0.05, (
-        "ảnh không co lẽ ra phải tràn xuống dưới vùng trên chữ (lỗi gốc LOW-339)", old_bottom / old_h)
+    # Từ LOW-345 ảnh không co cũng dừng ở dòng chữ đầu (không còn tràn sau chữ), nhưng vẫn thấp hơn
+    # đáy ảnh đã co (63% khung): đủ để chứng minh chế độ co mới là thứ giữ hình trong vùng.
+    assert old_bottom / old_h > bottom / h + 0.01, (
+        "ảnh không co lẽ ra phải thấp hơn ảnh đã co (lỗi gốc LOW-339)", old_bottom / old_h, bottom / h)
 
 
 def _padded_canvas():
