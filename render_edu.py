@@ -1040,6 +1040,42 @@ def _artifact_depth(g, side, ground_luma):
     return depth
 
 
+HAIRLINE_MAX = 0.006        # vien hairline: day toi da 0,6% canh (>= 2px)
+HAIRLINE_STD_MAX = 12       # dong ngoai cung phai gan nhu MOT MAU (vach ke, khong phai nen anh)
+
+
+def hairline_box(p):
+    """(x0, y0, x1, y1) sau khi bo VIEN HAIRLINE o mep, hoac None neu khong co (LOW-347).
+
+    Ap cho MOI anh Kite (khong chi anh trong che do co). Do tren 133 anh Kite that (21/09/2026):
+    bo dai mep tong quat (`_artifact_depth` toi 6% canh) danh dau 23 anh, phan lon la NOI DUNG
+    that (le dem 4:5, chu thich duoi bieu do, nhan truc, vien giao dien, mep anh chup nguoi) nen
+    khong ap dai tra. Chi nhom hairline (<= 0,6% canh, dong ngoai cung mot mau, lech manh so
+    voi long anh) moi an toan: 3/5 anh trong nhom la vach thua that (vien hong 2px bang
+    ukisai, vach do 13px bang paper bellman, vach do 1px anh chup Gemini); thanh nhan cam 7px
+    cua anh Elon (1,1% canh) va vet toi 25px anh Infineon (khong deu mau) thi GIU."""
+    from PIL import Image, ImageStat
+    try:
+        with Image.open(p) as im:
+            g = im.convert("L")
+    except OSError:                      # tep cut cut/hong: de duong cu tu xu ly, khong lam sap render
+        return None
+    w, h = g.size
+    sides = {}
+    for side in ("top", "bottom", "left", "right"):
+        span = h if side in ("top", "bottom") else w
+        depth = _artifact_depth(g, side, -1000)
+        if not depth or depth > max(2, int(span * HAIRLINE_MAX)):
+            continue
+        outer = {"top": (0, 0, w, 1), "bottom": (0, h - 1, w, h),
+                 "left": (0, 0, 1, h), "right": (w - 1, 0, w, h)}[side]
+        if ImageStat.Stat(g.crop(outer)).stddev[0] <= HAIRLINE_STD_MAX:
+            sides[side] = depth
+    if not sides:
+        return None
+    return (sides.get("left", 0), sides.get("top", 0), w - sides.get("right", 0), h - sides.get("bottom", 0))
+
+
 def content_box(p, ground):
     """Hop noi dung (x0, y0, x1, y1, toa do pixel anh goc) sau khi bo (1) vien PHANG cung mau
     `ground` va (2) dai vien THUA (thanh trang, vach mong o mep — Ong Chu 21/09/2026: "nhung
@@ -1169,6 +1205,11 @@ def image_make_background(sl, th, ten):
             force_photo, crop_box = True, fit["box"]
             if crop_box:
                 iw, ih = crop_box[2] - crop_box[0], crop_box[3] - crop_box[1]
+    if crop_box is None:
+        # LOW-347: vien hairline (vach 1-13px o mep) bo cho MOI anh, khong chi anh trong che do co.
+        crop_box = _small(("hairline", str(p)), lambda: hairline_box(p))
+        if crop_box:
+            iw, ih = crop_box[2] - crop_box[0], crop_box[3] - crop_box[1]
     kieu, mau_nen, nen_sang = read_background(p)
     if force_photo:
         kieu = "mo"
