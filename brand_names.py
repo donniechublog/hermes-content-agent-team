@@ -116,7 +116,7 @@ def line_segments(line: str) -> list:
         segs, family = [], False
         if key is None and "/" in core:
             org, model = core.rsplit("/", 1)
-            (k_model, f_model), (k_org, _f) = _key_in(model), _key_in(org)
+            (k_model, f_model), k_org = _key_in(model), _key_in(org)[0]
             key, family = k_model or k_org, f_model
             if key and model:
                 segs = [(org + "/", "org", key), (model, "name", key)]
