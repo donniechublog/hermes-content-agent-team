@@ -131,6 +131,20 @@ def test_ethan_line_is_colored_and_width_matches_drawing():
     assert abs((x0 + card._empty_line(d, dong, f)) - right) <= 6, (right, card._empty_line(d, dong, f))
 
 
+def test_ethan_quote_card_colors_model_name():
+    """The Ethan kieu QUOTE: cau quote la tieu de — ban dung that 21/09 chi doi mau
+    dau ngoac, ten model trong cau van trang."""
+    card.set_brand("donniechublog")
+    with tempfile.TemporaryDirectory() as t:
+        src = Path(t) / "bg.png"
+        Image.new("RGB", (1080, 1350), (25, 35, 55)).save(src)
+        out = Path(t) / "q.png"
+        card._render_quote(str(src), "DeepSeek-V4.1-Flash: 552 tỷ tham số, GPQA 90.9",
+                           "via Hugging Face", str(out), "donniechublog", "4:5", tagline="MODEL RELEASE")
+        im = Image.open(out).convert("RGB")
+    assert _count_near(im, card.brand_fill(("DEEPSEEK",), "name")) > 1500, "ten model trong quote phai to"
+
+
 def test_ethan_long_card_stays_single_color():
     """che_do None (the tin kieu dai) — khong to gi, nhu truoc."""
     card.set_brand("donniechublog")

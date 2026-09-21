@@ -115,13 +115,14 @@ BRAND = {
 # Gia tri mac dinh; build() ghi de theo --brand
 BG = BG_CARD = FG = MUTED = ACCENT = ACCENT_DIM = CYAN = LINE = None
 BRAND_NAME_FALLBACK = (255, 176, 32)   # nap lai theo thuong hieu o set_brand
+CURRENT_BRAND: dict = {}               # cau hinh thuong hieu dang nap (set_brand)
 THRESHOLD_BACKGROUND_BRIGHT = None    # diem sang nen (0..255) FG/BG hoa nhau — dat qua set_brand
 
 
 def set_brand(ten: str):
     """Nap bang mau cua mot thuong hieu."""
     global BG, BG_CARD, FG, MUTED, ACCENT, ACCENT_DIM, CYAN, LINE, THRESHOLD_BACKGROUND_BRIGHT
-    global BRAND_NAME_FALLBACK
+    global BRAND_NAME_FALLBACK, CURRENT_BRAND
     b = BRAND.get(ten)
     if b is None:
         raise SystemExit(f"Khong biet thuong hieu {ten!r}. "
@@ -141,6 +142,7 @@ def set_brand(ten: str):
     # FG = trang) thi lay mau thu ba cua kenh.
     BRAND_NAME_FALLBACK = CYAN if text_bg.ratio_wall_part(CYAN, FG) >= 1.5 \
         else tuple(b.get("fallback_company_color", (255, 176, 32)))
+    CURRENT_BRAND = b
     return b
 
 TITLE_SIZE_HI, TITLE_SIZE_LO = 56, 38
@@ -1078,10 +1080,13 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", cluttered=
     mau_nguon = (_color_change_background_hide_whole(canvas, (0, src_top, W, src_top + at_h))
                  if at_lines else mau_chu)
 
-    # Cac dong quote, canh trai (thut vao TEXT_X).
+    # Cac dong quote, canh trai (thut vao TEXT_X). Cau quote LA tieu de cua the
+    # kieu quote nen cung to ten hang/ten model (LOW-344), nhu `_about_line`.
     qy = first_line_top
     for ln, mau_ln in zip(q_lines, mau_dong):
-        d.text((TEXT_X, qy - tren), ln, font=f_q, fill=mau_ln)
+        draw_brand_line(d, TEXT_X, qy - tren, ln, f_q, mau_ln,
+                        colored=bool(CURRENT_BRAND.get("company_name_color")),
+                        nen_sang=(mau_ln == BG))
         qy += buoc
 
     # MAU: net khung dung CYAN cua bo nhan dien (nhu ten kenh, dong tong voi the
