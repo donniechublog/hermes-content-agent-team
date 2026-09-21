@@ -699,8 +699,13 @@ def card_logo(tep_logo, out, brand: str = "donniechublog"):
     lg = _trim_logo_margin(lg)
     px = lg.convert("RGBA")
     light_background = (245, 245, 245)
-    nen = (light_background if _hidden_pixel_count(px, light_background) <= _hidden_pixel_count(px, card.BG)
-           else card.BG)
+    # LOW-337 (Ong Chu 21/09/2026): *"qwen can dat tren nen sang giong cac model khac, ko su dung
+    # nen toi, tru phi la logo am ban"*. Truoc day chon nen lam IT diem logo chim nhat — logo Qwen co
+    # mot mang trang nho ben trong luc giac nen ra nen toi. Nay mac dinh nen SANG; chi nen toi khi
+    # logo la AM BAN (phan lon diem anh cua logo chim tren nen sang).
+    hidden_light = _hidden_pixel_count(px, light_background)
+    nen = (card.BG if hidden_light > NEGATIVE_LOGO_SHARE * max(1, _opaque_pixel_count(px))
+           and hidden_light > _hidden_pixel_count(px, card.BG) else light_background)
     im = Image.new("RGB", (w, h), nen)
     rong = int(w * LOGO_CARD_WIDTH)
     cao = max(1, round(lg.height * rong / lg.width))
@@ -744,6 +749,16 @@ def _trim_logo_margin(lg):
                     for pr, pg, pb, pa in lg.getdata()])
     bbox = lg.getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox()
     return lg.crop(bbox) if bbox else lg
+
+
+NEGATIVE_LOGO_SHARE = 0.5     # > nua diem anh logo chim tren nen sang = logo am ban -> nen toi
+
+
+def _opaque_pixel_count(px) -> int:
+    """So diem anh DUC cua logo, do cung ban thu nho voi `_hidden_pixel_count`."""
+    small = px.copy()
+    small.thumbnail((300, 300))
+    return sum(1 for p in small.getdata() if p[3] > 128)
 
 
 def _hidden_pixel_count(px, background) -> int:
