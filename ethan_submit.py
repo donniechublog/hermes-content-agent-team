@@ -233,6 +233,8 @@ def main() -> int:
         args.append("--cluttered")
     if role.is_brand_logo_card(kq["image"]) and not kq["image2"]:
         args.append("--logo-card")        # LOW-337: the logo 4:5 la hero, khong phai chart di mot minh
+        if kq["card_style"] != "quote":
+            args += ["--ratio", "4:5"]    # the logo da la 4:5; ti le tu do keo the cao 0.65, trang mot khoang lon
     if kq["card_style"] == "quote":
         hook = str(spec["hook"]).strip()
         args += ["--ratio", "4:5", "--title", hook, "--tagline", str(spec["tagline"]).strip().upper(),
