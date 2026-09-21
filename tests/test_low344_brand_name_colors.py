@@ -38,7 +38,11 @@ def test_whole_model_name_is_one_colored_chunk():
     ca = {
         "DEEPSEEK-V4.1-FLASH THẢ TRỌNG SỐ": [("DEEPSEEK-V4.1-FLASH", "name", "DEEPSEEK")],
         "QWEN-IMAGE-2.1 LÊN TOP": [("QWEN-IMAGE-2.1", "name", "QWEN")],
+        # viet hoa toan bo: khong biet "LUNA" la ten hay chu thuong -> chi noi tu co so
         "GPT-5.6 LUNA ĐÁNH BẠI GPT-6": [("GPT-5.6", "name", "OPENAI"), ("GPT-6", "name", "OPENAI")],
+        "GPT-5.6 Luna đánh bại GPT-6": [("GPT-5.6", "name", "OPENAI"), ("Luna", "name", "OPENAI"),
+                                         ("GPT-6", "name", "OPENAI")],
+        "Fable 5 hạ giá": [("Fable", "name", "CLAUDE"), ("5", "name", "CLAUDE")],
         "CLAUDE-OPUS-5 RA MẮT": [("CLAUDE-OPUS-5", "name", "CLAUDE")],
         "LLAMA4 SCOUT": [("LLAMA4", "name", "LLAMA")],
         "QWEN3.8-27B": [("QWEN3.8-27B", "name", "QWEN")],
@@ -201,7 +205,8 @@ def test_kite_title_with_brand_drops_accent():
 def test_kite_mono_brand_uses_theme_accent_and_light_region_css():
     th = render_edu.THEMES["ink"]
     h = render_edu.accent_html("GPT-5.6 Luna đánh bại GPT-6", None, th)
-    assert h.count('class="brand"') == 2 and f"--bc:{th['a'].upper()}" in h, h
+    # ca cum ten model "GPT-5.6 Luna" (tu noi tiep ho model, LOW-343) + "GPT-6"
+    assert h.count('class="brand"') == 3 and ">Luna</span>" in h and f"--bc:{th['a'].upper()}" in h, h
     css = render_edu._css_text_dark_region("#figtxt", th)
     assert ".brand{color:var(--bcd);}" in css
     assert ".brand{color:var(--bc);}" in render_edu.base_css(dict(th, hero=None))

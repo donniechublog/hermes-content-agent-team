@@ -27,6 +27,27 @@ import re
 
 # Tu khong nam trong `card.BRAND_FROM` (bang to ten hang cua Ethan).
 BRAND_ALIAS = {"GPT": ("OPENAI",), "HUGGINGFACE": ("HUGGING", "FACE")}
+# HO MODEL -> hang (gop tu LOW-343, Ong Chu 21/09/2026: "ko thay doi mau keyword quan
+# trong?"): ten model khong kem ten hang ("Fable 5", "Veo 4", "Nemotron") van phai to,
+# va sau mot ho model thi cac tu noi tiep (phien ban, bien the: "Gemini Omni Flash",
+# "GPT-6 Astra Max") thuoc cung cum. Hang khong co mau rieng (GLM, MiniMax) -> khoa
+# rieng khong co trong COLOR_RANK -> `colors_for` tra mau du phong noi bat.
+MODEL_FAMILY = {
+    "QWEN": ("QWEN",), "WAN": ("QWEN",),
+    "GEMINI": ("GEMINI",), "GEMMA": ("GEMINI",), "VEO": ("GEMINI",),
+    "CLAUDE": ("CLAUDE",), "FABLE": ("CLAUDE",), "OPUS": ("CLAUDE",),
+    "SONNET": ("CLAUDE",), "HAIKU": ("CLAUDE",),
+    "GPT": ("OPENAI",), "CHATGPT": ("OPENAI",), "SORA": ("OPENAI",),
+    "GROK": ("GROK",), "LLAMA": ("LLAMA",), "MUSE": ("META",),
+    "DEEPSEEK": ("DEEPSEEK",), "MISTRAL": ("MISTRAL",), "MAGISTRAL": ("MISTRAL",),
+    "DEVSTRAL": ("MISTRAL",), "CODESTRAL": ("MISTRAL",), "KIMI": ("KIMI",),
+    "NEMOTRON": ("NVIDIA",), "PHI": ("MICROSOFT",),
+    "SEEDANCE": ("BYTEDANCE",), "SEEDREAM": ("BYTEDANCE",), "DOUBAO": ("BYTEDANCE",),
+    "GLM": ("GLM",), "MINIMAX": ("MINIMAX",), "HAILUO": ("MINIMAX",),
+    "HUNYUAN": ("TENCENT",), "ERNIE": ("BAIDU",),
+}
+# Tu noi tiep mot ho model: bat dau hoa/so, chi gom chu Latin/so/.-+ ("Omni", "2.0", "Max").
+_MODEL_TAIL = re.compile(r"^[A-Z0-9][A-Za-z0-9.\-+]*$")
 # Cat mot tu ghep thanh cac manh de do ten hang: gach noi/cheo/cham/cong, va
 # chu dinh so phien ban ("QWEN3.8" -> QWEN, 3.8; "LLAMA4" -> LLAMA, 4).
 _SPLIT = re.compile(r"[-/:_.+]+")
@@ -40,20 +61,23 @@ def _parts(core: str) -> list:
     return [p for p in _SPLIT.split(_LETTER_DIGIT.sub(" ", core).replace(" ", "-").upper()) if p]
 
 
-def _key_in(core: str):
-    """Khoa hang dau tien nam trong mot tu ghep (co ca cum nhieu manh nhu
-    META-AI, HUGGING-FACE), hoac None."""
+def _key_in(core: str) -> tuple:
+    """(khoa_hang, la_ho_model) cua ten hang/ho model dau tien trong mot tu ghep
+    (co ca cum nhieu manh nhu META-AI, HUGGING-FACE), hoac (None, False)."""
     import card
     parts = _parts(core)
     for i in range(len(parts)):
         for cum in card.BRAND_PHRASE:
             if tuple(parts[i:i + len(cum)]) == cum:
-                return cum
-        if parts[i] in card.BRAND_FROM:
-            return (parts[i],)
-        if parts[i] in BRAND_ALIAS:
-            return BRAND_ALIAS[parts[i]]
-    return None
+                return cum, False
+        p = parts[i]
+        if p in MODEL_FAMILY:
+            return MODEL_FAMILY[p], True
+        if p in card.BRAND_FROM:
+            return (p,), False
+        if p in BRAND_ALIAS:
+            return BRAND_ALIAS[p], False
+    return None, False
 
 
 def _split_punct(word: str) -> tuple:
@@ -67,35 +91,66 @@ def _split_punct(word: str) -> tuple:
 
 
 def line_segments(line: str) -> list:
-    """Cat mot dong thanh TU (theo dau cach, nhu cach Ethan ve), moi tu la danh
+    """Cat mot doan chu thanh TU (theo dau cach, nhu cach Ethan ve), moi tu la danh
     sach khuc `(chu, vai, khoa_hang)` noi lien lai dung bang tu goc.
 
     vai: None (chu thuong) | "name" (ten hang / ten model) | "org" (tien to to
-    chuc truoc dau "/"). Tu khong dinh ten hang tra ve dung mot khuc vai None."""
+    chuc truoc dau "/"). Tu khong dinh ten hang tra ve dung mot khuc vai None.
+
+    Sau mot HO MODEL, cac tu noi tiep dang ten/phien ban (`_MODEL_TAIL`: "Omni",
+    "5.1", "Max") thuoc cung cum ten model, toi dau cau hoac tu thuong thi dung
+    (LOW-343). Doan chu da viet hoa toan bo thi khong phan biet duoc "RA" voi "MAX"
+    — luc do chi noi them tu co so ("V4", "5.1"). Nen tinh tren tieu de GOC roi
+    `restyle` sang dong da viet hoa (the Ethan)."""
     import card
     words = line.split(" ")
     exact = card._extract_label(line)          # cum nhieu tu cach dau cach: HUGGING FACE, META AI
-    out = []
+    all_upper = line == line.upper()
+    out, cluster = [], None                    # cluster: khoa cua cum ten model dang mo
     for word, (_w, key) in zip(words, exact, strict=True):
         lead, core, trail = _split_punct(word)
-        segs = []
         if not core:
             out.append([(word, None, None)])
+            cluster = None
             continue
+        segs, family = [], False
         if key is None and "/" in core:
             org, model = core.rsplit("/", 1)
-            k_model, k_org = _key_in(model), _key_in(org)
-            key = k_model or k_org
+            (k_model, f_model), (k_org, _f) = _key_in(model), _key_in(org)
+            key, family = k_model or k_org, f_model
             if key and model:
                 segs = [(org + "/", "org", key), (model, "name", key)]
         if not segs:
-            key = key or _key_in(core)
+            if key is None:
+                key, family = _key_in(core)
+            elif key[0] in MODEL_FAMILY:
+                family = True
+            if key is None and cluster and not lead and _MODEL_TAIL.match(core)                     and (not all_upper or any(c.isdigit() for c in core)):
+                key = cluster                   # tu noi tiep cum ten model
             segs = [(core, "name", key)] if key else [(core, None, None)]
+        cluster = key if (key and (family or cluster == key) and not trail) else None
         if lead:
             segs.insert(0, (lead, None, None))
         if trail:
             segs.append((trail, None, None))
         out.append(segs)
+    return out
+
+
+def restyle(words: list, shown: str) -> list:
+    """Ap cach cat khuc cua `words` (tinh tren chu goc) len dong `shown` (cung
+    cac tu, da doi hoa/thuong). Tu nao doi do dai thi de nguyen mot khuc."""
+    out = []
+    for segs, word in zip(words, shown.split(" "), strict=False):
+        if sum(len(t) for t, _r, _k in segs) != len(word):
+            role = next(((r, k) for _t, r, k in segs if r), (None, None))
+            out.append([(word, *role)])
+            continue
+        i, re_segs = 0, []
+        for t, r, k in segs:
+            re_segs.append((word[i:i + len(t)], r, k))
+            i += len(t)
+        out.append(re_segs)
     return out
 
 
