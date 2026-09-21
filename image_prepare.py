@@ -264,7 +264,8 @@ def load_meta(draft_id: str) -> dict:
 # 1 phien -1088MB kha dung, 2 phien -770MB, 4 phien -1152MB, 6 phien -1900MB (con
 # ~2.7GB + swap 3.3GB, 14 ngay khong co OOM nao). Dat bang so worker toi da de hang
 # khong bao gio dai hon so cho; hon nua thi tu doi nhu cu.
-COUNT_ENGINE_PARALLEL = max(1, int(os.environ.get("CT_PREPARE_PARALLEL", "6") or 6))
+# 6 -> 20 (21/09/2026): Ong Chu nang `max_in_progress` len 10 moi brand x 2 brand.
+COUNT_ENGINE_PARALLEL = max(1, int(os.environ.get("CT_PREPARE_PARALLEL", "20") or 20))
 
 # Doi khoa `running.pid` cua MOT draft toi da bay nhieu giay (LOW-26, 12/09/2026).
 # Truoc do la 300 — bang dung tran bash tool cua vai (~300s), nen lan chay dau

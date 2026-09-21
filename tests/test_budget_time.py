@@ -69,7 +69,8 @@ def test_engine_slots_match_worker_count():
     import os
     if os.environ.get("CT_PREPARE_PARALLEL"):
         return                                            # may nay dat tay, khong xet mac dinh
-    assert cb.COUNT_ENGINE_PARALLEL == 6, cb.COUNT_ENGINE_PARALLEL
+    # 21/09/2026: Ong Chu nang len 10/brand x 2 = 20.
+    assert cb.COUNT_ENGINE_PARALLEL == 20, cb.COUNT_ENGINE_PARALLEL
 
 
 def test_wait_slot_all_done_hours_then_exit_has_sentence_report_fixed_ky():
