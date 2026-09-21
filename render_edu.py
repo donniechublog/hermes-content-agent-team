@@ -108,6 +108,8 @@ from pathlib import Path
 import vietnamese  # noqa: E402  (cùng thư mục) — chỉ cần cổng chữ, không cần PIL
 # đo tương phản WCAG dùng CHUNG với card.py/Ethan + itachi_submit.py — xem LOW-9
 import text_bg  # noqa: E402
+# nhan dien + mau ten hang dung chung ca doi designer — LOW-344
+import brand_names  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 FONTS_DIR = ROOT / "assets" / "fonts"
@@ -189,8 +191,6 @@ MONO_BRANDS = {("OPENAI",), ("CHATGPT",), ("KIMI",), ("MOONSHOT",)}
 # Noi dang model/ma nguon, khong phai chu the: tin "deepseek-ai/... tha trong so
 # tren Hugging Face" la tin DeepSeek. Chi tinh khi khong nhac hang nao khac.
 PLATFORM_BRANDS = {("HUGGING", "FACE"), ("GITHUB",)}
-# Tu khong nam trong `card.BRAND_FROM` (bang cua Ethan, khong doi o day).
-BRAND_ALIAS = {"GPT": ("OPENAI",), "HUGGINGFACE": ("HUGGING", "FACE")}
 HEROES = ("orbit", "grid", "wave", "rings", "graph")   # ten hero SVG tren bia
 
 W, H = 1080, 1350
@@ -274,6 +274,7 @@ BASE_CSS_TPL = """
 .title{font-family:%(DISPLAY)s;font-weight:700;line-height:1.05;
   letter-spacing:-1.5px;color:%(WHITE)s;}
 .accent{color:%(CYAN)s;}
+.brand{color:var(--bc);}
 .standfirst{font-family:%(SERIF)s;font-style:italic;font-weight:500;
   line-height:1.4;color:%(STAND)s;}
 .byline{display:flex;flex-direction:row;align-items:center;gap:18px;
@@ -689,8 +690,47 @@ def esc(s):
     return html.escape(str(s), quote=True)
 
 
-def accent_html(title, accent):
-    """Bọc cụm nhấn trong title thành span cyan (giữ escape)."""
+def _hex(rgb) -> str:
+    return "#%02X%02X%02X" % tuple(rgb[:3])
+
+
+def _brand_title_html(title, th):
+    """HTML tieu de voi ten hang/ten model to theo palette hang (LOW-344), hoac
+    None neu tieu de khong nhac hang nao.
+
+    Moi khuc ten hang la `<span class="brand">` mang hai bien CSS: `--bc` (nen
+    toi, keo sang cho doc duoc) va `--bcd` (vung chu tren nen SANG, ep toi 42%
+    nhu `_color_dark`). Hang den trang lay mau nhan `a` cua theme dang dung."""
+    import card
+    words = brand_names.line_segments(title or "")
+    if not any(role for w in words for _t, role, _k in w):
+        return None
+    fallback = brand_names.hex_rgb(th["a"]) if th else card.BRAND_NAME_FALLBACK
+    out = []
+    for w in words:
+        parts = []
+        for text, role, key in w:
+            if not role:
+                parts.append(esc(text))
+                continue
+            ten, org = brand_names.colors_for(key, fallback)
+            mau = card._enough_bright(org if role == "org" else ten)
+            toi = tuple(int(c * 0.42) for c in mau)
+            parts.append(f'<span class="brand" style="--bc:{_hex(mau)};--bcd:{_hex(toi)}">'
+                         f'{esc(text)}</span>')
+        out.append("".join(parts))
+    return " ".join(out)
+
+
+def accent_html(title, accent, th=None):
+    """Bọc cụm nhấn trong title thành span cyan (giữ escape).
+
+    LOW-344 (Ông Chủ 21/09/2026, "theo tiêu chuẩn mới, bỏ qua tiêu chuẩn cũ"):
+    tiêu đề có TÊN HÃNG thì tô tên hãng theo palette hãng và BỎ `accent` Kite
+    tự chọn; không nhắc hãng nào thì `accent` chạy như cũ."""
+    brand = _brand_title_html(title, th)
+    if brand is not None:
+        return brand
     t = esc(title)
     if accent:
         a = esc(accent)
@@ -747,7 +787,7 @@ def s_cover(sl, th):
     head = (
         f'<div class="mid" style="position:relative;">'
         f'{eyebrow(sl["eyebrow"])}'
-        f'<h1 class="title" style="font-size:88px;margin:24px 0 26px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'<h1 class="title" style="font-size:88px;margin:24px 0 26px;">{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
         f'<p class="standfirst" style="font-size:38px;margin-bottom:30px;max-width:860px;">{esc(sl["standfirst"])}</p>'
         f'{byline}</div>'
     )
@@ -768,7 +808,7 @@ def _cover_image(sl, th):
            # 74px chu khong phai 88px nhu bia art: bia co anh chi cho tieu de 2
            # dong, co chu nho hon mot bac thi 2 dong do chua duoc du y.
            f'<h1 class="title" style="font-size:74px;margin:22px 0 26px;">'
-           f'{accent_html(sl["title"], sl.get("accent"))}</h1>'
+           f'{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
            f'<p class="standfirst" style="font-size:36px;max-width:880px;'
            f'margin-bottom:28px;">{esc(sl["standfirst"])}</p>')
     if by:
@@ -791,7 +831,7 @@ def s_statement(sl, th):
     body = (
         f'<div class="mid" style="margin-top:52px;">'
         f'{eyebrow(sl["eyebrow"])}'
-        f'<h1 class="title" style="font-size:78px;margin:36px 0 40px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'<h1 class="title" style="font-size:78px;margin:36px 0 40px;">{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
         f'<p class="standfirst" style="font-size:40px;max-width:880px;">{esc(sl["standfirst"])}</p>'
         f'</div>{cards_wrap}'
     )
@@ -810,7 +850,7 @@ def s_steps(sl, th):
     body = (
         f'<div class="mid" style="margin-top:46px;">'
         f'{eyebrow(sl["eyebrow"])}'
-        f'<h1 class="title" style="font-size:80px;margin:24px 0 8px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'<h1 class="title" style="font-size:80px;margin:24px 0 8px;">{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
         f'</div>'
         f'<div class="mid" style="margin-top:38px;">{rows}'
         f'<div style="border-bottom:1px solid {th["line"]};"></div></div>'
@@ -840,7 +880,7 @@ def s_loop(sl, th):
     body = (
         f'<div class="mid" style="margin-top:40px;">'
         f'{eyebrow(sl["eyebrow"])}'
-        f'<h1 class="title" style="font-size:80px;margin:32px 0 44px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'<h1 class="title" style="font-size:80px;margin:32px 0 44px;">{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
         f'<div class="chips" style="margin-bottom:44px;">{chips}</div>'
         f'<p class="standfirst" style="font-size:40px;max-width:900px;">{esc(sl["standfirst"])}</p>'
         f'</div>'
@@ -876,6 +916,7 @@ def _css_text_dark_region(scope, th):
             f'{scope} .fig-bar{{background:{a_toi};}}'
             f'{scope} .title{{color:rgba(0,0,0,0.85);}}'
             f'{scope} .accent{{color:{a_toi};}}'
+            f'{scope} .brand{{color:var(--bcd);}}'
             f'{scope} .standfirst{{color:rgba(0,0,0,0.68);}}'
             f'{scope} .fig-cap{{color:rgba(0,0,0,0.55);}}'
             f'{scope} .card-txt{{color:rgba(0,0,0,0.78);}}'
@@ -990,7 +1031,7 @@ def s_figure(sl, th):
     nen, anh = image_make_background(sl, th, "figure")
     chu = (f'{eyebrow(sl["eyebrow"])}'
            f'<h1 class="title" style="font-size:62px;margin:22px 0 0;">'
-           f'{accent_html(sl["title"], sl.get("accent"))}</h1>')
+           f'{accent_html(sl["title"], sl.get("accent"), th)}</h1>')
     # KHONG ve dong nguon anh (LOW-292, 20/09/2026). Ong Chu khoanh do dong
     # "— <mo ta anh> · via <trang>" o ca bia lan slide than cua album Gemini
     # (task t_22d038a3): "noi dung khong duoc phep xuat hien". Nguon anh VAN
@@ -1071,7 +1112,7 @@ def s_bars(sl, th):
     body = (
         f'<div class="mid" style="margin-top:46px;">'
         f'{eyebrow(sl["eyebrow"])}'
-        f'<h1 class="title" style="font-size:76px;margin:24px 0 8px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'<h1 class="title" style="font-size:76px;margin:24px 0 8px;">{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
         f'</div>'
         f'<div class="mid" style="margin-top:44px;">{rows}'
         f'<div style="border-bottom:1px solid {th["line"]};"></div>{cap}{stand}</div>'
@@ -1095,7 +1136,7 @@ def s_cta(sl, th):
     body = (
         f'<div class="mid" style="margin-top:40px;">'
         f'{eyebrow(sl["eyebrow"])}'
-        f'<h1 class="title" style="font-size:76px;margin:32px 0 48px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'<h1 class="title" style="font-size:76px;margin:32px 0 48px;">{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
         f'{checks_wrap}</div>'
         f'<div class="mid">{readmore}</div>'
     )
@@ -1447,19 +1488,13 @@ def subject_brand(texts) -> tuple | None:
     thu tu), bo qua noi dang model (PLATFORM_BRANDS) neu con hang khac. None
     neu khong nhac hang nao.
 
-    Tach `-` `/` `:` `_`, va chu dinh so phien ban, thanh dau cach truoc khi
-    tra: ten model gan nhu luon viet lien ("DeepSeek-V4.1-Flash",
-    "deepseek-ai/...", "Swift-Qwen3.8-27b"), ma `card._extract_label` chi tach
-    theo dau cach nen truot het (LOW-340). Chi tach o day — Ethan to ten hang
-    bang `_extract_label` nguyen ban, khong doi o ticket nay."""
-    import card
+    Nhan dien ten hang (ke ca trong ten model viet lien — "DeepSeek-V4.1-Flash",
+    "deepseek-ai/...", "Swift-Qwen3.8-27b") dung CHUNG `brand_names` voi cho to
+    ten hang cua ca doi (LOW-344), khong giu ban rieng."""
     found = []
     for text in texts:
-        flat = re.sub(r"[-/:_]+", " ", text or "")
-        flat = re.sub(r"(?<=[A-Za-z])(?=\d)", " ", flat)
-        for word, key in card._extract_label(flat):
-            key = key or BRAND_ALIAS.get(word.strip(card._RIA).upper())
-            if key and key not in found:
+        for key in brand_names.brand_keys(text or ""):
+            if key not in found:
                 found.append(key)
     return next((k for k in found if k not in PLATFORM_BRANDS), found[0] if found else None)
 

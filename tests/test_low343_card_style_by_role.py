@@ -67,16 +67,20 @@ def test_full_model_name_is_colored_not_just_the_brand():
     """Ong Chu 21/09/2026: "ko thay doi mau keyword quan trong?" — to NGUYEN CUM ten model."""
     assert _marked("Vừa lên bảng đã nhất: Fable 5 hạ giá 25% mà vẫn đứng #1") == ["Fable", "5"]
     assert _marked("Gemini Omni Flash #2 bảng đấu video") == ["Gemini", "Omni", "Flash"]
-    assert _marked("Alibaba ra mắt Qwen-Image-2.1 đóng gói sẵn") == ["Qwen-Image-2.1"]
+    # ten CONG TY van to nhu truoc (the Ethan luon to ALIBABA); LOW-344 gop hai bo to lam mot
+    assert _marked("Alibaba ra mắt Qwen-Image-2.1 đóng gói sẵn") == ["Alibaba", "Qwen-Image-2.1"]
     assert _marked("Grok Voice Transcribe 2.0 vào bảng nghe") == ["Grok", "Voice", "Transcribe", "2.0"]
     assert _marked("GPT-6 Astra Max dẫn đầu, Claude Fable 5.1 Max theo sau") ==         ["GPT-6", "Astra", "Max", "Claude", "Fable", "5.1", "Max"]
     assert _marked("Philippines muốn AI, Wanda không phải model") == []
 
 
 def test_model_color_is_the_family_color():
+    """Mau cua cum ten model = mau HANG cua ho model. Tu LOW-344 (Ong Chu chot 21/09/2026)
+    mau lay theo PALETTE hang (brand_names.colors_for), khong con COLOR_RANK tho."""
     import card
+    card.set_brand("dcgr")
     m = card.model_marks("Alibaba ra mắt Qwen-Image-2.1 cho Fable 5")
-    assert m[3] == card.COLOR_RANK["QWEN"] and m[5] == card.COLOR_RANK["CLAUDE"], m
+    assert m[3] == card.brand_fill(("QWEN",), "name") and m[5] == card.brand_fill(("CLAUDE",), "name"), m
 
 
 if __name__ == "__main__":

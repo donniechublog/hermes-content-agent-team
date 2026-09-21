@@ -393,7 +393,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         "folio": "<TÊN NGẮN CỦA BÀI ≤ 24 ký tự>",
         "slides": [
             {"kind": "cover", "eyebrow": "<CHUYÊN MỤC · DEEP DIVE, ≤ 28>", "title": "<hook ≤ 60 ký tự>",
-             "accent": "<cụm trong title cần nhấn>", "standfirst": "<1 câu ≤ 200 ký tự>",
+             "accent": "<cụm trong title cần nhấn; title có tên hãng thì bỏ qua — tên hãng tự tô>", "standfirst": "<1 câu ≤ 200 ký tự>",
              "byline": [handle_channel(m["brand"]), "Phân tích", "5 phút đọc"],
              "image": (hero_anh["id"] if hero_anh else "<mã hình thật A? nếu bìa dùng ảnh, hoặc bỏ>")},  # noqa: E501
             {"kind": "statement", "eyebrow": "BỐI CẢNH", "title": "<≤ 60>", "accent": "<cụm nhấn>",
