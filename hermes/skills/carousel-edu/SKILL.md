@@ -31,9 +31,9 @@ viết chữ**. Chữ thuần là đường cuối: ý nào có hình nói nhanh
 ## Luồng
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python kite_prepare.py <id>   # 1. brief
+cd /home/dc-group/content-team && venv/bin/python kite_prepare.py <id>   # 1. brief
 # 2. viết spec.json vào đường dẫn brief in ra
-cd /home/donniechu/content-team && venv/bin/python kite_submit.py <id>        # 3. nộp
+cd /home/dc-group/content-team && venv/bin/python kite_submit.py <id>        # 3. nộp
 ```
 
 Brief in tư liệu, hình thật đã nhìn và liên quan (mã A?), theme/hero gợi ý
@@ -73,11 +73,32 @@ mảng art bị đọc thành "bằng chứng thật" thì nó thuộc cột C�
 | `rings` | vòng đồng tâm + kim | mục tiêu, độ chính xác |
 | `graph` | mạng node-cạnh | quan hệ, so sánh nhiều bên |
 
-Thứ tự chọn theme, renderer tự làm, không hỏi Ông Chủ: **màu ảnh bìa thật** →
-**màu nhận diện của hãng** được nhắc trong bài (tra `COLOR_RANK`, cùng bảng với chỗ
-tô tên hãng của Ethan) → mới tới cột "hợp với" ở bảng trên cho khỏi lặp bộ trước.
-Nên một loạt tin cùng hãng sẽ cùng tone: đó là chủ ý, palette của slide đi cùng
-màu brand. Bìa dùng hình thật thì bộ không vẽ hero.
+**Palette theo hãng (LOW-340, Ông Chủ 21/09/2026).** Tin về một hãng có màu
+nhận diện rõ thì theme **khoá theo hãng**, Kite không chọn. Ghi theme khác thì
+`kite_submit.py` tự ghi đè. Dùng palette của hãng này cho tin hãng khác là lỗi.
+
+| theme | hãng | tone |
+|---|---|---|
+| `deepseek` | DeepSeek | xanh dương × xám × trắng |
+| `anthropic` | Anthropic, Claude | cam đất × ngà |
+| `gemini` | Google, Gemini, DeepMind | xanh × tím |
+| `meta` | Meta, Llama | xanh Meta × xám |
+| `qwen` | Qwen | tím × lavender |
+| `mistral` | Mistral | cam × vàng |
+| `nvidia` | NVIDIA | xanh lá NVIDIA × xám |
+| `huggingface` | Hugging Face | vàng × cam |
+| `perplexity` | Perplexity | ngọc × trắng giấy |
+
+Hãng tông đen trắng (OpenAI/ChatGPT/GPT, xAI/Grok, Apple, Midjourney, Kimi…)
+**không có palette**: nền tối chữ trắng của Kite đã là tone đó.
+
+Thứ tự chọn theme, renderer tự làm, không hỏi Ông Chủ: **palette của hãng chủ
+thể** (hãng nhắc đầu tiên trong tiêu đề tin; Hugging Face/GitHub là nơi đăng
+model, chỉ tính khi không có hãng nào khác) → **màu ảnh bìa thật** → **màu nhận
+diện** của hãng chưa có palette (tra `COLOR_RANK`, cùng bảng với chỗ tô tên hãng
+của Ethan; hãng đen trắng bỏ qua) → mới tới cột "hợp với" của bảng tâm trạng ở
+trên cho khỏi lặp bộ trước. Nên một loạt tin cùng hãng sẽ cùng tone: đó là chủ
+ý. Bìa dùng hình thật thì bộ không vẽ hero.
 
 ## Hình thật
 

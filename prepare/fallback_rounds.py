@@ -459,11 +459,17 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
              or th.confirm_unlisted_vendor(h["key"], h["company"])]
     print("[thuong hieu] hang trong tin: " + (", ".join(h["company"] for h in hangs) or "khong ra"),
           file=sys.stderr)
-    if not hangs:
-        return anh, [a for a in anh if a["uses"] and a.get("relevant") is not False], \
-            [a["id"] for a in anh if a.get("relevant") is None]
     wd4 = wd / state_paths.BRAND_MATCH_DIR
     import story_type
+    # LOW-337: tin MODEL/BENCHMARK — logo CUA MODEL (Qwen, khong phai Alibaba).
+    tin_model = story_type.is_model_story(category)
+    logo_model = th.model_logo_images(tieu_de_nhin, wd4) if tin_model else []
+    if logo_model:
+        print("[thuong hieu] logo model: " + ", ".join(c["brand_match"]["company"] for c in logo_model),
+              file=sys.stderr)
+    if not hangs and not logo_model:
+        return anh, [a for a in anh if a["uses"] and a.get("relevant") is not False], \
+            [a["id"] for a in anh if a.get("relevant") is None]
     cands = []
     for h in hangs:
         if th.deadline_passed():
@@ -483,6 +489,9 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         if (story_type.late(category, "stock") and not khong_browser
                 and not th.deadline_passed(th.BROWSER_STEP_MIN_LEFT)):
             cands += th.image_has_ballot(h, wd4 / h["key"], phien=phien)
+    if tin_model:
+        # Logo hang me KHONG duoc dung cho tin model (Ong Chu 21/09/2026) — chi logo model.
+        cands = [c for c in cands if (c.get("brand_match") or {}).get("kind") != "logo"] + logo_model
     # Diem theo LOAI TIN cong vao diem goc truoc khi sort: cung bo ung vien,
     # tin M&A day logo len truoc chan dung, tin LAB day tru so/founder len
     # truoc logo (story_type.BOARD_IMAGE_BY_TYPE, Ong Chu 12/09/2026).

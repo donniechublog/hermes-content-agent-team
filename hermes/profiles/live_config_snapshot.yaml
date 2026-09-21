@@ -61,7 +61,7 @@ blog/dre:
   model/default: DS-v4Flash
   model/provider: custom
   skills/external_dirs:
-  - /home/donniechu/content-team/hermes/skills
+  - /home/dc-group/content-team/hermes/skills
   skills/write_approval: true
   toolsets:
   - hermes-cli
@@ -77,7 +77,7 @@ blog/ethan:
   model/default: DS-v4Flash
   model/provider: custom
   skills/external_dirs:
-  - /home/donniechu/content-team/hermes/skills
+  - /home/dc-group/content-team/hermes/skills
   skills/write_approval: true
   toolsets:
   - hermes-cli
@@ -107,7 +107,7 @@ blog/gin:
   model/default: DS-v4Flash
   model/provider: custom
   skills/external_dirs:
-  - /home/donniechu/content-team/hermes/skills
+  - /home/dc-group/content-team/hermes/skills
   skills/write_approval: true
   toolsets:
   - hermes-cli
@@ -123,7 +123,7 @@ blog/itachi:
   model/default: DS-v4Flash
   model/provider: custom
   skills/external_dirs:
-  - /home/donniechu/content-team/hermes/skills
+  - /home/dc-group/content-team/hermes/skills
   skills/write_approval: true
   toolsets:
   - hermes-cli
@@ -152,7 +152,7 @@ blog/kite:
   model/default: DS-v4Flash
   model/provider: custom
   skills/external_dirs:
-  - /home/donniechu/content-team/hermes/skills
+  - /home/dc-group/content-team/hermes/skills
   skills/write_approval: true
   toolsets:
   - hermes-cli
@@ -227,7 +227,7 @@ dcgr/dre:
   model/default: DS-v4Flash
   model/provider: custom
   skills/external_dirs:
-  - /home/donniechu/content-team/hermes/skills
+  - /home/dc-group/content-team/hermes/skills
   skills/write_approval: true
   toolsets:
   - hermes-cli
@@ -243,7 +243,7 @@ dcgr/ethan:
   model/default: DS-v4Flash
   model/provider: custom
   skills/external_dirs:
-  - /home/donniechu/content-team/hermes/skills
+  - /home/dc-group/content-team/hermes/skills
   skills/write_approval: true
   toolsets:
   - hermes-cli
@@ -259,7 +259,7 @@ dcgr/gin:
   model/default: DS-v4Flash
   model/provider: custom
   skills/external_dirs:
-  - /home/donniechu/content-team/hermes/skills
+  - /home/dc-group/content-team/hermes/skills
   skills/write_approval: true
   toolsets:
   - hermes-cli
@@ -275,7 +275,7 @@ dcgr/itachi:
   model/default: DS-v4Flash
   model/provider: custom
   skills/external_dirs:
-  - /home/donniechu/content-team/hermes/skills
+  - /home/dc-group/content-team/hermes/skills
   skills/write_approval: true
   toolsets:
   - hermes-cli
@@ -304,7 +304,7 @@ dcgr/kite:
   model/default: DS-v4Flash
   model/provider: custom
   skills/external_dirs:
-  - /home/donniechu/content-team/hermes/skills
+  - /home/dc-group/content-team/hermes/skills
   skills/write_approval: true
   toolsets:
   - hermes-cli

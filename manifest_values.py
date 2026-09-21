@@ -88,6 +88,7 @@ RANKING_KIND_LABELS = {                 # ranking.kind
     "list": "danh-sach",
     "list-stitched": "danh-sach-ghep",
     "card": "the",
+    "x_post": "tweet-arena",
 }
 TONE_LABELS = {"light": "sáng", "dark": "tối"}   # brand_match.background_tone
 STORY_OBJECT_LABELS = {                 # image_order_by_story_type[] (story_type.py)

@@ -859,9 +859,8 @@ nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IM
   thẻ sẽ dựng (`card.text_zone_report`): vùng khung chữ sạch (`busy` ≤ 8) và không cắt mất chi
   tiết mép khi phủ kín (`lost` ≤ 25%) xếp trước; ảnh rối/mất mép có nhãn ⚠️, `ethan_submit` cảnh
   báo khi chọn ảnh rối mà bài còn ảnh sạch (không chặn).
-- **Slide Dre**: ảnh chụp nguồn dừng TRÊN vùng chữ, cắt tại dải trống dài nhất trong vùng cho
-  phép (`image_rules_common.quiet_cut_row`) — ranh giới giữa hai khối (ảnh | chú thích | tít),
-  không bao giờ cắt ngang một dòng. Khoảng hở `carousel.CAPTURE_TEXT_GAP`.
+- **Slide Dre**: ảnh nền phẳng (gồm ảnh chụp trang) theo LOW-341 — ảnh 90% bề ngang trên CHÍNH màu
+  nền của nó (lề liền màu với ảnh, không phải viền lạ); bìa là ảnh chụp nguồn thì không cover-crop.
 - **Cổng pixel**: `check_side_bars` (mỗi module vai, đo bằng `image_rules_common.has_side_bars`)
   chặn ảnh đầu vào có mảng màu đặc ≥ 1.5% bề ngang chạy suốt hai bên. Thẻ logo / thẻ xếp hạng dự
   phòng được miễn (nền đặc phủ kín là chính thiết kế của chúng). Ảnh `source_capture` được miễn
@@ -891,6 +890,51 @@ nền đặc: mờ 44px từ khoảng lặng (cắt ngang mặt người) + ph�
   thì `carousel.py` dừng, không gửi album. Đây là lỗi code, vai `kanban_block`.
 - Bìa (`build_cover`) giữ bố cục đã duyệt. Thẻ Ethan và slide Kite chưa kiểm theo
   luật này (LOW-287).
+
+### 7.0b Màu chữ tương phản TRƯỚC, nền chữ SAU — ảnh nền phẳng không có nền chữ (LOW-341)
+
+Ông Chủ 21/09/2026, xem hai slide quote MiniMax-H3 (hình paper nền trắng → ảnh sắc 55% /
+dải cover-blur xám 11% / overlay tối 29%), nguyên văn: *"ko nên làm thế này, hình sẽ bị
+tách thành 3 khối. luôn ưu tiên đặt chữ màu tương phản với màu nền trước khi phải dùng tới
+nền chữ. ví dụ trường hợp này chỉ cần phóng lớn main image ra để hiển thị full 90% width
+rồi đặt quote màu đen lên nền trắng là được"*. Cùng ngày: *"bìa cũng áp dụng"*.
+
+- **Thứ tự ưu tiên:** đổi màu chữ cho tương phản với nền là cách đầu tiên; overlay (7.0)
+  chỉ khi chữ buộc phải đè lên ảnh chụp.
+- **Ảnh nền phẳng** = viền ảnh (cả bốn cạnh) là một màu phẳng: hình trong paper, ảnh chụp
+  trang nền trắng/nền tối, bảng số liệu, logo. Đo trên pixel (`logo_card.flat_background`,
+  viền 1%: ≥ 90% cả viền và ≥ 70% mỗi cạnh trùng màu nền; đo 21/09: hình paper ≥ 0.93 /
+  0.77, ảnh chụp ≤ 0.83 / 0.51).
+- **Ảnh nền phẳng ở MỌI slide — thân, quote, bìa** (`carousel._flat_layout`): khung là màu
+  nền của chính ảnh; phần nội dung (cắt bỏ lề trống) phóng **90% bề ngang**; chữ, nét khung
+  quote, dấu ngoặc, chip label, dòng nguồn đổi màu tương phản (nền sáng → chữ `(17,17,20)`,
+  nét CYAN kéo tối; nền tối → chữ trắng). Không dải mờ xám, không overlay tối. Chung một
+  đường với slide logo (LOW-295).
+- **Bề ngang đi trước — không thu ảnh cho vừa** (Ông Chủ 21/09, bìa SoL-Pi ghép 2 hình:
+  *"luôn ưu tiên hiển thị full chiều rộng, phần nội dung ảnh bị chèn vào text, chúng ta phủ
+  lên một layer cùng màu với màu nền rồi đặt quote của chúng ta lên"*). Ảnh vừa phần trên
+  chữ thì canh giữa trong phần đó; ảnh cao hơn thì đặt từ trên xuống, phần lấn vào vùng chữ
+  bị phủ **đúng màu nền của ảnh** (tan dần 120px, đặc từ 24px trên dòng chữ đầu) — đọc ra
+  "hình tan vào giấy", không ra khối riêng, và chữ luôn nằm trên giấy chứ không đè lên hình.
+  Bản đầu (thu cả cặp ghép cho vừa trên hook → còn ~55% bề ngang) bị bác cùng ngày.
+- **Chart cắt sát mép** (bảng/sơ đồ/chụp màn hình mà vision xếp `chart`): viền không còn
+  phẳng nhưng nền vẫn là một màu chiếm đa số → ngưỡng nới (viền ≥ 0.40, cả ảnh ≥ 0.45,
+  `FLAT_RELAXED_*`). Đo 21/09 trên 5429 ảnh gốc máy chủ: gom thêm 151/276 chart. **Không**
+  áp cho ảnh chụp — ở 0.55/0.60 nó kéo cả chân dung nền xám/đen vào.
+- **Ảnh ghép dọc** xét TỪNG tấm (`carousel._flat_plan`, `dre_submit` ghi `image_kinds`):
+  mọi tấm nền phẳng cùng một màu → cả tấm ghép đi đường nền phẳng; hai tấm khác màu nền
+  (hình trắng + tranh nền kem) → ảnh giữ full bề ngang như cũ, vùng chữ phủ **màu nền của
+  tấm dưới** (tấm chữ đè lên) thay cho overlay tối, chữ đổi màu tương phản.
+- `dre_submit` dùng ảnh GỐC cho ảnh nền phẳng (không bản cắt 4:5), và không áp các luật
+  "ảnh ngang phải ghép / chart không làm bìa" — những luật đó canh chuyện chữ đè lên ảnh.
+  Chart NỀN CHUYỂN MÀU vẫn không làm bìa được như cũ.
+- **Cổng đo trên pixel thật** (`carousel._gate_flat`): ảnh nguồn nền phẳng mà slide ra
+  không đi đường nền phẳng, hoặc > 0,5% điểm ngoài ảnh / trong vùng chữ lệch màu nền (dải
+  mờ/lớp phủ tối lọt vào, hoặc chữ đè lên hình) → `carousel.py` dừng, không gửi album. Lỗi
+  CODE, không phải spec.
+- Slide Kite: `render_edu.py` đã có nhánh nền phẳng (lấp màu nền, đổi màu chữ) từ
+  08/09 nhưng ảnh phẳng cao quá vẫn bị cắt mép dưới — LOW-339 (gộp vào LOW-341). Thẻ Ethan
+  chưa áp (LOW-287).
 
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
 mảng nhìn tách rời:

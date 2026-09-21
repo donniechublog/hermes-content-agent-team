@@ -29,7 +29,7 @@ Provider là **per-profile** (config global KHÔNG kế thừa sang profile). Sa
 
 ```bash
 cd ~/hermes-agent
-DB=/home/donniechu/.hermes-blog/memory_store.db      # MỘT DB chung cho cả hai home
+DB=/home/dc-group/.hermes-blog/memory_store.db      # MỘT DB chung cho cả hai home
 for H in ~/.hermes-blog ~/.hermes-dcgr; do
   # profile mặc định của home
   HERMES_HOME=$H venv/bin/python -m hermes_cli.main config set memory.provider holographic

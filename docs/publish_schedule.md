@@ -52,6 +52,16 @@ trước — thẻ không trả về, Ông Chủ bấm lại.
 ## Luật đã chốt
 
 - **Teaser đăng ngay**, không chiếm slot: `publish_at = now`, con trỏ đứng im.
+- **Đăng bù thì rải, không dồn.** `run_due` đăng nhiều nhất MỘT bài mỗi
+  lần, và chỉ khi đã cách lần đăng **thật** gần nhất `GAP_SECONDS`
+  (`last_publish` trong `publish_schedule.json`, trừ dung sai
+  `GAP_TOLERANCE_SECONDS` = 120s cho độ trễ tick). Trước 21/09/2026, `run_due`
+  đăng mọi bài quá hạn trong một tick: ngày 20/09 hệ ngừng cả ngày vì
+  chuyển máy, 21:50 sống lại thì channel ra 13 bài trong 15 phút. Nhịp đo
+  trên giờ hẹn là chưa đủ — phải đo trên lần đăng thật.
+- **Đăng lỗi không chiếm nhịp.** Chỉ ghi `last_publish` khi Telegram đã
+  nhận, để một cú lỗi không bắt bài kế chờ thêm một tiếng.
+- **Teaser không bị nhịp chặn**, vì nó vốn không chiếm slot.
   Teaser chỉ lên Telegram (`moat_publish.intake` vốn đã từ chối nó), nên nó
   không giành chỗ với bài social.
 - **Huỷ lịch không dồn hàng lên.** Bỏ một bài giữa chừng thì slot đó để trống.

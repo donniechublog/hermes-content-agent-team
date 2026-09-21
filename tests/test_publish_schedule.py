@@ -303,6 +303,109 @@ def test_run_due_publishes_overdue_and_leaves_future_alone():
         assert publisher.published == ["toi_gio"], publisher.published
         assert sb.read_draft("chua_toi")["status"] == ps.SCHEDULED
 
+
+# =========================================================================
+# run_due() — nhip giua hai lan dang THAT (dan 20/09/2026)
+# =========================================================================
+def _ba_bai_qua_han(sb):
+    for i, at in enumerate((1_700_000_000, 1_700_003_600, 1_700_007_200)):
+        sb.write_draft("bai%d" % i, status=ps.SCHEDULED, publish_at=at)
+
+
+def test_run_due_khong_dang_bu_ca_hang_doi_trong_mot_tick():
+    """Sau mot khoang chet, MOI bai deu qua han cung luc.
+
+    20/09/2026 he ngung ca ngay vi chuyen may; 21:50 song lai thi tick dau
+    tien day 13 bai len channel trong 15 phut — dung cai ma file nay sinh ra
+    de chan. Tick chi duoc dang MOT bai.
+    """
+    with _Sandbox() as sb:
+        _ba_bai_qua_han(sb)
+        publisher = _FakePublisher(sb)
+        restore = _swap_publish_deps(sb, publisher, lambda *a, **k: (True, "da xep"))
+        try:
+            ps.run_due(now=1_700_010_000, brand="donniechublog")
+        finally:
+            restore()
+        assert publisher.published == ["bai0"], publisher.published
+
+
+def test_run_due_tick_ke_tiep_phai_cho_du_mot_tieng():
+    """Cron chay moi phut: tick sau khong duoc dang tiep khi chua du GAP."""
+    with _Sandbox() as sb:
+        _ba_bai_qua_han(sb)
+        publisher = _FakePublisher(sb)
+        restore = _swap_publish_deps(sb, publisher, lambda *a, **k: (True, "da xep"))
+        try:
+            ps.run_due(now=1_700_010_000, brand="donniechublog")
+            ps.run_due(now=1_700_010_060, brand="donniechublog")
+            ps.run_due(now=1_700_010_120, brand="donniechublog")
+        finally:
+            restore()
+        assert publisher.published == ["bai0"], publisher.published
+
+
+def test_run_due_dang_bai_ke_tiep_khi_da_du_mot_tieng():
+    """Du GAP thi hang doi nhich mot bai — bu dan, khong bu dồn."""
+    with _Sandbox() as sb:
+        _ba_bai_qua_han(sb)
+        publisher = _FakePublisher(sb)
+        restore = _swap_publish_deps(sb, publisher, lambda *a, **k: (True, "da xep"))
+        try:
+            ps.run_due(now=1_700_010_000, brand="donniechublog")
+            ps.run_due(now=1_700_013_600, brand="donniechublog")
+        finally:
+            restore()
+        assert publisher.published == ["bai0", "bai1"], publisher.published
+
+
+def test_run_due_teaser_khong_bi_nhip_chan():
+    """Luat da chot: teaser len thang Telegram, khong gianh cho bai social —
+    nen cung khong bi nhip cua bai social giu lai."""
+    with _Sandbox() as sb:
+        sb.write_draft("bai_thuong", status=ps.SCHEDULED, publish_at=1_700_000_000)
+        sb.write_draft("teaser", status=ps.SCHEDULED, publish_at=1_700_000_000,
+                       category="TEASER")
+        publisher = _FakePublisher(sb)
+        restore = _swap_publish_deps(sb, publisher, lambda *a, **k: (True, "da xep"))
+        try:
+            ps.run_due(now=1_700_000_000, brand="donniechublog")
+        finally:
+            restore()
+        assert sorted(publisher.published) == ["bai_thuong", "teaser"], publisher.published
+
+
+def test_run_due_nhip_khong_troi_dan_khi_dang_dung_gio():
+    """Cron tick moi phut nen lan dang truoc luon tre vai giay so voi gio hen.
+    Khong co dung sai thi moi bai bi lui them vai giay, don lai thanh vai phut
+    sau mot ngay."""
+    with _Sandbox() as sb:
+        sb.write_draft("a", status=ps.SCHEDULED, publish_at=1_700_000_000)
+        sb.write_draft("b", status=ps.SCHEDULED, publish_at=1_700_003_600)
+        publisher = _FakePublisher(sb)
+        restore = _swap_publish_deps(sb, publisher, lambda *a, **k: (True, "da xep"))
+        try:
+            ps.run_due(now=1_700_000_045, brand="donniechublog")   # tre 45s
+            ps.run_due(now=1_700_003_610, brand="donniechublog")   # tre 10s
+        finally:
+            restore()
+        assert publisher.published == ["a", "b"], publisher.published
+
+
+def test_run_due_khong_ghi_moc_nhip_khi_dang_that_bai():
+    """Telegram loi thi tick sau phai thu lai ngay, khong phai cho mot tieng."""
+    with _Sandbox() as sb:
+        sb.write_draft("a", status=ps.SCHEDULED, publish_at=1_700_000_000)
+        publisher = _FakePublisher(sb, res={"ok": False, "description": "loi gia"})
+        restore = _swap_publish_deps(sb, publisher, lambda *a, **k: (True, "da xep"))
+        try:
+            ps.run_due(now=1_700_000_000, brand="donniechublog")
+            sb.write_draft("a", status=ps.SCHEDULED, publish_at=1_700_000_000)
+            ps.run_due(now=1_700_000_060, brand="donniechublog")
+        finally:
+            restore()
+        assert publisher.published == ["a", "a"], publisher.published
+
 if __name__ == "__main__":
     sys.path.insert(0, str(ROOT / "tests"))
     from tam import chay_tat_ca          # noqa: E402

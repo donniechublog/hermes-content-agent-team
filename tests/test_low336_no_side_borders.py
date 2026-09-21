@@ -181,9 +181,11 @@ def test_carousel_body_capture_no_bars():
         out = Path(t) / "body.png"
         carousel.build_body(str(p), "Chu slide than.", "@x", str(out))
         im = Image.open(out).convert("RGB")
-        assert not image_rules_common.has_side_bars(im)[0]
-        top = carousel.TEXT_BASE - carousel.TEXT_MAX_H
-        assert _col_energy_band(im, top - 40, top - 10) < 20, "chu sac cua trang chay xuong vung chu"
+        # Anh nen phang (LOW-341) dat 90% be ngang tren CHINH mau nen cua no: le hai ben la
+        # mau nen cua trang (lien voi anh), khong phai mang mau la (vien den cu).
+        for x in (5, im.width - 6):
+            c = im.getpixel((x, im.height // 3))
+            assert all(abs(c[k] - PAGE[k]) <= 6 for k in range(3)), f"le x={x} khong phai mau nen anh: {c}"
 
 
 # ---- Tu khoa to mau rieng tren tit the tran (Ong Chu 21/09: "mark key quan trong") ----
@@ -257,7 +259,8 @@ def test_card_text_box_background_is_flat_over_blotchy_image():
         H, Wc = c.height, c.width
         # Le trong TRAI nam tren mang xanh, le PHAI tren dai xam/do/den: hai mang anh rat
         # khac nhau. Nen khung phang thi hai le gan nhu cung do sang.
-        y0, y1 = int(H * 0.70), int(H * 0.85)
+        # Khung tu ~0.70H (CEILING_TEXTBOX 30%, LOW-343) — tranh goc bo tron o dinh khung.
+        y0, y1 = int(H * 0.76), int(H * 0.90)
         a, b = card.CEILING_FRAME_X + 10, card.CEILING_TEXT_X - 12
         trai = ImageStat.Stat(c.crop((a, y0, b, y1)))
         phai = ImageStat.Stat(c.crop((Wc - b, y0, Wc - a, y1)))

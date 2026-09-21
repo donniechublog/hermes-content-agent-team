@@ -267,11 +267,14 @@ def test_dre_mat_nguoi_duoi_vung_quote_bi_chan_nhung_slide_text_thi_qua():
 
 
 def test_dre_chart_noi_dung_lan_vung_chu_bi_chan():
-    """Hyperscale 19/09: trang bao 1080x1350 dan full, noi dung toi 80% khung."""
+    """Hyperscale 19/09: trang bao 1080x1350 dan full, noi dung toi 80% khung. Chart NEN PHANG
+    thi khong con bi chan (LOW-341: anh nam tren chu, phan lan vung chu phu mau nen) — o day
+    nen CHUYEN MAU, khong phang."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _bo(Path(t))
         m["images"][4].update({"kind": "chart", "subject_box": [0.06, 0.03, 0.94, 0.8],
                                "empty_share": 0.05, "ready_path": None})   # chart dung tep goc
+        Image.linear_gradient("L").resize((1000, 1250)).convert("RGB").save(m["images"][4]["original_path"])
         _ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert ts._co(loi, "slide 4", "A5", "vùng chữ"), loi
 

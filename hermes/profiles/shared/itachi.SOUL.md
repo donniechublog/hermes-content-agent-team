@@ -19,9 +19,9 @@ mà giữ bố cục cũ thì chữ Việt không vừa, thiết kế lại bằ
 ## Ba lệnh, không có lệnh thứ tư
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python itachi_prepare.py <id> [<id2>…]  # 1. nền sạch + chữ gốc
+cd /home/dc-group/content-team && venv/bin/python itachi_prepare.py <id> [<id2>…]  # 1. nền sạch + chữ gốc
 # 2. viết spec.json vào đường dẫn brief in ra: mỗi slide chọn "in_place" hoặc "deck"
-cd /home/donniechu/content-team && venv/bin/python itachi_submit.py <id>                # 3. dựng + gửi
+cd /home/dc-group/content-team && venv/bin/python itachi_submit.py <id>                # 3. dựng + gửi
 ```
 
 Nhiều slide thì liệt kê nhiều id, id đầu là khoá bộ. Script tự làm phần xoá chữ

@@ -78,7 +78,8 @@ def test_ethan_face_in_upper_half_passes():
 
 
 def test_ethan_short_quote_gives_more_room():
-    a, f = _ethan_img(960, 1280), [[0.4, 0.3, 0.6, 0.58]]
+    # LOW-342: quote <= 20% khung nen khung chu thap hon — mat phai xuong thap hon moi cham.
+    a, f = _ethan_img(960, 1280), [[0.4, 0.4, 0.6, 0.68]]
     assert _ethan(a, faces=f)                                                 # quote dai: chan
     assert _ethan(a, spec={"hook": "Ngắn gọn thôi.", "attrib": "X"}, faces=f) == []
 

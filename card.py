@@ -64,7 +64,8 @@ F_MARK = str(FONTS / "Oswald.ttf")                    # dau ngoac kep — glyph 
 W = 1200                          # bề ngang cố định
 # Tran chieu cao textbox khi ti le bi khoa. Anh la noi dung chinh, textbox chi
 # la phan chu thich; cho nao thua thi tra cho anh chu khong don vao textbox.
-CEILING_TEXTBOX = 0.40
+CEILING_TEXTBOX = 0.30
+TEXT_MAX_SHARE = 0.20                     # LOW-342: khoi chu (khong tinh le/chip) <= 20% chieu cao the
 PAD = 44
 
 # ---- Thuong hieu ----------------------------------------------------------
@@ -172,12 +173,12 @@ QUOTE_LEAD = 16                         # gian dong quote — thoang hon tieu de
 QUOTE_MAX_LINES = 7                     # dai hon la cau qua dai cho mot the
 QUOTE_PAD = 64                          # le trong hon hero: quote can khoang tho
 MARK_SIZE = 210                         # dau ngoac kep (Oswald: ink that ~28% co font)
-QUOTE_BLUR = 56                         # ban kinh mo vung chu de len (Gaussian) — LOW-165: tang gap
+QUOTE_BLUR = 30                         # ban kinh mo vung chu de len (Gaussian) — LOW-165: tang gap
                                 # doi tu 28, van khong xoa het mot mang lech tong hang tram px
                                 # (xem docstring _open_region_text) nhung giam manh do "sot" —
                                 # truong hop nang giai bang cach mo rong dinh nghia CLUTTERED
                                 # (prepare/vision.py) de di duong nen dac thay vi blur.
-QUOTE_BLUR_COUNT = 110                    # khoang dem TREN diem chu bat dau, de mo tan dan khong dot ngot
+QUOTE_BLUR_COUNT = 80                     # khoang dem TREN diem chu bat dau, de mo tan dan khong dot ngot
 
 # ---- Kieu tran: khung chu nhat quanh khoi chu ------------------------------
 # Ong Chu chot 07/09/2026: bo nen dac, dat chu thang len anh voi mau tuong phan,
@@ -312,6 +313,69 @@ COLOR_PHRASE = {
 }
 
 
+# ---- To TEN MODEL day du (LOW-343, Ong Chu 21/09/2026: *"ko thay doi mau keyword quan trong?"*) ----
+# Bo to cu chi to TEN HANG dung mot tu trong BRAND_FROM: the "Gemini Omni Flash #2" chi to
+# "GEMINI", the "Fable 5 ha gia 25%" khong to gi, the Qwen chi to "ALIBABA". Gio to NGUYEN CUM
+# ten model kem phien ban bang mau cua ho model. Ho model -> mau (mau hang chu quan khi model
+# khong co mau rieng). Khong dung ranking.extract_model: no bo sot "Fable 5" (thieu chu Claude),
+# "Grok Voice Transcribe 2.0" (chi ra "Grok").
+MODEL_FAMILY_COLOR = {
+    "QWEN": COLOR_RANK["QWEN"], "WAN": COLOR_RANK["QWEN"],
+    "GEMINI": COLOR_RANK["GEMINI"], "GEMMA": COLOR_RANK["GEMINI"], "VEO": COLOR_RANK["GEMINI"],
+    "CLAUDE": COLOR_RANK["CLAUDE"], "FABLE": COLOR_RANK["CLAUDE"], "OPUS": COLOR_RANK["CLAUDE"],
+    "SONNET": COLOR_RANK["CLAUDE"], "HAIKU": COLOR_RANK["CLAUDE"],
+    "GPT": COLOR_RANK["CHATGPT"], "CHATGPT": COLOR_RANK["CHATGPT"], "SORA": COLOR_RANK["CHATGPT"],
+    "GROK": COLOR_RANK["GROK"], "LLAMA": COLOR_RANK["LLAMA"], "MUSE": COLOR_RANK["META"],
+    "DEEPSEEK": COLOR_RANK["DEEPSEEK"], "MISTRAL": COLOR_RANK["MISTRAL"],
+    "MAGISTRAL": COLOR_RANK["MISTRAL"], "DEVSTRAL": COLOR_RANK["MISTRAL"],
+    "CODESTRAL": COLOR_RANK["MISTRAL"], "KIMI": COLOR_RANK["KIMI"],
+    "NEMOTRON": COLOR_RANK["NVIDIA"], "PHI": COLOR_RANK["MICROSOFT"],
+    "SEEDANCE": COLOR_RANK["BYTEDANCE"], "SEEDREAM": COLOR_RANK["BYTEDANCE"],
+    "DOUBAO": COLOR_RANK["BYTEDANCE"], "GLM": None, "MINIMAX": None, "HAILUO": None,
+    "HUNYUAN": COLOR_RANK["TENCENT"], "ERNIE": COLOR_RANK["BAIDU"],
+}
+_MODEL_TAIL = re.compile(r"^[A-Z0-9][A-Za-z0-9.\-+]*$")
+
+
+def _model_family(tu: str):
+    """Ho model ma tu `tu` (da bo dau cau, viet hoa) bat dau bang, hoac None. Sau ten ho phai
+    het tu hoac la ky tu KHONG phai chu cai: "QWEN-IMAGE-2.1", "QWEN3", "GPT-6" khop;
+    "WANT", "PHILIPPINES" khong khop."""
+    for ho in MODEL_FAMILY_COLOR:
+        if tu.startswith(ho) and (len(tu) == len(ho) or not tu[len(ho)].isalpha()):
+            return ho
+    return None
+
+
+def model_marks(title: str) -> list:
+    """Mau to cho TUNG TU cua `title.split()` — mau ho model voi cac tu thuoc cum ten model,
+    None voi tu khac (va voi ho chua co mau rieng: `False` = la ten model, dung mau du phong).
+    Cum = tu thuoc mot ho model + cac tu NOI TIEP viet hoa/co so (ten, phien ban, bien the);
+    dung o chu thuong tieng Viet, "#2", "25%", dau cau."""
+    tus = (title or "").split()
+    ra = [None] * len(tus)
+    i = 0
+    while i < len(tus):
+        sach = tus[i].strip(_RIA)
+        ho = _model_family(sach.upper()) if sach else None
+        if not ho:
+            i += 1
+            continue
+        mau = MODEL_FAMILY_COLOR[ho] or False
+        ra[i] = mau
+        j = i + 1
+        het = tus[i] != tus[i].rstrip(_RIA)                  # "Flash," — dau cau dong cum
+        while not het and j < len(tus):
+            s = tus[j].rstrip(_RIA)
+            if not s or not _MODEL_TAIL.match(s):
+                break
+            ra[j] = mau
+            het = tus[j] != s
+            j += 1
+        i = j
+    return ra
+
+
 def _measure_bright(mau) -> float:
     r, g, b = (c / 255 for c in mau[:3])
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
@@ -440,7 +504,7 @@ def _empty_line(d, dong, font):
 
 
 def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
-             nen_sang=False, keys: frozenset = frozenset()):
+             nen_sang=False, keys: frozenset = frozenset(), marks=None):
     """Ve mot dong, to rieng ten thuong hieu.
 
     che_do:
@@ -456,9 +520,14 @@ def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
     toi nen dai chu co the sang; kieu the tin luon co nen toi.
     """
     khoang = d.textlength(" ", font=font)
-    for tu, khoa in _extract_label(dong, keys):
+    marks = list(marks or [])
+    for k, (tu, khoa) in enumerate(_extract_label(dong, keys)):
         f_mau = mau
-        if khoa and che_do == "cyan":
+        mk = marks[k] if k < len(marks) else None
+        if mk is not None and che_do:                         # LOW-343: nguyen cum ten model
+            goc = CYAN if che_do == "cyan" else (mk or mau_du_phong or CYAN)
+            f_mau = _enough_dark(goc) if nen_sang else _enough_bright(goc)
+        elif khoa and che_do == "cyan":
             f_mau = _enough_dark(CYAN) if nen_sang else CYAN
         elif khoa and che_do == "company":
             goc = _color_of_rank(khoa) or mau_du_phong or CYAN
@@ -877,7 +946,7 @@ def _layer_image(canvas, src_img, H, top_anchor=False, cover_focus=None) -> int:
 TEXT_OVERLAY_CLUTTERED = 205
 
 
-def _text_bg_overlay(canvas, frame_top):
+def _text_bg_overlay(canvas, frame_top, fade=QUOTE_BLUR_COUNT):
     """Nen chu cho ANH ROI buoc phai dung. `_open_region_text` chi lam mo — tren anh co
     chu in san, chu cu van lo mo mo sau chu moi, doc ra lem nhem (LOW-47). O day: van mo
     cuc bo nhu anh sach, sau do phu them mot lop tinh mau nen theo gradient, tran
@@ -887,9 +956,9 @@ def _text_bg_overlay(canvas, frame_top):
     ban truoc (`_text_bg_strict`, LOW-47) phu NEN DAC mau BG tu khoang lang gan nhat xuong
     day the — chinh cai ma LOW-286 da bac o slide than carousel. Nay the di cung mot duong
     voi carousel: chi overlay, khong bao gio la mang mau dac."""
-    _open_region_text(canvas, frame_top)
+    _open_region_text(canvas, frame_top, fade)
     W_, H_ = canvas.size
-    top = max(0, int(frame_top - QUOTE_BLUR_COUNT))
+    top = max(0, int(frame_top - fade))
     doan = max(1, int(frame_top) - top)
     mat_na = Image.new("L", (W_, H_), 0)
     for y in range(top, H_):
@@ -906,6 +975,7 @@ def _text_bg_overlay(canvas, frame_top):
 # alpha tran TEXT_BOX_OPACITY = 84% — duoi tran overlay 88% cua LOW-286/330, anh van
 # hien nhe qua nhung khong con mang. Khung phang roi thi ca khoi mot mau chu.
 TEXT_BOX_OPACITY = 215
+TEXT_BG_MODE = "overlay"        # TAM: "overlay" (LOW-336) | "solid" (LOW-343) — xem _render_ceiling
 
 
 def _text_box_overlay(canvas, box, radius):
@@ -946,7 +1016,36 @@ def _blur_below(canvas, fade_top, full_top):
     canvas.paste(Image.composite(mo, vung, mask), (0, top))
 
 
-def _open_region_text(canvas, frame_top):
+CLEAN_QUIET_SEARCH = 140      # px tim "khoang lang" TREN net khung (LOW-343)
+CLEAN_QUIET_STD = 8.0         # hang anh co do lech sang < muc nay = khoang lang (nen tron / duong ke)
+
+
+def _clean_region_text(canvas, frame_top) -> int:
+    """Vung chu the khung chu nhat: MOT MAU TRON tu khoang lang gan nhat tren khung xuong day
+    the. Sua canvas tai cho, tra hang bat dau phu.
+
+    Ong Chu 21/09/2026 (LOW-343), sau khi bo dai mo dan tren khung: *"lam no sach tron di, de
+    lai nhung lom dom nay rat thieu chuyen nghiep"* — lam mo 30px chi san duoc chi tiet nho,
+    mang mau lon cua anh (logo do, bieu tuong xanh) van thanh vet nhoe trong va duoi khung.
+    Mau phu lay tu chinh hang anh o diem bat dau (trung vi), nen phan phu noi lien voi nen anh
+    (bang trang -> trang, nen den -> den). Diem bat dau doi len KHOANG LANG gan nhat (duong ke,
+    nen trong) de net khung khong cat ngang nua hang chu cua anh."""
+    import numpy as np
+    W_, H_ = canvas.size
+    arr = np.asarray(canvas.convert("RGB"), dtype=np.float32)
+    xam = arr[..., :3].mean(axis=2)[:, 60:W_ - 60]
+    top = int(frame_top)
+    tren = max(0, top - CLEAN_QUIET_SEARCH)
+    lech = xam[tren:top + 1].std(axis=1)
+    lang = [y for y in range(top, tren - 1, -1) if lech[y - tren] < CLEAN_QUIET_STD]
+    bat_dau = lang[0] if lang else tren + int(lech.argmin())
+    mau = tuple(int(v) for v in np.median(arr[bat_dau, 60:W_ - 60, :3], axis=0))
+    phu = Image.new(canvas.mode, (W_, H_ - bat_dau), mau + ((255,) if canvas.mode == "RGBA" else ()))
+    canvas.paste(phu, (0, bat_dau))
+    return bat_dau
+
+
+def _open_region_text(canvas, frame_top, fade=QUOTE_BLUR_COUNT):
     """Lam MO CUC BO vung anh nam duoi chu, sua canvas tai cho (Ong Chu 06/09/2026:
     chu co vien "phen nhu karaoke" — bo vien, thay bang lam mo).
 
@@ -959,7 +1058,7 @@ def _open_region_text(canvas, frame_top):
     ao trang cat doc khoi chu) thi mo bao nhieu cung khong san phang, do la
     viec cua `_can_board_line`."""
     W_, H_ = canvas.size
-    top = max(0, int(frame_top - QUOTE_BLUR_COUNT))
+    top = max(0, int(frame_top - fade))
     vung = canvas.crop((0, top, W_, H_))
     mo = vung.filter(ImageFilter.GaussianBlur(QUOTE_BLUR))
     # Mat na: full mo tu frame_top tro xuong, rieng doan `dem` phia tren la fade.
@@ -1114,9 +1213,13 @@ def _quote_geometry(d, quote, attrib, handle, H):
     avail_w = W - 2 * TEXT_X
 
     # Cau trich dan — giu nguyen HOA/thuong (khong .upper() nhu tieu de).
-    f_q, q_lines = _fit_text(d, quote, avail_w, max_lines=QUOTE_MAX_LINES,
-                             hi=QUOTE_SIZE_HI, lo=QUOTE_SIZE_LO, path=F_QUOTE)
-    buoc, tren = _step_line(f_q, q_lines, QUOTE_LEAD)
+    # LOW-342: khoi quote chi chiem <= 20% chieu cao the — co chu ha dan toi khi vua.
+    for size_hi in range(QUOTE_SIZE_HI, QUOTE_SIZE_LO - 1, -2):
+        f_q, q_lines = _fit_text(d, quote, avail_w, max_lines=QUOTE_MAX_LINES,
+                                 hi=size_hi, lo=size_hi, path=F_QUOTE)
+        buoc, tren = _step_line(f_q, q_lines, QUOTE_LEAD)
+        if buoc * len(q_lines) <= H * TEXT_MAX_SHARE and not q_lines[-1].endswith("…"):
+            break
     quote_h = buoc * len(q_lines)
 
     f_at = _f(F_QUOTE_REG, 26)
@@ -1334,7 +1437,8 @@ _RE_EXPORT = (NEGATIVE_FACE_MARK, PHRASE_FACE_MARK, MARK_FORBID)
 
 def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
           brand="donniechublog", bo_qua_dau=False, kieu="quote", kicker="",
-          attrib="", bo_qua_anh=False, nhan_vat="", cluttered=False, highlight=(), cover_focus=None):
+          attrib="", bo_qua_anh=False, nhan_vat="", cluttered=False, logo_card=False, highlight=(),
+          cover_focus=None):
     """Dung the `quote` (mac dinh) hoac `full_bleed`. `src`: mot duong dan, hoac danh
     sach hai duong dan (ghep doc). `title` la cau trich dan (quote) hoac cau
     tieu de (full_bleed). `kieu` nhan ca gia tri cu `tran` (LOW-248, role_spec)."""
@@ -1363,7 +1467,8 @@ def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
     _block_crop(src)          # anh ngang bi cat bot be ngang: dung o moi kieu
     if not bo_qua_anh:
         _block_standard_image(src, nhan_vat)   # chuan anh chung: do net, mat nguoi, trung
-        _block_chart(src)     # chart di mot minh vao hero: ep sang --image2/carousel
+        if not logo_card:     # LOW-337: the logo 4:5 (image_brand.card_logo) la hero, khong phai chart
+            _block_chart(src)     # chart di mot minh vao hero: ep sang --image2/carousel
     # Moi kieu the mot ham ve rieng; `build` chi con la cong chan + re nhanh.
     if kieu == "quote":
         return _render_quote(src, title, attrib, out, handle, ratio, tagline, cluttered=cluttered)
@@ -1448,7 +1553,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
         _g1, _g2, _g3, _g4 = _range(nen)
         frame_h = _cao_dau(nen) + _g3 + max(via_h, 34) + _g4
         f_title, title_lines = _grow_title(probe, title.upper(), avail_w,
-                                           box_h - frame_h,
+                                           min(box_h - frame_h, round(H * TEXT_MAX_SHARE)),
                                            max_lines=CEILING_TITLE_LINES,
                                            lead=lead, path=F_HERO,
                                            weight=HERO_WEIGHT,
@@ -1488,14 +1593,19 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
     bottom_y = H - g4 - via_h
     frame_top = max(CEILING_FRAME_PAD, cum_top - CEILING_FRAME_PAD)
     frame_bot = min(bottom_y - 16, cum_bot + CEILING_FRAME_PAD)
-    # LOW-336: chi lam mo + phu overlay BEN TRONG khung chu. Dai mo tran het be ngang
-    # (`_open_region_text`, tu frame_top - 110) bien vat toi/mau manh ngay tren khung
-    # thanh vet loang (nut toi, la co do) — khung da co overlay rieng thi dai do thua.
-    # Dai DUOI khung (cho ten kenh): chi mo khi BAN (vd dong bang xep hang) — ten kenh chu
-    # nho de len chi tiet thi chim. Mep tan 40px bat dau TRONG khung nen khong thanh duong ke.
-    _blur_below(canvas, frame_bot - 40, frame_bot)
-    mau_khoi = _text_box_overlay(canvas, (CEILING_FRAME_X, frame_top, W - CEILING_FRAME_X, frame_bot),
-                                 CEILING_FRAME_R)
+    # Nen chu (LOW-336 / LOW-343): TAM giu hai cach de Ong Chu so tren the that, chot xong bo
+    # cach bi loai. "overlay" = anh phu kin the, overlay deu TRONG khung (LOW-336);
+    # "solid" = mot mau tron tu khoang lang tren khung xuong day (LOW-343).
+    if TEXT_BG_MODE == "solid":
+        _clean_region_text(canvas, frame_top)
+        mau_khoi = FG if _bright_region(canvas, (CEILING_FRAME_X, frame_top, W - CEILING_FRAME_X,
+                                                 frame_bot)) < THRESHOLD_BACKGROUND_BRIGHT else BG
+    else:
+        # Chi lam mo + phu overlay BEN TRONG khung chu. Dai DUOI khung (ten kenh) chi mo khi
+        # BAN (vd dong bang xep hang). Mep tan 40px bat dau TRONG khung nen khong thanh ke.
+        _blur_below(canvas, frame_bot - 40, frame_bot)
+        mau_khoi = _text_box_overlay(canvas, (CEILING_FRAME_X, frame_top, W - CEILING_FRAME_X, frame_bot),
+                                     CEILING_FRAME_R)
 
     buoc, tren = _step_line(f_title, title_lines, lead)
     # LOW-336: khung da la MOT lop overlay deu (`_text_box_overlay`) -> ca khoi mot mau
@@ -1541,10 +1651,15 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
     # kicker khong doi theo viec dong do co dau hay khong.
     # strict=False co y: `sang_dong` co hau to `or [0.0]` nen o ca tieu de rong
     # (khong xay ra qua CLI, nhung `build` la thu vien) hai danh sach lech mot.
+    # Dong tieu de la cac lat LIEN TIEP cua `title.split()` (_wrap), nen mau tung tu cua ten
+    # model tinh mot lan tren ca cau roi cat theo dong — cum ten model vat qua hai dong van to.
+    marks, dau = model_marks(title), 0
     for ln, mau_ln in zip(title_lines, mau_dong, strict=False):
+        n = len(ln.split(" "))
         _about_line(d, _x_chu(ln, f_title), y - tren, ln, f_title, mau_ln,
                  che_do_to, mau_du_phong, nen_sang=(mau_ln == BG),
-                 keys=key_words(highlight))
+                 keys=key_words(highlight), marks=marks[dau:dau + n])
+        dau += n
         y += buoc
 
     # Chan the chi con TEN KENH, can giua. Nguon van phai ghi, nhung ghi o chu
@@ -1609,6 +1724,8 @@ def main():
                    choices=["free"] + list(RATIOS),
                    help="free: chiều cao trôi theo ảnh. 1:1/4:5/3:4: khoá tỉ lệ")
     p.add_argument("--out", required=True)
+    p.add_argument("--logo-card", action="store_true",
+                   help="Anh la THE LOGO 4:5 cua hang (LOW-337): dung mot minh lam hero, khong bi chan nhu chart")
     p.add_argument("--cluttered", action="store_true",
                    help="Anh roi (cluttered) buoc phai dung: nen chu dac thay lam mo (LOW-47)")
     p.add_argument("--cover-focus", default=None,
@@ -1622,7 +1739,7 @@ def main():
           handle=a.handle, ratio=a.ratio, tagline=a.tagline, brand=a.brand,
           bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker, attrib=a.attrib,
           bo_qua_anh=a.bo_qua_anh, nhan_vat=a.nhan_vat, cluttered=a.cluttered,
-          highlight=a.highlight,
+          logo_card=a.logo_card, highlight=a.highlight,
           cover_focus=tuple(float(v) for v in a.cover_focus.split(",")) if a.cover_focus else None)
 
 

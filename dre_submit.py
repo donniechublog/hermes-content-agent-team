@@ -125,7 +125,10 @@ def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
     # 13/09/2026): bo cam doan ve nguon/chat luong nay, moi vai.
     bo.kiem_mat(ghep, muc, nhan)
     bo.dung_anh.append((nhan, list(ghep)))
-    return {"images": [bo.anh[x]["original_path"] for x in ghep]}
+    # LOW-341: loai tung tam (chart hay anh chup) de carousel._flat_plan biet tam nao duoc xet
+    # nguong nen phang noi (bang/so do cat sat mep).
+    return {"images": [bo.anh[x]["original_path"] for x in ghep],
+            "image_kinds": [bo.anh[x].get("kind") for x in ghep]}
 
 
 def _clean_cover_stack_pair(anh: dict, cap_ids) -> list | None:
@@ -159,6 +162,16 @@ def _headline_cover_with_better(anh: dict, ma: str, cap_ids) -> str | None:
             f"[\"{cap[0]}\", \"{cap[1]}\"] làm bìa (ưu tiên cặp có logo/chủ thể của tin).")
 
 
+def _flat_original(a: dict):
+    """Mau nen neu anh GOC la nen phang (LOW-341, logo_card.flat_background), None neu khong
+    hoac khong mo duoc tep. Anh loai chart (bang, so do, chup man hinh) xet them nguong noi."""
+    import logo_card
+    try:
+        return logo_card.flat_background(Image.open(a["original_path"]), relaxed=a.get("kind") == "chart")
+    except (OSError, KeyError, TypeError):
+        return None
+
+
 def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | None:
     """Nhanh mot ma anh: chon ban dung (goc / da cat san / cat ngang) va chan
     cac cach dung sai loai anh."""
@@ -180,6 +193,18 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
         cap = _headline_cover_with_better(bo.anh, ma, m.get("stackable_pairs") or [])
         if cap:
             bo.loi.append(cap)
+    if not a.get("ranking") and not a.get("logo_card") and _flat_original(a):
+        # LOW-341: anh NEN PHANG (hinh paper, chup trang trang) — carousel.py dan NGUYEN noi
+        # dung 90% be ngang tren chinh mau nen, TREN chu, o ca bia. Dung anh GOC: ban cat 4:5
+        # cua ready/ la cat mat noi dung, con luat "anh ngang phai ghep / chart khong lam bia"
+        # canh chung chu de len anh — o day chu khong bao gio de len anh.
+        ra["image"] = a["original_path"]
+        if a.get("kind") == "chart":
+            ra["chart"] = True                   # carousel._flat_plan xet nguong noi cua chart
+        bo.loi.extend(nc.check_empty_image(a, nhan, image_rules_dre.EMPTY_SHARE_MAX))
+        bo.kiem_mat([ma], muc, nhan)
+        bo.dung_anh.append((nhan, [ma]))
+        return ra
     if a["kind"] == "chart" and not a.get("ranking"):
         # Do hoa CLUTTERED lam bia duoc (LOW-47): carousel hien nguyen be ngang, nen chu
         # dac phu nua duoi — khong con "hook de len mat nua duoi" nua.

@@ -178,7 +178,7 @@ def test_theme_va_hero_la_thi_bao_kem_lua_chon():
         sl, m = _du_bia(wd)
         _r, loi, _c = _chay(sl, m, wd, theme="neon-xyz", hero="rong")
         assert _co(loi, "theme", "neon-xyz") and _co(loi, "hero", "rong"), loi
-        th = sorted(render_edu.THEMES)[0]
+        th = sorted(render_edu.MOOD_THEMES)[0]   # palette hang chi cho tin cua hang (LOW-340)
         ra, loi2, _c = _chay(sl, m, wd, theme=th)
         assert loi2 == [] and ra["theme"] == th
 

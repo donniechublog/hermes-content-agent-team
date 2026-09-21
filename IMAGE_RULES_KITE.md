@@ -791,9 +791,8 @@ nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IM
   thẻ sẽ dựng (`card.text_zone_report`): vùng khung chữ sạch (`busy` ≤ 8) và không cắt mất chi
   tiết mép khi phủ kín (`lost` ≤ 25%) xếp trước; ảnh rối/mất mép có nhãn ⚠️, `ethan_submit` cảnh
   báo khi chọn ảnh rối mà bài còn ảnh sạch (không chặn).
-- **Slide Dre**: ảnh chụp nguồn dừng TRÊN vùng chữ, cắt tại dải trống dài nhất trong vùng cho
-  phép (`image_rules_common.quiet_cut_row`) — ranh giới giữa hai khối (ảnh | chú thích | tít),
-  không bao giờ cắt ngang một dòng. Khoảng hở `carousel.CAPTURE_TEXT_GAP`.
+- **Slide Dre**: ảnh nền phẳng (gồm ảnh chụp trang) theo LOW-341 — ảnh 90% bề ngang trên CHÍNH màu
+  nền của nó (lề liền màu với ảnh, không phải viền lạ); bìa là ảnh chụp nguồn thì không cover-crop.
 - **Cổng pixel**: `check_side_bars` (mỗi module vai, đo bằng `image_rules_common.has_side_bars`)
   chặn ảnh đầu vào có mảng màu đặc ≥ 1.5% bề ngang chạy suốt hai bên. Thẻ logo / thẻ xếp hạng dự
   phòng được miễn (nền đặc phủ kín là chính thiết kế của chúng). Ảnh `source_capture` được miễn
@@ -851,6 +850,15 @@ mảng nhìn tách rời:
 - **Không ghép hai ảnh lệch tone** (mục 5).
 - **Không làm tối riêng một mảng** quanh chart để "cho nổi": mảng tối có mép
   thẳng chính là vùng thứ hai.
+
+### 7.0b Màu chữ tương phản TRƯỚC, nền chữ SAU — ảnh nền phẳng (LOW-341, gộp LOW-339)
+
+Ông Chủ 21/09/2026: *"luôn ưu tiên đặt chữ màu tương phản với màu nền trước khi phải dùng
+tới nền chữ"*; ảnh nền phẳng thì *"kéo màu mép ra kín hai bên"*. Luật chung cho mọi vai,
+chi tiết và số đo ở `IMAGE_RULES_DRE.md` §7.0b. Ở Kite, nhánh `phang` của
+`render_edu.image_make_background` đã lấp màu nền của ảnh ra cả thẻ và đổi màu chữ từ
+08/09; chỗ còn hở là ảnh phẳng CAO quá phần trên chữ vẫn bị cắt mép dưới (`set_image`)
+thay vì thu nhỏ vừa — LOW-339, chưa sửa (cần đo lại slide Pirate Face trên máy chủ).
 
 ### 7.1 Ảnh rối: chỉ dùng khi hết ảnh sạch, dùng thì nền chữ đậm hơn (vẫn là overlay)
 

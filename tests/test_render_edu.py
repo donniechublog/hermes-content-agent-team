@@ -290,21 +290,23 @@ def test_dam_nhieu_ti_hon_khong_tu_quyet_theme():
 
 def test_theme_bam_mau_hang_khi_anh_khong_co_mau():
     """LOW-11, Ong Chu chot 10/09/2026: palette cua slide phai di cung mau
-    brand. Bia ve vector (khong co anh mau) thi theme bam MAU NHAN DIEN CUA
-    HANG chu khong xoay vong mu mau — tin DeepSeek (xanh duong #4D6CF7) ra
-    'ink', khong duoc ra 'moss' xanh la nua."""
+    brand — tin DeepSeek khong duoc ra 'moss' xanh la. Tu LOW-340 (21/09) DeepSeek
+    co palette rieng (xanh duong · xam · trang), khong con muon 'ink' navy x vang."""
     theme, _hero = re_.pick_theme_auto({"folio": "DEEPSEEK V4"}, bia_anh=False)
-    assert theme == "ink", f"tin DeepSeek phai ra theme 'ink', ra {theme}"
+    assert theme == "deepseek", f"tin DeepSeek phai ra theme 'deepseek', ra {theme}"
 
 
-def test_mau_anh_that_van_thang_mau_hang():
-    """Thu tu uu tien phai giu nguyen: anh that mau CO SAN (luat 09/09/2026)
-    van thang mau hang. Tin DeepSeek (xanh duong) ma bia la anh xanh la ro ret
-    thi theme chay theo ANH, ra 'moss'."""
+def test_brand_palette_beats_cover_image_color():
+    """LOW-340, Ong Chu chot 21/09/2026: thu tu MOI — palette hang chu the
+    dung dau, mau anh bia that xuong thu hai (luat 09/09 bi thay). Tin DeepSeek
+    ma bia la anh xanh la ro ret van ra palette DeepSeek."""
     p = _anh_mot_mau((76, 217, 111))
     theme, _hero = re_.pick_theme_auto(
         {"folio": "DEEPSEEK V4"}, bia_anh=True, anh_mau=str(p))
-    assert theme == "moss", f"mau anh that phai thang mau hang, ra {theme}"
+    assert theme == "deepseek", f"palette hang phai thang mau anh bia, ra {theme}"
+    # Tin KHONG gan hang: mau anh bia van quyet nhu cu.
+    theme, _hero = re_.pick_theme_auto({"folio": "test"}, bia_anh=True, anh_mau=str(p))
+    assert theme == "moss", theme
 
 
 def test_mau_hang_trong_spec_chiu_duoc_spec_khong_co_slides():
