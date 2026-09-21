@@ -79,6 +79,14 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             s2["image"] = img_path
 
+            # LOW-339: logo / hinh ve tren nen tron (vision `subject_kind`=logo) ma DAY chu
+            # the roi xuong duoi vung tren khung chu thi renderer phai CO ANH VUA, khong
+            # cat/che nua duoi. Nhan `kind` cua manifest khong dung duoc o day: A77 (mat
+            # cuop bien) bi do "chart" vi nen phang + it mau, nen chi tin `subject_kind`.
+            # The logo 4:5 co logo nam tren cao (day chu the < vung tren) KHONG doi.
+            if render_edu.subject_below_text_zone(hinh[img]):
+                s2["image_fit"] = "contain"
+
             # KHONG DUNG LAI ANH DA DUNG (Ong Chu 06/09/2026). Dre va Ethan
 
             # co cong nay tu dau; Kite thi khong doc lan khong ghi, nen mot
@@ -337,6 +345,25 @@ def check_subject_above_text(spec_r: dict, m: dict, text_tops: dict) -> list:
     for i, sl in enumerate(spec_r.get("slides") or [], start=1):
         a = by_path.get(str(sl.get("image") or ""))
         top = text_tops.get(i)
+        # LOW-339: anh da CO cho vua (image_fit) thi day anh co dinh o CONTAIN_BOTTOM; khoi chu
+        # chi can khong len qua do. Khong xet kind/ranking o duoi: A77 bi do "chart".
+        if sl.get("image_fit") == "contain" and top is not None and sl.get("image"):
+            p_img, iw_img, ih_img = render_edu._measure_image(sl["image"])
+            fit = render_edu.contain_fit(p_img, iw_img, ih_img)
+            if fit is not None:
+                if render_edu._boxed_picture(fit):
+                    if not sl.get("image_force"):
+                        loi.append(f"slide {i} ({(a or {}).get('id')}): hình có khung riêng nhưng chỉ hiển thị "
+                                   f"{fit['width_share']:.0%} bề ngang (cao hơn vùng trên chữ) nên lộ thành cái "
+                                   "hộp trên nền. Đổi hình khác: không dùng hình không hiển thị được full bề "
+                                   "ngang. Chỉ khi BUỘC phải dùng hình này thì thêm \"image_force\": true vào "
+                                   "slide (hình được phóng full bề ngang, lớp chữ phủ lên phần thừa)")
+                    continue
+                if render_edu.CONTAIN_BOTTOM > top + image_rules_kite.SUBJECT_TEXT_TOLERANCE * render_edu.H:
+                    loi.append(f"slide {i} ({(a or {}).get('id')}): khối chữ bắt đầu ở {top / render_edu.H:.0%} "
+                               f"khung, đè lên đáy hình đã co ({render_edu.CONTAIN_BOTTOM / render_edu.H:.0%}). "
+                               "Rút gọn chữ của slide (standfirst/caption/cards)")
+                continue
         if not a or top is None or a.get("kind") == "chart" or a.get("ranking") or a.get("unpadded_path"):
             continue
         path = sl["image"]
