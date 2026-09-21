@@ -1012,8 +1012,8 @@ của Ethan. đó là lý do vì sao chúng ta cần tách một số phần tro
 
 - Kiểu thẻ gắn với VAI trong code: `role.Role.card_styles` (Ethan = `("full_bleed",)`),
   đọc qua `role.card_styles_for`. `ethan_submit` từ chối `"card_style": "quote"` với câu báo
-  "quote là phong cách của Dre"; spec không ghi kiểu thì mặc định `full_bleed`; giá trị cũ
-  tên kiểu cũ vẫn đọc được qua `role_spec.card_style_value`.
+  "quote là phong cách của Dre"; spec không ghi kiểu thì mặc định `full_bleed`; tên kiểu
+  cũ vẫn đọc được qua `role_spec.card_style_value`.
 - Spec cũ ghi `quote` KHÔNG tự đổi sang `full_bleed`: một câu hook kiểu quote (kèm attrib
   "via …") không tự thành tiêu đề được, vai phải viết lại `title` + `kicker`.
 - Brief, task body, SOUL (`hermes/profiles/shared/ethan.SOUL.md`) và skill `hero-image` chỉ
