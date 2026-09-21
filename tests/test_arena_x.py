@@ -17,8 +17,8 @@ import ranking  # noqa: E402
 NOW = datetime(2026, 9, 21, tzinfo=timezone.utc)
 
 
-def _tw(text, created="2026-09-15T10:00:00.000Z", handle="arena", photos=("https://pbs.twimg.com/media/x.jpg",)):
-    return {"id": "1", "handle": handle, "created": created, "text": text, "photos": list(photos)}
+def _tw(text, created="2026-09-15T10:00:00.000Z", handle="arena", url="https://x.com/arena/status/2093015572212846673"):
+    return arena_x._record(url, handle, created, text)
 
 
 def test_exact_model_with_version_only():
@@ -43,12 +43,12 @@ def test_short_names_only_when_they_keep_the_version():
     assert arena_x.model_keys(["GPT-6 Astra (max)", "GPT-6 Astra", "GPT-6"])[-1] == "gpt 6"
 
 
-def test_usable_filters_handle_age_photo():
+def test_usable_filters_handle_age_url():
     m = ["Qwen-Image-2.1"]
     assert arena_x.usable(_tw("Qwen-Image-2.1 #1"), m, NOW)
     assert not arena_x.usable(_tw("Qwen-Image-2.1 #1", handle="designarena"), m, NOW)
     assert not arena_x.usable(_tw("Qwen-Image-2.1 #1", created="2026-06-01T00:00:00.000Z"), m, NOW)
-    assert not arena_x.usable(_tw("Qwen-Image-2.1 #1", photos=()), m, NOW)
+    assert not arena_x.usable(_tw("Qwen-Image-2.1 #1", url=""), m, NOW)
 
 
 def test_status_ids_from_search_html():
@@ -70,6 +70,14 @@ def test_arena_x_is_a_real_capture_and_goes_first():
         assert ranking.find_and_capture(["Qwen-Image-2.1"], [], Path("."), in_log=lambda *_: None) == hit[0]
     finally:
         arena_x.find_arena_images = saved
+
+
+
+def test_uses_team_skills_not_ad_hoc_search():
+    """Ong Chu 21/09/2026: "skill crawl X trong repo cua chung ta co roi, tan dung thoi"."""
+    src = (ROOT / "arena_x.py").read_text(encoding="utf-8")
+    assert arena_x.SOCIAL_FETCH.exists() and arena_x.GET_SOURCE.exists()
+    assert "duckduckgo" not in src.lower() and "syndication" not in src.lower()
 
 
 if __name__ == "__main__":

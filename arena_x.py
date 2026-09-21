@@ -7,14 +7,14 @@ tới benchmark, ko tìm được thì mới dùng bảng của bên khác"*. @a
 chính chủ cho từng model mới ("Gemini Omni 1.1 Flash has landed #1 in the Text-to-Video
 Arena" kèm ảnh bảng) — đẹp và đúng hơn ảnh engine tự chụp trang bảng.
 
-Đường đi (đo 21/09/2026 trên máy chủ):
-  - Timeline công khai của X (`syndication.twitter.com/srv/timeline-profile`) trả 429 từ
-    mọi máy, không dùng được. Không đăng nhập X hộ ai.
-  - Đọc MỘT tweet theo ID (`cdn.syndication.twimg.com/tweet-result`) thì chạy: có chữ,
-    ngày, tác giả, ảnh gốc `pbs.twimg.com`.
-  - ID tweet lấy từ hai chỗ: tìm DuckDuckGo `site:x.com/arena "<model>"` (Bing không trả
-    link status), và kho tweet của crawler social-publishing (`scan_x.read_tweets`) — kho
-    này chỉ bắt @arena khi lọt vào feed, và crawler đã dừng từ 13/09/2026.
+Đường đi — CHỈ dùng hạ tầng sẵn có của đội, không tự mò (Ông Chủ 21/09/2026: *"skill crawl X
+trong repo của chúng ta có rồi, tận dụng thôi"*):
+  - Tweet của @arena: kho tweet của crawler X (`scan_x.read_tweets`, GET /tweets) và skill
+    `social-crawl` đọc trang `x.com/arena` (tweet đầu/ghim + thread của nó) qua crawl-queue.
+  - Ảnh: `url-mascot-frame/scripts/get_source.py` — post X trả `media[]` rỗng, script đó đọc
+    `pbs.twimg.com/media/<id>` trong HTML và tải bản `name=orig`.
+  Crawl-queue chỉ đọc MỘT post mỗi lần (trang hồ sơ/trang tìm kiếm đều trả một tweet), nên
+  danh sách tweet mới dựa vào kho crawler X — kho đó dừng từ 13/09/2026 (xem báo cáo LOW-337).
 
 Khớp CHẶT tên model: tìm "Qwen-Image-2.1" ra toàn tweet Qwen-Image-2.0 / Qwen 3 cũ, nên
 chỉ nhận tweet chứa đúng tên (kể cả số phiên bản), đăng trong `MAX_AGE_DAYS` ngày, có ảnh.
@@ -22,7 +22,6 @@ Không ra gì -> [] và `ranking` đi chụp các trang bảng như trước.
 """
 import re
 import sys
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -33,8 +32,10 @@ HANDLES = ("arena", "lmarena_ai")          # lmarena_ai: tên cũ của cùng t�
 MAX_AGE_DAYS = 45
 MAX_IMAGES = 2
 MAX_TWEETS_CHECKED = 12
-SEARCH_URL = "https://html.duckduckgo.com/html/"
-TWEET_URL = "https://cdn.syndication.twimg.com/tweet-result"
+ROOT = Path(__file__).resolve().parent
+SOCIAL_FETCH = ROOT / "hermes/skills/social-crawl/scripts/social_fetch.py"
+GET_SOURCE = ROOT / "hermes/skills/url-mascot-frame/scripts/get_source.py"
+PROFILE_URL = "https://x.com/arena"
 KIND = "x_post"                             # ranking.kind cho ảnh lấy từ tweet
 SITE = "Arena (X @arena)"
 _STATUS = re.compile(r"(?:x|twitter)\.com(?:/|%2F)(" + "|".join(HANDLES) + r")(?:/|%2F)status(?:/|%2F)(\d{15,20})",
@@ -69,61 +70,56 @@ def tweet_matches(text: str, models: list) -> str:
     return ""
 
 
-def _ua():
-    return {"User-Agent": env_load.UA_BROWSER, "Accept-Language": "en-US,en;q=0.9"}
+def _record(url: str, handle: str, created: str, text: str) -> dict:
+    return {"url": url or "", "handle": (handle or "").lstrip("@").lower(), "created": created or "",
+            "text": text or ""}
 
 
-def search_ids(models: list) -> list:
-    """ID tweet của @arena nhắc model, từ DuckDuckGo. Hỏng mạng -> []."""
-    import httpx
-    ids = []
-    for k in model_keys(models)[:2]:
-        try:
-            r = httpx.get(SEARCH_URL, params={"q": f'site:x.com/arena "{k}"'}, headers=_ua(),
-                          timeout=20, follow_redirects=True)
-        except Exception as e:                               # noqa: BLE001
-            print(f"[arena_x] tim tweet hong: {type(e).__name__}", file=sys.stderr)
-            continue
-        ids += [m.group(2) for m in _STATUS.finditer(r.text)]
-    return list(dict.fromkeys(ids))
-
-
-def crawler_ids(models: list) -> list:
-    """ID tweet của @arena có sẵn trong kho crawler social-publishing và nhắc model."""
+def crawler_tweets() -> list:
+    """Tweet @arena trong kho crawler X (GET /tweets). Không đọc được -> []."""
     import scan_x
     try:
         goi = scan_x.read_tweets(24 * MAX_AGE_DAYS, 5000)
     except (SystemExit, Exception) as e:                     # noqa: BLE001 — read_tweets sys.exit khi thieu khoa
         print(f"[arena_x] kho tweet crawler khong doc duoc: {e}", file=sys.stderr)
         return []
+    ra = [_record(t.get("url"), (t.get("author") or {}).get("handle"), t.get("timestamp"), t.get("text"))
+          for t in goi.get("tweets", [])]
+    return [r for r in ra if r["handle"] in HANDLES]
+
+
+def profile_tweets() -> list:
+    """Tweet đầu trang x.com/arena + thread của nó, qua skill social-crawl. Hỏng -> []."""
+    import json
+    import subprocess
+    try:
+        out = subprocess.run([sys.executable, str(SOCIAL_FETCH), PROFILE_URL, "--tries", "3"],
+                             capture_output=True, text=True, timeout=240).stdout
+        d = json.loads(out[out.index("{"):])
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[arena_x] social-crawl {PROFILE_URL} hong: {type(e).__name__}", file=sys.stderr)
+        return []
     ra = []
-    for t in goi.get("tweets", []):
-        tay = ((t.get("author") or {}).get("handle") or "").lstrip("@").lower()
-        m = _STATUS.search(t.get("url") or "")
-        if tay in HANDLES and m and tweet_matches(t.get("text"), models):
-            ra.append(m.group(2))
+    for t in [d.get("tweet") or {}] + list(d.get("thread") or []):
+        ra.append(_record(t.get("url"), (t.get("author") or {}).get("handle") or "arena",
+                          t.get("timestamp"), t.get("text")))
     return ra
 
 
-def fetch_tweet(tweet_id: str) -> dict:
-    """{id, handle, created, text, photos:[url]} của một tweet, hoặc {}."""
-    import httpx
+def download_image(url: str, out: Path) -> bool:
+    """Ảnh gốc của post X qua skill url-mascot-frame (`get_source.py`)."""
+    import subprocess
     try:
-        r = httpx.get(TWEET_URL, params={"id": tweet_id, "token": "a"}, headers=_ua(), timeout=20)
-        if r.status_code != 200:
-            return {}
-        d = r.json()
+        subprocess.run([sys.executable, str(GET_SOURCE), url, str(out)], capture_output=True,
+                       text=True, timeout=240)
     except Exception:                                        # noqa: BLE001
-        return {}
-    return {"id": tweet_id, "handle": ((d.get("user") or {}).get("screen_name") or "").lower(),
-            "created": d.get("created_at") or "", "text": d.get("text") or "",
-            "photos": [m["media_url_https"] for m in d.get("mediaDetails") or []
-                       if m.get("type") == "photo" and m.get("media_url_https")]}
+        return False
+    return out.exists() and out.stat().st_size > 0
 
 
 def usable(tw: dict, models: list, now=None) -> str:
-    """Tên model khớp nếu tweet dùng được (đúng @arena, mới, có ảnh, nhắc đúng model), hoặc ''."""
-    if not tw or tw.get("handle") not in HANDLES or not tw.get("photos"):
+    """Tên model khớp nếu tweet dùng được (đúng @arena, mới, nhắc đúng model), hoặc ''."""
+    if not tw or tw.get("handle") not in HANDLES or not _STATUS.search(tw.get("url") or ""):
         return ""
     try:
         ngay = datetime.fromisoformat(tw["created"].replace("Z", "+00:00"))
@@ -137,38 +133,39 @@ def usable(tw: dict, models: list, now=None) -> str:
 def find_arena_images(models: list, out_dir: Path, in_log=print) -> list:
     """Ảnh xếp hạng từ tweet @arena cho `models`, cùng dạng kết quả với
     `ranking.find_and_capture_many`. Không có -> []."""
-    import httpx
     from PIL import Image
     import image_provenance
     import state_paths
-    ids = list(dict.fromkeys(crawler_ids(models) + search_ids(models)))[:MAX_TWEETS_CHECKED]
+    ungvien, da = [], set()
+    for tw in crawler_tweets() + profile_tweets():
+        m = _STATUS.search(tw["url"])
+        if m and m.group(2) not in da and usable(tw, models):
+            da.add(m.group(2))
+            ungvien.append((m.group(2), tw))
     ra = []
-    for tid in ids:
-        tw = fetch_tweet(tid)
+    for tid, tw in ungvien[:MAX_TWEETS_CHECKED]:
         khop = usable(tw, models)
-        if not khop:
-            continue
         url = f"https://x.com/{tw['handle']}/status/{tid}"
-        for i, anh in enumerate(tw["photos"][:1]):
-            out = Path(out_dir) / f"{state_paths.RANKING_IMAGE_PREFIX}arena_x_{tid}_{i}.png"
-            try:
-                out.parent.mkdir(parents=True, exist_ok=True)
-                tam = out.with_suffix(".tmp")
-                tam.write_bytes(httpx.get(anh.split("?")[0] + "?name=large", headers=_ua(), timeout=30,
-                                          follow_redirects=True).content)
-                Image.open(tam).convert("RGB").save(out, "PNG")
-                tam.unlink(missing_ok=True)
-            except Exception as e:                           # noqa: BLE001
-                in_log(f"[arena_x] tai anh tweet {tid} hong: {type(e).__name__}")
-                continue
-            dong = (tw["text"].splitlines() or [""])[0][:90]
-            image_provenance.stamp_file(out, "ranking_capture", model=khop, source="arena-x",
-                                        site=SITE, board=dong, rank=None, url=url)
-            in_log(f"[arena_x] {url}: khớp {khop!r} — {dong}")
-            ra.append({"file_path": str(out), "kind": KIND, "source": "arena-x", "site": SITE,
-                       "board": dong, "rank": None, "model": khop, "url": url, "row": dong,
-                       "logo": None, "mentioned": True})
+        out = Path(out_dir) / f"{state_paths.RANKING_IMAGE_PREFIX}arena_x_{tid}.png"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        tam = out.with_suffix(".src")
+        if not download_image(url, tam):
+            in_log(f"[arena_x] {url}: khong lay duoc anh")
+            continue
+        try:
+            Image.open(tam).convert("RGB").save(out, "PNG")
+        except Exception as e:                               # noqa: BLE001
+            in_log(f"[arena_x] anh tweet {tid} hong: {type(e).__name__}")
+            continue
+        finally:
+            tam.unlink(missing_ok=True)
+        dong = (tw["text"].splitlines() or [""])[0][:90]
+        image_provenance.stamp_file(out, "ranking_capture", model=khop, source="arena-x",
+                                    site=SITE, board=dong, rank=None, url=url)
+        in_log(f"[arena_x] {url}: khớp {khop!r} — {dong}")
+        ra.append({"file_path": str(out), "kind": KIND, "source": "arena-x", "site": SITE,
+                   "board": dong, "rank": None, "model": khop, "url": url, "row": dong,
+                   "logo": None, "mentioned": True})
         if len(ra) >= MAX_IMAGES:
             break
-        time.sleep(0.3)
     return ra
