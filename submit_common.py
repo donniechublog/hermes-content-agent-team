@@ -618,8 +618,8 @@ def check_no_repeat_image_redo(anh: dict, dung_anh: list, m: dict, drafts_dir) -
     loi = []
     for nhan, ma_list in dung_anh:
         mo = re.search(r"slide (\d+)", nhan)
-        so = "1" if nhan == "bìa" else (mo.group(1) if mo else None)
-        ds = cam.get(so) if so else None
+        slide_no = "1" if nhan == "bìa" else (mo.group(1) if mo else None)
+        ds = cam.get(slide_no) if slide_no else None
         if not ds:
             continue
         for ma in ma_list:

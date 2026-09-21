@@ -518,17 +518,17 @@ def _extract_reason_redo(text):
         return "CA BO", (m.group(2).strip() or t)
     m = re.search(r"(?:slide|ảnh|anh)\s*#?\s*(\d[\d\s,]*)", t, re.I)
     if m:
-        so = sorted({int(x) for x in re.findall(r"\d+", m.group(1))})
+        slide_numbers = sorted({int(x) for x in re.findall(r"\d+", m.group(1))})
         duoi = t[m.end():]
         mm = re.match(r"^\s*[:\-–—]\s*(.*)$", duoi, re.S)
         ly_do = mm.group(1).strip() if mm else t
-        return ", ".join(str(x) for x in so), (ly_do or t)
+        return ", ".join(str(x) for x in slide_numbers), (ly_do or t)
     # Khong co chu "slide/ảnh" nhung go tat so tro len dau ("4: chart bi cat"),
     # kieu cu truoc 13/09/2026 — van phai nhan.
     m = re.match(r"^\s*(\d[\d\s,]*)\s*[:\-–—]\s*(.*)$", t, re.S)
     if m:
-        so = sorted({int(x) for x in re.findall(r"\d+", m.group(1))})
-        return ", ".join(str(x) for x in so), m.group(2).strip()
+        slide_numbers = sorted({int(x) for x in re.findall(r"\d+", m.group(1))})
+        return ", ".join(str(x) for x in slide_numbers), m.group(2).strip()
     return None, t
 
 def _code_of_slide(spec: dict, n: int) -> list:
@@ -929,7 +929,7 @@ def _button_lower_ready(token, draft_id, cq):
     # so=0 -> "Chi 0 anh that" du co 6 anh.
     mm = schema.read_manifest(xong) or {}
     san = int(mm.get("base_min_images", 5))
-    so = int(mm.get("usable_count", 0))
+    usable = int(mm.get("usable_count", 0))
     cu = int(mm.get("min_images", san))
     # Goi san pham dung ten cua vai: "slide" cho Dre/Kite, "ảnh" cho Ethan.
     # Sidecar TRUOC manifest: `create_task_kite` doi `image_role` trong sidecar khi
@@ -942,7 +942,7 @@ def _button_lower_ready(token, draft_id, cq):
     if not mm:
         note = "⚠️ Không đọc được bản chuẩn bị (manifest.json) — chưa hạ sàn được, vai vẫn bị chặn như cũ"
         call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="Thiếu manifest.json", show_alert=True)
-    elif so < san:
+    elif usable < san:
         # HET DUONG that su: khong the ha san duoi san cung (carousel.MIN_SLIDE),
         # nen chi con Kite hoac bo tin. Truoc 08/09/2026 noi vay roi GO LUON ban
         # phim (_finalize_button xoa vo dieu kien) — Ong Chu doc thay "chuyen Kite hoac
@@ -952,12 +952,12 @@ def _button_lower_ready(token, draft_id, cq):
         hang = [] if khong_kite else [{"text": "🎨 Gửi Kite vẽ vector", "callback_data": "imgkite:" + draft_id}]
         hang.append({"text": "❌ Bỏ hẳn tin", "callback_data": "imgno:" + draft_id})
         keyboard = {"inline_keyboard": [hang]}
-        note = (f"⚠️ Chỉ {so} ảnh thật mà bài này cần tối thiểu {san} {don_vi} — "
+        note = (f"⚠️ Chỉ {usable} ảnh thật mà bài này cần tối thiểu {san} {don_vi} — "
                 f"bấm tiếp cũng không dựng được. Chuyển Kite vẽ vector, hoặc bỏ tin.")
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-             text=f"Không đủ: {so} ảnh < {san} {don_vi}", show_alert=True)
+             text=f"Không đủ: {usable} ảnh < {san} {don_vi}", show_alert=True)
     elif cu <= san:
-        note = f"🖼 Sàn đã ở mức tối thiểu {san} {don_vi} — vai làm với {so} ảnh hiện có"
+        note = f"🖼 Sàn đã ở mức tối thiểu {san} {don_vi} — vai làm với {usable} ảnh hiện có"
         call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="OK, làm với số ảnh hiện có")
     else:
         mm["min_images"] = san
@@ -967,7 +967,7 @@ def _button_lower_ready(token, draft_id, cq):
             tmp.write_text(json.dumps(mm, ensure_ascii=False, indent=1), encoding="utf-8")
             tmp.replace(xong)
             note = (f"🖼 Đã hạ sàn {cu} → {san} {don_vi} cho bài này: vai ảnh làm với "
-                    f"{so} ảnh thật hiện có (gộp ý / giảm {don_vi})")
+                    f"{usable} ảnh thật hiện có (gộp ý / giảm {don_vi})")
             call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=f"Hạ sàn còn {san} {don_vi}")
         except OSError as e:
             note = f"⚠️ Không ghi được {state_paths.MANIFEST_FILE} ({type(e).__name__}) — sàn vẫn {cu}, vai sẽ còn bị chặn"
@@ -1457,7 +1457,7 @@ def _bottom_again_moat(token, action, draft_id, cq):
          text="Đang đẩy lại…")
     msg = cq.get("message") or {}
 
-    def chay():
+    def run():
         try:
             if action == "mlai":
                 ok, why = moat_publish.intake(draft_id)
@@ -1484,7 +1484,7 @@ def _bottom_again_moat(token, action, draft_id, cq):
                                else (msg.get("reply_markup") or {"inline_keyboard": []})))
         log("nut", f"day lai moat {action} {draft_id}: {txt}")
 
-    threading.Thread(target=chay, daemon=True).start()
+    threading.Thread(target=run, daemon=True).start()
 
 
 def _read_draft(draft_id):

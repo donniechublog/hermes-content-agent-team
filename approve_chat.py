@@ -65,11 +65,11 @@ class RankFIFCell:
         """(so cua minh, so nguoi dang dung truoc). Tach khoi doi() de ben goi
         kip bao Ong Chu "con N tin truoc" TRONG LUC cho, khong phai sau."""
         with self._cv:
-            so = self._phat
+            ticket = self._phat
             self._phat += 1
-            return so, so - self._phuc_vu
+            return ticket, ticket - self._phuc_vu
 
-    def doi(self, ticket):
+    def wait(self, ticket):
         with self._cv:
             while ticket != self._phuc_vu:
                 self._cv.wait()
@@ -213,7 +213,7 @@ def handle_chat(token, group, msg, thread_id, text):
              text=f"⏳ <b>{who}</b> đang trả lời {truoc} tin trước trong topic này, "
                   "xong sẽ tới tin này…", parse_mode="HTML")
         da_bao = True
-    hang.doi(so)
+    hang.wait(so)
     try:
         # Tang 2: cho chung — toi da _SO_SONG_SONG vai goi agent cung luc.
         if not _CHO_CHAT.acquire(blocking=False):
@@ -248,10 +248,10 @@ def _chat_has_lock(token, group, thread_id, text, profile, session, who, kw_thre
     # chua xong thi nhan mot dong, de Ong Chu biet la dang chay chu khong phai
     # chet. Truoc day 10 phut im lang roi moi bao het gio.
     ket_qua = {}
-    def _goi():
+    def _call():
         ket_qua["r"] = chat_router.ask(profile, session, context_edge_role(profile) + text,
                                        toolsets=toolsets)
-    th = threading.Thread(target=_goi, daemon=True)
+    th = threading.Thread(target=_call, daemon=True)
     th.start()
     moc_bao = [120, 360]
     t0 = time.time()

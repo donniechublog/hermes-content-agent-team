@@ -785,7 +785,7 @@ def _gate_image(paths):
     da_thay = {}
     da_subject = {}                      # LOW-265: chan dung lap chu the trong carousel
 
-    def gom(ket_qua):
+    def collect(ket_qua):
         a, b = ket_qua
         loi.extend(a)
         canh_bao.extend(b)
@@ -796,7 +796,7 @@ def _gate_image(paths):
         if not Path(p).exists():
             loi.append(f"{nhan}: khong thay tep anh {p}")
             continue
-        if not gom(image_rules_dre.check_duplicate(nhan, p, da_thay)):
+        if not collect(image_rules_dre.check_duplicate(nhan, p, da_thay)):
             continue
         img = Image.open(p)
         w, h_px = img.size
@@ -805,9 +805,9 @@ def _gate_image(paths):
 
         # Anh RONG chan TRUOC check_chart_integrity: anh trang tron duoc do_chart cham la
         # "chart" (phang 100%, 2 mau), de sau thi thong bao thanh "thieu co".
-        if not gom(image_rules_dre.check_blank_image(nhan, img)):
+        if not collect(image_rules_dre.check_blank_image(nhan, img)):
             continue
-        if not gom(image_rules_dre.check_chart_integrity(nhan, img, khai_chart, la_bia)):
+        if not collect(image_rules_dre.check_chart_integrity(nhan, img, khai_chart, la_bia)):
             continue
 
         # RIENG CUA CAROUSEL: slide than khai "chart": true -> nhan ca anh NGANG
@@ -821,16 +821,16 @@ def _gate_image(paths):
             continue
         # Anh GHEP DOC ("images") duoc san rieng STACK_FLOOR (LOW-178): _body_image
         # cat giua doc phan cao hon khung, dre_submit da canh bao mep nao bi cat.
-        gom(image_rules_dre.check_aspect_ratio(
+        collect(image_rules_dre.check_aspect_ratio(
             nhan, p, w, h_px, img=img,                                # img: de mien tru anh xep hang
             lo=image_rules_dre.STACK_FLOOR if muc.get("images") else image_rules_dre.TI_LE_45))
 
-        gom(image_rules_dre.check_crop_landscape(nhan, img, w, h_px, muc.get("crop_ok")))
-        gom(image_rules_dre.check_resolution(nhan, w, h_px))
-        gom(image_rules_dre.check_unnamed_face(nhan, p, muc.get("subject")))
-        gom(image_rules_dre.check_repeated_subject_portrait(nhan, p, muc, da_subject))
+        collect(image_rules_dre.check_crop_landscape(nhan, img, w, h_px, muc.get("crop_ok")))
+        collect(image_rules_dre.check_resolution(nhan, w, h_px))
+        collect(image_rules_dre.check_unnamed_face(nhan, p, muc.get("subject")))
+        collect(image_rules_dre.check_repeated_subject_portrait(nhan, p, muc, da_subject))
         # LOW-267: tep ghep co 2 mat nen cong tren bo qua — kiem tung tam thanh phan.
-        gom(image_rules_dre.check_stack_portrait_subjects(nhan, muc.get("images"), muc, da_subject))
+        collect(image_rules_dre.check_stack_portrait_subjects(nhan, muc.get("images"), muc, da_subject))
     return loi, canh_bao
 
 

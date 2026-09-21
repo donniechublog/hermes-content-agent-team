@@ -240,8 +240,8 @@ def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
     nguoi doc kenh nho anh lau hon mot ngay.
     """
     import json, time
-    so = image_provenance._used_images_log()
-    if not so.exists():
+    used_log = image_provenance._used_images_log()
+    if not used_log.exists():
         return [], []
     try:
         with Image.open(duong_dan) as im:
@@ -274,7 +274,7 @@ def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
     except Exception:                                        # noqa: BLE001
         nguong = 6
     ma = _file_md5(duong_dan)
-    for line in so.read_text(encoding="utf-8").splitlines():
+    for line in used_log.read_text(encoding="utf-8").splitlines():
         try:
             d = json.loads(line)
         except Exception:                                    # noqa: BLE001

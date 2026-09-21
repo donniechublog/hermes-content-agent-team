@@ -726,7 +726,7 @@ def filter_aa(aa: dict, ngay: int, top: int) -> dict:
     co_diem.sort(key=lambda r: -r["codingIndex"])
     hang_coding = {r["slug"]: i + 1 for i, r in enumerate(co_diem)}
 
-    def gon2(r):
+    def slim_with_rank(r):
         g = gon(r)
         g["coding_rank"] = hang_coding.get(r["slug"])
         g["original_name"] = name_original(g["name"])
@@ -736,19 +736,19 @@ def filter_aa(aa: dict, ngay: int, top: int) -> dict:
     # (high)", "(max)", "(low)"...). Voi Nova do la MOT model ra mat, khong
     # phai bay. Lay bien the diem coding cao nhat lam dai dien.
     ra_mat_goc = {}
-    for r in sorted((gon2(r) for r in gan_day),
+    for r in sorted((slim_with_rank(r) for r in gan_day),
                     key=lambda x: -(x["coding"] or 0)):
         ra_mat_goc.setdefault(r["original_name"], r)
     return {
-        "new_releases": sorted((gon2(r) for r in gan_day),
+        "new_releases": sorted((slim_with_rank(r) for r in gan_day),
                              key=lambda x: x["released"] or "", reverse=True),
         "releases_by_name": sorted(ra_mat_goc.values(),
                                   key=lambda x: (x["released"] or "", -(x["coding"] or 0)),
                                   reverse=True),
-        "coding_board_original": _board_original(co_diem, gon2, top),
+        "coding_board_original": _board_original(co_diem, slim_with_rank, top),
         "intelligence_board_original": _board_original(
             sorted((r for r in aa.values() if r.get("intelligenceIndex") is not None),
-                   key=lambda r: -r["intelligenceIndex"]), gon2, top, khoa="intelligence"),
+                   key=lambda r: -r["intelligenceIndex"]), slim_with_rank, top, khoa="intelligence"),
         # `agenticIndex` da duoc tai ve va bo vao gon() tu truoc, nhung chua bao
         # gio duoc dung bang xep hang -> so_hang() khong co moc de so, nen mot
         # model nhay tu #9 len #2 agentic ma tri tue khong doi thi Nova IM
@@ -756,7 +756,7 @@ def filter_aa(aa: dict, ngay: int, top: int) -> dict:
         # request them: so da nam san trong payload.
         "agentic_board_original": _board_original(
             sorted((r for r in aa.values() if r.get("agenticIndex") is not None),
-                   key=lambda r: -r["agenticIndex"]), gon2, top, khoa="agentic"),
+                   key=lambda r: -r["agenticIndex"]), slim_with_rank, top, khoa="agentic"),
         "new_open_weights": sorted(
             (gon(r) for r in gan_day if r.get("isOpenWeights")),
             key=lambda x: x["released"] or "", reverse=True),

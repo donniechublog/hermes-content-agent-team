@@ -265,9 +265,9 @@ def _chart_by_figure(im: Image.Image) -> bool:
     v = im.resize((480, max(1, round(h * 480 / w))))
     L = v.convert("L")
     n = v.width * v.height
-    trang = sum(L.histogram()[236:]) / n
+    white_ratio = sum(L.histogram()[236:]) / n
     canh = sum(L.filter(ImageFilter.FIND_EDGES).histogram()[60:]) / n
-    return trang >= 0.45 and canh >= 0.08
+    return white_ratio >= 0.45 and canh >= 0.08
 
 
 # ---- 3. do, phan loai, cat san --------------------------------------------

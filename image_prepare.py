@@ -145,21 +145,21 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
     # srgb) de khong lang le doi cach xu ly mau anh chup.
     with BrowserSession() as phien:
         nguon, nguon_path, link = load_source(draft_id, meta, state, phien=phien)
-        trang = nguon.get("pages", [])
+        source_pages = nguon.get("pages", [])
 
-        trang = _supplement_source(nguon, nguon_path, trang, link)
+        source_pages = _supplement_source(nguon, nguon_path, source_pages, link)
         # Trang cong bo CHINH CHU cua model (LOW-21): chay cho moi tin nhac model
         # cua hang trong watchlist, TRUOC browser de browser ghe lay chart.
-        trang = _extra_announcement_page(nguon, nguon_path, trang, title, tom.get("summary", ""))
+        source_pages = _extra_announcement_page(nguon, nguon_path, source_pages, title, tom.get("summary", ""))
         bp = {"title_en": "", "article_text": "", "cands": [], "extra_pages": []}
         if not khong_browser:
-            bp, trang = _take_from_browser(trang, wd, nguon, nguon_path, phien=phien)
+            bp, source_pages = _take_from_browser(source_pages, wd, nguon, nguon_path, phien=phien)
         # LOW-222: than bai cua tin la bang chung tach ten rieng cho MOI vong sau
         # (Commons, Yandex, bao thuc the, thuong hieu, cau hoi vision).
         set_story_text("\n".join([bp.get("article_text") or "", tom.get("summary") or ""]))
         xhs, tin_xep_hang = _capture_ranking(title, nguon, tom, link, meta, bp, wd,
                                            khong_browser, phien=phien)
-        anh = _gather_and_download_image(title, link, nguon_path, nguon, trang, bp, wd, xhs)
+        anh = _gather_and_download_image(title, link, nguon_path, nguon, source_pages, bp, wd, xhs)
         anh, dung_duoc, chua_nhin = _seen_image(anh, nguon, title, wd)
         flagship = bool(carousel._FLAGSHIP_RE.search(title + " " + tom.get("summary", "")))
         toi_thieu = role.min_images(vai_anh, flagship)
@@ -186,11 +186,11 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         # mot tam anh la tren mang co dinh dang gi. Truoc do `_round_widen_search`
         # (Yandex + og:image) chay truoc, la duong dai va de lac de hon han.
         if not role.has_enough_material(vai_anh, dung_duoc, flagship):
-            anh, dung_duoc, chua_nhin = _round_capture_source(anh, link, trang, wd,
+            anh, dung_duoc, chua_nhin = _round_capture_source(anh, link, source_pages, wd,
                                                          khong_browser, phien=phien,
                                                          tieu_de=tieu_de_nhin)
         if not role.has_enough_material(vai_anh, dung_duoc, flagship) and not khong_browser:
-            anh, dung_duoc, chua_nhin = _round_widen_search(anh, trang, tieu_de_nhin, toi_thieu,
+            anh, dung_duoc, chua_nhin = _round_widen_search(anh, source_pages, tieu_de_nhin, toi_thieu,
                                                        dung_duoc, wd, phien=phien)
         # ANH CUA CHINH HANG trong tin (logo, chan dung founder/CEO, tru so,
         # campus): chay cho MOI tin nhac toi mot hang trong watchlist, KHONG doi

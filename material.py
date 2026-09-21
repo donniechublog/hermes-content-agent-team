@@ -170,14 +170,14 @@ def main():
     a = ap.parse_args()
 
     tl = gather(a.tieu_de, a.link, a.so_bai_khac, a.tu_nguon)
-    trang = use_page(tl)
+    page_text = use_page(tl)
     if a.out:
-        Path(a.out).write_text(trang, encoding="utf-8")
+        Path(a.out).write_text(page_text, encoding="utf-8")
         print(a.out)
         print(f"  {len(tl['sources'])} nguồn, {len(tl['number_sentences'])} câu có số liệu",
               file=sys.stderr)
     else:
-        print(trang)
+        print(page_text)
 
 
 if __name__ == "__main__":

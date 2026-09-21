@@ -205,10 +205,10 @@ def main() -> int:
     ngay = datetime.now(qb.VN).strftime("%Y-%m-%d")
 
     if a.khong_co:
-        so = "?"
+        scanned = "?"
         if a.vai == "finn":
             d = json.loads((wd / "candidates.json").read_text(encoding="utf-8")) if (wd / "candidates.json").exists() else {}
-            so = len(d.get("candidates", []))
+            scanned = len(d.get("candidates", []))
             chan = nothing_found_block(d.get("candidates") or [])
             if chan:
                 for dong in chan:
@@ -218,9 +218,9 @@ def main() -> int:
                 return 1
         elif a.vai in ("vera", "qinn"):
             d = json.loads((wd / state_paths.SCAN_RESULT_FILE).read_text(encoding="utf-8")) if (wd / state_paths.SCAN_RESULT_FILE).exists() else {}
-            so = d.get("scanned_total", "?")
+            scanned = d.get("scanned_total", "?")
         tep = wd / state_paths.SCAN_NONE_FOUND_FILE
-        tep.write_text(f"{NAME[a.vai]}: hôm nay không có tin nào đạt ngưỡng (đã quét {so} tin). "
+        tep.write_text(f"{NAME[a.vai]}: hôm nay không có tin nào đạt ngưỡng (đã quét {scanned} tin). "
                        "Không có gì để chọn.", encoding="utf-8")
         ok = send(a.vai, tep, a.thu)
         print("Ket qua task: Không có tin đạt ngưỡng, đã báo Ông Chủ." if ok else "[LOI] gui bao cao hong")

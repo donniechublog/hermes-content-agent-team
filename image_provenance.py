@@ -222,10 +222,10 @@ def remove_used_for_draft(draft_id: str) -> int:
     noi bai do da bi bo.
     """
     import json
-    so = _used_images_log()
-    if not so.exists():
+    used_log = _used_images_log()
+    if not used_log.exists():
         return 0
-    dong = so.read_text(encoding="utf-8").splitlines()
+    dong = used_log.read_text(encoding="utf-8").splitlines()
     giu = []
     for d in dong:
         try:
@@ -234,7 +234,7 @@ def remove_used_for_draft(draft_id: str) -> int:
             giu.append(d)                                    # dong hong: giu nguyen
     if len(giu) == len(dong):
         return 0
-    tmp = so.with_suffix(".jsonl.tmp")
+    tmp = used_log.with_suffix(".jsonl.tmp")
     tmp.write_text(("\n".join(giu) + "\n") if giu else "", encoding="utf-8")
-    tmp.replace(so)
+    tmp.replace(used_log)
     return len(dong) - len(giu)

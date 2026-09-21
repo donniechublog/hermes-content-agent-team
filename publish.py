@@ -68,10 +68,10 @@ def single_pretty(text: str) -> str:
     for pat, thay in _KHOI:
         text = pat.sub(thay, text)
     # bo the khong hop le, giu the hop le nguyen ven
-    def _bo(m):
+    def _valid_tag_only(m):
         ten = (m.group(1) or "").lower()
         return m.group(0) if ten in CARD_VALID else ""
-    text = re.sub(r"</?([a-zA-Z][a-zA-Z0-9-]*)[^>]*>", _bo, text)
+    text = re.sub(r"</?([a-zA-Z][a-zA-Z0-9-]*)[^>]*>", _valid_tag_only, text)
     # 3. bo em-dash. Ong Chu khong dung dau nay trong van ban dang len kenh.
     #    " — " giua cau thanh dau phay; dinh lien chu thanh gach ngang thuong.
     text = re.sub(r"\s+[\u2014\u2013]\s+", ", ", text)
