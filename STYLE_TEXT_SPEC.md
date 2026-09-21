@@ -33,21 +33,41 @@ Không dùng font đơn cách ở đây. JetBrains Mono bắt mỗi chữ cái c
 nên một câu dài ăn rất nhiều bề ngang và đọc ra "code" chứ không ra "báo".
 Oswald hẹp ngang nên chứa được câu dài ở cỡ chữ to.
 
-Tên hãng trong tiêu đề được tô màu tự động, tra theo `BRAND_FROM` và `BRAND_PHRASE`
-trong `card.py`. Riêng `AI` đứng một mình không tô.
+**Tô màu tên hãng là luật chung của cả đội designer** (Ethan, Dre, Kite), từ
+LOW-344 (Ông Chủ chốt 21/09/2026). Chỉ có một chỗ nhận diện và chọn màu:
+`brand_names.py`. Ethan tô tiêu đề thẻ (`card._about_line`), Dre tô hook bìa
+(`carousel.build_cover`), Kite tô tiêu đề slide (`render_edu.accent_html`). Dấu
+ngoặc quote của Ethan/Dre lấy cùng màu đó.
 
-Hai thương hiệu tô khác nhau, khai báo bằng khoá `company_name_color`:
+- **Nhận diện** theo `BRAND_FROM` / `BRAND_PHRASE` trong `card.py`, cộng alias
+  (`GPT` → OpenAI, `HUGGINGFACE` → Hugging Face). Tên model viết liền vẫn nhận ra
+  được: gạch nối, gạch chéo, số phiên bản dính liền (`DEEPSEEK-V4.1-FLASH`,
+  `QWEN3.8-27B`, `GPT-5.6`, `LLAMA4`). Riêng `AI` đứng một mình không tô; từ ghép
+  thường (`AI-FIRST`) và mã không có tên hãng (`H100`) không tô theo luật này.
+- **Tô trọn cụm tên model**: cả `DEEPSEEK-V4.1-FLASH`, không chỉ `DEEPSEEK`.
+- **Tiền tố tổ chức tô khác màu**: `DEEPSEEK-AI/DEEPSEEK-V4.1-FLASH` ra hai khúc,
+  tên model màu nhấn chính `a`, tiền tố `DEEPSEEK-AI/` màu nhấn phụ `b` (hoặc `a`
+  pha nhạt khi `b` gần như xám/trắng, không phân biệt được với chữ).
+- **Màu theo palette của hãng**, giống nhau ở cả hai kênh và cả ba vai: hãng có
+  palette (`render_edu.BRAND_THEME`) dùng `a`/`b` của palette; hãng chưa có palette
+  dùng màu `COLOR_RANK`. Bỏ luật cũ blog = CYAN / dcgr = màu hãng; khoá
+  `company_name_color` giờ chỉ còn nghĩa "có tô hay không".
+- **Hãng đen trắng** (OpenAI, xAI, Apple, Midjourney, Kimi…) vẫn tô, bằng một màu
+  nổi bật: Kite lấy màu nhấn `a` của theme đang dùng; Ethan/Dre lấy CYAN của kênh,
+  riêng dcgr (CYAN = trắng = màu chữ) lấy `fallback_company_color` (hổ phách).
+- Màu quá đậm được `_enough_bright()` kéo lên cho đủ đọc trên nền tối; trên nền
+  sáng thì kéo tối (`_enough_dark()`, Kite dùng biến CSS `--bcd`).
+- **Kite**: tiêu đề có tên hãng thì tô tên hãng và **bỏ `accent`** do Kite tự chọn;
+  tiêu đề không nhắc hãng nào thì `accent` vẫn chạy như cũ.
 
-- **donniechublog** (`"cyan"`) — dùng CYAN của bộ nhận diện.
-- **dcgr** (`"company"`) — dùng **màu riêng của chính hãng** được nhắc tới, tra
-  `COLOR_RANK` / `COLOR_PHRASE`. Đây là màu thứ ba của bảng đơn sắc: nó không cố định,
-  mà đến từ chủ thể của tin. Màu quá đậm được `_enough_bright()` kéo lên đủ đọc trên
-  nền tối. Hãng chưa biết màu thì dùng `fallback_company_color` (hổ phách).
-
-Cùng bảng `COLOR_RANK` đó còn quyết **palette của carousel EDU** (Kite): khi ảnh
-bìa không có màu rõ ràng, `render_edu.chon_theme_tu_dong` bám màu hãng nhắc
-trong spec thay vì xoay vòng mù màu (LOW-11 — tin DeepSeek xanh dương từng ra
-slide xanh lá). Thứ tự: màu ảnh thật → màu hãng → xoay vòng.
+Cùng bảng `COLOR_RANK` đó còn góp vào **palette của carousel EDU** (Kite). Tin
+DeepSeek xanh dương đã hai lần ra slide xanh lá (LOW-11, LOW-340). Từ LOW-340
+(Ông Chủ 21/09/2026), hãng lớn có **palette riêng** (`render_edu.BRAND_THEME`:
+deepseek, anthropic, gemini, meta, qwen, mistral, nvidia, huggingface,
+perplexity), khoá theo hãng chủ thể của tin, và theme do Kite tự ghi không thắng
+được. Hãng tông đen trắng (OpenAI, xAI, Apple…) không có palette và bỏ qua tầng
+màu hãng. Thứ tự trong `render_edu.pick_theme_auto`: palette hãng → màu ảnh bìa
+thật → màu hãng chưa có palette (theme tâm trạng gần hue nhất) → xoay vòng.
 
 Giãn dòng và khoảng cách kicker đo bằng `_step_line()`, tức là đo **chính các
 dòng sắp vẽ**, không đo bằng chuỗi mẫu `"Ây"`. Tiêu đề tiếng Việt viết hoa trải

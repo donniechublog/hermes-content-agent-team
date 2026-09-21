@@ -34,7 +34,7 @@ def test_board_by_use_error_boss():
     assert lt.order_image("M&A")[0] == "two_company_pair"
     assert lt.order_image("M&A")[1] == "logo"
     assert lt.late("M&A", "stock")
-    assert lt.order_image("MODEL")[0] == "ranking"
+    assert lt.order_image("MODEL")[0] == "logo"          # LOW-337: logo > benchmark > founder > office
     assert lt.order_image("INFRA")[0] == "infrastructure_concept"
     assert lt.order_image("LAB")[0] == "logo" and lt.order_image("LAB")[-1] == "company_country_flag"
     assert lt.late("LAB", "company_country_flag") and lt.late("LAB", "founder")
@@ -70,7 +70,7 @@ def test_line_brief_prints_old_object_names():
     assert lt.line_brief({"category": "INFRA"})[0].split(": ", 1)[1].startswith(
         "khai_niem_ha_tang > tru_so > co_nuoc_hang > logo (")
     assert lt.line_brief({"category": "MODEL"})[0].split(": ", 1)[1].startswith(
-        "xep_hang > chart_cong_bo > logo > founder > khai_niem (")
+        "logo > xep_hang > chart_cong_bo > founder > tru_so > khai_niem (")
     assert lt.line_brief({"category": "BUSINESS"})[0].split(": ", 1)[1].startswith(
         "logo > founder > tru_so > xep_hang > co_phieu (")
     assert lt.line_brief({"category": "LAB"})[0].split(": ", 1)[1].startswith(

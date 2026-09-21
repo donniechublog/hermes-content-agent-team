@@ -98,18 +98,16 @@ def test_image_capture_ok_permission_make_cover_and_no_ask_vision():
             wd = Path(d)
             anh, dung_duoc, _ = fallback_rounds._round_capture_source(
                 [], "https://vidu.com/bai-toan", [{"url": "https://bao-khac.com/x"}], wd)
-            # LOW-262: `original_path` (dem vien den cho carousel.py) phai con
-            # giu ban `unpadded_path` (ti le tu nhien, TRUOC khi dem) — kiem
-            # trong scope cua TemporaryDirectory, tep bien mat khi ra khoi `with`.
+            # LOW-336: `original_path` giu TI LE TU NHIEN cua tam chup (khong con
+            # dem vien den 4:5 — vien la pixel that, di vao the/slide thanh vien hai
+            # ben) va mang dau `source_capture`. Kiem trong scope TemporaryDirectory.
+            import image_provenance
             for a in anh:
-                assert a.get("unpadded_path"), f'{a["id"]}: thiếu unpadded_path'
-                assert a["unpadded_path"] != a["original_path"]
-                with Image.open(a["unpadded_path"]) as im_raw:
-                    assert im_raw.size == (414 * 3, 520 * 3), \
-                        f'{a["id"]}: unpadded_path bị đổi kích thước, phải giữ nguyên ảnh chụp gốc'
-                with Image.open(a["original_path"]) as im_padded:
-                    assert im_padded.size == (1080, 1350), \
-                        f'{a["id"]}: original_path phải vẫn là bản đã đệm 4:5 cho carousel.py'
+                assert not a.get("padding_color"), f'{a["id"]}: van con dem vien'
+                with Image.open(a["original_path"]) as im:
+                    assert im.size == (414 * 3, 520 * 3), \
+                        f'{a["id"]}: original_path bi doi kich thuoc: {im.size}'
+                    assert image_provenance.is_source_capture(im), f'{a["id"]}: thieu dau source_capture'
     finally:
         capture_page.capture_lead_mobile = that
 

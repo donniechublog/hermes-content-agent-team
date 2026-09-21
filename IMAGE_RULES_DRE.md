@@ -830,6 +830,47 @@ thoại chạy app ở slide 5 và 6). Cổng riêng `submit_common.check_same_p
 
 ---
 
+## 6c. Không viền hai bên, không cắt sát nội dung — luật CHUNG mọi vai (LOW-336, 21/09/2026)
+
+Ông Chủ, sau thẻ Ethan chụp trang HuggingFace ra một dải hẹp giữa hai mảng đen: *"nguyên
+tắc ảnh này là chung cho mọi role designer, ko bao giờ để viền 2 bên, cũng ko cắt sát vào
+nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IMAGE_RULES_ETHAN.md`, `IMAGE_RULES_KITE.md` — sửa một thì sửa cả ba.
+
+- **Ảnh chụp trang nguồn giữ tỉ lệ tự nhiên, không đệm.** `capture_page.frame_source_capture`
+  chỉ bỏ phần TRỐNG ở mép (đáy cắt ngang dòng chữ thì lùi về hàng trống; lề đặc hai bên của
+  chính trang thì gọt) và đóng dấu `source_capture`. Không cắt hai cạnh vào nội dung, không tô màu
+  đệm. Bản đệm đen 4:5 cũ (`count_background`, 13/09) đã bỏ: mảng đen là pixel thật, đi vào thẻ/slide
+  thành viền hai bên — đo trên 10 bản đệm thật: cả 10 có mảng đặc 1.7–12.5% mỗi bên.
+- **Renderer luôn dán ảnh FULL BỀ NGANG**; phần khung còn thiếu là chính ảnh đó làm mờ
+  (`card._layer_image`, `carousel._body_image`) — Kite vẫn theo luật riêng (nền palette, §7).
+  Bìa Dre là ảnh chụp nguồn thì KHÔNG cover-crop (cover-crop cắt hai cạnh vào chữ của trang).
+- **Thẻ Ethan** (Ông Chủ chốt style cùng ngày): ảnh LẤP KÍN thẻ, khung quote/tít là lớp overlay
+  đè lên ảnh — không tách chữ khỏi hình. Ảnh chụp nguồn cao hơn thẻ thì giữ ĐỈNH trang.
+- **Nền chữ thẻ trần Ethan PHẲNG** (Ông Chủ bác 5 thẻ cùng ngày: *"nền của text bị loang lổ là
+  ko được phép"*): BÊN TRONG khung chữ là MỘT lớp overlay một màu (sáng hoặc tối theo nền đã mờ,
+  alpha `card.TEXT_BOX_OPACITY` = 84%, dưới trần 88%), cả khối một màu chữ — không còn dải mờ
+  tràn hết bề ngang trên khung (biến nút tối/lá cờ thành vệt) và không còn dải phủ riêng từng
+  dòng. Ngoài khung ảnh giữ sắc nét; riêng dải dưới khung (tên kênh) được làm mờ. Từ khoá tô màu
+  riêng: tên hãng/họ model theo palette hãng (LOW-344, `brand_names`); mã model chữ lẫn số không kèm
+  hãng (NEEDLE3, H100) và cụm Ethan khai `"highlight"` là vai "key", màu dự phòng của kênh.
+  Ông Chủ so A/B trên 12 thẻ thật với cách LOW-343 (một màu trơn từ khoảng lặng trên khung xuống
+  đáy) và chốt: *"Overlay trong khung là style đạt chuẩn"* — màu trơn cắt ảnh bằng một mảng đặc
+  có mép ngang (lá cờ đỏ, Xiaomi cam).
+- **Ảnh tốt trước, biện pháp che sau** (Ông Chủ cùng ngày: *"một bức ảnh tốt là ko cần phải dùng
+  những biện pháp phức tạp như blur mà text quote vẫn hiển thị rõ ràng, nội dung chính của phần
+  hình vẫn được đảm bảo"*). Thẻ trần: ảnh chụp thường PHỦ KÍN thẻ quanh chủ thể; ảnh có đáy là nền
+  phẳng thì kéo dài chính màu nền đó; không còn dải mờ lộ ra. Brief Ethan đo từng ảnh ĐẶT ĐÚNG như
+  thẻ sẽ dựng (`card.text_zone_report`): vùng khung chữ sạch (`busy` ≤ 8) và không cắt mất chi
+  tiết mép khi phủ kín (`lost` ≤ 25%) xếp trước; ảnh rối/mất mép có nhãn ⚠️, `ethan_submit` cảnh
+  báo khi chọn ảnh rối mà bài còn ảnh sạch (không chặn).
+- **Slide Dre**: ảnh nền phẳng (gồm ảnh chụp trang) theo LOW-341 — ảnh 90% bề ngang trên CHÍNH màu
+  nền của nó (lề liền màu với ảnh, không phải viền lạ); bìa là ảnh chụp nguồn thì không cover-crop.
+- **Cổng pixel**: `check_side_bars` (mỗi module vai, đo bằng `image_rules_common.has_side_bars`)
+  chặn ảnh đầu vào có mảng màu đặc ≥ 1.5% bề ngang chạy suốt hai bên. Thẻ logo / thẻ xếp hạng dự
+  phòng được miễn (nền đặc phủ kín là chính thiết kế của chúng). Ảnh `source_capture` được miễn
+  cổng tỉ lệ 4:5..1:1 và cổng chart (§1.2b2: ảnh chụp nguồn được làm bìa).
+- Test: `tests/test_low336_no_side_borders.py`.
+
 ## 7. Không bao giờ để ra hai vùng riêng biệt
 
 ### 7.0 Chữ ~20% khung, nền chữ CHỈ là overlay (LOW-286 — luật trên hết của mục này)
@@ -851,8 +892,54 @@ nền đặc: mờ 44px từ khoảng lặng (cắt ngang mặt người) + ph�
 - **Cổng đo trên pixel thật** (`carousel._gate_text_background`): mọi slide thân/quote
   bị so canvas trước/sau nền chữ. Độ phủ > 88% hoặc vùng đổi bắt đầu cao hơn 42% khung
   thì `carousel.py` dừng, không gửi album. Đây là lỗi code, vai `kanban_block`.
-- Bìa (`build_cover`) giữ bố cục đã duyệt. Thẻ Ethan và slide Kite chưa kiểm theo
-  luật này (LOW-287).
+- Bìa (`build_cover`) giữ bố cục đã duyệt. Thẻ Ethan đi luật riêng (LOW-336, §6c: nền chữ là
+  overlay đều TRONG khung, ảnh phủ kín thẻ); slide Kite chưa kiểm theo luật này (LOW-287).
+
+### 7.0b Màu chữ tương phản TRƯỚC, nền chữ SAU — ảnh nền phẳng không có nền chữ (LOW-341)
+
+Ông Chủ 21/09/2026, xem hai slide quote MiniMax-H3 (hình paper nền trắng → ảnh sắc 55% /
+dải cover-blur xám 11% / overlay tối 29%), nguyên văn: *"ko nên làm thế này, hình sẽ bị
+tách thành 3 khối. luôn ưu tiên đặt chữ màu tương phản với màu nền trước khi phải dùng tới
+nền chữ. ví dụ trường hợp này chỉ cần phóng lớn main image ra để hiển thị full 90% width
+rồi đặt quote màu đen lên nền trắng là được"*. Cùng ngày: *"bìa cũng áp dụng"*.
+
+- **Thứ tự ưu tiên:** đổi màu chữ cho tương phản với nền là cách đầu tiên; overlay (7.0)
+  chỉ khi chữ buộc phải đè lên ảnh chụp.
+- **Ảnh nền phẳng** = viền ảnh (cả bốn cạnh) là một màu phẳng: hình trong paper, ảnh chụp
+  trang nền trắng/nền tối, bảng số liệu, logo. Đo trên pixel (`logo_card.flat_background`,
+  viền 1%: ≥ 90% cả viền và ≥ 70% mỗi cạnh trùng màu nền; đo 21/09: hình paper ≥ 0.93 /
+  0.77, ảnh chụp ≤ 0.83 / 0.51).
+- **Ảnh nền phẳng ở MỌI slide — thân, quote, bìa** (`carousel._flat_layout`): khung là màu
+  nền của chính ảnh; phần nội dung (cắt bỏ lề trống) phóng **90% bề ngang**; chữ, nét khung
+  quote, dấu ngoặc, chip label, dòng nguồn đổi màu tương phản (nền sáng → chữ `(17,17,20)`,
+  nét CYAN kéo tối; nền tối → chữ trắng). Không dải mờ xám, không overlay tối. Chung một
+  đường với slide logo (LOW-295).
+- **Bề ngang đi trước — không thu ảnh cho vừa** (Ông Chủ 21/09, bìa SoL-Pi ghép 2 hình:
+  *"luôn ưu tiên hiển thị full chiều rộng, phần nội dung ảnh bị chèn vào text, chúng ta phủ
+  lên một layer cùng màu với màu nền rồi đặt quote của chúng ta lên"*). Ảnh vừa phần trên
+  chữ thì canh giữa trong phần đó; ảnh cao hơn thì đặt từ trên xuống, phần lấn vào vùng chữ
+  bị phủ **đúng màu nền của ảnh** (tan dần 120px, đặc từ 24px trên dòng chữ đầu) — đọc ra
+  "hình tan vào giấy", không ra khối riêng, và chữ luôn nằm trên giấy chứ không đè lên hình.
+  Bản đầu (thu cả cặp ghép cho vừa trên hook → còn ~55% bề ngang) bị bác cùng ngày.
+- **Chart cắt sát mép** (bảng/sơ đồ/chụp màn hình mà vision xếp `chart`): viền không còn
+  phẳng nhưng nền vẫn là một màu chiếm đa số → ngưỡng nới (viền ≥ 0.40, cả ảnh ≥ 0.45,
+  `FLAT_RELAXED_*`). Đo 21/09 trên 5429 ảnh gốc máy chủ: gom thêm 151/276 chart. **Không**
+  áp cho ảnh chụp — ở 0.55/0.60 nó kéo cả chân dung nền xám/đen vào.
+- **Ảnh ghép dọc** xét TỪNG tấm (`carousel._flat_plan`, `dre_submit` ghi `image_kinds`):
+  mọi tấm nền phẳng cùng một màu → cả tấm ghép đi đường nền phẳng; hai tấm khác màu nền
+  (hình trắng + tranh nền kem) → ảnh giữ full bề ngang như cũ, vùng chữ phủ **màu nền của
+  tấm dưới** (tấm chữ đè lên) thay cho overlay tối, chữ đổi màu tương phản.
+- `dre_submit` dùng ảnh GỐC cho ảnh nền phẳng (không bản cắt 4:5), và không áp các luật
+  "ảnh ngang phải ghép / chart không làm bìa" — những luật đó canh chuyện chữ đè lên ảnh.
+  Chart NỀN CHUYỂN MÀU vẫn không làm bìa được như cũ.
+- **Cổng đo trên pixel thật** (`carousel._gate_flat`): ảnh nguồn nền phẳng mà slide ra
+  không đi đường nền phẳng, hoặc > 0,5% điểm ngoài ảnh / trong vùng chữ lệch màu nền (dải
+  mờ/lớp phủ tối lọt vào, hoặc chữ đè lên hình) → `carousel.py` dừng, không gửi album. Lỗi
+  CODE, không phải spec.
+- Slide Kite: `render_edu.py` đã có nhánh nền phẳng (lấp màu nền, đổi màu chữ) từ
+  08/09 nhưng ảnh phẳng cao quá vẫn bị cắt mép dưới — LOW-339 (gộp vào LOW-341). Thẻ Ethan
+  đi luật riêng (LOW-336, §6c): đáy ảnh là nền phẳng thì kéo dài chính màu nền đó, nền chữ là
+  overlay đều TRONG khung.
 
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
 mảng nhìn tách rời:
@@ -866,7 +953,8 @@ mảng nhìn tách rời:
   - **Carousel (Dre)**: FG một màu cố định cho cả bộ; chỉ thêm lớp mờ+tinh khi
     đo THẬT trên pixel WYSIWYG thấy vùng dưới chữ không đủ tương phản hoặc quá
     "rối" (`carousel.py::_layer_if_can`).
-  - **Hero cả hai kiểu** `quote` (06/09/2026) và `full_bleed` (07/09/2026): không còn
+  - **Hero cả hai kiểu** `quote` (06/09/2026) và `full_bleed` (07/09/2026; từ 21/09/2026
+    `full_bleed` đổi sang overlay phẳng TRONG khung chữ, xem §6c): không còn
     TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_open_region_text`, tan dần
     theo đường cong power, không đột ngột), màu chữ tự đổi tương phản với vùng
     đã mờ đó (`_color_change_background_hide_whole`, đo qua `_can_board_line` nên một mảng sáng cục

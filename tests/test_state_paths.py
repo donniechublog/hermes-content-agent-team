@@ -138,6 +138,7 @@ def test_constants_match_approved_table():
                    - {ten for _, ten in _rows_240().values()} - set(_rows_239())
                    - set(_rows_publish_schedule())
                    - set(_rows_scan_overflow())
+                   - set(_rows_dispatch_shadow())
                    - {ten for _, ten in _rows_242().values()}
                    - {ten for _, ten in _rows_241().values()}
                    - {ten for _, ten in _rows_246().values()})
@@ -317,6 +318,18 @@ def _rows_scan_overflow() -> dict:
 def test_scan_overflow_constants_are_declared():
     for hang, (ten, kept) in _rows_scan_overflow().items():
         assert getattr(state_paths, hang) == ten, (hang, getattr(state_paths, hang))
+        assert kept in TABLE_231["_kept"], f"{kept} khong co trong _kept cua state_files_v2.json"
+
+
+def _rows_dispatch_shadow() -> dict:
+    """LOW-349 (21/09/2026): log goi y chay bong tu chon tin — sinh ra da English
+    san, cung kieu `_rows_publish_schedule`."""
+    return {"DISPATCH_SHADOW_FILE": ("dispatch_shadow.jsonl", "state/<brand>/dispatch_shadow.jsonl")}
+
+
+def test_dispatch_shadow_constants_are_declared():
+    for const, (name, kept) in _rows_dispatch_shadow().items():
+        assert getattr(state_paths, const) == name, (const, getattr(state_paths, const))
         assert kept in TABLE_231["_kept"], f"{kept} khong co trong _kept cua state_files_v2.json"
 
 

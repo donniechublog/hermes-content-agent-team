@@ -151,6 +151,38 @@ toán học thì lệch chuẩn"* ra bìa là một tấm dây mạng phòng má
   **trừ khi có mặt người**, lúc đó §6 vẫn đòi khai `subject`.
 - **Không hỏi vision** "có liên quan bài không": đây là trang của **chính** tin.
 
+### 1.2b3 Logo / hình vẽ nền sáng cao hơn vùng trên chữ: co cả tấm, không cắt (LOW-339)
+
+Ông Chủ 21/09/2026, xem slide 04/06 "Pirate Face" (`A77.png`, vision gắn `subject_kind=logo`)
+bị khung chữ che ~40% hình: *"có thể thu nhỏ hình lại để không bị mất một nửa dưới"*. Xem tiếp
+6 ảnh thật: *"hai hình được đánh dấu có vấn đề, vì ko hiển thị được full width, ko sử dụng những
+hình như vậy"* và *"trong trường hợp buộc phải sử dụng thì phóng lớn ra để hiển thị full width,
+phần thừa chạm vào text để layer của text phủ lên"*.
+
+- `kite_submit` gắn `image_fit: "contain"` cho slide có hình `logo` mà đáy chủ thể rơi xuống dưới
+  vùng trên chữ (`render_edu.subject_below_text_zone`). Không hạ ngưỡng "nền phẳng" chung.
+- Bốn mép cùng một màu (`edge_ground_share` >= 0.80) và hình cao hơn vùng trên chữ thì
+  `render_edu` bỏ viền nền đệm thừa (`content_box`) rồi co CẢ TẤM vừa vùng trên chữ, đặt trên chính
+  màu nền của ảnh, chữ đảo màu tương phản, không overlay/blur. Logo hoà vào nền (cướp biển, GA Today)
+  được giữ, dù không full bề ngang.
+- Tấm ảnh có khung riêng (toà nhà, banner) mà co xong hẹp hơn 90% bề ngang thì lộ thành cái hộp
+  trên nền: **cổng nộp chặn, đổi hình khác**. Chỉ khi BUỘC phải dùng thì slide ghi
+  `"image_force": true`: hình bỏ viền đệm, phóng full bề ngang, phần thừa đi xuống sau khung chữ
+  và lớp chữ phủ lên (đường ảnh chụp có sẵn).
+- Chi tiết thừa ở mép hình (thanh trắng dày ở đỉnh, vạch trắng mảnh hai bên: ảnh Gemini thật) bị cắt cùng bước bỏ viền đệm, cả ở chế độ co lẫn `image_force` — Ông Chủ 21/09/2026: *"những đoạn chi tiết thừa vô duyên này, cũng phải loại bỏ triệt để"*. Chỉ dải MỎNG (<= 6% cạnh), lệch mạnh so với lòng ảnh và khác màu nền mới bị cắt; vùng sáng dày (bầu trời thật) và chóp nét vẽ chạm mép thì giữ (`render_edu.content_box`).
+- **Vạch hairline ở mép cho MỌI ảnh Kite** (LOW-347): vạch <= 0,6% cạnh (>= 2px), dòng ngoài cùng gần một màu, lệch >= 90 độ sáng so với lòng ảnh thì cắt cả ở đường ảnh chụp/phẳng thường (`render_edu.hairline_box`). Đo trên 133 ảnh Kite thật: chạm đúng 3 ảnh, cả 3 là vạch thừa thật (viền hồng 2px bảng ukisai, vạch xanh đen 13px hình paper bellman, vạch trắng 1px ảnh chụp Gemini). KHÔNG áp dải dày tới 6% cho mọi ảnh: bộ đo đó đánh dấu 23/133 ảnh mà phần lớn là nội dung thật (lề đệm 4:5, chú thích dưới biểu đồ, nhãn trục, viền giao diện, mép ảnh người); thanh nhấn cam 7px của ảnh Elon (1,1% cạnh) và vệt tối 25px không đều màu của ảnh Infineon được giữ. Khoá bằng `tests/test_low347_hairline_trim.py`.
+- Cổng nộp còn chặn khi khối chữ dài đẩy lên đè đáy hình đã co (đáy cố định ở 63% khung).
+- Khoá bằng `tests/test_low339_contain_fit.py` (gồm cổng đo pixel trên render Chromium thật).
+
+### 1.2b4 Kicker phải đọc được trên ảnh sáng phủ xuống sau chữ (LOW-345)
+
+Đo thật 21/09/2026 (theme ink, kicker xanh nhạt): tương quan WCAG kicker/nền quanh chữ chỉ 1,09 (Pirate Face đường ảnh chụp), 1,29 (bảng benchmark), 2,0 (bìa Qwen); chữ nhỏ cần >= 4,5. Hai nguyên nhân:
+
+- Ảnh chụp/ảnh sáng: dải phủ dưới chữ bắt đầu ĐÚNG mép trên khối chữ mà kicker là dòng đầu nên nằm ở chỗ độ phủ ~0. Dải phủ giờ bắt đầu `VEIL_LEAD` (48px) SỚM hơn và kín trong nửa đầu dòng kicker (`VEIL_SPAN - VEIL_LEAD <= 24`). Vẫn chỉ là dải phủ hẹp dưới chữ, không nền đặc (LOW-286/330).
+- Ảnh bảng nền phẳng: ảnh chỉ tan dần ở 63% khung, khối chữ dài bắt đầu sớm hơn nên hàng bảng lọt ra sau kicker (bìa Qwen: hàng `flux-2-klein-9b`). Ảnh phẳng giờ kết thúc và tan TRÊN dòng chữ đầu (`FLAT_TEXT_GAP` = 8px, script `__datMan` đo bằng Chromium).
+
+Khoá bằng `tests/test_low345_kicker_contrast.py` (đo tương quan và pixel trên render Chromium thật).
+
 ### 1.2c Ảnh khái niệm: tin không có ảnh riêng thì tìm theo chủ đề, không bỏ
 
 Ông Chủ 07/09/2026: *"trong resource gốc không có hình hoặc hình không đạt là bỏ
@@ -759,8 +791,49 @@ hình có tỷ lệ 4:5, mà là tìm hình có main character đặt vừa tron
   (`kite_submit.measure_text_tops`, ~2 giây một bộ) vì chiều cao khối chữ chỉ trình duyệt biết.
   Đo 19/09 trên 4 bộ thật: 53–62% khung. Ảnh đặt như `render_edu.set_image` (dưới masthead,
   cao tự nhiên, cắt dưới). Không sửa `render_edu.py`.
-- Ảnh chụp trang nguồn đã đệm viền (`unpadded_path`) chưa xét: hộp vision đo trên bản đệm.
+- Ảnh chụp trang nguồn đã đệm viền (`unpadded_path`, manifest trước LOW-336) chưa xét: hộp vision đo trên bản đệm.
 - Manifest cũ (không `subject_box`, không mặt) → không chặn.
+
+## 6c. Không viền hai bên, không cắt sát nội dung — luật CHUNG mọi vai (LOW-336, 21/09/2026)
+
+Ông Chủ, sau thẻ Ethan chụp trang HuggingFace ra một dải hẹp giữa hai mảng đen: *"nguyên
+tắc ảnh này là chung cho mọi role designer, ko bao giờ để viền 2 bên, cũng ko cắt sát vào
+nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IMAGE_RULES_ETHAN.md`, `IMAGE_RULES_KITE.md` — sửa một thì sửa cả ba.
+
+- **Ảnh chụp trang nguồn giữ tỉ lệ tự nhiên, không đệm.** `capture_page.frame_source_capture`
+  chỉ bỏ phần TRỐNG ở mép (đáy cắt ngang dòng chữ thì lùi về hàng trống; lề đặc hai bên của
+  chính trang thì gọt) và đóng dấu `source_capture`. Không cắt hai cạnh vào nội dung, không tô màu
+  đệm. Bản đệm đen 4:5 cũ (`count_background`, 13/09) đã bỏ: mảng đen là pixel thật, đi vào thẻ/slide
+  thành viền hai bên — đo trên 10 bản đệm thật: cả 10 có mảng đặc 1.7–12.5% mỗi bên.
+- **Renderer luôn dán ảnh FULL BỀ NGANG**; phần khung còn thiếu là chính ảnh đó làm mờ
+  (`card._layer_image`, `carousel._body_image`) — Kite vẫn theo luật riêng (nền palette, §7).
+  Bìa Dre là ảnh chụp nguồn thì KHÔNG cover-crop (cover-crop cắt hai cạnh vào chữ của trang).
+- **Thẻ Ethan** (Ông Chủ chốt style cùng ngày): ảnh LẤP KÍN thẻ, khung quote/tít là lớp overlay
+  đè lên ảnh — không tách chữ khỏi hình. Ảnh chụp nguồn cao hơn thẻ thì giữ ĐỈNH trang.
+- **Nền chữ thẻ trần Ethan PHẲNG** (Ông Chủ bác 5 thẻ cùng ngày: *"nền của text bị loang lổ là
+  ko được phép"*): BÊN TRONG khung chữ là MỘT lớp overlay một màu (sáng hoặc tối theo nền đã mờ,
+  alpha `card.TEXT_BOX_OPACITY` = 84%, dưới trần 88%), cả khối một màu chữ — không còn dải mờ
+  tràn hết bề ngang trên khung (biến nút tối/lá cờ thành vệt) và không còn dải phủ riêng từng
+  dòng. Ngoài khung ảnh giữ sắc nét; riêng dải dưới khung (tên kênh) được làm mờ. Từ khoá tô màu
+  riêng: tên hãng/họ model theo palette hãng (LOW-344, `brand_names`); mã model chữ lẫn số không kèm
+  hãng (NEEDLE3, H100) và cụm Ethan khai `"highlight"` là vai "key", màu dự phòng của kênh.
+  Ông Chủ so A/B trên 12 thẻ thật với cách LOW-343 (một màu trơn từ khoảng lặng trên khung xuống
+  đáy) và chốt: *"Overlay trong khung là style đạt chuẩn"* — màu trơn cắt ảnh bằng một mảng đặc
+  có mép ngang (lá cờ đỏ, Xiaomi cam).
+- **Ảnh tốt trước, biện pháp che sau** (Ông Chủ cùng ngày: *"một bức ảnh tốt là ko cần phải dùng
+  những biện pháp phức tạp như blur mà text quote vẫn hiển thị rõ ràng, nội dung chính của phần
+  hình vẫn được đảm bảo"*). Thẻ trần: ảnh chụp thường PHỦ KÍN thẻ quanh chủ thể; ảnh có đáy là nền
+  phẳng thì kéo dài chính màu nền đó; không còn dải mờ lộ ra. Brief Ethan đo từng ảnh ĐẶT ĐÚNG như
+  thẻ sẽ dựng (`card.text_zone_report`): vùng khung chữ sạch (`busy` ≤ 8) và không cắt mất chi
+  tiết mép khi phủ kín (`lost` ≤ 25%) xếp trước; ảnh rối/mất mép có nhãn ⚠️, `ethan_submit` cảnh
+  báo khi chọn ảnh rối mà bài còn ảnh sạch (không chặn).
+- **Slide Dre**: ảnh nền phẳng (gồm ảnh chụp trang) theo LOW-341 — ảnh 90% bề ngang trên CHÍNH màu
+  nền của nó (lề liền màu với ảnh, không phải viền lạ); bìa là ảnh chụp nguồn thì không cover-crop.
+- **Cổng pixel**: `check_side_bars` (mỗi module vai, đo bằng `image_rules_common.has_side_bars`)
+  chặn ảnh đầu vào có mảng màu đặc ≥ 1.5% bề ngang chạy suốt hai bên. Thẻ logo / thẻ xếp hạng dự
+  phòng được miễn (nền đặc phủ kín là chính thiết kế của chúng). Ảnh `source_capture` được miễn
+  cổng tỉ lệ 4:5..1:1 và cổng chart (§1.2b2: ảnh chụp nguồn được làm bìa).
+- Test: `tests/test_low336_no_side_borders.py`.
 
 ## 7. Không bao giờ để ra hai vùng riêng biệt
 
@@ -776,7 +849,8 @@ mảng nhìn tách rời:
   - **Carousel (Dre)**: FG một màu cố định cho cả bộ; chỉ thêm lớp mờ+tinh khi
     đo THẬT trên pixel WYSIWYG thấy vùng dưới chữ không đủ tương phản hoặc quá
     "rối" (`carousel.py::_layer_if_can`).
-  - **Hero cả hai kiểu** `quote` (06/09/2026) và `full_bleed` (07/09/2026): không còn
+  - **Hero cả hai kiểu** `quote` (06/09/2026) và `full_bleed` (07/09/2026; từ 21/09/2026
+    `full_bleed` đổi sang overlay phẳng TRONG khung chữ, xem §6c): không còn
     TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_open_region_text`, tan dần
     theo đường cong power, không đột ngột), màu chữ tự đổi tương phản với vùng
     đã mờ đó (`_color_change_background_hide_whole`, đo qua `_can_board_line` nên một mảng sáng cục
@@ -812,6 +886,15 @@ mảng nhìn tách rời:
 - **Không ghép hai ảnh lệch tone** (mục 5).
 - **Không làm tối riêng một mảng** quanh chart để "cho nổi": mảng tối có mép
   thẳng chính là vùng thứ hai.
+
+### 7.0b Màu chữ tương phản TRƯỚC, nền chữ SAU — ảnh nền phẳng (LOW-341, gộp LOW-339)
+
+Ông Chủ 21/09/2026: *"luôn ưu tiên đặt chữ màu tương phản với màu nền trước khi phải dùng
+tới nền chữ"*; ảnh nền phẳng thì *"kéo màu mép ra kín hai bên"*. Luật chung cho mọi vai,
+chi tiết và số đo ở `IMAGE_RULES_DRE.md` §7.0b. Ở Kite, nhánh `phang` của
+`render_edu.image_make_background` đã lấp màu nền của ảnh ra cả thẻ và đổi màu chữ từ
+08/09; chỗ còn hở là ảnh phẳng CAO quá phần trên chữ vẫn bị cắt mép dưới (`set_image`)
+thay vì thu nhỏ vừa — LOW-339, chưa sửa (cần đo lại slide Pirate Face trên máy chủ).
 
 ### 7.1 Ảnh rối: chỉ dùng khi hết ảnh sạch, dùng thì nền chữ đậm hơn (vẫn là overlay)
 

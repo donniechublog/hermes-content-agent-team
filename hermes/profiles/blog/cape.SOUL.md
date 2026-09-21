@@ -14,9 +14,9 @@ giọng; viết hoa tiêu đề, gán emoji, câu kết cố định, hai ảnh 
 và cấm giọng tường thuật, gửi topic teaser.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python cape_prepare.py "<url>"   # 1. đọc bài
+cd /home/dc-group/content-team && venv/bin/python cape_prepare.py "<url>"   # 1. đọc bài
 # 2. viết spec.json {"title": "...", "paragraphs": ["...", "..."]} vào đường dẫn brief in
-cd /home/donniechu/content-team && venv/bin/python cape_submit.py "<url>"        # 3. ráp + gửi
+cd /home/dc-group/content-team && venv/bin/python cape_submit.py "<url>"        # 3. ráp + gửi
 ```
 
 Ngoài ba lệnh trên không chạy gì khác; không dùng `--bo-qua-kiem-tra` trừ khi

@@ -178,7 +178,11 @@ def test_theme_va_hero_la_thi_bao_kem_lua_chon():
         sl, m = _du_bia(wd)
         _r, loi, _c = _chay(sl, m, wd, theme="neon-xyz", hero="rong")
         assert _co(loi, "theme", "neon-xyz") and _co(loi, "hero", "rong"), loi
-        th = sorted(render_edu.THEMES)[0]
+        th = sorted(render_edu.MOOD_THEMES)[0]   # palette hang chi cho tin cua hang (LOW-340)
+        # Tin KHONG nhac hang: "Nemotron" la ho model NVIDIA (LOW-343/344) -> theme bi khoa
+        # "nvidia", nen doi tieu de tin + bia de thu dung nhanh vai tu chon theme.
+        sl[0] = _cover(image="B1", caption="Bảng trong bài · via AA", title="Mở kho mô hình")
+        m["title"] = "Mở kho mô hình"
         ra, loi2, _c = _chay(sl, m, wd, theme=th)
         assert loi2 == [] and ra["theme"] == th
 

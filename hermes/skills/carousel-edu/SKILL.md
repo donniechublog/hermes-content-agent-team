@@ -31,9 +31,9 @@ viết chữ**. Chữ thuần là đường cuối: ý nào có hình nói nhanh
 ## Luồng
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python kite_prepare.py <id>   # 1. brief
+cd /home/dc-group/content-team && venv/bin/python kite_prepare.py <id>   # 1. brief
 # 2. viết spec.json vào đường dẫn brief in ra
-cd /home/donniechu/content-team && venv/bin/python kite_submit.py <id>        # 3. nộp
+cd /home/dc-group/content-team && venv/bin/python kite_submit.py <id>        # 3. nộp
 ```
 
 Brief in tư liệu, hình thật đã nhìn và liên quan (mã A?), theme/hero gợi ý
@@ -73,11 +73,37 @@ mảng art bị đọc thành "bằng chứng thật" thì nó thuộc cột C�
 | `rings` | vòng đồng tâm + kim | mục tiêu, độ chính xác |
 | `graph` | mạng node-cạnh | quan hệ, so sánh nhiều bên |
 
-Thứ tự chọn theme, renderer tự làm, không hỏi Ông Chủ: **màu ảnh bìa thật** →
-**màu nhận diện của hãng** được nhắc trong bài (tra `COLOR_RANK`, cùng bảng với chỗ
-tô tên hãng của Ethan) → mới tới cột "hợp với" ở bảng trên cho khỏi lặp bộ trước.
-Nên một loạt tin cùng hãng sẽ cùng tone: đó là chủ ý, palette của slide đi cùng
-màu brand. Bìa dùng hình thật thì bộ không vẽ hero.
+**Palette theo hãng (LOW-340, Ông Chủ 21/09/2026).** Tin về một hãng có màu
+nhận diện rõ thì theme **khoá theo hãng**, Kite không chọn. Ghi theme khác thì
+`kite_submit.py` tự ghi đè. Dùng palette của hãng này cho tin hãng khác là lỗi.
+
+| theme | hãng | tone |
+|---|---|---|
+| `deepseek` | DeepSeek | xanh dương × xám × trắng |
+| `anthropic` | Anthropic, Claude | cam đất × ngà |
+| `gemini` | Google, Gemini, DeepMind | xanh × tím |
+| `meta` | Meta, Llama | xanh Meta × xám |
+| `qwen` | Qwen | tím × lavender |
+| `mistral` | Mistral | cam × vàng |
+| `nvidia` | NVIDIA | xanh lá NVIDIA × xám |
+| `huggingface` | Hugging Face | vàng × cam |
+| `perplexity` | Perplexity | ngọc × trắng giấy |
+
+Hãng tông đen trắng (OpenAI/ChatGPT/GPT, xAI/Grok, Apple, Midjourney, Kimi…)
+**không có palette**: nền tối chữ trắng của Kite đã là tone đó.
+
+**Tên hãng trong tiêu đề tự được tô** (LOW-344): cả cụm tên model
+(`DeepSeek-V4.1-Flash`), tiền tố tổ chức (`deepseek-ai/`) khác màu. Tiêu đề có
+tên hãng thì `accent` **bị bỏ qua**; chỉ tiêu đề không nhắc hãng nào mới cần
+`accent`.
+
+Thứ tự chọn theme, renderer tự làm, không hỏi Ông Chủ: **palette của hãng chủ
+thể** (hãng nhắc đầu tiên trong tiêu đề tin; Hugging Face/GitHub là nơi đăng
+model, chỉ tính khi không có hãng nào khác) → **màu ảnh bìa thật** → **màu nhận
+diện** của hãng chưa có palette (tra `COLOR_RANK`, cùng bảng với chỗ tô tên hãng
+của Ethan; hãng đen trắng bỏ qua) → mới tới cột "hợp với" của bảng tâm trạng ở
+trên cho khỏi lặp bộ trước. Nên một loạt tin cùng hãng sẽ cùng tone: đó là chủ
+ý. Bìa dùng hình thật thì bộ không vẽ hero.
 
 ## Hình thật
 
@@ -86,6 +112,22 @@ full bề ngang **và ảnh chụp**. Có hình thật trong brief thì **bắt 
 nhất một**: chart hoặc bảng vào `figure`, ảnh chụp làm bìa `image` hoặc `figure`.
 Bộ toàn chữ và card khi có ảnh thật là thiếu. Mọi hình thật có `caption` "… ·
 via <ai>"; ảnh có mặt người thì caption ghi đúng tên trong bài.
+
+**Hình không hiển thị được full bề ngang** (LOW-339, LOW-346): logo/hình vẽ cao hơn
+vùng trên khung chữ được engine tự co vừa, việc đó không cần bạn làm gì. Nhưng
+một **tấm ảnh có khung riêng** (toà nhà, banner, ảnh chụp màn hình) mà co xong hẹp
+hơn 90% bề ngang thì lộ thành cái hộp trên nền, và `kite_submit.py` báo lỗi
+`hình có khung riêng nhưng chỉ hiển thị …% bề ngang`. Cách xử lý theo thứ tự:
+
+1. **Đổi hình khác** trong danh sách hình thật của brief (luật Ông Chủ 21/09/2026:
+   *"ko hiển thị được full width thì ko sử dụng"*).
+2. Chỉ khi **buộc phải dùng** đúng tấm đó (không còn hình nào khác) mới ghi
+   `"image_force": true` vào slide: engine cắt viền đệm rồi phóng full bề ngang,
+   phần thừa đi xuống sau khung chữ và lớp chữ phủ lên.
+
+Khoá `image_fit` do `kite_submit.py` tự gắn, **đừng tự ghi**. Chữ quá dài cũng
+bị chặn (`khối chữ bắt đầu ở …% khung, đè lên đáy hình đã co`): rút gọn
+standfirst/caption/cards, không phải sửa hình.
 
 Tin về một model: hình thật phải gồm chart từ **trang công bố của hãng** (nguồn
 `kind: "announcement"`), engine tự ghé — IMAGE_RULES §1.2b. Brief tin model không có tấm

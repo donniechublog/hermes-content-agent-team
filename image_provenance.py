@@ -175,6 +175,13 @@ def is_logo_card(img):
     return provenance(img) == "logo_card"
 
 
+def is_source_capture(img):
+    """Anh chup trang nguon cua chinh tin (`capture_page.frame_source_capture`,
+    LOW-336): ti le tu nhien, KHONG dem. Renderer dan full be ngang tren nen la
+    chinh no lam mo, nen no duoc mien cong ti le 4:5..1:1 va khong duoc cover-crop."""
+    return provenance(img) == "source_capture"
+
+
 def is_stacked_composite(img):
     """Anh nay co phai ban GHEP DOC do doi dung ra khong."""
     return provenance(img) == "vertical_stack"

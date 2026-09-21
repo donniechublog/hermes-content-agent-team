@@ -194,114 +194,30 @@ def _out_rgb(mau: str) -> tuple:
     return (255, 255, 255)
 
 
-# Ong Chu 13/09/2026, xem 4 slide render thu: *"khoang trong phia tren van qua
-# lon va trong trai, nen chung ta se crop hinh ve chu nhat 9:16 nhung van giu
-# duoc chu the ro rang, ko bi mat di phan quan trong"*. Anh chup khoi lead da
-# len (16:9, 3:2...) dan het be ngang roi dem nen phia tren/duoi de vua 4:5 —
-# doi voi anh NGANG, phan dem chiem toi 30-40% chieu cao, trong trai. Cat BOT
-# HAI BEN truoc (can giua — anh hero bao chi thuong dat chu the o giua khung),
-# CHUA toi ti le dich (0.8, gan day 4:5 chu KHONG toi 9:16=0.5625 thang: cat
-# sat vay de mat chu the o hai ria khi khong biet no nam o dau) va GIOI HAN
-# CAT TOI DA (35% be ngang) de khong lo cat mat chu the trai/phai. Anh da du
-# hep (chan dung, cot bao...) thi khong cat gi ca — nhanh nay chi xu ly anh NGANG.
-CROP_RATIO_TRANSLATE = 0.8      # muc tieu sau khi cat (gan 4:5, an toan hon 9:16 thang)
-CROP_MAX = 0.35         # tran ti le be ngang duoc phep cat (giu chu the)
+# LOW-336 (Ong Chu 21/09/2026): *"nguyen tac anh nay la chung cho moi role designer,
+# ko bao gio de vien 2 ben, cung ko cat sat vao noi dung"*. Truoc do ham
+# `count_background` (13/09) CAT BOT HAI BEN (dut chu o mep: "Functional" con
+# "al") roi DEM DEN tam chup thanh 4:5 — mang den la pixel that, di theo tam anh
+# vao the Ethan/slide Dre thanh vien hai ben va mang dac duoi day (IMAGE_RULES
+# §7 "khong co mau nen dac o dau het"). Nay tam chup GIU TI LE TU NHIEN, chi bo
+# phan TRONG o mep; lap khung la viec cua renderer (nen = chinh anh lam mo).
 
 
-THRESHOLD_OTHER_BACKGROUND = 28     # do lech (0..255/kenh) de tinh mot cot la "co chu the"
+def frame_source_capture(src, out_path):
+    """Lam sach mep tam chup trang nguon va dong dau `source_capture`.
 
-
-def _variable_text_card_x(im):
-    """Bien THAT (trai, phai) cua chu the theo truc ngang, tinh bang 0..1. None
-    neu khong doan duoc (anh khong co nen don sac o bon goc — chup nguoi/canh
-    that choan het khung, cu de nguyen khong cat gi them cho an toan).
-
-    Khac ban dau dung TRONG TAM co trong so (da lam dut chu "t" cua logo TSMC,
-    su co 13/09/2026): trong tam khong dam bao khung cat CHUA TRON chu the khi
-    chu the qua rong — phai do dung BIEN NGOAI CUNG con "khac nen ro" o hai
-    dau, roi khong bao gio cat vao trong bien do."""
+    Khong cat vao noi dung, khong dem mau: day cat ngang dong chu thi lui ve hang
+    trong, le dac hai ben thi got di (`image_rules_common.clean_capture_edges`).
+    Tra (w, h) cua tam da luu."""
     from PIL import Image as _Im
-    nho = im.convert("RGB").resize((160, max(1, round(160 * im.size[1] / im.size[0]))), _Im.Resampling.BOX)
-    w, h = nho.size
-    goc = [nho.getpixel((0, 0)), nho.getpixel((w - 1, 0)),
-           nho.getpixel((0, h - 1)), nho.getpixel((w - 1, h - 1))]
-    if max(abs(a[k] - b[k]) for a in goc for b in goc for k in range(3)) > 60:
-        return None                  # bon goc da khac nhau -> khong phai nen don sac
-    nen = tuple(sum(c[k] for c in goc) / 4 for k in range(3))
-    px = nho.load()
-    co_chu_the = []
-    for x in range(w):
-        khac = False
-        for y in range(h):
-            if any(abs(px[x, y][k] - nen[k]) > THRESHOLD_OTHER_BACKGROUND for k in range(3)):
-                khac = True
-                break
-        co_chu_the.append(khac)
-    if not any(co_chu_the):
-        return None
-    trai = next(x for x, v in enumerate(co_chu_the) if v)
-    phai = len(co_chu_the) - 1 - next(x for x, v in enumerate(reversed(co_chu_the)) if v)
-    return (trai / (w - 1), phai / (w - 1))
 
-
-def count_background(anh_vao, out_path, mau_nen: str, ti_le: float = 0.8, cao_tren: float = 0.15,
-           lap_day: float = 0.78):
-    """Dat anh chup vao khung `ti_le` (4:5) — CAT BOT HAI BEN neu anh qua ngang
-    (quanh tam THI GIAC cua chu the — xem `_tam_chu_the_x` — toi da `CROP_MAX`
-    be ngang) roi PHONG LEN cho day khung (contain-fit, co the phong to hon anh
-    goc), phan con lai (neu con) to MAU NEN cua chinh trang do. Ra mot tam dung
-    mot minh lam slide duoc, khong ghep cap.
-
-    Su co 13/09/2026 (hai lop): (1) cat can giua hinh hoc cat dut chu "t" cua
-    logo TSMC vi chu the dat lech trai — sua bang tam thi giac o tren; (2) anh
-    sau khi cat nho hon 1080px NHUNG khong duoc phong lai, nam co lai giua
-    khung voi vien trang bon phia — nhin nhu hinh vuong chu khong phai 4:5 day
-    khung. `cao_tren`: phan dem CON LAI (sau ca cat lan phong) chia cho phia
-    tren theo ti le nay. Tra (w, h) cua tam da dem."""
-    from PIL import Image as _Im
-    im = _Im.open(anh_vao).convert("RGB")
-    w, h = im.size
-    if w / h > CROP_RATIO_TRANSLATE:
-        w_dich = max(int(round(h * CROP_RATIO_TRANSLATE)), int(round(w * (1 - CROP_MAX))))
-        bien = _variable_text_card_x(im)
-        if bien is not None:
-            # KHONG BAO GIO cat vao trong bien chu the that (do bang do-lech-mau-
-            # nen, xem _variable_text_card_x) — chu the rong hon `w_dich` thi NOI RONG
-            # cua so cat ra du chua tron no, chap nhan giam bot muc dem thay vi
-            # lam dut chu (su co 13/09/2026: logo "tsmc" trai het chieu ngang,
-            # cat theo trong tam van dut chu "t").
-            trai_px, phai_px = round(bien[0] * (w - 1)), round(bien[1] * (w - 1))
-            w_dich = max(w_dich, phai_px - trai_px + 1)
-            giua = (trai_px + phai_px) / 2
-        else:
-            giua = w / 2               # khong doan duoc nen -> can giua, an toan
-        if w_dich < w:
-            x0 = min(max(0, round(giua - w_dich / 2)), w - w_dich)
-            im = im.crop((x0, 0, x0 + w_dich, h))
-            w, h = im.size
-    W = 1080
-    H = int(round(W / ti_le))
-    # CONTAIN-FIT vao (W, H*lap_day) — PHONG TO hoac thu nho, khong chi thu nho
-    # nhu ban cu (do la nguyen nhan anh da cat gon van nho giua khung thay vi
-    # day no ra). KHONG lap day 100% chieu cao (Ong Chu 13/09/2026, sau khi cat
-    # gan day khung: chu tieu de de thang len anh, cong bao ve tuong phan cua
-    # carousel.py (_layer_if_can) phai phu mot dai xam day de chu den doc duoc —
-    # chinh la "vet nhat" — vi khong con mieng nen PHANG nao ngay tren cho chu
-    # se nam de cong do tu bo qua. Chua het khung: `lap_day` (0.78) danh lai
-    # mot dai phang o duoi (via `cao_tren` thap, phan lon roi ve duoi) lam nen
-    # sach cho tieu de, dai o tren chi con nho.
-    PAD_MIN = 40
-    H_dich = H * lap_day
-    t = min((W - PAD_MIN) / w, (H_dich - PAD_MIN) / h)
-    im = im.resize((max(1, round(w * t)), max(1, round(h * t))), _Im.Resampling.LANCZOS)
-    w, h = im.size
-    nen = _Im.new("RGB", (W, H), _out_rgb(mau_nen))
-    y = int(round((H - h) * cao_tren))
-    nen.paste(im, ((W - w) // 2, max(0, min(y, H - h))))
+    import image_provenance
+    import image_rules_common
+    im = image_rules_common.clean_capture_edges(_Im.open(src).convert("RGB"))
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    nen.save(out_path, "PNG")
-    return nen.size
+    im.save(out_path, "PNG", pnginfo=image_provenance.stamp_provenance("source_capture"))
+    return im.size
 
 
 def capture_lead_mobile(url: str, out_path, phien=None) -> dict | None:

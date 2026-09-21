@@ -163,28 +163,35 @@ def _use_card(tmp, ten_anh, title, **k):
     return Image.open(out).convert("RGB")
 
 
-def test_card_ceiling_no_remaining_network_background_solid_cell_bottom():
-    """Ca duong ve, khong chi `_layer_image`: day the phai la anh, khong phai mau."""
+def test_card_ceiling_image_above_frame_overlay_inside():
+    """Ong Chu so A/B 21/09/2026 roi chot overlay TRONG khung (LOW-336) thay cho mot mau tron tu
+    khoang lang xuong day (LOW-343): phia tren khung van la anh, va day the KHONG phai mot mang
+    mau tron (anh van lien toi day, khung chu la vat nam TREN anh)."""
+    import card
     with tempfile.TemporaryDirectory() as t:
         im = _use_card(t, (1920, 1080), "Nvidia mở kho mô hình Nemotron")
-        phang = _line_flat(im, 700, 1500)
-        assert phang == 0, f"{phang} hang mau dac o nua duoi the"
+        tren = 1500 - int(1500 * card.CEILING_TEXTBOX) - 20
+        assert _line_flat(im, 300, tren) == 0, "phia tren vung chu phai con la anh"
+        assert _line_flat(im, 1480, 1500) == 0, "day the la mang mau tron, khong phai anh"
 
 
 def test_card_ceiling_has_frame_text_most_net():
-    """Ong Chu chot 07/09/2026: co khung. Net doc cua khung la mot cot pixel
+    """Ong Chu chot 07/09/2026: co khung (LOW-342: vung chu 30% the, khung tu ~70%). Net doc cua khung la mot cot pixel
     gan nhu khong doi mau — anh (ke ca da lam mo) thi khong bao gio nhu vay."""
     import card
     with tempfile.TemporaryDirectory() as t:
         im = _use_card(t, (1920, 1080), "Nvidia mở kho mô hình Nemotron")
         x = card.CEILING_FRAME_X + card.CEILING_FRAME_LW // 2
-        cot = [im.getpixel((x, y)) for y in range(int(1500 * 0.68), int(1500 * 0.88))]
+        cot = [im.getpixel((x, y)) for y in range(int(1500 * 0.72), int(1500 * 0.88))]
         lech = max(max(abs(p[i] - cot[0][i]) for i in range(3)) for p in cot)
         assert lech < 24, f"khong thay net doc cua khung o x={x} (lech {lech})"
-        # ...va ngay ben trong khung thi KHONG phai net (khong phai ca vung mot mau)
-        trong = [im.getpixel((x + 60, y)) for y in range(int(1500 * 0.68), int(1500 * 0.88))]
-        assert max(max(abs(p[i] - trong[0][i]) for i in range(3))
-                   for p in trong) > 24, "ben trong khung cung phang: van la mang dac"
+        # ...va ngay ben trong khung la OVERLAY chu khong phai mang DAC: tu LOW-336 (Ong Chu
+        # 21/09/2026 "nen cua text bi loang lo la ko duoc phep") trong khung la mot lop
+        # overlay deu alpha 84% nen gan phang, nhung anh van lo qua 16% — khong mot mau tuyet doi.
+        trong = [im.getpixel((x + 18, y)) for y in range(int(1500 * 0.76), int(1500 * 0.9))]   # le trong giua net khung va chu
+        lech_trong = max(max(abs(p[i] - trong[0][i]) for i in range(3)) for p in trong)
+        assert lech_trong > 2, "ben trong khung la mang DAC mot mau, khong phai overlay"
+        assert lech_trong < 24, f"ben trong khung loang lo (lech {lech_trong})"
 
 
 def test_card_ceiling_bright_bottom_then_text_change_bright_color_dark():

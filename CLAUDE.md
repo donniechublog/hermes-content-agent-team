@@ -8,27 +8,20 @@ Bối cảnh: repo này được sửa từ nhiều máy (Mac này + 2 máy khá
 - Dấu hiệu nghi có phiên khác đang chạy trong thư mục gốc: `git status` có nhiều file lạ đang sửa dở, hoặc `git reflog` của nhánh hiện tại có commit mới trong vài phút gần nhất mà bạn không phải người tạo. Khi nghi ngờ — dừng, kiểm tra trước (`git reflog`, `ps aux | grep -i claude`), đừng `checkout`/reset/ghi đè để "khôi phục".
 - Xong việc: review diff, commit, rồi `ExitWorktree` — `remove` nếu đã merge/xong hẳn, `keep` nếu tạm dừng. Không bỏ worktree lửng lơ trên một nhánh cũ — đó cũng là một dạng "phiên khác" gây lẫn về sau.
 
-## 2. Remotes & thứ tự push (kiểm lại 21/09/2026)
+## 2. Remotes & thứ tự push
 
-- **GitHub** `donniechublog/hermes-content-agent-team` là remote chung DUY NHẤT — nơi chốt/đồng bộ giữa các máy, push lên không có side-effect. Tên remote tuỳ clone: máy Windows và máy production đều gọi nó là `origin`, clone cũ có thể còn gọi là `github`. Chạy `git remote -v` trước khi push, đừng đoán theo tên.
-- **Production = `dc-group`** (chuyển máy 20/09/2026): `ssh -o BatchMode=yes -J donniechu-01 dc-group@100.87.212.236`, code ở `/home/dc-group/content-team`, trong đó `origin` = `git@github.com:donniechublog/hermes-content-agent-team.git`. Unit systemd `--user`: `hermes-approve@{blog,dcgr}`, `hermes-gateway@{blog,dcgr}`, `hermes-dashboard-{blog,dcgr}`, `journal-web`.
-- **`donniechu-01` KHÔNG còn là production** — giờ chỉ là jump host SSH. `~/content-team` ở đó là bản cũ (draft dừng khoảng 17/09; trưa 21/09 thì đường dẫn đó không còn là repo git nữa). Không push/pull/deploy gì vào đó. Clone nào còn remote trỏ `donniechu@donniechu-01.netbird.mated:/home/donniechu/content-team` (máy Windows: `deploy`; clone cũ: `origin`) thì remote đó đã chết, gỡ đi (`git remote remove <tên>`). Câu "push vào `origin` là deploy production" của bản cũ mục này KHÔNG còn đúng.
-- Nhánh task (bất kể tạo từ máy nào) chỉ push lên GitHub. Không push gì thẳng vào máy production.
-- **Không có deploy tự động**: dc-group không có hook, crontab, timer hay path unit nào kéo code. Push lên GitHub hay merge PR KHÔNG làm production đổi. Config repo trên dc-group vẫn còn `receive.denyCurrentBranch=updateInstead`, nhưng không clone nào push vào đó, và cây làm việc đang có sửa dở nên push kiểu đó cũng bị từ chối — đừng dựng lại push-to-deploy.
-- **Bước deploy thật** là kéo TAY trên dc-group (reflog 21/09: `fetch origin main` rồi `merge 3af4d6c: Fast-forward`), chỉ làm sau khi `main` đã chốt xong trên GitHub. Coi đây là bước "bấm nút deploy" — làm riêng, có chủ đích, một nơi/một lúc — không phải việc mỗi phiên tự làm ngay khi xong task của mình:
+**Chuẩn tên remote, giống nhau ở MỌI clone** (21/09/2026). Không clone nào có remote tên `origin`: gõ nhầm `git push origin main` theo thói quen sẽ báo lỗi thay vì deploy.
 
-  ```bash
-  ssh -o BatchMode=yes -J donniechu-01 dc-group@100.87.212.236
-  cd ~/content-team && git status --short          # xem cây đang có gì trước
-  git fetch origin main
-  git merge --ff-only origin/main                   # hoặc SHA cụ thể đã có trên main
-  systemctl --user restart hermes-approve@blog hermes-approve@dcgr   # thêm journal-web nếu journal_web.py đổi
-  git log -1 --oneline                              # khớp commit muốn lên
-  ```
+| Tên | URL | Có trên |
+|---|---|---|
+| `github` | `donniechublog/hermes-content-agent-team` (https hoặc ssh) | mọi máy, kể cả production |
+| `deploy` | `dc-group:/home/dc-group/content-team` (hoặc `dc-group@dc-group-system-product-name.netbird.mated:…`) | máy dev; production KHÔNG có |
 
-  - Chỉ `--ff-only`, chỉ tới commit đã có trên `main` của GitHub. Không commit trên máy production (21/09 reflog có 2 commit làm thẳng trên `main` ở dc-group rồi phải reset) — sửa gì cũng qua nhánh + PR.
-  - Cây làm việc trên dc-group có sửa dở chưa commit của người khác (21/09: 34 tệp sửa + 24 tệp mới). KHÔNG `reset --hard`, `checkout -- .`, `clean`, `stash` để "dọn cho sạch". `merge --ff-only` từ chối vì đụng tệp đang sửa dở → dừng, hỏi người đang sửa, đừng tự xoá.
-  - Vì sao phải restart: `hermes-approve@*` (`approve_service.py`) và `journal-web` là tiến trình chạy dài, import code lúc khởi động nên không thấy code mới. Script do gateway/cron gọi thì mỗi lần là tiến trình mới, tự ăn code mới. `hermes-gateway@*` và `hermes-dashboard-*` chạy từ `~/hermes-agent`, chỉ restart khi đổi cấu hình gateway/plugin (xem `hermes/gateway/<brand>/DOC.md`, `hermes/README.md`).
+- Kiểm `git remote -v` trước khi push. Clone còn `origin`: `git remote rename origin github` (hoặc `deploy`, tuỳ URL). Đổi tên chỉ sửa `.git/config` của máy đó, nhánh theo dõi tự chuyển theo.
+- **`deploy` = production**, ĐÃ CHUYỂN MÁY 20/09/2026, `donniechu-01` không còn là đích deploy (21/09/2026 phát hiện một lần deploy lạc vào máy cũ). Server có `receive.denyCurrentBranch=updateInstead`. **Push vào `deploy` là deploy production ngay lập tức**, không phải một push bình thường.
+- Trên máy production, cách kéo code đang dùng thực tế là `git pull github main` chạy TAY — kiểm `hostname` trước khi kéo, phải ra `dc-group-System-Product-Name`.
+- `github` là remote an toàn, không side-effect, nơi chốt/đồng bộ giữa 3 máy. Nhánh task (từ máy nào cũng vậy) chỉ push lên `github`, không bao giờ lên `deploy`.
+- Chỉ `git push deploy main` sau khi `main` đã chốt xong trên `github`. Coi đây là bước "bấm nút deploy" — làm riêng, có chủ đích, một nơi/một lúc — không phải việc mỗi phiên tự làm ngay khi xong task của mình.
 
 ## 3. `main` chỉ tiến ở một chỗ
 

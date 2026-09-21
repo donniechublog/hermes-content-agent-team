@@ -459,11 +459,17 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
              or th.confirm_unlisted_vendor(h["key"], h["company"])]
     print("[thuong hieu] hang trong tin: " + (", ".join(h["company"] for h in hangs) or "khong ra"),
           file=sys.stderr)
-    if not hangs:
-        return anh, [a for a in anh if a["uses"] and a.get("relevant") is not False], \
-            [a["id"] for a in anh if a.get("relevant") is None]
     wd4 = wd / state_paths.BRAND_MATCH_DIR
     import story_type
+    # LOW-337: tin MODEL/BENCHMARK — logo CUA MODEL (Qwen, khong phai Alibaba).
+    tin_model = story_type.is_model_story(category)
+    logo_model = th.model_logo_images(tieu_de_nhin, wd4) if tin_model else []
+    if logo_model:
+        print("[thuong hieu] logo model: " + ", ".join(c["brand_match"]["company"] for c in logo_model),
+              file=sys.stderr)
+    if not hangs and not logo_model:
+        return anh, [a for a in anh if a["uses"] and a.get("relevant") is not False], \
+            [a["id"] for a in anh if a.get("relevant") is None]
     cands = []
     for h in hangs:
         if th.deadline_passed():
@@ -483,6 +489,9 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         if (story_type.late(category, "stock") and not khong_browser
                 and not th.deadline_passed(th.BROWSER_STEP_MIN_LEFT)):
             cands += th.image_has_ballot(h, wd4 / h["key"], phien=phien)
+    if tin_model:
+        # Logo hang me KHONG duoc dung cho tin model (Ong Chu 21/09/2026) — chi logo model.
+        cands = [c for c in cands if (c.get("brand_match") or {}).get("kind") != "logo"] + logo_model
     # Diem theo LOAI TIN cong vao diem goc truoc khi sort: cung bo ung vien,
     # tin M&A day logo len truoc chan dung, tin LAB day tru so/founder len
     # truoc logo (story_type.BOARD_IMAGE_BY_TYPE, Ong Chu 12/09/2026).
@@ -677,26 +686,16 @@ def _round_capture_source(anh: list, link: str, source_pages: list, wd: Path,
              "domain": _domain(u), "score": 0, "chart_hint": False, **c}
         moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
         moi.parent.mkdir(parents=True, exist_ok=True)
-        # DEM NEN DEN (Ong Chu 13/09/2026, sua lai cung ngay): tam chup khoi lead
-        # thuong la anh NGANG, de nguyen thi dinh luat "ngang phai ghep doi hoac
-        # cat_ngang" va thanh tam le khong dung duoc. Dem xong no la 4:5 dung,
-        # dung MOT MINH lam mot slide. Mau dem la DEN co dinh (khong sample mau
-        # nen trang cua trang nguon) - carousel toi dung nen den + chu trang, dem
-        # trang tao khoang trang lac long giua anh va khung, buoc carousel.py
-        # phai phu them lop mo (_layer_if_can) len tren de chu doc duoc ("vet
-        # nhat"). Dem den tu dau: khop luon voi nen anh, khong con khoang trang,
-        # khong can lop phu nua.
+        # TI LE TU NHIEN, KHONG DEM (LOW-336, Ong Chu 21/09/2026: "ko bao gio de
+        # vien 2 ben, cung ko cat sat vao noi dung"). Truoc do `count_background`
+        # dem den 4:5 cho carousel — vien den la pixel that, di vao the Ethan va
+        # slide Dre. Nay chi lam sach mep (day cat ngang dong chu, le trong hai
+        # ben) va dong dau `source_capture`; renderer tu lap khung bang chinh anh
+        # lam mo, cong ti le cua Dre mien cho dau nay.
         try:
-            capture_page.count_background(tam, moi, "#000000")
-            # GIU LAI `tam` (ti le tu nhien, chua dem vien) thay vi xoa (LOW-262):
-            # renderer full-bleed cua Kite (render_edu.py) tu lo full-width fit/crop
-            # rieng, dua no anh da dem vien den (quy uoc cua carousel.py/Dre) thi
-            # vien do la pixel that, bi trai theo luon len slide. `unpadded_path`
-            # la loi ra cho renderer do — `kite_submit.py` uu tien dung no.
-            a["padding_color"] = "#000000"
-            a["unpadded_path"] = str(tam)
+            capture_page.frame_source_capture(tam, moi)      # `tam` (ban chup tho) giu lai de soi
         except Exception as e:                               # noqa: BLE001
-            print(f"[chup nguon] {_domain(u)}: dem nen hong ({type(e).__name__}), giu tam goc",
+            print(f"[chup nguon] {_domain(u)}: lam sach mep hong ({type(e).__name__}), giu tam goc",
                   file=sys.stderr)
             Path(a["original_path"]).replace(moi)
         a["original_path"] = str(moi)

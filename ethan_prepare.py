@@ -3,8 +3,8 @@
 
 Phan co hoc (nguon, anh, do, cat, tu lieu) nam o image_prepare.py — dung chung
 voi Dre. Tep nay chi in ban chuan bi theo cach nhin cua HERO CARD: mot tam anh
-lam nen, mot cau hook de len (kieu `quote`, mac dinh) hoac mot tieu de + kicker
-(kieu `full_bleed`). Nhan "dung duoc o dau" khac Dre vi card.py khoa kho 4:5:
+lam nen, mot tieu de + kicker trong khung chu nhat (kieu `full_bleed` — kieu DUY NHAT
+cua Ethan tu LOW-343; `quote` la phong cach cua Dre). Nhan "dung duoc o dau" khac Dre vi card.py khoa kho 4:5:
 
   - anh chup ti le <= 1.6 (card.kiem_anh_thap: trai full be ngang 1200 phai cao
     >= 750px): dung mot minh duoc;
@@ -30,6 +30,7 @@ import route_missing_images                                       # noqa: E402
 import role                                                   # noqa: E402
 import manifest_values                                       # noqa: E402
 import state_paths                                            # noqa: E402
+import story_type                                            # noqa: E402
 
 # 1200/750 — nguong kiem_anh_thap cua card.py o kho 4:5. Song o ban dang ky vai
 # vi engine anh cung phai biet no: no la thu quyet dinh mot tam co lam nen hero
@@ -51,7 +52,9 @@ def label_ethan(a: dict) -> tuple:
         if r > RATIO_HERO_MAX:
             ghi.append(f"bảng quá ngang ({r}): thêm \"image2\" ngang cùng tone để ghép dọc")
         return dung, ghi
-    if a["kind"] == "chart":
+    if role.is_brand_logo_card(a):
+        dung.append("THẺ LOGO 4:5 — dùng MỘT MÌNH được làm nền hero (logo nửa trên, chừa sẵn chỗ cho chữ)")
+    elif a["kind"] == "chart":
         dung.append("CHỈ ghép dọc (image2) với một ảnh ngang cùng tone, chart một mình bị chặn")
     elif r > RATIO_HERO_MAX:
         dung.append("ảnh NGANG quá 1.6: CHỈ ghép dọc (image2) với ảnh ngang cùng tone")
@@ -81,6 +84,52 @@ def label_ethan(a: dict) -> tuple:
     return dung, ghi
 
 
+# LOW-336 (Ong Chu 21/09/2026): *"mot buc anh tot la ko can phai dung nhung bien phap phuc
+# tap nhu blur ma text quote van hien thi ro rang, noi dung chinh cua phan hinh van duoc
+# dam bao"*. Do anh DAT DUNG nhu the se dung (`card.text_zone_report`), roi xep anh co vung
+# khung chu SACH va KHONG mat chi tiet o mep len truoc. Nguong can tren 42 anh that o
+# may chu 21/09: anh chup trang/toa nha/logo nen tron busy 0.5-7.7; anh khai niem/thuc
+# the/thuong hieu roi 24-63; Xiaomi A2 (logo o goc) phu kin mat 32% chi tiet o mep.
+ZONE_CLEAN = 8.0
+ZONE_BUSY = 15.0
+EDGE_LOST_MAX = 0.25
+
+
+def text_zone(a: dict) -> dict | None:
+    """`card.text_zone_report` cho mot anh trong manifest, dat nhu `ethan_submit` se dat.
+    None neu khong do duoc (tep hong / thieu)."""
+    try:
+        import card
+        import ethan_submit
+        return card.text_zone_report(a["original_path"], cover_focus=ethan_submit.cover_focus(a, False),
+                                     top_anchor=a.get("source") == "capture_source")
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[ethan_prepare] khong do duoc vung chu {a.get('id')}: {type(e).__name__}", file=sys.stderr)
+        return None
+
+
+def zone_notes(z: dict | None) -> list:
+    """Nhan ngan cho brief tu ket qua `text_zone`."""
+    if not z:
+        return []
+    ghi = []
+    if z["busy"] <= ZONE_CLEAN:
+        ghi.append("✅ vùng khung chữ SẠCH (chữ rõ, không cần che)")
+    elif z["busy"] > ZONE_BUSY:
+        ghi.append(f"⚠️ vùng khung chữ RỐI (đo {z['busy']:.0f}) — chữ đè lên chi tiết, tránh nếu còn ảnh sạch")
+    if z["lost"] > EDGE_LOST_MAX:
+        ghi.append(f"⚠️ phủ kín thẻ sẽ CẮT MẤT ~{z['lost']:.0%} chi tiết ở mép (chữ/logo) — tránh nếu còn ảnh khác")
+    return ghi
+
+
+def zone_rank(z: dict | None) -> tuple:
+    """Khoa xep: sach & khong mat mep truoc; chua do duoc xep giua."""
+    if not z:
+        return (1, 0.0)
+    xau = (z["busy"] > ZONE_BUSY) + (z["lost"] > EDGE_LOST_MAX)
+    return (xau, z["busy"] + 40 * z["lost"])
+
+
 def stackable_pairs_hero(m: dict) -> list:
     """Cap anh ngang ghep doc duoc cho card.py: cung tone (da tinh trong engine)
     va ti le sau ghep <= 1.6."""
@@ -97,10 +146,10 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     import brief_common
     L = brief_common.mark(
         m, "ETHAN",
-        f"Brand: {m['brand']} | draft: {m['draft_id']} | kiểu mặc định: quote (thẻ HOOK 4:5)")
+        f"Brand: {m['brand']} | draft: {m['draft_id']} | kiểu: full_bleed (khung chữ nhật)")
     L += brief_common.block_redo(
-        da_dung, f"ảnh {da_dung.get('image')}, hook “{da_dung.get('hook', '')}”. "
-                 "Lần này ẢNH và HOOK phải khác." if da_dung else "")
+        da_dung, f"ảnh {da_dung.get('image')}, tiêu đề “{da_dung.get('title') or da_dung.get('hook', '')}”. "
+                 "Lần này ẢNH và TIÊU ĐỀ phải khác." if da_dung else "")
     L += brief_common.block_material(m, nhan="Finn/Vera", n_cau=15, n_doan=800)
     L += ["", "## Ảnh đã tải & xử lý — chỉ dùng MÃ ẢNH, không tải/crop/mở gì thêm"]
     if not m["images"]:
@@ -113,6 +162,12 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['not_yet_seen'])} (vision không chạy) — nhãn dưới chỉ là đo "
                  "số, có thể sai; mở contact_sheet.png trước khi dùng.")
     goi_y = []
+    import image_rules_ethan
+    chi_logo_bang = image_rules_ethan.model_story_only(m.get("category"))
+    if chi_logo_bang:
+        L.append("⛔ TIN MODEL/BENCHMARK (luật riêng của Ethan, LOW-337): chỉ dùng THẺ LOGO CỦA MODEL (Qwen, "
+                 "ChatGPT, Gemini… — KHÔNG logo hãng mẹ) hoặc BẢNG XẾP HẠNG/BENCHMARK. Ưu tiên logo, rồi tới bảng. "
+                 "Không có cả hai thì báo thiếu ảnh.")
     if m.get("is_ranking_story"):
         L.append(cb.ranking_brief_line(m, "", "ethan_submit"))
     for a in m["images"]:
@@ -121,8 +176,18 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                      f"(nguồn: {a['domain'] or manifest_values.source_label(a['source'])})")
             continue
         dung, ghi = label_ethan(a)
-        if dung[0].startswith("nền hero") and not a.get("faces"):
-            goi_y.append((a.get("bottom_left_brightness", 0), -a.get("short_side", 0), a["id"]))
+        if chi_logo_bang and not image_rules_ethan.model_story_image_ok(a):
+            L.append(f"- {a['id']}: ⛔ TIN MODEL — Ethan chỉ dùng logo model/bảng benchmark → KHÔNG DÙNG "
+                     f"({manifest_values.kind_label(a['kind'])}, nguồn: {a['domain'] or manifest_values.source_label(a['source'])})")
+            continue
+        hero = dung[0].startswith("nền hero") or role.is_brand_logo_card(a)
+        z = text_zone(a) if hero or a.get("ranking") else None
+        ghi = zone_notes(z) + ghi
+        if hero and not a.get("faces"):
+            # LOW-337: theo bang story_type (logo > founder > tru so...) truoc; LOW-336: roi den
+            # vung khung chu SACH & khong mat chi tiet mep (thay cho "nua duoi toi").
+            goi_y.append((-story_type.score_by_type(m.get("category"), (a.get("brand_match") or {}).get("kind", "")),
+                          zone_rank(z), -a.get("short_side", 0), a["id"]))
         dong = (f"- {a['id']}: {a['w']}x{a['h']} ({a['ratio']}) {manifest_values.kind_label(a['kind']).upper()} | {'; '.join(dung)}"
                 f" | nguồn: {a['domain'] or manifest_values.source_label(a['source'])}")
         if a.get("description"):
@@ -134,31 +199,30 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         L.append(dong)
     goi_y.sort()
     if goi_y:
-        L.append("Gợi ý nền hero (không chart, không mặt, nửa dưới tối trước): " + ", ".join(g[2] for g in goi_y[:3]))
+        L.append("Gợi ý nền hero (theo thứ tự loại ảnh của bảng, rồi vùng khung chữ SẠCH và không mất chi tiết "
+                 "mép — ảnh tốt là chữ rõ mà không cần che; không mặt): " + ", ".join(g[3] for g in goi_y[:3]))
     cap = stackable_pairs_hero(m)
-    import story_type
     L += story_type.line_brief(m)
     if cap:
         L.append("Cặp ghép dọc được (cùng tone, dùng \"image\"+\"image2\"): " + ", ".join("+".join(c) for c in cap))
     L.append(f"Nhìn tất cả ảnh trong MỘT tấm: {m['workdir']}/{state_paths.CONTACT_SHEET_FILE} (mở tối đa một lần, khi thật cần).")
     L += ["", f"## Viết spec vào: {m['workdir']}/spec.json"]
     khung = {
-        "image": (goi_y[0][2] if goi_y else "A?"),
-        "card_style": "quote",
-        "hook": "<một câu ĐẬP VÀO MẮT trong 3 giây, có dấu, ≤ 120 ký tự: tiêu đề/góc giật có CON SỐ, hoặc lời có thật>",
-        "tagline": "<" + " | ".join(TAGLINE_CALL_Y) + ">",
-        "attrib": "<'via <báo>' nếu hook là câu bạn soạn; 'Phát biểu của <tên>, <chức/hãng>' CHỈ khi là lời có thật>",
+        "image": (goi_y[0][3] if goi_y else "A?"),
+        "card_style": "full_bleed",
+        "title": "<MỘT câu hoàn chỉnh bao quát tin, ĐẬP VÀO MẮT trong 3 giây, có dấu, có CON SỐ nếu tin có số>",
+        "kicker": "<" + " | ".join(TAGLINE_CALL_Y) + ">",
+        "highlight": ["<1-3 cụm KEY chép đúng từ title: tên hãng/sản phẩm cần nổi màu, hoặc bỏ trường này>"],
         "image2": "<mã ảnh ngang thứ hai để ghép dọc, hoặc bỏ trường này>",
         "subject": "<tên người trong ảnh nếu ảnh có mặt, hoặc bỏ trường này>",
     }
     L.append(json.dumps(khung, ensure_ascii=False, indent=1))
-    L.append("Kiểu \"full_bleed\" (đổi không khí, hiếm dùng): {\"image\": \"A?\", \"card_style\": \"full_bleed\", \"title\": \"<MỘT câu "
-             "hoàn chỉnh bao quát tin, có số nếu tin có số>\", \"kicker\": \"<≤ 2 từ tiếng Anh: BREAKING, MODEL "
-             "RELEASE, FUNDING...>\"}")
-    L.append("Luật: hook là MỘT câu, tiếng Việt có dấu, không em-dash, không gán câu tự soạn thành lời một người; "
-             "tên hãng trong câu tự tô màu. Chart/ảnh ngang >1.6 phải có image2. Ảnh có mặt phải có subject. "
-             "Kiểu quote: CHỦ THỂ (mặt người, sản phẩm) phải nằm TRÊN khung quote — câu càng dài khung càng cao, "
-             "cổng chặn đo đúng vị trí; không dùng ảnh gần như trống (logo nhỏ trên nền trơn).")
+    L.append("Luật: Ethan CHỈ dùng kiểu \"full_bleed\" (khung chữ nhật) — kiểu quote là phong cách của Dre, "
+             "ethan_submit từ chối. Tiêu đề là MỘT câu, tiếng Việt có dấu, không em-dash; tên hãng trong câu tự tô "
+             "màu. Kicker tiếng Anh ngắn, chọn trong danh sách trên. Chart/ảnh ngang >1.6 phải có image2. Ảnh có "
+             "mặt phải có subject. Không dùng ảnh gần như trống (logo nhỏ trên nền trơn).")
+    L.append("Tô màu: tên hãng, cụm tên model họ đã biết và mã model chữ lẫn số (NEEDLE3, H100) tự tô; cụm KEY "
+             "khác (tên hãng/sản phẩm chưa có trong danh sách) ghi vào \"highlight\": [\"<1-3 cụm chép đúng từ title>\"].")
     L += ["", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python ethan_submit.py {m['draft_id']}",
           "Script tự ghép/cắt, chạy mọi cổng chặn của card.py, dựng thẻ, gửi lên topic kèm nút duyệt, ghi bàn "

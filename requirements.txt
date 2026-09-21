@@ -16,8 +16,8 @@
 #
 # Them/bo goi o day, hoac nang goi tren may chu, thi lam moi lock — lam TREN MAY CHU,
 # trong venv dang chay on:
-#     scp requirements.txt lock_requirements.py donniechu-01.netbird.mated:/tmp/
-#     ssh donniechu-01.netbird.mated '~/hermes-agent/venv/bin/python /tmp/lock_requirements.py /tmp/requirements.txt' > requirements.lock
+#     scp requirements.txt lock_requirements.py dc-group@dc-group-system-product-name.netbird.mated:/tmp/
+#     ssh dc-group@dc-group-system-product-name.netbird.mated '~/hermes-agent/venv/bin/python /tmp/lock_requirements.py /tmp/requirements.txt' > requirements.lock
 # Thieu goi tren may chu thi script tu choi ghi (khong sinh lock thieu). Quen lam moi
 # lock sau khi them goi o day thi tests/test_requirements_lock.py do.
 

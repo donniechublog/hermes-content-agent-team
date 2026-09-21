@@ -75,9 +75,19 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
             # (Dre) — render_edu.py (Kite) tu lo full-width fit/crop, dua no
             # anh da dem vien thi vien do la pixel that, bi trai theo len
             # slide. Dung `unpadded_path` (ti le tu nhien, chua dem) khi co.
+            # Tu LOW-336 khong con dem nua (`original_path` da la ti le tu
+            # nhien); nhanh nay chi con cho manifest cu.
             img_path = hinh[img].get("unpadded_path") or hinh[img]["original_path"]
 
             s2["image"] = img_path
+
+            # LOW-339: logo / hinh ve tren nen tron (vision `subject_kind`=logo) ma DAY chu
+            # the roi xuong duoi vung tren khung chu thi renderer phai CO ANH VUA, khong
+            # cat/che nua duoi. Nhan `kind` cua manifest khong dung duoc o day: A77 (mat
+            # cuop bien) bi do "chart" vi nen phang + it mau, nen chi tin `subject_kind`.
+            # The logo 4:5 co logo nam tren cao (day chu the < vung tren) KHONG doi.
+            if render_edu.subject_below_text_zone(hinh[img]):
+                s2["image_fit"] = "contain"
 
             # KHONG DUNG LAI ANH DA DUNG (Ong Chu 06/09/2026). Dre va Ethan
 
@@ -126,6 +136,12 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
                     canh += c
 
                     l, c = image_rules_kite.check_resolution(nhan, _im.width, _im.height)
+
+                    loi += l
+
+                    canh += c
+
+                    l, c = image_rules_kite.check_side_bars(nhan, _im)
 
                     loi += l
 
@@ -337,6 +353,25 @@ def check_subject_above_text(spec_r: dict, m: dict, text_tops: dict) -> list:
     for i, sl in enumerate(spec_r.get("slides") or [], start=1):
         a = by_path.get(str(sl.get("image") or ""))
         top = text_tops.get(i)
+        # LOW-339: anh da CO cho vua (image_fit) thi day anh co dinh o CONTAIN_BOTTOM; khoi chu
+        # chi can khong len qua do. Khong xet kind/ranking o duoi: A77 bi do "chart".
+        if sl.get("image_fit") == "contain" and top is not None and sl.get("image"):
+            p_img, iw_img, ih_img = render_edu._measure_image(sl["image"])
+            fit = render_edu.contain_fit(p_img, iw_img, ih_img)
+            if fit is not None:
+                if render_edu._boxed_picture(fit):
+                    if not sl.get("image_force"):
+                        loi.append(f"slide {i} ({(a or {}).get('id')}): hình có khung riêng nhưng chỉ hiển thị "
+                                   f"{fit['width_share']:.0%} bề ngang (cao hơn vùng trên chữ) nên lộ thành cái "
+                                   "hộp trên nền. Đổi hình khác: không dùng hình không hiển thị được full bề "
+                                   "ngang. Chỉ khi BUỘC phải dùng hình này thì thêm \"image_force\": true vào "
+                                   "slide (hình được phóng full bề ngang, lớp chữ phủ lên phần thừa)")
+                    continue
+                if render_edu.CONTAIN_BOTTOM > top + image_rules_kite.SUBJECT_TEXT_TOLERANCE * render_edu.H:
+                    loi.append(f"slide {i} ({(a or {}).get('id')}): khối chữ bắt đầu ở {top / render_edu.H:.0%} "
+                               f"khung, đè lên đáy hình đã co ({render_edu.CONTAIN_BOTTOM / render_edu.H:.0%}). "
+                               "Rút gọn chữ của slide (standfirst/caption/cards)")
+                continue
         if not a or top is None or a.get("kind") == "chart" or a.get("ranking") or a.get("unpadded_path"):
             continue
         path = sl["image"]
@@ -360,11 +395,14 @@ def check_subject_above_text(spec_r: dict, m: dict, text_tops: dict) -> list:
     return loi
 
 
-def _frame_spec(spec: dict, m: dict, slides: list, loi: list) -> dict:
+def _frame_spec(spec: dict, m: dict, slides: list, loi: list, canh: list) -> dict:
     """Khung spec render (brand/section/folio/theme/hero) + kiem CAU TRUC bộ.
 
     Tach khoi `resolve_spec` o LOW-309. Thu tu ghi `loi` giu nguyen: so slide ->
     kind cua slide 1 -> theme -> hero.
+
+    Theme (LOW-340): tin ve hang co palette rieng thi KHOA theo hang, ghi de theme
+    vai tu chon — mot cho quyet, tat dinh. Palette hang dung cho tin hang khac la loi.
     """
     if not (6 <= len(slides) <= 10):
         loi.append(f"có {len(slides)} slide — cần 6..10")
@@ -375,11 +413,23 @@ def _frame_spec(spec: dict, m: dict, slides: list, loi: list) -> dict:
     # d24ddfc da sua byline/follow, con masthead van in "dcgr" (05/09/2026).
     ra = {"brand": kb.handle_channel(m["brand"]), "section": spec.get("section") or "RESEARCH",
           "folio": spec.get("folio") or m["title"][:24].upper()}
+    # Tieu de tin goc: chu the luon dung dau ("deepseek-ai/DeepSeek-V4.1-Flash: ...")
+    # — spec vai viet co the chi ghi "V4.1-FLASH" / "HUGGING FACE · DEEP DIVE".
+    ra["subject"] = m["title"]
+    locked, key = render_edu.brand_theme_of({**ra, "slides": slides})
     theme, hero = spec.get("theme"), spec.get("hero")
     if theme and theme not in render_edu.THEMES:
-        loi.append(f"theme \"{theme}\" không có (chọn: {', '.join(render_edu.THEMES)})")
+        loi.append(f"theme \"{theme}\" không có (chọn: {', '.join(render_edu.MOOD_THEMES)})")
+    elif render_edu.is_brand_theme(theme) and theme != locked:
+        loi.append(f"theme \"{theme}\" là palette riêng của một hãng, tin này không phải tin hãng đó "
+                   f"— chọn: {', '.join(render_edu.MOOD_THEMES)}")
     if hero and hero not in render_edu.HEROES:
         loi.append(f"hero \"{hero}\" không có (chọn: {', '.join(render_edu.HEROES)})")
+    if locked:
+        if theme and theme != locked:
+            canh.append(f"theme \"{theme}\" bị thay bằng \"{locked}\": tin {' '.join(key)} dùng "
+                        "palette nhận diện của hãng (LOW-340), không cần chọn theme")
+        theme = locked
     if theme:
         ra["theme"] = theme
     if hero:
@@ -393,7 +443,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     slides = spec.get("slides") or []
     hinh = {a["id"]: a for a in kb.figure_real(m)}
     da_thay = {}                    # hash anh -> nhan slide, TRONG BO nay (check_duplicate)
-    ra = _frame_spec(spec, m, slides, loi)
+    ra = _frame_spec(spec, m, slides, loi, canh)
     for i, sl in enumerate(slides, 1):
         s2 = _resolve_slide(i, sl, hinh, m, da_thay, loi, canh)
         if s2 is None:
@@ -536,12 +586,19 @@ def _check_not_yet_seen_and_number(slides: list, hinh: dict, m: dict, wd, canh: 
     canh.extend(nc.check_numbers_on_card(chu, m, wd))
 
 
-def _check_redo(spec: dict, da_dung, hook: str, loi: list) -> None:
+def _check_redo(spec: dict, da_dung, hook: str, loi: list, theme_locked: bool = False) -> None:
     """LAM LAI thi theme/hero va hook bia phai KHAC lan truoc — khong thi Ong Chu
-    bam "lam lai" ma nhan lai gan nhu cai vua bac."""
+    bam "lam lai" ma nhan lai gan nhu cai vua bac.
+
+    Theme khoa theo hang (LOW-340) thi khong doi duoc: chi doi hero khi bia ve
+    vector — bia anh that thi hero luon None, doi "theme hoac hero" la chan cung."""
     if not da_dung:
         return
-    if (spec.get("theme"), spec.get("hero")) == (da_dung.get("theme"), da_dung.get("hero")):
+    if theme_locked:
+        bia_vector = not (spec.get("slides") or [{}])[0].get("image")
+        if bia_vector and spec.get("hero") and spec.get("hero") == da_dung.get("hero"):
+            loi.append("LÀM LẠI: theme đã khoá theo hãng, hero trùng lần trước — đổi hero")
+    elif (spec.get("theme"), spec.get("hero")) == (da_dung.get("theme"), da_dung.get("hero")):
         loi.append("LÀM LẠI: theme và hero trùng lần trước — đổi ít nhất một")
     if nc.normalize(hook) == nc.normalize(da_dung.get("hook")):
         loi.append("LÀM LẠI: hook bìa giống lần trước — viết khác")
@@ -622,7 +679,7 @@ def main() -> int:
             tops = {}
         loi += check_subject_above_text(spec_r, m, tops)
     hook = (spec.get("slides") or [{}])[0].get("title", "")
-    _check_redo(spec, da_dung, hook, loi)
+    _check_redo(spec, da_dung, hook, loi, render_edu.is_brand_theme(spec_r.get("theme")))
     for c in canh:
         print(f"[CANH BAO] {c}")
     if loi:

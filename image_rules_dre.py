@@ -157,6 +157,7 @@ EMPTY_FLAT = 0.995               # ... va gan nhu 100% cap pixel ke nhau bang nh
 # Gin/Itachi, von di khong ap bo luat nay) khi tach `image_rules.py` (LOW-182).
 from image_provenance import (       # noqa: E402
     read_crop_trace, allows_landscape_crop, is_logo_card, is_ranking_image, is_stacked_composite,
+    is_source_capture,
 )
 
 
@@ -454,7 +455,7 @@ def check_chart_integrity(nhan, img, khai_chart, la_bia=False):
     Anh GHEP DOC duoc mien han: no da nguyen ven va full be ngang san.
     """
     loi, canh_bao = [], []
-    if is_stacked_composite(img) or is_ranking_image(img):
+    if is_stacked_composite(img) or is_ranking_image(img) or is_source_capture(img):
         return loi, canh_bao
     la_ct, mo_ta = is_chart(img)
     if la_ct and not khai_chart:
@@ -488,7 +489,7 @@ def check_chart_standalone(nhan, img, da_ghep=False):
     Anh GHEP DOC duoc mien: chart nam nua tren con nguyen, anh thu hai o duoi
     chiu man toi. Do la duong ra, khong phai vi pham.
     """
-    if da_ghep or is_stacked_composite(img) or is_ranking_image(img):
+    if da_ghep or is_stacked_composite(img) or is_ranking_image(img) or is_source_capture(img):
         return [], []
     la_ct, mo_ta = is_chart(img)
     if not la_ct:
@@ -515,7 +516,7 @@ def check_aspect_ratio(nhan, p, w, h, lo=TI_LE_45, hi=TI_LE_11, dung_sai=TOLERAN
     r = w / h
     if lo - dung_sai <= r <= hi + dung_sai:
         return [], []
-    if img is not None and is_ranking_image(img):
+    if img is not None and (is_ranking_image(img) or is_source_capture(img)):
         return [], []
     if r >= LANDSCAPE_CLEAR:
         # Anh NGANG: crop_ratio tu choi cat be ngang (can --cat-ngang), va cat
@@ -742,3 +743,18 @@ def check_founder_balance(anh: dict, muc_ds) -> list:
             f"nhưng thiếu bên {', '.join(sorted(thieu))} dù manifest có sẵn ({goi_y}). "
             "Ghép cặp mỗi hãng một người trong cùng slide (khai \"subject\": "
             "\"Tên A, Tên B\") hoặc thêm slide cho người còn thiếu."]
+
+
+def check_side_bars(nhan, img):
+    """Anh co MANG MAU DAC chay doc hai ben -> CHAN (LOW-336, Ong Chu 21/09/2026:
+    luat CHUNG moi vai designer — "ko bao gio de vien 2 ben"). Do bang
+    `image_rules_common.has_side_bars`. The logo / the xep hang du phong co nen
+    dac la CHINH thiet ke cua chung (mot mau nen phu kin), khong phai vien."""
+    if is_logo_card(img) or is_ranking_image(img):
+        return [], []
+    co, mo_ta = image_rules_common.has_side_bars(img)
+    if co:
+        return [f"{nhan}: anh co VIEN mau dac hai ben ({mo_ta}). Khong dung ban da "
+                "dem vien: lay ban chup ti le tu nhien (renderer tu lap khung bang "
+                "chinh anh lam mo), hoac doi anh khac."], []
+    return [], []

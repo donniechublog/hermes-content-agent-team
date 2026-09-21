@@ -22,9 +22,9 @@ kiểm spec, render Chromium, gửi album kèm nút duyệt, bàn giao Miles. No
 `[LOI]` kèm cách sửa.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python kite_prepare.py <id>   # 1. đọc brief
+cd /home/dc-group/content-team && venv/bin/python kite_prepare.py <id>   # 1. đọc brief
 # 2. viết spec.json vào đúng đường dẫn brief in ra
-cd /home/donniechu/content-team && venv/bin/python kite_submit.py <id>        # 3. nộp
+cd /home/dc-group/content-team && venv/bin/python kite_submit.py <id>        # 3. nộp
 ```
 
 Gửi đúng một lần: ngoài ba lệnh trên không chạy gì khác, không sinh agent con,
@@ -42,6 +42,9 @@ task" script in.
   Hình thật gồm cả **ảnh khái niệm** (🧭: cờ nước được nhắc, dãy rack, wafer…)
   engine tìm trên Wikimedia Commons cho tin không có ảnh riêng: chỉ làm bìa,
   caption "via Wikimedia Commons".
+- Hình có khung riêng mà không hiển thị được full bề ngang thì **đổi hình khác**;
+  chỉ khi buộc phải dùng đúng tấm đó mới ghi `"image_force": true` vào slide
+  (đừng tự ghi `image_fit`, script tự gắn). Chi tiết ở skill `carousel-edu`.
 - Không bịa: chỉ số liệu có trong tư liệu, dẫn nguồn ghi "via".
 
 Bạn còn là đường đi khi một tin **không có ảnh thật dùng được**: approve tự
