@@ -1447,14 +1447,16 @@ def subject_brand(texts) -> tuple | None:
     thu tu), bo qua noi dang model (PLATFORM_BRANDS) neu con hang khac. None
     neu khong nhac hang nao.
 
-    Tach `-` `/` `:` `_` thanh dau cach truoc khi tra: ten model gan nhu luon
-    viet lien ("DeepSeek-V4.1-Flash", "deepseek-ai/...", "Qwen-Image-2.1"), ma
-    `card._extract_label` chi tach theo dau cach nen truot het (LOW-340). Chi tach
-    o day — Ethan to ten hang bang `_extract_label` nguyen ban, khong doi o ticket nay."""
+    Tach `-` `/` `:` `_`, va chu dinh so phien ban, thanh dau cach truoc khi
+    tra: ten model gan nhu luon viet lien ("DeepSeek-V4.1-Flash",
+    "deepseek-ai/...", "Swift-Qwen3.8-27b"), ma `card._extract_label` chi tach
+    theo dau cach nen truot het (LOW-340). Chi tach o day — Ethan to ten hang
+    bang `_extract_label` nguyen ban, khong doi o ticket nay."""
     import card
     found = []
     for text in texts:
         flat = re.sub(r"[-/:_]+", " ", text or "")
+        flat = re.sub(r"(?<=[A-Za-z])(?=\d)", " ", flat)
         for word, key in card._extract_label(flat):
             key = key or BRAND_ALIAS.get(word.strip(card._RIA).upper())
             if key and key not in found:

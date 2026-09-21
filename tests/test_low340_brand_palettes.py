@@ -85,6 +85,9 @@ def test_hyphenated_model_names_are_recognised():
                  "DEEPSEEK V4.1-FLASH"):
         assert render_edu.subject_brand([text]) == ("DEEPSEEK",), text
     assert render_edu.subject_brand(["Qwen-Image-2.1 lên top"]) == ("QWEN",)
+    # so phien ban dinh lien ten (tin that 21/09: "ukisai/Swift-Qwen3.8-27b")
+    assert render_edu.subject_brand(["ukisai/Swift-Qwen3.8-27b thả trọng số"]) == ("QWEN",)
+    assert render_edu.subject_brand(["Llama4 Scout"]) == ("LLAMA",)
     assert render_edu.subject_brand(["GPT-5.1 vượt mặt"]) == ("OPENAI",)
     assert render_edu.subject_brand(["Một chủ đề không nhắc hãng nào"]) is None
 
