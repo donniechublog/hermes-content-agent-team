@@ -327,7 +327,12 @@ def intake(draft_id, scheduled_at=None, platforms=None, external_id=None):
         return False, ("chua cau hinh MOAT_BASE_URL/" + name_lock(brand)
                        + " cho thuong hieu " + brand)
 
-    if isinstance(d.get("moat"), dict) and d["moat"].get("workflow_id"):
+    # Idempotent CHI cho cu day mac dinh. Nut "Day lai <nen tang>" truyen
+    # external_id moi (va mot platform) de co mot workflow khac — chan o day
+    # thi nut do khong bao gio tao duoc task, bam bao nhieu lan cung chi thay
+    # "da day truoc do" (gap 19/09/2026 khi dang lai Facebook bi mat anh).
+    if (external_id is None and platforms is None
+            and isinstance(d.get("moat"), dict) and d["moat"].get("workflow_id")):
         return True, "da day truoc do"
 
     # Tran chung cho moi nen tang. Ong Chu chot lay gioi han Instagram lam moc
