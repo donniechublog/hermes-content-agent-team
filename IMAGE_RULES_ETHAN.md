@@ -992,6 +992,15 @@ riêng biệt"*. Thứ tự: **logo > bảng benchmark** (rộng hơn cho vai kh
   tin MODEL/BENCHMARK bỏ thẻ logo hãng mẹ, thêm thẻ logo model (`image_brand.model_logo_images`:
   bảng `MODEL_LOGO` đã kiểm tay, họ model ngoài bảng hỏi Wikidata và chỉ nhận mục là chatbot/model
   AI). Ảnh hãng khác (trụ sở, founder) vẫn vào kho cho Dre/Kite; Ethan thì bị chặn như trên.
-- CÒN THIẾU: nguồn Twitter của arena.ai chưa có đường lấy; model không có logo trên Wikidata/bảng
-  (Xingchen, lab nhỏ) thì Ethan báo thiếu ảnh.
+- **Thẻ logo đặt trên nền SÁNG** như mọi model (Ông Chủ 21/09/2026: *"qwen cần đặt trên nền sáng giống
+  các model khác, ko sử dụng nền tối, trừ phi là logo âm bản"*). `image_brand.card_logo` chỉ ra nền
+  tối khi quá nửa điểm ảnh logo chìm trên nền sáng (`NEGATIVE_LOGO_SHARE`).
+- **Bảng benchmark lấy từ X của arena.ai TRƯỚC** (*"cứ lấy hình từ tài khoản twitter của arena.ai là
+  chuẩn nhất … ko tìm được thì mới dùng bảng của bên khác"*): `arena_x.py`, gọi đầu
+  `ranking.find_and_capture(_many)`. Chỉ nhận tweet @arena có ảnh, ≤ 45 ngày, và tên model nằm ở
+  ĐOẠN ĐẦU tweet kèm đúng số phiên bản (tweet "Gemini Omni 1.1 Flash #1" nhắc "Gemini Omni Flash"
+  để so sánh — không được lấy cho tin bản cũ). Không có mới chụp trang bảng như trước.
+- CÒN THIẾU: ID tweet @arena chưa có nguồn ổn định (DuckDuckGo chặn bot sau vài lượt, crawler
+  social-publishing dừng từ 13/09/2026 và không theo dõi riêng @arena); model không có logo trên
+  Wikidata/bảng (Xingchen, lab nhỏ) thì Ethan báo thiếu ảnh.
 
