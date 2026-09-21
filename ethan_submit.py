@@ -65,6 +65,15 @@ def _check_text(spec: dict, kieu: str, loi: list) -> None:
     else:
         if not str(spec.get("title") or "").strip():
             loi.append("kiểu full_bleed: thiếu \"title\" (một câu hoàn chỉnh)")
+        # LOW-336: cum tu khoa to mau rieng phai NAM TRONG title — khong thi khong to duoc gi.
+        hl = spec.get("highlight") or []
+        if not isinstance(hl, list):
+            loi.append("\"highlight\" phải là danh sách cụm từ, ví dụ [\"Cactus Compute\", \"Needle3\"]")
+        else:
+            tit = str(spec.get("title") or "").upper()
+            for cum in hl:
+                if str(cum).strip().upper() not in tit:
+                    loi.append(f"\"highlight\": cụm {cum!r} không có trong title — chép đúng từ trong title")
 
 
 def _check_subject_above_quote(spec: dict, kieu: str, a: dict, ma: str, ma2, m: dict) -> list:
@@ -216,6 +225,8 @@ def main() -> int:
     else:
         hook = str(spec["title"]).strip()
         args += ["--title", hook, "--kicker", str(spec.get("kicker") or "").strip().upper()]
+        for cum in spec.get("highlight") or []:
+            args += ["--highlight", str(cum).strip()]
     r = subprocess.run(args, cwd=str(ROOT), capture_output=True, text=True, timeout=300)
     for dong in (r.stderr or "").splitlines():
         if dong.startswith("[CANH BAO]"):

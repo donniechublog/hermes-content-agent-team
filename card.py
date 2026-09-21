@@ -23,6 +23,7 @@ mọi bảng màu.
 """
 import argparse
 import functools
+import re
 import sys
 from pathlib import Path
 
@@ -357,7 +358,26 @@ def _color_of_rank(tu_sach: tuple):
     return None
 
 
-def _extract_label(dong: str):
+# LOW-336 (Ong Chu 21/09/2026, chot style the tran): "mark key quan trong voi mau khac".
+# Ngoai ten hang da biet mau, to ca MA MODEL/SAN PHAM (chu lan so: NEEDLE3, XING4.0-29B-A4B,
+# H100) va cac cum Ethan khai trong spec `highlight`. Khoa danh dau KEY_MARK -> khong co
+# mau hang rieng -> lay mau du phong cua bo nhan dien.
+KEY_MARK = ("*",)
+_MODEL_ID = re.compile(r"^(?=[A-Z0-9.+-]*[A-Z])(?=[A-Z0-9.+-]*\d)[A-Z0-9][A-Z0-9.+-]*$")
+
+
+def key_words(highlight) -> frozenset:
+    """Cac tu (da lam sach, viet hoa) cua nhung cum `highlight` trong spec."""
+    tu = set()
+    for cum in highlight or ():
+        for t in str(cum).split():
+            t = t.strip(_RIA).upper()
+            if len(t) >= 2:
+                tu.add(t)
+    return frozenset(tu)
+
+
+def _extract_label(dong: str, keys: frozenset = frozenset()):
     """Tach mot dong thanh [(tu, khoa_hang)]. Giu nguyen tu goc de ve.
 
     `khoa_hang` la tuple cac tu da lam sach cua ten hang khop duoc, hoac None.
@@ -388,6 +408,8 @@ def _extract_label(dong: str):
         else:
             if cleaned[i] in BRAND_FROM:
                 khoa[i] = (cleaned[i],)
+            elif cleaned[i] in keys or _MODEL_ID.match(cleaned[i]):
+                khoa[i] = KEY_MARK
             i += 1
     return list(zip(tu, khoa))
 
@@ -418,7 +440,7 @@ def _empty_line(d, dong, font):
 
 
 def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
-             nen_sang=False):
+             nen_sang=False, keys: frozenset = frozenset()):
     """Ve mot dong, to rieng ten thuong hieu.
 
     che_do:
@@ -434,7 +456,7 @@ def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
     toi nen dai chu co the sang; kieu the tin luon co nen toi.
     """
     khoang = d.textlength(" ", font=font)
-    for tu, khoa in _extract_label(dong):
+    for tu, khoa in _extract_label(dong, keys):
         f_mau = mau
         if khoa and che_do == "cyan":
             f_mau = _enough_dark(CYAN) if nen_sang else CYAN
@@ -1158,7 +1180,7 @@ _RE_EXPORT = (NEGATIVE_FACE_MARK, PHRASE_FACE_MARK, MARK_FORBID)
 
 def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
           brand="donniechublog", bo_qua_dau=False, kieu="quote", kicker="",
-          attrib="", bo_qua_anh=False, nhan_vat="", cluttered=False):
+          attrib="", bo_qua_anh=False, nhan_vat="", cluttered=False, highlight=()):
     """Dung the `quote` (mac dinh) hoac `full_bleed`. `src`: mot duong dan, hoac danh
     sach hai duong dan (ghep doc). `title` la cau trich dan (quote) hoac cau
     tieu de (full_bleed). `kieu` nhan ca gia tri cu `tran` (LOW-248, role_spec)."""
@@ -1191,10 +1213,11 @@ def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
     # Moi kieu the mot ham ve rieng; `build` chi con la cong chan + re nhanh.
     if kieu == "quote":
         return _render_quote(src, title, attrib, out, handle, ratio, tagline, cluttered=cluttered)
-    return _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=cluttered)
+    return _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=cluttered,
+                           highlight=highlight)
 
 
-def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False):
+def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, highlight=()):
     """The hero TRAN: anh phu kin the, tieu de MOT cau tron ven de len anh
     trong mot khung chu nhat net.
 
@@ -1369,7 +1392,8 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False):
     # (khong xay ra qua CLI, nhung `build` la thu vien) hai danh sach lech mot.
     for ln, mau_ln in zip(title_lines, mau_dong, strict=False):
         _about_line(d, _x_chu(ln, f_title), y - tren, ln, f_title, mau_ln,
-                 che_do_to, mau_du_phong, nen_sang=(mau_ln == BG))
+                 che_do_to, mau_du_phong, nen_sang=(mau_ln == BG),
+                 keys=key_words(highlight))
         y += buoc
 
     # Chan the chi con TEN KENH, can giua. Nguon van phai ghi, nhung ghi o chu
@@ -1436,11 +1460,15 @@ def main():
     p.add_argument("--out", required=True)
     p.add_argument("--cluttered", action="store_true",
                    help="Anh roi (cluttered) buoc phai dung: nen chu dac thay lam mo (LOW-47)")
+    p.add_argument("--highlight", action="append", default=[],
+                   help="Cum TU KHOA trong tieu de to mau rieng (lap lai duoc; LOW-336). Ten hang da biet "
+                        "va ma model (chu lan so) tu to, khong can khai")
     a = p.parse_args()
     build([a.image, a.image2] if a.image2 else a.image, a.title, a.out,
           handle=a.handle, ratio=a.ratio, tagline=a.tagline, brand=a.brand,
           bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker, attrib=a.attrib,
-          bo_qua_anh=a.bo_qua_anh, nhan_vat=a.nhan_vat, cluttered=a.cluttered)
+          bo_qua_anh=a.bo_qua_anh, nhan_vat=a.nhan_vat, cluttered=a.cluttered,
+          highlight=a.highlight)
 
 
 if __name__ == "__main__":

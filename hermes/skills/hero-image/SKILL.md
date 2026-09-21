@@ -55,8 +55,10 @@ có số. **Kicker** tiếng Anh tối đa hai từ (BREAKING, MODEL RELEASE, AG
 FUNDING, BENCHMARK, OPEN SOURCE, M&A, RESEARCH, INFRA, POLICY).
 
 Tên hãng trong câu được tô màu tự động (donniechublog: cyan nhận diện; dcgr: màu
-riêng của hãng). Gặp hãng không được tô thì báo lại để thêm vào `card.py`, đừng
-đánh dấu tay. Nguồn ảnh đi theo bàn giao sang Miles, script lo.
+riêng của hãng), mã model chữ lẫn số (NEEDLE3, H100, XING4.0-29B-A4B) cũng tự tô.
+Cụm KEY khác cần nổi bật (tên hãng/sản phẩm chưa có trong danh sách, vd "Cactus
+Compute") thì ghi vào `"highlight": ["Cactus Compute"]` — 1-3 cụm, chép ĐÚNG từ
+trong title, script chặn cụm không có trong title. Nguồn ảnh đi theo bàn giao sang Miles, script lo.
 
 ## Nhìn lại trước khi nộp (đọc spec, không cần mở ảnh)
 

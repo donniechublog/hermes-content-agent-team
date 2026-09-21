@@ -186,6 +186,56 @@ def test_carousel_body_capture_no_bars():
         assert _col_energy_band(im, top - 40, top - 10) < 20, "chu sac cua trang chay xuong vung chu"
 
 
+# ---- Tu khoa to mau rieng tren tit the tran (Ong Chu 21/09: "mark key quan trong") ----
+
+def test_key_terms_marked_model_ids_and_spec_highlight():
+    import card
+    kq = card._extract_label("CACTUS COMPUTE RA MẮT NEEDLE3 TỐI ƯU TRUY XUẤT",
+                             card.key_words(["Cactus Compute"]))
+    to = [t for t, k in kq if k]
+    assert to == ["CACTUS", "COMPUTE", "NEEDLE3"], to
+    # Khong khai gi: ma model chu lan so van to; chu tieng Viet / so tron thi khong.
+    to = [t for t, k in card._extract_label("XING4.0-29B-A4B CHẠY TỐT TRÊN RTX 3090") if k]
+    assert to == ["XING4.0-29B-A4B"], to
+
+
+def test_ethan_highlight_must_be_in_title():
+    import ethan_submit
+    loi = []
+    ethan_submit._check_text({"title": "Cactus Compute ra mắt Needle3", "highlight": ["Cactus Compute"]},
+                             "full_bleed", loi)
+    assert loi == [], loi
+    ethan_submit._check_text({"title": "Cactus Compute ra mắt Needle3", "highlight": ["Needle 4"]},
+                             "full_bleed", loi)
+    assert loi and "không có trong title" in loi[0], loi
+
+
+def test_card_title_key_drawn_in_accent_color():
+    """Tu khoa phai ra MAU KHAC tren pixel that cua the, khong chi danh dau trong code."""
+    import card
+    src = _noise_photo(300, 375)
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / "a.png"
+        src.save(p)
+        outs = {}
+        for hl in ((), ("Cactus Compute",)):
+            o = Path(t) / f"c{len(hl)}.png"
+            card.build(str(p), "Cactus Compute ra mắt mô hình mới", str(o), ratio="4:5",
+                       kieu="full_bleed", kicker="MODEL RELEASE", brand="dcgr", bo_qua_anh=True,
+                       highlight=hl)
+            outs[len(hl)] = Image.open(o).convert("RGB")
+        H = outs[0].height
+        vung = (0, int(H * 0.6), outs[0].width, H)
+        a, b = outs[0].crop(vung).getcolors(1 << 24), outs[1].crop(vung).getcolors(1 << 24)
+        # Mau du phong cua dcgr la ho phach (am, bao hoa); `_enough_bright/_dark` chi
+        # keo do sang, giu sac do — dem diem "am bao hoa" thay vi so dung mot mau.
+        assert card.BRAND["dcgr"]["fallback_company_color"] == (255, 176, 32)
+
+        def gan(cs):
+            return sum(n for n, c in cs if c[0] > c[2] + 90 and c[1] > c[2] + 40)
+        assert gan(b) > gan(a) + 500, (gan(a), gan(b))
+
+
 if __name__ == "__main__":
     ok = 0
     ten = [n for n in dir() if n.startswith("test_")]

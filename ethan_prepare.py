@@ -154,7 +154,8 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     L.append(json.dumps(khung, ensure_ascii=False, indent=1))
     L.append("Kiểu \"full_bleed\" (đổi không khí, hiếm dùng): {\"image\": \"A?\", \"card_style\": \"full_bleed\", \"title\": \"<MỘT câu "
              "hoàn chỉnh bao quát tin, có số nếu tin có số>\", \"kicker\": \"<≤ 2 từ tiếng Anh: BREAKING, MODEL "
-             "RELEASE, FUNDING...>\"}")
+             "RELEASE, FUNDING...>\", \"highlight\": [\"<1-3 cụm KEY chép đúng từ title: tên hãng, tên model/sản phẩm>\"]}. "
+             "Cụm trong highlight được tô màu khác; tên hãng đã biết và mã model chữ lẫn số (NEEDLE3, H100) tự tô.")
     L.append("Luật: hook là MỘT câu, tiếng Việt có dấu, không em-dash, không gán câu tự soạn thành lời một người; "
              "tên hãng trong câu tự tô màu. Chart/ảnh ngang >1.6 phải có image2. Ảnh có mặt phải có subject. "
              "Kiểu quote: CHỦ THỂ (mặt người, sản phẩm) phải nằm TRÊN khung quote — câu càng dài khung càng cao, "
