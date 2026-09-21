@@ -410,7 +410,13 @@ def _color_rank_within(text: str):
     return brand_names.colors_for(keys[0], None)[0] if keys else None
 
 
-BRAND_MIN_CONTRAST = 4.5     # ten hang to mau van phai doc duoc tren dai nen cua dong
+# Ten hang to mau van phai doc duoc tren dai nen cua dong. Hai nguong vi hai chieu
+# khac nhau: KEO TOI giu duoc sac mau toi 4.5; KEO SANG thi pha trang lam mat mau
+# — tren nen xam toi vua (L~100-120) chinh chu trang cung chi ~4.5, ep 4.5 la ra
+# trang tron (do that the Qwen dcgr 21/09). Tieu de/quote deu >= 50px dam nen
+# dung nguong WCAG AA cho CHU LON (3.0) o chieu sang.
+BRAND_MIN_CONTRAST = 4.5
+BRAND_MIN_CONTRAST_LARGE = 3.0
 
 
 def _contrast_fit(mau, nen_level, darker, target=BRAND_MIN_CONTRAST):
@@ -431,13 +437,16 @@ def brand_fill(key, role, nen_sang=False, fallback=None, bg_level=None):
     Mau theo palette hang (brand_names.colors_for); hang den trang lay
     `fallback` — mac dinh BRAND_NAME_FALLBACK cua thuong hieu dang nap. Keo
     sang tren nen toi, keo toi tren nen SANG (`nen_sang`). Biet do sang THAT
-    cua dai nen dong (`bg_level`, tu `_can_board_line`) thi keo toi khi dat
-    tuong phan BRAND_MIN_CONTRAST — nen xam trung binh (L~170) lam mau hang da
+    cua dai nen dong (`bg_level`, tu `_can_board_line`) thi keo toi/sang toi khi dat
+    tuong phan BRAND_MIN_CONTRAST(_LARGE) — nen xam trung binh (L~170) lam mau hang da
     ep toi 42% van chi con CR 2.2 (test_gate bat, 21/09/2026)."""
     ten, org = brand_names.colors_for(key, fallback or BRAND_NAME_FALLBACK)
     goc = org if role == "org" else ten
     goc = _enough_dark(goc) if nen_sang else _enough_bright(goc)
-    return goc if bg_level is None else _contrast_fit(goc, bg_level, darker=nen_sang)
+    if bg_level is None:
+        return goc
+    return _contrast_fit(goc, bg_level, darker=nen_sang,
+                         target=BRAND_MIN_CONTRAST if nen_sang else BRAND_MIN_CONTRAST_LARGE)
 
 
 def _empty_line(d, dong, font):

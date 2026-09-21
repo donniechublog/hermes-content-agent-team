@@ -145,6 +145,19 @@ def test_ethan_quote_card_colors_model_name():
     assert _count_near(im, card.brand_fill(("DEEPSEEK",), "name")) > 1500, "ten model trong quote phai to"
 
 
+def test_brand_color_fits_line_background_without_losing_hue():
+    """Nen that cua dong: sang (L=170, chu toi) -> keo toi dat 4.5; toi vua
+    (L=110, chu trang) -> keo sang dat 3.0 (WCAG chu lon) ma VAN CON MAU.
+    Ban dau ep 4.5 ca hai chieu: Qwen tren the dcgr ra (251,251,251) — trang tron."""
+    import colorsys
+    card.set_brand("dcgr")
+    toi = card.brand_fill(("QWEN",), "name", nen_sang=True, bg_level=170)
+    assert text_bg.ratio_wall_part(toi, (170,) * 3) >= 4.5, toi
+    sang = card.brand_fill(("QWEN",), "name", nen_sang=False, bg_level=110)
+    assert text_bg.ratio_wall_part(sang, (110,) * 3) >= 3.0, sang
+    assert colorsys.rgb_to_hsv(*(c / 255 for c in sang))[1] >= 0.2, f"mat mau: {sang}"
+
+
 def test_ethan_long_card_stays_single_color():
     """che_do None (the tin kieu dai) — khong to gi, nhu truoc."""
     card.set_brand("donniechublog")
