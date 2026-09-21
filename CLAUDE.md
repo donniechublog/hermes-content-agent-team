@@ -19,9 +19,13 @@ Bối cảnh: repo này được sửa từ nhiều máy (Mac này + 2 máy khá
 
 - Kiểm `git remote -v` trước khi push. Clone còn `origin`: `git remote rename origin github` (hoặc `deploy`, tuỳ URL). Đổi tên chỉ sửa `.git/config` của máy đó, nhánh theo dõi tự chuyển theo.
 - **`deploy` = production**, ĐÃ CHUYỂN MÁY 20/09/2026, `donniechu-01` không còn là đích deploy (21/09/2026 phát hiện một lần deploy lạc vào máy cũ). Server có `receive.denyCurrentBranch=updateInstead`. **Push vào `deploy` là deploy production ngay lập tức**, không phải một push bình thường.
-- Trên máy production, cách kéo code đang dùng thực tế là `git pull github main` chạy TAY — kiểm `hostname` trước khi kéo, phải ra `dc-group-System-Product-Name`.
 - `github` là remote an toàn, không side-effect, nơi chốt/đồng bộ giữa 3 máy. Nhánh task (từ máy nào cũng vậy) chỉ push lên `github`, không bao giờ lên `deploy`.
-- Chỉ `git push deploy main` sau khi `main` đã chốt xong trên `github`. Coi đây là bước "bấm nút deploy" — làm riêng, có chủ đích, một nơi/một lúc — không phải việc mỗi phiên tự làm ngay khi xong task của mình.
+- Chỉ `git push deploy main` sau khi `main` đã chốt xong trên `github`. Coi đây là bước "bấm nút deploy" — làm riêng, có chủ đích, một nơi/một lúc — không phải việc mỗi phiên tự làm ngay khi xong task của mình. Không có deploy tự động (máy chủ không có hook, crontab hay timer nào kéo code): merge PR trên GitHub KHÔNG làm production đổi.
+  - `updateInstead` từ chối push khi cây làm việc trên máy chủ có sửa dở. Bị từ chối thì KHÔNG `reset --hard` / `checkout -- .` / `stash` / `clean` trên máy chủ để "dọn cho sạch" — đó là việc dở của người khác, hỏi người đang sửa. Cần kéo ngay thì vào máy chủ (`ssh dc-group`: HostName 100.87.212.236, ProxyJump donniechu-01 — donniechu-01 chỉ còn là cầu nối mạng), kiểm `hostname` ra `dc-group-System-Product-Name`, rồi `git -C ~/content-team fetch github main && git -C ~/content-team merge --ff-only github/main`. Chỉ `--ff-only`, không `git pull` trần. `--ff-only` cũng từ chối vì đụng tệp đang sửa dở thì dừng lại hỏi.
+  - Không commit trên máy production (21/09 reflog có 3 commit làm thẳng trên `main` ở dc-group rồi phải reset) — sửa gì cũng qua nhánh + PR.
+  - Code lên xong: `systemctl --user restart hermes-approve@blog hermes-approve@dcgr journal-web` — hai dịch vụ này import code lúc khởi động nên không thấy code mới. Script do gateway/cron gọi mỗi lần là tiến trình mới, tự ăn code mới. `hermes-gateway@*`, `hermes-dashboard-*` chạy từ `~/hermes-agent`, chỉ restart khi đổi cấu hình gateway/plugin (xem `hermes/gateway/<brand>/DOC.md`).
+  - SOUL chạy thật nằm ở `~/.hermes-<brand>/profiles/<slug>/SOUL.md`, không đọc thẳng từ repo. Deploy có sửa `hermes/profiles/**/*.SOUL.md` thì chạy `venv/bin/python sync_hermes.py` (chỉ so sánh) rồi chép tay đúng SOUL đã đổi. Không chạy `--ra-hermes` bừa: nó ghi cả MEMORY.md từ repo đè lên MEMORY vai tự ghi lúc chạy.
+  - Kiểm: `git -C ~/content-team log -1 --oneline` khớp commit muốn lên, `systemctl --user is-active hermes-approve@blog hermes-approve@dcgr`.
 
 ## 3. `main` chỉ tiến ở một chỗ
 
