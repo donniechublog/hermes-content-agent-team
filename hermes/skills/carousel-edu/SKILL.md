@@ -113,6 +113,22 @@ nhất một**: chart hoặc bảng vào `figure`, ảnh chụp làm bìa `image
 Bộ toàn chữ và card khi có ảnh thật là thiếu. Mọi hình thật có `caption` "… ·
 via <ai>"; ảnh có mặt người thì caption ghi đúng tên trong bài.
 
+**Hình không hiển thị được full bề ngang** (LOW-339, LOW-346): logo/hình vẽ cao hơn
+vùng trên khung chữ được engine tự co vừa, việc đó không cần bạn làm gì. Nhưng
+một **tấm ảnh có khung riêng** (toà nhà, banner, ảnh chụp màn hình) mà co xong hẹp
+hơn 90% bề ngang thì lộ thành cái hộp trên nền, và `kite_submit.py` báo lỗi
+`hình có khung riêng nhưng chỉ hiển thị …% bề ngang`. Cách xử lý theo thứ tự:
+
+1. **Đổi hình khác** trong danh sách hình thật của brief (luật Ông Chủ 21/09/2026:
+   *"ko hiển thị được full width thì ko sử dụng"*).
+2. Chỉ khi **buộc phải dùng** đúng tấm đó (không còn hình nào khác) mới ghi
+   `"image_force": true` vào slide: engine cắt viền đệm rồi phóng full bề ngang,
+   phần thừa đi xuống sau khung chữ và lớp chữ phủ lên.
+
+Khoá `image_fit` do `kite_submit.py` tự gắn, **đừng tự ghi**. Chữ quá dài cũng
+bị chặn (`khối chữ bắt đầu ở …% khung, đè lên đáy hình đã co`): rút gọn
+standfirst/caption/cards, không phải sửa hình.
+
 Tin về một model: hình thật phải gồm chart từ **trang công bố của hãng** (nguồn
 `kind: "announcement"`), engine tự ghé — IMAGE_RULES §1.2b. Brief tin model không có tấm
 nào từ miền của hãng thì nói rõ khi báo thiếu, đừng vẽ vector thay.
