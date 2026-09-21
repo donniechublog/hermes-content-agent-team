@@ -162,7 +162,9 @@ venv/bin/python sync_hermes.py --kiem-upstream
 
 ## Model
 
-Cả 20 profile chạy chính bằng combo `DS-v4Flash` của 9router. `agent.reasoning_effort`
+Cả 23 profile (blog 12 + dcgr 11) chạy chính bằng `ag/gemini-3.8-flash` (thuê bao
+antigravity), dự phòng xai/grok-4.6 rồi gcli/grok-4.6, khác nhà cung cấp với model
+chính (LOW-326, sau sự cố DeepSeek hết tiền LOW-324; DeepSeek đã rời chuỗi). `agent.reasoning_effort`
 là `none` cho mọi vai nội dung (tắt suy luận để tránh trả về rỗng); Bob đặt `medium`,
 Ada dùng mặc định. Đừng tin bảng model chép trong tài liệu, hãy hỏi máy chủ.
 
