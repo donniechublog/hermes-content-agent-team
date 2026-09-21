@@ -190,15 +190,15 @@ def test_carousel_body_capture_no_bars():
 
 # ---- Tu khoa to mau rieng tren tit the tran (Ong Chu 21/09: "mark key quan trong") ----
 
-def test_key_terms_marked_model_ids_and_spec_highlight():
+def test_key_terms_marked_by_spec_highlight():
+    """Cum Ethan khai trong `highlight` (hang chua co trong bang mau) duoc danh dau de to; chu
+    khac khong. Ten model ho da biet do `brand_names` (LOW-344) lo, khong danh dau o day."""
     import card
     kq = card._extract_label("CACTUS COMPUTE RA MẮT NEEDLE3 TỐI ƯU TRUY XUẤT",
                              card.key_words(["Cactus Compute"]))
-    to = [t for t, k in kq if k]
-    assert to == ["CACTUS", "COMPUTE", "NEEDLE3"], to
-    # Khong khai gi: ma model chu lan so van to; chu tieng Viet / so tron thi khong.
-    to = [t for t, k in card._extract_label("XING4.0-29B-A4B CHẠY TỐT TRÊN RTX 3090") if k]
-    assert to == ["XING4.0-29B-A4B"], to
+    to = [t for t, k in kq if k == card.KEY_MARK]
+    assert to == ["CACTUS", "COMPUTE"], to
+    assert not [t for t, k in card._extract_label("H100 B200 CHẠY TỐT") if k], "ma chip khong tu to"
 
 
 def test_ethan_highlight_must_be_in_title():

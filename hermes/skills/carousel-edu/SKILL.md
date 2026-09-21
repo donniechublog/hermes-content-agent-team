@@ -92,6 +92,11 @@ nhận diện rõ thì theme **khoá theo hãng**, Kite không chọn. Ghi theme
 Hãng tông đen trắng (OpenAI/ChatGPT/GPT, xAI/Grok, Apple, Midjourney, Kimi…)
 **không có palette**: nền tối chữ trắng của Kite đã là tone đó.
 
+**Tên hãng trong tiêu đề tự được tô** (LOW-344): cả cụm tên model
+(`DeepSeek-V4.1-Flash`), tiền tố tổ chức (`deepseek-ai/`) khác màu. Tiêu đề có
+tên hãng thì `accent` **bị bỏ qua**; chỉ tiêu đề không nhắc hãng nào mới cần
+`accent`.
+
 Thứ tự chọn theme, renderer tự làm, không hỏi Ông Chủ: **palette của hãng chủ
 thể** (hãng nhắc đầu tiên trong tiêu đề tin; Hugging Face/GitHub là nơi đăng
 model, chỉ tính khi không có hãng nào khác) → **màu ảnh bìa thật** → **màu nhận

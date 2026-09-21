@@ -151,6 +151,28 @@ toán học thì lệch chuẩn"* ra bìa là một tấm dây mạng phòng má
   **trừ khi có mặt người**, lúc đó §6 vẫn đòi khai `subject`.
 - **Không hỏi vision** "có liên quan bài không": đây là trang của **chính** tin.
 
+### 1.2b3 Logo / hình vẽ nền sáng cao hơn vùng trên chữ: co cả tấm, không cắt (LOW-339)
+
+Ông Chủ 21/09/2026, xem slide 04/06 "Pirate Face" (`A77.png`, vision gắn `subject_kind=logo`)
+bị khung chữ che ~40% hình: *"có thể thu nhỏ hình lại để không bị mất một nửa dưới"*. Xem tiếp
+6 ảnh thật: *"hai hình được đánh dấu có vấn đề, vì ko hiển thị được full width, ko sử dụng những
+hình như vậy"* và *"trong trường hợp buộc phải sử dụng thì phóng lớn ra để hiển thị full width,
+phần thừa chạm vào text để layer của text phủ lên"*.
+
+- `kite_submit` gắn `image_fit: "contain"` cho slide có hình `logo` mà đáy chủ thể rơi xuống dưới
+  vùng trên chữ (`render_edu.subject_below_text_zone`). Không hạ ngưỡng "nền phẳng" chung.
+- Bốn mép cùng một màu (`edge_ground_share` >= 0.80) và hình cao hơn vùng trên chữ thì
+  `render_edu` bỏ viền nền đệm thừa (`content_box`) rồi co CẢ TẤM vừa vùng trên chữ, đặt trên chính
+  màu nền của ảnh, chữ đảo màu tương phản, không overlay/blur. Logo hoà vào nền (cướp biển, GA Today)
+  được giữ, dù không full bề ngang.
+- Tấm ảnh có khung riêng (toà nhà, banner) mà co xong hẹp hơn 90% bề ngang thì lộ thành cái hộp
+  trên nền: **cổng nộp chặn, đổi hình khác**. Chỉ khi BUỘC phải dùng thì slide ghi
+  `"image_force": true`: hình bỏ viền đệm, phóng full bề ngang, phần thừa đi xuống sau khung chữ
+  và lớp chữ phủ lên (đường ảnh chụp có sẵn).
+- Chi tiết thừa ở mép hình (thanh trắng dày ở đỉnh, vạch trắng mảnh hai bên: ảnh Gemini thật) bị cắt cùng bước bỏ viền đệm, cả ở chế độ co lẫn `image_force` — Ông Chủ 21/09/2026: *"những đoạn chi tiết thừa vô duyên này, cũng phải loại bỏ triệt để"*. Chỉ dải MỎNG (<= 6% cạnh), lệch mạnh so với lòng ảnh và khác màu nền mới bị cắt; vùng sáng dày (bầu trời thật) và chóp nét vẽ chạm mép thì giữ (`render_edu.content_box`).
+- Cổng nộp còn chặn khi khối chữ dài đẩy lên đè đáy hình đã co (đáy cố định ở 63% khung).
+- Khoá bằng `tests/test_low339_contain_fit.py` (gồm cổng đo pixel trên render Chromium thật).
+
 ### 1.2c Ảnh khái niệm: tin không có ảnh riêng thì tìm theo chủ đề, không bỏ
 
 Ông Chủ 07/09/2026: *"trong resource gốc không có hình hoặc hình không đạt là bỏ
@@ -783,7 +805,7 @@ nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IM
   alpha `card.TEXT_BOX_OPACITY` = 84%, dưới trần 88%), cả khối một màu chữ — không còn dải mờ
   tràn hết bề ngang trên khung (biến nút tối/lá cờ thành vệt) và không còn dải phủ riêng từng
   dòng. Ngoài khung ảnh giữ sắc nét; riêng dải dưới khung (tên kênh) được làm mờ. Từ khoá tô màu
-  riêng: mã model chữ lẫn số tự tô, cụm khác Ethan khai `"highlight"`.
+  riêng: tên hãng/tên model họ đã biết tự tô (LOW-344), cụm khác Ethan khai `"highlight"`.
   Ông Chủ so A/B trên 12 thẻ thật với cách LOW-343 (một màu trơn từ khoảng lặng trên khung xuống
   đáy) và chốt: *"Overlay trong khung là style đạt chuẩn"* — màu trơn cắt ảnh bằng một mảng đặc
   có mép ngang (lá cờ đỏ, Xiaomi cam).

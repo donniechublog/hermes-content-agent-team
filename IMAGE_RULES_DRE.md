@@ -851,7 +851,7 @@ nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IM
   alpha `card.TEXT_BOX_OPACITY` = 84%, dưới trần 88%), cả khối một màu chữ — không còn dải mờ
   tràn hết bề ngang trên khung (biến nút tối/lá cờ thành vệt) và không còn dải phủ riêng từng
   dòng. Ngoài khung ảnh giữ sắc nét; riêng dải dưới khung (tên kênh) được làm mờ. Từ khoá tô màu
-  riêng: mã model chữ lẫn số tự tô, cụm khác Ethan khai `"highlight"`.
+  riêng: tên hãng/tên model họ đã biết tự tô (LOW-344), cụm khác Ethan khai `"highlight"`.
   Ông Chủ so A/B trên 12 thẻ thật với cách LOW-343 (một màu trơn từ khoảng lặng trên khung xuống
   đáy) và chốt: *"Overlay trong khung là style đạt chuẩn"* — màu trơn cắt ảnh bằng một mảng đặc
   có mép ngang (lá cờ đỏ, Xiaomi cam).

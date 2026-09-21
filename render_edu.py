@@ -108,6 +108,8 @@ from pathlib import Path
 import vietnamese  # noqa: E402  (cùng thư mục) — chỉ cần cổng chữ, không cần PIL
 # đo tương phản WCAG dùng CHUNG với card.py/Ethan + itachi_submit.py — xem LOW-9
 import text_bg  # noqa: E402
+# nhan dien + mau ten hang dung chung ca doi designer — LOW-344
+import brand_names  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 FONTS_DIR = ROOT / "assets" / "fonts"
@@ -189,8 +191,6 @@ MONO_BRANDS = {("OPENAI",), ("CHATGPT",), ("KIMI",), ("MOONSHOT",)}
 # Noi dang model/ma nguon, khong phai chu the: tin "deepseek-ai/... tha trong so
 # tren Hugging Face" la tin DeepSeek. Chi tinh khi khong nhac hang nao khac.
 PLATFORM_BRANDS = {("HUGGING", "FACE"), ("GITHUB",)}
-# Tu khong nam trong `card.BRAND_FROM` (bang cua Ethan, khong doi o day).
-BRAND_ALIAS = {"GPT": ("OPENAI",), "HUGGINGFACE": ("HUGGING", "FACE")}
 HEROES = ("orbit", "grid", "wave", "rings", "graph")   # ten hero SVG tren bia
 
 W, H = 1080, 1350
@@ -274,6 +274,7 @@ BASE_CSS_TPL = """
 .title{font-family:%(DISPLAY)s;font-weight:700;line-height:1.05;
   letter-spacing:-1.5px;color:%(WHITE)s;}
 .accent{color:%(CYAN)s;}
+.brand{color:var(--bc);}
 .standfirst{font-family:%(SERIF)s;font-style:italic;font-weight:500;
   line-height:1.4;color:%(STAND)s;}
 .byline{display:flex;flex-direction:row;align-items:center;gap:18px;
@@ -689,8 +690,47 @@ def esc(s):
     return html.escape(str(s), quote=True)
 
 
-def accent_html(title, accent):
-    """Bọc cụm nhấn trong title thành span cyan (giữ escape)."""
+def _hex(rgb) -> str:
+    return "#%02X%02X%02X" % tuple(rgb[:3])
+
+
+def _brand_title_html(title, th):
+    """HTML tieu de voi ten hang/ten model to theo palette hang (LOW-344), hoac
+    None neu tieu de khong nhac hang nao.
+
+    Moi khuc ten hang la `<span class="brand">` mang hai bien CSS: `--bc` (nen
+    toi, keo sang cho doc duoc) va `--bcd` (vung chu tren nen SANG, ep toi 42%
+    nhu `_color_dark`). Hang den trang lay mau nhan `a` cua theme dang dung."""
+    import card
+    words = brand_names.line_segments(title or "")
+    if not any(role for w in words for _t, role, _k in w):
+        return None
+    fallback = brand_names.hex_rgb(th["a"]) if th else card.BRAND_NAME_FALLBACK
+    out = []
+    for w in words:
+        parts = []
+        for text, role, key in w:
+            if not role:
+                parts.append(esc(text))
+                continue
+            ten, org = brand_names.colors_for(key, fallback)
+            mau = card._enough_bright(org if role == "org" else ten)
+            toi = tuple(int(c * 0.42) for c in mau)
+            parts.append(f'<span class="brand" style="--bc:{_hex(mau)};--bcd:{_hex(toi)}">'
+                         f'{esc(text)}</span>')
+        out.append("".join(parts))
+    return " ".join(out)
+
+
+def accent_html(title, accent, th=None):
+    """Bọc cụm nhấn trong title thành span cyan (giữ escape).
+
+    LOW-344 (Ông Chủ 21/09/2026, "theo tiêu chuẩn mới, bỏ qua tiêu chuẩn cũ"):
+    tiêu đề có TÊN HÃNG thì tô tên hãng theo palette hãng và BỎ `accent` Kite
+    tự chọn; không nhắc hãng nào thì `accent` chạy như cũ."""
+    brand = _brand_title_html(title, th)
+    if brand is not None:
+        return brand
     t = esc(title)
     if accent:
         a = esc(accent)
@@ -747,7 +787,7 @@ def s_cover(sl, th):
     head = (
         f'<div class="mid" style="position:relative;">'
         f'{eyebrow(sl["eyebrow"])}'
-        f'<h1 class="title" style="font-size:88px;margin:24px 0 26px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'<h1 class="title" style="font-size:88px;margin:24px 0 26px;">{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
         f'<p class="standfirst" style="font-size:38px;margin-bottom:30px;max-width:860px;">{esc(sl["standfirst"])}</p>'
         f'{byline}</div>'
     )
@@ -768,7 +808,7 @@ def _cover_image(sl, th):
            # 74px chu khong phai 88px nhu bia art: bia co anh chi cho tieu de 2
            # dong, co chu nho hon mot bac thi 2 dong do chua duoc du y.
            f'<h1 class="title" style="font-size:74px;margin:22px 0 26px;">'
-           f'{accent_html(sl["title"], sl.get("accent"))}</h1>'
+           f'{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
            f'<p class="standfirst" style="font-size:36px;max-width:880px;'
            f'margin-bottom:28px;">{esc(sl["standfirst"])}</p>')
     if by:
@@ -791,7 +831,7 @@ def s_statement(sl, th):
     body = (
         f'<div class="mid" style="margin-top:52px;">'
         f'{eyebrow(sl["eyebrow"])}'
-        f'<h1 class="title" style="font-size:78px;margin:36px 0 40px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'<h1 class="title" style="font-size:78px;margin:36px 0 40px;">{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
         f'<p class="standfirst" style="font-size:40px;max-width:880px;">{esc(sl["standfirst"])}</p>'
         f'</div>{cards_wrap}'
     )
@@ -810,7 +850,7 @@ def s_steps(sl, th):
     body = (
         f'<div class="mid" style="margin-top:46px;">'
         f'{eyebrow(sl["eyebrow"])}'
-        f'<h1 class="title" style="font-size:80px;margin:24px 0 8px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'<h1 class="title" style="font-size:80px;margin:24px 0 8px;">{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
         f'</div>'
         f'<div class="mid" style="margin-top:38px;">{rows}'
         f'<div style="border-bottom:1px solid {th["line"]};"></div></div>'
@@ -840,7 +880,7 @@ def s_loop(sl, th):
     body = (
         f'<div class="mid" style="margin-top:40px;">'
         f'{eyebrow(sl["eyebrow"])}'
-        f'<h1 class="title" style="font-size:80px;margin:32px 0 44px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'<h1 class="title" style="font-size:80px;margin:32px 0 44px;">{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
         f'<div class="chips" style="margin-bottom:44px;">{chips}</div>'
         f'<p class="standfirst" style="font-size:40px;max-width:900px;">{esc(sl["standfirst"])}</p>'
         f'</div>'
@@ -876,6 +916,7 @@ def _css_text_dark_region(scope, th):
             f'{scope} .fig-bar{{background:{a_toi};}}'
             f'{scope} .title{{color:rgba(0,0,0,0.85);}}'
             f'{scope} .accent{{color:{a_toi};}}'
+            f'{scope} .brand{{color:var(--bcd);}}'
             f'{scope} .standfirst{{color:rgba(0,0,0,0.68);}}'
             f'{scope} .fig-cap{{color:rgba(0,0,0,0.55);}}'
             f'{scope} .card-txt{{color:rgba(0,0,0,0.78);}}'
@@ -883,6 +924,209 @@ def _css_text_dark_region(scope, th):
             f'{scope} .byline{{color:rgba(0,0,0,0.55);}}'
             f'{scope} .byline .b0{{color:rgba(0,0,0,0.85);}}'
             f'{scope} .dot{{background:rgba(0,0,0,0.4);}}</style>')
+
+
+CONTAIN_GROUND_MIN = 0.80   # moi mep anh phai >= ti le nay gan mau nen thi hop anh moi "tan" vao khung
+
+
+def edge_ground_share(p):
+    """-> (ti le mep KEM DEU nhat gan mau nen, mau nen RGB). Mau nen = trung vi 4 mep.
+
+    Thap hon `RATIO_FLAT_MIN` cua `read_background` vi logo net den cham mep lam mep do
+    mat vai phan tram (A77: mep tren 83%, ba mep con lai 91-97%), nhung van du de hop anh
+    hoa vao nen. Anh chup that (toa nha, man hinh, logo tren mat bang) co mep lon xon nen
+    khong dat, va se di duong cu."""
+    from PIL import Image
+    with Image.open(p) as im:
+        return _edge_share(im.convert("RGB"))
+
+
+def _edge_share(im):
+    """`edge_ground_share` tren doi tuong PIL RGB (dung cho ca anh da cat)."""
+    from PIL import ImageStat
+    w, h = im.size
+    d = max(2, min(w, h) // 50)
+    strips = [im.crop((0, 0, w, d)), im.crop((0, h - d, w, h)),
+              im.crop((0, 0, d, h)), im.crop((w - d, 0, w, h))]
+    meds = [[int(round(x)) for x in ImageStat.Stat(v).median] for v in strips]
+    ground = tuple(int(sum(m[k] for m in meds) / 4) for k in range(3))
+    worst = 1.0
+    for v in strips:
+        st = ImageStat.Stat(v)
+        for k in range(3):
+            lo = max(0, ground[k] - THRESHOLD_OFFSET_BORDER)
+            hi = min(255, ground[k] + THRESHOLD_OFFSET_BORDER)
+            worst = min(worst, sum(st.h[k * 256:k * 256 + 256][lo:hi + 1]) / st.count[k])
+    return worst, ground
+
+
+def subject_below_text_zone(a):
+    """LOW-339: manifest image `a` la logo/hinh ve (vision `subject_kind`) ma day chu the
+    (`subject_box[3]`) roi xuong duoi vung tren khung chu `FIG_BOTTOM_FLAT`, nghia la
+    nua duoi hinh se nam sau chu. The logo 4:5 co logo tren cao thi khong."""
+    import logo_card
+    if not logo_card.is_logo_image(a) or not a.get("w") or not a.get("h"):
+        return False
+    return a["subject_box"][3] * round(W * a["h"] / a["w"]) > CONTAIN_BOTTOM - FIG_FIXED
+
+
+CONTAIN_CONTENT_TOL = 24                    # lech mau (0..255) tro len la "noi dung", duoi do la nen
+CONTAIN_BOTTOM = int(H * FIG_BOTTOM_FLAT)   # y (px) cua mep duoi anh khi co: ke tu dinh khung
+
+
+def contain_ground(p, iw, ih):
+    """Mau nen RGB neu che do co anh AP DUNG cho anh nay (cao hon vung tren chu VA mep
+    dong mau), nguoc lai None. Dung chung cho renderer va cong chan o kite_submit, de hai
+    ben khong lech nhau ve viec anh nao duoc co."""
+    if max(1, round(W * ih / iw)) <= CONTAIN_BOTTOM - FIG_FIXED:
+        return None
+    share, ground = edge_ground_share(p)
+    return ground if share >= CONTAIN_GROUND_MIN else None
+
+
+def _image_crop_uri(p, box):
+    """Data URI cua anh da cat theo `box` (None = nguyen anh)."""
+    if not box:
+        return _image_data_uri(p)
+
+    def build():
+        import io
+        from PIL import Image
+        with Image.open(p) as im:
+            buf = io.BytesIO()
+            im.convert("RGB").crop(box).save(buf, "PNG")
+        return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+    return _small(("uri_crop", str(p), box), build)
+
+
+CONTAIN_ARTIFACT_MAX = 0.06     # dai vien thua day toi da (ti le canh) — day hon la noi dung that
+CONTAIN_ARTIFACT_CONTRAST = 90  # do lech do sang (0..255) so voi long anh de tinh la "thua"
+CONTAIN_ARTIFACT_GROUND_GAP = 40  # ... va phai khac mau nen it nhat chung nay (khong thi la le nen)
+
+
+def _artifact_depth(g, side, ground_luma):
+    """So dong/cot sat mep `side` ('top','bottom','left','right') cua anh xam `g` la dai vien
+    THUA (thanh trang, vach mong o mep). Dai chi tinh khi no MONG (<= CONTAIN_ARTIFACT_MAX) va
+    long anh ngay sau do tro ve binh thuong; troi dai het muc do (bau troi sang, nen trang
+    that) thi la noi dung, khong cat. Dong/cot gan mau NEN (`ground_luma`) khong tinh: do la le
+    nen con sot hoac dau net ve chom mep (chop rau cua logo cuop bien), khong phai vach thua."""
+    from PIL import ImageStat
+    w, h = g.size
+    vertical = side in ("top", "bottom")
+    span = h if vertical else w
+    max_d = max(1, int(span * CONTAIN_ARTIFACT_MAX))
+
+    def strip(i0, i1):
+        if side == "top":
+            box = (0, i0, w, i1)
+        elif side == "bottom":
+            box = (0, h - i1, w, h - i0)
+        elif side == "left":
+            box = (i0, 0, i1, h)
+        else:
+            box = (w - i1, 0, w - i0, h)
+        return ImageStat.Stat(g.crop(box)).mean[0]
+
+    ref = strip(int(span * 0.08), max(int(span * 0.08) + 1, int(span * 0.14)))
+    depth = 0
+    for i in range(max_d):
+        mean = strip(i, i + 1)
+        if abs(mean - ref) > CONTAIN_ARTIFACT_CONTRAST and abs(mean - ground_luma) > CONTAIN_ARTIFACT_GROUND_GAP:
+            depth = i + 1
+    if depth >= max_d:          # van con "thua" o do sau toi da: la noi dung that
+        return 0
+    return depth
+
+
+def content_box(p, ground):
+    """Hop noi dung (x0, y0, x1, y1, toa do pixel anh goc) sau khi bo (1) vien PHANG cung mau
+    `ground` va (2) dai vien THUA (thanh trang, vach mong o mep — Ong Chu 21/09/2026: "nhung
+    doan chi tiet thua vo duyen ... phai loai bo triet de"), hoac None neu khong co gi de bo.
+
+    Nhieu logo/anh da duoc dem nen san thanh khung 4:5 (1080x1350 nen den quanh mot tam
+    that): co ca khung thi tam that chi con ~50% be ngang, chu trong infographic khong
+    doc duoc (dung thu 21/09/2026 tren 6 anh that). Bo vien nen roi moi co. Buoc (1) do tren
+    ban thu nho, buoc (2) do tren anh goc."""
+    from PIL import Image, ImageChops
+    with Image.open(p) as im:
+        im = im.convert("RGB")
+        w, h = im.size
+        k = min(1.0, 400 / max(w, h))
+        small = im.resize((max(1, round(w * k)), max(1, round(h * k))), Image.LANCZOS) if k < 1 else im
+        diff = ImageChops.difference(small, Image.new("RGB", small.size, ground)).convert("L")
+        box = diff.point(lambda v: 255 if v > CONTAIN_CONTENT_TOL else 0).getbbox()
+        if not box:
+            return None
+        x0, y0, x1, y1 = (round(box[0] / k), round(box[1] / k),
+                          min(w, round(box[2] / k)), min(h, round(box[3] / k)))
+        g = im.crop((x0, y0, x1, y1)).convert("L")
+        gl = _bright(ground)
+        top, bottom = _artifact_depth(g, "top", gl), _artifact_depth(g, "bottom", gl)
+        left, right = _artifact_depth(g, "left", gl), _artifact_depth(g, "right", gl)
+    x0, y0, x1, y1 = x0 + left, y0 + top, x1 - right, y1 - bottom
+    if x0 <= 0 and y0 <= 0 and x1 >= w and y1 >= h:
+        return None
+    return (x0, y0, x1, y1)
+
+
+CONTAIN_FULL_WIDTH_MIN = 0.90   # hinh co co khung rieng ma hep hon ti le nay (theo be ngang khung) thi khong dung
+
+
+def contain_fit(p, iw, ih):
+    """Hinh hoc co anh, hoac None neu che do co khong ap dung.
+
+    -> {"ground", "box", "width", "height", "width_share", "blends"}. `blends`: vien cua
+    phan NOI DUNG (sau khi bo nen thua) van dong mau nen, tuc hinh la net ve/logo hoa vao
+    nen (mat cuop bien, GA Today). Nguoc lai la mot TAM ANH co khung rieng (toa nha, banner
+    cookie): hep hon khung thi lo thanh cai hop tren nen den — Ong Chu 21/09/2026: "ko hien
+    thi duoc full width thi ko su dung nhung hinh nhu vay"."""
+    ground = contain_ground(p, iw, ih)
+    if ground is None:
+        return None
+    from PIL import Image
+    box = content_box(p, ground)
+    cw, ch = (box[2] - box[0], box[3] - box[1]) if box else (iw, ih)
+    scale = min(W / cw, (CONTAIN_BOTTOM - FIG_FIXED) / ch)
+    width, height = max(1, round(cw * scale)), max(1, round(ch * scale))
+    with Image.open(p) as im:
+        content = im.convert("RGB")
+        if box:
+            content = content.crop(box)
+        blends = _edge_share(content)[0] >= CONTAIN_GROUND_MIN
+    return {"ground": ground, "box": box, "width": width, "height": height,
+            "width_share": width / W, "blends": blends}
+
+
+def _boxed_picture(fit):
+    """Tam anh co khung rieng ma co xong van hep hon khung: lo thanh cai hop tren nen."""
+    return fit["width_share"] < CONTAIN_FULL_WIDTH_MIN and not fit["blends"]
+
+
+def _image_contain_background(p, iw, ih, th):
+    """LOW-339: logo / hinh ve tren nen tron ma day chu the roi xuong duoi vung tren khung
+    chu (`subject_below_text_zone`) -> CO CA TAM ANH cho vua vung tren chu, khong cat mep
+    duoi hay de xuong sau khung chu (slide 04/06 "Pirate Face": ~40% anh nam sau chu).
+    Tra None khi anh da vua san hoac mep anh khong dong mau (anh chup that di duong cu).
+
+    Co CA TAM, khong co theo `subject_box`: hop do vision uoc luong khong phu het hinh
+    (do thu tren the Gemini va logo GA Today: phan cuoi hinh van tran xuong de len chu).
+    Vien nen phang thua duoc bo truoc (`content_box`). Khung = mau nen CHINH anh
+    (`edge_ground_share`), anh dat canh tren duoi masthead va canh giua ngang, hai ben la
+    cung mot mau nen nen khong lo hop; chu doi mau tuong phan (`_css_text_dark_region`),
+    khong overlay, khong blur (Ong Chu 21/09/2026, LOW-341 + huong (a) cua LOW-339).
+    """
+    fit = contain_fit(p, iw, ih)
+    if fit is None or _boxed_picture(fit):
+        return None
+    ground, box, width, height = fit["ground"], fit["box"], fit["width"], fit["height"]
+    ground_hex = "#%02X%02X%02X" % ground
+    html_bg = (f'<div class="figwrap" style="background:{ground_hex};">'
+               f'<img class="fig-sac" src="{_image_crop_uri(p, box)}" alt="" '
+               f'style="top:{FIG_FIXED}px;left:{(W - width) // 2}px;width:{width}px;'
+               f'height:{height}px;object-fit:contain;"></div>')
+    if _bright(ground) > THRESHOLD_BRIGHT_TEXT_DARK:
+        html_bg += _css_mast_dark() + _css_text_dark_region("#figtxt", th)
+    return html_bg
 
 
 def image_make_background(sl, th, ten):
@@ -909,7 +1153,23 @@ def image_make_background(sl, th, ten):
       canh.
     """
     p, iw, ih = _measure_image(sl["image"])
+    crop_box = None
+    force_photo = False
+    if sl.get("image_fit") == "contain":
+        contained = _image_contain_background(p, iw, ih, th)
+        if contained is not None:
+            return contained, ""
+        fit = contain_fit(p, iw, ih)
+        if fit is not None:
+            # Hinh co khung rieng khong hien thi duoc full be ngang (cong nop chan, tru khi
+            # slide ghi image_force). Buoc phai dung thi PHONG full be ngang, bo vien nen dem thua,
+            # phan thua cham chu thi lop chu phu len (duong anh chup co san). Ong Chu 21/09/2026.
+            force_photo, crop_box = True, fit["box"]
+            if crop_box:
+                iw, ih = crop_box[2] - crop_box[0], crop_box[3] - crop_box[1]
     kieu, mau_nen, nen_sang = read_background(p)
+    if force_photo:
+        kieu = "mo"
     cao, y0, cao_that = set_image(iw, ih, kieu == "phang")
     if cao_that > cao and ("bao", str(p), cao) not in _NHO_ANH:
         # Bao ra de Kite biet mat bao nhieu: neu phan mat la phan dang noi toi
@@ -919,7 +1179,7 @@ def image_make_background(sl, th, ten):
         _NHO_ANH[("bao", str(p), cao)] = True
         print(f"{ten} {p.name}: {iw}x{ih}, cao {cao_that}px -> con {cao}px "
               f"(giu mep tren, mat {cao_that - cao}px duoi)", file=sys.stderr)
-    uri = _image_data_uri(p)
+    uri = _image_crop_uri(p, crop_box)
     # Bi cat thi cho phan cuoi TAN vao nen thay vi dut ngang: nen cung mau nen
     # anh chi viec loang ra, doc thanh "con nua o duoi" chu khong phai "bi xen".
     mo_day = ('' if cao_that <= cao else
@@ -990,7 +1250,7 @@ def s_figure(sl, th):
     nen, anh = image_make_background(sl, th, "figure")
     chu = (f'{eyebrow(sl["eyebrow"])}'
            f'<h1 class="title" style="font-size:62px;margin:22px 0 0;">'
-           f'{accent_html(sl["title"], sl.get("accent"))}</h1>')
+           f'{accent_html(sl["title"], sl.get("accent"), th)}</h1>')
     # KHONG ve dong nguon anh (LOW-292, 20/09/2026). Ong Chu khoanh do dong
     # "— <mo ta anh> · via <trang>" o ca bia lan slide than cua album Gemini
     # (task t_22d038a3): "noi dung khong duoc phep xuat hien". Nguon anh VAN
@@ -1071,7 +1331,7 @@ def s_bars(sl, th):
     body = (
         f'<div class="mid" style="margin-top:46px;">'
         f'{eyebrow(sl["eyebrow"])}'
-        f'<h1 class="title" style="font-size:76px;margin:24px 0 8px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'<h1 class="title" style="font-size:76px;margin:24px 0 8px;">{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
         f'</div>'
         f'<div class="mid" style="margin-top:44px;">{rows}'
         f'<div style="border-bottom:1px solid {th["line"]};"></div>{cap}{stand}</div>'
@@ -1095,7 +1355,7 @@ def s_cta(sl, th):
     body = (
         f'<div class="mid" style="margin-top:40px;">'
         f'{eyebrow(sl["eyebrow"])}'
-        f'<h1 class="title" style="font-size:76px;margin:32px 0 48px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'<h1 class="title" style="font-size:76px;margin:32px 0 48px;">{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
         f'{checks_wrap}</div>'
         f'<div class="mid">{readmore}</div>'
     )
@@ -1447,19 +1707,13 @@ def subject_brand(texts) -> tuple | None:
     thu tu), bo qua noi dang model (PLATFORM_BRANDS) neu con hang khac. None
     neu khong nhac hang nao.
 
-    Tach `-` `/` `:` `_`, va chu dinh so phien ban, thanh dau cach truoc khi
-    tra: ten model gan nhu luon viet lien ("DeepSeek-V4.1-Flash",
-    "deepseek-ai/...", "Swift-Qwen3.8-27b"), ma `card._extract_label` chi tach
-    theo dau cach nen truot het (LOW-340). Chi tach o day — Ethan to ten hang
-    bang `_extract_label` nguyen ban, khong doi o ticket nay."""
-    import card
+    Nhan dien ten hang (ke ca trong ten model viet lien — "DeepSeek-V4.1-Flash",
+    "deepseek-ai/...", "Swift-Qwen3.8-27b") dung CHUNG `brand_names` voi cho to
+    ten hang cua ca doi (LOW-344), khong giu ban rieng."""
     found = []
     for text in texts:
-        flat = re.sub(r"[-/:_]+", " ", text or "")
-        flat = re.sub(r"(?<=[A-Za-z])(?=\d)", " ", flat)
-        for word, key in card._extract_label(flat):
-            key = key or BRAND_ALIAS.get(word.strip(card._RIA).upper())
-            if key and key not in found:
+        for key in brand_names.brand_keys(text or ""):
+            if key not in found:
                 found.append(key)
     return next((k for k in found if k not in PLATFORM_BRANDS), found[0] if found else None)
 

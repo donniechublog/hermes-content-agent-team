@@ -23,12 +23,12 @@ mọi bảng màu.
 """
 import argparse
 import functools
-import re
 import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
+import brand_names
 import image_provenance
 import image_rules_ethan
 import role_spec
@@ -75,9 +75,9 @@ PAD = 44
 BRAND = {
     "donniechublog": {
         "handle": "donniechublog",
-        # Ten hang trong tieu de lay CYAN cua bo nhan dien. Bang mau nay da co
-        # mot mau nhan manh roi, muon them mau rieng cua tung hang nua thi doi
-        # "cyan" thanh "company" o day, khong phai sua cho nao khac.
+        # Co to ten hang trong tieu de hay khong (None = khong). MAU to tu LOW-344
+        # (Ong Chu 21/09/2026) theo PALETTE cua hang cho moi thuong hieu va moi vai
+        # (brand_names.colors_for), khong con blog = CYAN / dcgr = mau hang.
         "company_name_color": "cyan",
         # Ten kenh ro va dung mau CYAN nhan dien.
         "handle_clarity": 1.0,
@@ -98,7 +98,8 @@ BRAND = {
         # Nho vay bang mau van don sac o moi cho khac, va cham mau duy nhat tren
         # the luon mang y nghia.
         "company_name_color": "company",
-        "fallback_company_color": (255, 176, 32),   # hang chua biet mau: ho phach
+        # hang den trang (LOW-344): CYAN cua dcgr la trang = mau chu, nen dung ho phach
+        "fallback_company_color": (255, 176, 32),
         # Chan the la thong tin PHU: nho va mo hon de lui ve sau.
         "footer_size_scale": 0.85,        # co chu o chan the: 85% co goc
         "footer_brightness": 0.55,        # do sang chu chan, 1.0 la bang FG
@@ -115,12 +116,15 @@ BRAND = {
 
 # Gia tri mac dinh; build() ghi de theo --brand
 BG = BG_CARD = FG = MUTED = ACCENT = ACCENT_DIM = CYAN = LINE = None
+BRAND_NAME_FALLBACK = (255, 176, 32)   # nap lai theo thuong hieu o set_brand
+CURRENT_BRAND: dict = {}               # cau hinh thuong hieu dang nap (set_brand)
 THRESHOLD_BACKGROUND_BRIGHT = None    # diem sang nen (0..255) FG/BG hoa nhau — dat qua set_brand
 
 
 def set_brand(ten: str):
     """Nap bang mau cua mot thuong hieu."""
     global BG, BG_CARD, FG, MUTED, ACCENT, ACCENT_DIM, CYAN, LINE, THRESHOLD_BACKGROUND_BRIGHT
+    global BRAND_NAME_FALLBACK, CURRENT_BRAND
     b = BRAND.get(ten)
     if b is None:
         raise SystemExit(f"Khong biet thuong hieu {ten!r}. "
@@ -135,6 +139,12 @@ def set_brand(ten: str):
     # mot con so co dinh (116, tinh rieng cho FG/BG cua donniechublog) se sai
     # nguong voi dcgr (FG/BG gan nhu trang tuyet doi / den tuyet doi).
     THRESHOLD_BACKGROUND_BRIGHT = text_bg.threshold_wall_part(FG, BG)
+    # Mau to ten hang DEN TRANG (OpenAI, xAI...) — LOW-344: "mau tuong phan,
+    # mien la noi bat". CYAN cua kenh, tru khi no trung mau chu (dcgr: CYAN =
+    # FG = trang) thi lay mau thu ba cua kenh.
+    BRAND_NAME_FALLBACK = CYAN if text_bg.ratio_wall_part(CYAN, FG) >= 1.5 \
+        else tuple(b.get("fallback_company_color", (255, 176, 32)))
+    CURRENT_BRAND = b
     return b
 
 TITLE_SIZE_HI, TITLE_SIZE_LO = 56, 38
@@ -313,67 +323,18 @@ COLOR_PHRASE = {
 }
 
 
-# ---- To TEN MODEL day du (LOW-343, Ong Chu 21/09/2026: *"ko thay doi mau keyword quan trong?"*) ----
-# Bo to cu chi to TEN HANG dung mot tu trong BRAND_FROM: the "Gemini Omni Flash #2" chi to
-# "GEMINI", the "Fable 5 ha gia 25%" khong to gi, the Qwen chi to "ALIBABA". Gio to NGUYEN CUM
-# ten model kem phien ban bang mau cua ho model. Ho model -> mau (mau hang chu quan khi model
-# khong co mau rieng). Khong dung ranking.extract_model: no bo sot "Fable 5" (thieu chu Claude),
-# "Grok Voice Transcribe 2.0" (chi ra "Grok").
-MODEL_FAMILY_COLOR = {
-    "QWEN": COLOR_RANK["QWEN"], "WAN": COLOR_RANK["QWEN"],
-    "GEMINI": COLOR_RANK["GEMINI"], "GEMMA": COLOR_RANK["GEMINI"], "VEO": COLOR_RANK["GEMINI"],
-    "CLAUDE": COLOR_RANK["CLAUDE"], "FABLE": COLOR_RANK["CLAUDE"], "OPUS": COLOR_RANK["CLAUDE"],
-    "SONNET": COLOR_RANK["CLAUDE"], "HAIKU": COLOR_RANK["CLAUDE"],
-    "GPT": COLOR_RANK["CHATGPT"], "CHATGPT": COLOR_RANK["CHATGPT"], "SORA": COLOR_RANK["CHATGPT"],
-    "GROK": COLOR_RANK["GROK"], "LLAMA": COLOR_RANK["LLAMA"], "MUSE": COLOR_RANK["META"],
-    "DEEPSEEK": COLOR_RANK["DEEPSEEK"], "MISTRAL": COLOR_RANK["MISTRAL"],
-    "MAGISTRAL": COLOR_RANK["MISTRAL"], "DEVSTRAL": COLOR_RANK["MISTRAL"],
-    "CODESTRAL": COLOR_RANK["MISTRAL"], "KIMI": COLOR_RANK["KIMI"],
-    "NEMOTRON": COLOR_RANK["NVIDIA"], "PHI": COLOR_RANK["MICROSOFT"],
-    "SEEDANCE": COLOR_RANK["BYTEDANCE"], "SEEDREAM": COLOR_RANK["BYTEDANCE"],
-    "DOUBAO": COLOR_RANK["BYTEDANCE"], "GLM": None, "MINIMAX": None, "HAILUO": None,
-    "HUNYUAN": COLOR_RANK["TENCENT"], "ERNIE": COLOR_RANK["BAIDU"],
-}
-_MODEL_TAIL = re.compile(r"^[A-Z0-9][A-Za-z0-9.\-+]*$")
-
-
-def _model_family(tu: str):
-    """Ho model ma tu `tu` (da bo dau cau, viet hoa) bat dau bang, hoac None. Sau ten ho phai
-    het tu hoac la ky tu KHONG phai chu cai: "QWEN-IMAGE-2.1", "QWEN3", "GPT-6" khop;
-    "WANT", "PHILIPPINES" khong khop."""
-    for ho in MODEL_FAMILY_COLOR:
-        if tu.startswith(ho) and (len(tu) == len(ho) or not tu[len(ho)].isalpha()):
-            return ho
-    return None
-
-
+# ---- To TEN MODEL day du (LOW-343 -> LOW-344) ----------------------------------
+# Ho model ("Fable 5", "Gemini Omni Flash") va cum ten model gio nhan dien o
+# `brand_names` — MOT cho cho ca Ethan, Dre, Kite; mau theo PALETTE hang (Ong Chu chot
+# 21/09/2026, LOW-344), khong con mau ho rieng o day.
 def model_marks(title: str) -> list:
-    """Mau to cho TUNG TU cua `title.split()` — mau ho model voi cac tu thuoc cum ten model,
-    None voi tu khac (va voi ho chua co mau rieng: `False` = la ten model, dung mau du phong).
-    Cum = tu thuoc mot ho model + cac tu NOI TIEP viet hoa/co so (ten, phien ban, bien the);
-    dung o chu thuong tieng Viet, "#2", "25%", dau cau."""
-    tus = (title or "").split()
-    ra = [None] * len(tus)
-    i = 0
-    while i < len(tus):
-        sach = tus[i].strip(_RIA)
-        ho = _model_family(sach.upper()) if sach else None
-        if not ho:
-            i += 1
-            continue
-        mau = MODEL_FAMILY_COLOR[ho] or False
-        ra[i] = mau
-        j = i + 1
-        het = tus[i] != tus[i].rstrip(_RIA)                  # "Flash," — dau cau dong cum
-        while not het and j < len(tus):
-            s = tus[j].rstrip(_RIA)
-            if not s or not _MODEL_TAIL.match(s):
-                break
-            ra[j] = mau
-            het = tus[j] != s
-            j += 1
-        i = j
-    return ra
+    """Mau to cho TUNG TU cua `title.split()`: mau ten model/ten hang theo palette, None
+    voi tu khong to. Giu ten ham cua LOW-343 cho noi goi/test cu."""
+    out = []
+    for segs in brand_names.line_segments(" ".join((title or "").split())):
+        key = next((k for _t, r, k in segs if r), None)
+        out.append(brand_fill(key, "name") if key else None)
+    return out
 
 
 def _measure_bright(mau) -> float:
@@ -422,12 +383,11 @@ def _color_of_rank(tu_sach: tuple):
     return None
 
 
-# LOW-336 (Ong Chu 21/09/2026, chot style the tran): "mark key quan trong voi mau khac".
-# Ngoai ten hang da biet mau, to ca MA MODEL/SAN PHAM (chu lan so: NEEDLE3, XING4.0-29B-A4B,
-# H100) va cac cum Ethan khai trong spec `highlight`. Khoa danh dau KEY_MARK -> khong co
-# mau hang rieng -> lay mau du phong cua bo nhan dien.
+# LOW-336 (Ong Chu 21/09/2026, chot style the tran): "mark key quan trong voi mau khac". Ten
+# hang / ten model thuoc ho da biet do `brand_names` (LOW-343/344) tu to; cum KEY khac (hang
+# chua co trong bang, vd "Cactus Compute") Ethan khai trong spec `highlight` -> danh dau
+# KEY_MARK, khong co mau hang rieng nen lay mau du phong cua kenh.
 KEY_MARK = ("*",)
-_MODEL_ID = re.compile(r"^(?=[A-Z0-9.+-]*[A-Z])(?=[A-Z0-9.+-]*\d)[A-Z0-9][A-Z0-9.+-]*$")
 
 
 def key_words(highlight) -> frozenset:
@@ -472,46 +432,100 @@ def _extract_label(dong: str, keys: frozenset = frozenset()):
         else:
             if cleaned[i] in BRAND_FROM:
                 khoa[i] = (cleaned[i],)
-            elif cleaned[i] in keys or _MODEL_ID.match(cleaned[i]):
+            elif cleaned[i] in keys:
                 khoa[i] = KEY_MARK
             i += 1
     return list(zip(tu, khoa))
 
 
 def _color_rank_within(text: str):
-    """Mau cua ten hang DAU TIEN nhan ra trong `text`, hoac None. Dung de to
-    dau ngoac quote theo mau hang duoc nhac toi trong chu de."""
-    for _tu, khoa in _extract_label(text or ""):
-        if khoa:
-            mau = _color_of_rank(khoa)
-            if mau:
-                return mau
-    return None
+    """Mau cua ten hang DAU TIEN nhan ra trong `text` (ke ca trong ten model
+    viet lien, LOW-344), theo palette cua hang; None neu khong nhac hang nao
+    hoac hang den trang. Dung de to dau ngoac quote (Ethan + Dre)."""
+    keys = brand_names.brand_keys(text or "")
+    return brand_names.colors_for(keys[0], None)[0] if keys else None
 
 
-def _empty_line(d, dong, font):
-    """Be ngang mot dong khi ve tung tu mot.
+# Ten hang to mau van phai doc duoc tren dai nen cua dong. Hai nguong vi hai chieu
+# khac nhau: KEO TOI giu duoc sac mau toi 4.5; KEO SANG thi pha trang lam mat mau
+# — tren nen xam toi vua (L~100-120) chinh chu trang cung chi ~4.5, ep 4.5 la ra
+# trang tron (do that the Qwen dcgr 21/09). Tieu de/quote deu >= 50px dam nen
+# dung nguong WCAG AA cho CHU LON (3.0) o chieu sang.
+BRAND_MIN_CONTRAST = 4.5
+BRAND_MIN_CONTRAST_LARGE = 3.0
 
-    Phai do dung cach se ve, khong duoc do ca chuoi mot lan: ve tung tu thi be
+
+def _contrast_fit(mau, nen_level, darker, target=BRAND_MIN_CONTRAST):
+    """Keo `mau` ve phia toi (`darker`) hoac sang tung buoc, giu hue, toi khi
+    tuong phan WCAG voi nen xam `nen_level` (0..255) dat `target`."""
+    nen = (round(nen_level),) * 3
+    mau = tuple(mau[:3])
+    for _ in range(40):
+        if text_bg.ratio_wall_part(mau, nen) >= target:
+            break
+        mau = tuple(max(0, round(c * 0.9)) for c in mau) if darker             else tuple(min(255, round(c + (255 - c) * 0.12)) for c in mau)
+    return mau
+
+
+def brand_fill(key, role, nen_sang=False, fallback=None, bg_level=None):
+    """Mau ve mot khuc ten hang (`role` "name"/"org") tren the/slide PIL.
+
+    Mau theo palette hang (brand_names.colors_for); hang den trang lay
+    `fallback` — mac dinh BRAND_NAME_FALLBACK cua thuong hieu dang nap. Keo
+    sang tren nen toi, keo toi tren nen SANG (`nen_sang`). Biet do sang THAT
+    cua dai nen dong (`bg_level`, tu `_can_board_line`) thi keo toi/sang toi khi dat
+    tuong phan BRAND_MIN_CONTRAST(_LARGE) — nen xam trung binh (L~170) lam mau hang da
+    ep toi 42% van chi con CR 2.2 (test_gate bat, 21/09/2026)."""
+    ten, org = brand_names.colors_for(key, fallback or BRAND_NAME_FALLBACK)
+    goc = org if role == "org" else ten
+    goc = _enough_dark(goc) if nen_sang else _enough_bright(goc)
+    if bg_level is None:
+        return goc
+    return _contrast_fit(goc, bg_level, darker=nen_sang,
+                         target=BRAND_MIN_CONTRAST if nen_sang else BRAND_MIN_CONTRAST_LARGE)
+
+
+def _empty_line(d, dong, font, words=None):
+    """Be ngang mot dong khi ve tung khuc mot (`draw_brand_line`).
+
+    Phai do dung cach se ve, khong duoc do ca chuoi mot lan: ve tung khuc thi be
     ngang la tong cua tung manh, lech vai pixel so voi do ca chuoi, va cho lech
     do du de mot dong can giua nhin ra la lech.
     """
     if not dong:
         return 0
     khoang = d.textlength(" ", font=font)
-    return sum(d.textlength(t, font=font) for t in dong.split(" ")) \
-        + khoang * (len(dong.split(" ")) - 1)
+    words = words if words is not None else brand_names.line_segments(dong)
+    return sum(d.textlength(t, font=font) for w in words for t, _v, _k in w) \
+        + khoang * (len(words) - 1)
+
+
+def draw_brand_line(d, x, y, dong, font, mau, colored=True, nen_sang=False, fallback=None,
+                    bg_level=None, words=None):
+    """Ve mot dong chu, to ten hang/ten model theo palette hang (LOW-344).
+
+    Dung chung cho Ethan (`_about_line`) va Dre (hook bia carousel). Ve tung
+    KHUC (ten model, tien to to chuc, dau cau) noi lien nhau, dau cach giua
+    cac tu — be ngang do bang `_empty_line`, cung cach ve. `colored=False`:
+    ca dong mot mau (the tin kieu dai)."""
+    khoang = d.textlength(" ", font=font)
+    for word in (words if words is not None else brand_names.line_segments(dong)):
+        for text, role, key in word:
+            f_mau = brand_fill(key, role, nen_sang, fallback, bg_level) if (colored and role) else mau
+            d.text((x, y), text, font=font, fill=f_mau)
+            x += d.textlength(text, font=font)
+        x += khoang
 
 
 def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
-             nen_sang=False, keys: frozenset = frozenset(), marks=None):
-    """Ve mot dong, to rieng ten thuong hieu.
+             nen_sang=False, bg_level=None, words=None):
+    """Ve mot dong tieu de the Ethan, to rieng ten hang/ten model.
 
-    che_do:
-      None    — khong to gi, ca dong mot mau (the tin kieu dai)
-      "cyan"  — ten hang lay CYAN cua bo nhan dien (donniechublog)
-      "company" — ten hang lay MAU RIENG CUA HANG do (dcgr). Hang chua biet mau
-                thi dung `mau_du_phong` (BRAND `fallback_company_color`).
+    che_do: None — khong to gi, ca dong mot mau (the tin kieu dai); co gia tri
+    ("cyan"/"company", khoa `company_name_color` cua thuong hieu) — to. Tu
+    LOW-344 (Ong Chu 21/09/2026) MAU khong con theo che_do (blog = CYAN, dcgr =
+    mau hang) ma theo PALETTE cua hang, giong Dre va Kite. `mau_du_phong` giu cho
+    noi goi cu; mau hang den trang gio lay tu BRAND_NAME_FALLBACK (set_brand).
 
     `nen_sang`: dong nay nam tren mot dai anh SANG. Khi do mau ten hang phai
     keo ve phia TOI (`_enough_dark`), khong phai sang them — dung cai loi da sua cho
@@ -519,21 +533,8 @@ def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
     mat chu). Chi kieu `full_bleed` truyen co nay: no dat chu thang len anh khong man
     toi nen dai chu co the sang; kieu the tin luon co nen toi.
     """
-    khoang = d.textlength(" ", font=font)
-    marks = list(marks or [])
-    for k, (tu, khoa) in enumerate(_extract_label(dong, keys)):
-        f_mau = mau
-        mk = marks[k] if k < len(marks) else None
-        if mk is not None and che_do:                         # LOW-343: nguyen cum ten model
-            goc = CYAN if che_do == "cyan" else (mk or mau_du_phong or CYAN)
-            f_mau = _enough_dark(goc) if nen_sang else _enough_bright(goc)
-        elif khoa and che_do == "cyan":
-            f_mau = _enough_dark(CYAN) if nen_sang else CYAN
-        elif khoa and che_do == "company":
-            goc = _color_of_rank(khoa) or mau_du_phong or CYAN
-            f_mau = _enough_dark(goc) if nen_sang else _enough_bright(goc)
-        d.text((x, y), tu, font=font, fill=f_mau)
-        x += d.textlength(tu, font=font) + khoang
+    draw_brand_line(d, x, y, dong, font, mau, colored=bool(che_do), nen_sang=nen_sang,
+                    bg_level=bg_level, words=words)
 
 
 def _empty_tracked(d, text, font, track):
@@ -1318,10 +1319,13 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", cluttered=
     mau_nguon = (_color_change_background_hide_whole(canvas, (0, src_top, W, src_top + at_h))
                  if at_lines else mau_chu)
 
-    # Cac dong quote, canh trai (thut vao TEXT_X).
+    # Cac dong quote, canh trai (thut vao TEXT_X). Cau quote LA tieu de cua the
+    # kieu quote nen cung to ten hang/ten model (LOW-344), nhu `_about_line`.
     qy = first_line_top
-    for ln, mau_ln in zip(q_lines, mau_dong):
-        d.text((TEXT_X, qy - tren), ln, font=f_q, fill=mau_ln)
+    for ln, mau_ln, sg in zip(q_lines, mau_dong, sang_dong, strict=False):
+        draw_brand_line(d, TEXT_X, qy - tren, ln, f_q, mau_ln,
+                        colored=bool(CURRENT_BRAND.get("company_name_color")),
+                        nen_sang=(mau_ln == BG), bg_level=sg)
         qy += buoc
 
     # MAU: net khung dung CYAN cua bo nhan dien (nhu ten kenh, dong tong voi the
@@ -1575,6 +1579,10 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
     # LOW-336: khung da la MOT lop overlay deu (`_text_box_overlay`) -> ca khoi mot mau
     # chu, khong con do/tinh rieng tung dai dong (dai tinh tung dong la mot nguon loang lo).
     mau_dong = [mau_khoi] * max(1, len(title_lines))
+    # Do sang THAT cua nen tung dong cho `brand_fill` (LOW-344) — khung da phang nen moi dong
+    # cung mot muc: do sang trung binh cua chinh khung sau overlay.
+    sang_dong = [_bright_region(canvas, _within_card(canvas, (CEILING_FRAME_X, frame_top, W - CEILING_FRAME_X,
+                                                               frame_bot)))] * len(mau_dong)
     # Phe cua CA KHOI — dung cho net khung, kicker, va mau ten hang trong tieu de.
     nen_sang = mau_khoi == BG
     mau_net = _enough_dark(CYAN) if nen_sang else CYAN
@@ -1606,8 +1614,8 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
 
     # Tieu de can giua: chu noi tren anh, truc doi xung cua tam anh la moc duy
     # nhat. Ve TUNG TU (de to ten thuong hieu) nen do be ngang dung cach do.
-    def _x_chu(ln, font):
-        return (W - _empty_line(d, ln, font)) / 2
+    def _x_chu(ln, font, words=None):
+        return (W - _empty_line(d, ln, font, words)) / 2
 
     che_do_to = b.get("company_name_color")
     mau_du_phong = b.get("fallback_company_color")
@@ -1615,15 +1623,16 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
     # kicker khong doi theo viec dong do co dau hay khong.
     # strict=False co y: `sang_dong` co hau to `or [0.0]` nen o ca tieu de rong
     # (khong xay ra qua CLI, nhung `build` la thu vien) hai danh sach lech mot.
-    # Dong tieu de la cac lat LIEN TIEP cua `title.split()` (_wrap), nen mau tung tu cua ten
-    # model tinh mot lan tren ca cau roi cat theo dong — cum ten model vat qua hai dong van to.
-    marks, dau = model_marks(title), 0
-    for ln, mau_ln in zip(title_lines, mau_dong, strict=False):
+    # Dong tieu de la cac lat LIEN TIEP cua `title.split()` (_wrap, da viet hoa), nen cum
+    # ten model tinh MOT lan tren tieu de GOC (con phan biet hoa/thuong — LOW-343) roi cat
+    # theo dong — cum vat qua hai dong van to.
+    cac_tu, dau = brand_names.line_segments(" ".join(title.split()), key_words(highlight)), 0
+    for ln, mau_ln, sg in zip(title_lines, mau_dong, sang_dong, strict=False):
         n = len(ln.split(" "))
-        _about_line(d, _x_chu(ln, f_title), y - tren, ln, f_title, mau_ln,
-                 che_do_to, mau_du_phong, nen_sang=(mau_ln == BG),
-                 keys=key_words(highlight), marks=marks[dau:dau + n])
+        tu_dong = brand_names.restyle(cac_tu[dau:dau + n], ln)
         dau += n
+        _about_line(d, _x_chu(ln, f_title, tu_dong), y - tren, ln, f_title, mau_ln,
+                 che_do_to, mau_du_phong, nen_sang=(mau_ln == BG), bg_level=sg, words=tu_dong)
         y += buoc
 
     # Chan the chi con TEN KENH, can giua. Nguon van phai ghi, nhung ghi o chu
@@ -1697,7 +1706,7 @@ def main():
                         "Khong dung cho anh co chu (chup trang, bang, chart) — LOW-336")
     p.add_argument("--highlight", action="append", default=[],
                    help="Cum TU KHOA trong tieu de to mau rieng (lap lai duoc; LOW-336). Ten hang da biet "
-                        "va ma model (chu lan so) tu to, khong can khai")
+                        "va ten model ho da biet tu to (brand_names), khong can khai")
     a = p.parse_args()
     build([a.image, a.image2] if a.image2 else a.image, a.title, a.out,
           handle=a.handle, ratio=a.ratio, tagline=a.tagline, brand=a.brand,

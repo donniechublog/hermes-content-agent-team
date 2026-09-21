@@ -46,7 +46,7 @@ mình, chỉ ghép dọc, có mặt người), cặp ghép, tư liệu và khung
   benchmark, tham số, tốc độ.
 
 Tên hãng trong câu được tô màu tự động (donniechublog: cyan nhận diện; dcgr: màu
-riêng của hãng), mã model chữ lẫn số (NEEDLE3, H100, XING4.0-29B-A4B) cũng tự tô.
+riêng của hãng), tên model thuộc họ đã biết (DeepSeek-V4.1-Flash, Qwen-Image-2.1) cũng tự tô.
 Cụm KEY khác cần nổi bật (tên hãng/sản phẩm chưa có trong danh sách, vd "Cactus
 Compute") thì ghi vào `"highlight": ["Cactus Compute"]` — 1-3 cụm, chép ĐÚNG từ
 trong title, script chặn cụm không có trong title. Nguồn ảnh đi theo bàn giao sang Miles, script lo.

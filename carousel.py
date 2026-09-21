@@ -182,12 +182,25 @@ def _fit_block(d, paragraphs, max_w, max_h, hi, lo, weight=None, lead=BODY_LEAD)
     return f, wrapped, lh, sum(len(w) for w in wrapped) * lh
 
 
-def _draw_paragraphs(d, x, y, wrapped, font, lh, fill):
-    """Ve lan luot cac doan tu (x, y) xuong. Tra ve y sau khi ve xong."""
+def _draw_paragraphs(d, x, y, wrapped, font, lh, fill, brand_colors=False, brand_bg=None):
+    """Ve lan luot cac doan tu (x, y) xuong. Tra ve y sau khi ve xong.
+
+    `brand_colors` (LOW-344): to ten hang/ten model theo palette hang, cung ham
+    ve voi tieu de the Ethan (`card.draw_brand_line`). `brand_bg`: mau nen THAT
+    duoi chu (nen phang LOW-341) — mau ten hang keo toi/sang cho du tuong phan voi no."""
     gap = int(lh * PARA_GAP)
+    if brand_bg is not None:
+        muc = text_bg._luminance(brand_bg)
+        nen_sang = muc > text_bg._luminance(fill[:3])
+        bg_level = next(v for v in range(256) if text_bg._luminance((v, v, v)) >= muc)
+    else:
+        nen_sang, bg_level = BACKGROUND_SHOW == "light", None
     for pi, lines in enumerate(wrapped):
         for ln in lines:
-            d.text((x, y), ln, font=font, fill=fill)
+            if brand_colors:
+                card.draw_brand_line(d, x, y, ln, font, fill, nen_sang=nen_sang, bg_level=bg_level)
+            else:
+                d.text((x, y), ln, font=font, fill=fill)
             y += lh
         if pi != len(wrapped) - 1:
             y += gap
@@ -939,7 +952,9 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
     if report is not None:                      # LOW-330: bia cung bi do nhu slide than
         report.update(_text_bg_report(truoc_nen, canvas))
         _note_flat(report, canvas, nen, hop)
-    _draw_paragraphs(d, PAD, y, wrapped, hf, lh, fg)
+    # LOW-344: to ten hang/ten model tren hook; nen phang (LOW-341) thi keo mau theo chinh nen do.
+    _draw_paragraphs(d, PAD, y, wrapped, hf, lh, fg, brand_colors=True,
+                     brand_bg=tuple(nen[:3]) if nen else None)
     if label:
         # Hang duoi cung: chip CATEGORY (cyan) + chip label (trang), cung y.
         bb = _watermark(canvas, category, y=y_label)
