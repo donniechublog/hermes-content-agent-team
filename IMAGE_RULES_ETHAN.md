@@ -750,6 +750,47 @@ hình có tỷ lệ 4:5, mà là tìm hình có main character đặt vừa tron
   → qua (nhìn thẻ dựng ra xác nhận).
 - Manifest cũ (không `subject_box`, không mặt) → không chặn.
 
+## 6c. Không viền hai bên, không cắt sát nội dung — luật CHUNG mọi vai (LOW-336, 21/09/2026)
+
+Ông Chủ, sau thẻ Ethan chụp trang HuggingFace ra một dải hẹp giữa hai mảng đen: *"nguyên
+tắc ảnh này là chung cho mọi role designer, ko bao giờ để viền 2 bên, cũng ko cắt sát vào
+nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IMAGE_RULES_ETHAN.md`, `IMAGE_RULES_KITE.md` — sửa một thì sửa cả ba.
+
+- **Ảnh chụp trang nguồn giữ tỉ lệ tự nhiên, không đệm.** `capture_page.frame_source_capture`
+  chỉ bỏ phần TRỐNG ở mép (đáy cắt ngang dòng chữ thì lùi về hàng trống; lề đặc hai bên của
+  chính trang thì gọt) và đóng dấu `source_capture`. Không cắt hai cạnh vào nội dung, không tô màu
+  đệm. Bản đệm đen 4:5 cũ (`count_background`, 13/09) đã bỏ: mảng đen là pixel thật, đi vào thẻ/slide
+  thành viền hai bên — đo trên 10 bản đệm thật: cả 10 có mảng đặc 1.7–12.5% mỗi bên.
+- **Renderer luôn dán ảnh FULL BỀ NGANG**; phần khung còn thiếu là chính ảnh đó làm mờ
+  (`card._layer_image`, `carousel._body_image`) — Kite vẫn theo luật riêng (nền palette, §7).
+  Bìa Dre là ảnh chụp nguồn thì KHÔNG cover-crop (cover-crop cắt hai cạnh vào chữ của trang).
+- **Thẻ Ethan** (Ông Chủ chốt style cùng ngày): ảnh LẤP KÍN thẻ, khung quote/tít là lớp overlay
+  đè lên ảnh — không tách chữ khỏi hình. Ảnh chụp nguồn cao hơn thẻ thì giữ ĐỈNH trang.
+- **Nền chữ thẻ trần Ethan PHẲNG** (Ông Chủ bác 5 thẻ cùng ngày: *"nền của text bị loang lổ là
+  ko được phép"*): BÊN TRONG khung chữ là MỘT lớp overlay một màu (sáng hoặc tối theo nền đã mờ,
+  alpha `card.TEXT_BOX_OPACITY` = 84%, dưới trần 88%), cả khối một màu chữ — không còn dải mờ
+  tràn hết bề ngang trên khung (biến nút tối/lá cờ thành vệt) và không còn dải phủ riêng từng
+  dòng. Ngoài khung ảnh giữ sắc nét; riêng dải dưới khung (tên kênh) được làm mờ. Từ khoá tô màu
+  riêng: tên hãng/họ model theo palette hãng (LOW-344, `brand_names`); mã model chữ lẫn số không kèm
+  hãng (NEEDLE3, H100) và cụm Ethan khai `"highlight"` là vai "key", màu dự phòng của kênh.
+  Ông Chủ so A/B trên 12 thẻ thật với cách LOW-343 (một màu trơn từ khoảng lặng trên khung xuống
+  đáy) và chốt: *"Overlay trong khung là style đạt chuẩn"* — màu trơn cắt ảnh bằng một mảng đặc
+  có mép ngang (lá cờ đỏ, Xiaomi cam).
+- **Ảnh tốt trước, biện pháp che sau** (Ông Chủ cùng ngày: *"một bức ảnh tốt là ko cần phải dùng
+  những biện pháp phức tạp như blur mà text quote vẫn hiển thị rõ ràng, nội dung chính của phần
+  hình vẫn được đảm bảo"*). Thẻ trần: ảnh chụp thường PHỦ KÍN thẻ quanh chủ thể; ảnh có đáy là nền
+  phẳng thì kéo dài chính màu nền đó; không còn dải mờ lộ ra. Brief Ethan đo từng ảnh ĐẶT ĐÚNG như
+  thẻ sẽ dựng (`card.text_zone_report`): vùng khung chữ sạch (`busy` ≤ 8) và không cắt mất chi
+  tiết mép khi phủ kín (`lost` ≤ 25%) xếp trước; ảnh rối/mất mép có nhãn ⚠️, `ethan_submit` cảnh
+  báo khi chọn ảnh rối mà bài còn ảnh sạch (không chặn).
+- **Slide Dre**: ảnh nền phẳng (gồm ảnh chụp trang) theo LOW-341 — ảnh 90% bề ngang trên CHÍNH màu
+  nền của nó (lề liền màu với ảnh, không phải viền lạ); bìa là ảnh chụp nguồn thì không cover-crop.
+- **Cổng pixel**: `check_side_bars` (mỗi module vai, đo bằng `image_rules_common.has_side_bars`)
+  chặn ảnh đầu vào có mảng màu đặc ≥ 1.5% bề ngang chạy suốt hai bên. Thẻ logo / thẻ xếp hạng dự
+  phòng được miễn (nền đặc phủ kín là chính thiết kế của chúng). Ảnh `source_capture` được miễn
+  cổng tỉ lệ 4:5..1:1 và cổng chart (§1.2b2: ảnh chụp nguồn được làm bìa).
+- Test: `tests/test_low336_no_side_borders.py`.
+
 ## 7. Không bao giờ để ra hai vùng riêng biệt
 
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
@@ -764,7 +805,8 @@ mảng nhìn tách rời:
   - **Carousel (Dre)**: FG một màu cố định cho cả bộ; chỉ thêm lớp mờ+tinh khi
     đo THẬT trên pixel WYSIWYG thấy vùng dưới chữ không đủ tương phản hoặc quá
     "rối" (`carousel.py::_layer_if_can`).
-  - **Hero cả hai kiểu** `quote` (06/09/2026) và `full_bleed` (07/09/2026): không còn
+  - **Hero cả hai kiểu** `quote` (06/09/2026) và `full_bleed` (07/09/2026; từ 21/09/2026
+    `full_bleed` đổi sang overlay phẳng TRONG khung chữ, xem §6c): không còn
     TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_open_region_text`, tan dần
     theo đường cong power, không đột ngột), màu chữ tự đổi tương phản với vùng
     đã mờ đó (`_color_change_background_hide_whole`, đo qua `_can_board_line` nên một mảng sáng cục
@@ -807,7 +849,9 @@ mảng nhìn tách rời:
 tới nền chữ"*. Luật chung cho mọi vai, chi tiết và số đo ở `IMAGE_RULES_DRE.md` §7.0b
 (ảnh nền phẳng: khung là màu nền của ảnh, nội dung 90% bề ngang — không thu cho vừa —,
 phần lấn vào vùng chữ phủ đúng màu nền, chữ đổi màu; không dải mờ/lớp phủ tối). Thẻ Ethan
-(`card.py`) CHƯA áp — theo dõi ở LOW-287.
+(`card.py`) đi luật riêng (LOW-336, §6c; Ông Chủ so A/B 21/09/2026): đáy ảnh là nền phẳng thì
+kéo dài chính màu nền đó, ảnh chụp thường phủ kín thẻ, nền chữ là overlay đều TRONG khung —
+KHÔNG phải một màu trơn từ khoảng lặng xuống đáy (cách LOW-343, đã bỏ).
 
 ### 7.1 Ảnh rối: chỉ dùng khi hết ảnh sạch, dùng thì nền chữ đậm hơn (vẫn là overlay)
 

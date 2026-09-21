@@ -46,8 +46,17 @@ mình, chỉ ghép dọc, có mặt người), cặp ghép, tư liệu và khung
   benchmark, tham số, tốc độ.
 
 Tên hãng trong câu được tô màu tự động (donniechublog: cyan nhận diện; dcgr: màu
-riêng của hãng). Gặp hãng không được tô thì báo lại để thêm vào `card.py`, đừng
-đánh dấu tay. Nguồn ảnh đi theo bàn giao sang Miles, script lo.
+riêng của hãng), tên model thuộc họ đã biết (DeepSeek-V4.1-Flash, Qwen-Image-2.1) và mã model chữ
+lẫn số không kèm hãng (NEEDLE3, H100) cũng tự tô.
+Cụm KEY khác cần nổi bật (tên hãng/sản phẩm chưa có trong danh sách, vd "Cactus
+Compute") thì ghi vào `"highlight": ["Cactus Compute"]` — 1-3 cụm, chép ĐÚNG từ
+trong title, script chặn cụm không có trong title. Nguồn ảnh đi theo bàn giao sang Miles, script lo.
+
+## Chọn ảnh: ảnh tốt là chữ rõ mà không cần che
+
+Brief ghi cho mỗi ảnh hero "✅ vùng khung chữ SẠCH" hoặc "⚠️ vùng khung chữ RỐI" / "⚠️ phủ
+kín thẻ sẽ CẮT MẤT chi tiết ở mép" — đo trên đúng bố cục thẻ sẽ dựng. Ưu tiên ảnh SẠCH và
+không mất mép (dòng "Gợi ý nền hero" đã xếp sẵn); chỉ dùng ảnh ⚠️ khi không còn ảnh nào khác.
 
 ## Nhìn lại trước khi nộp (đọc spec, không cần mở ảnh)
 

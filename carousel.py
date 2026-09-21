@@ -59,6 +59,7 @@ from PIL import Image, ImageDraw, ImageFilter
 # Tai dung nguyen xi cac helper da kiem chung cua card.py thay vi viet lai:
 # nap font co truc bien thien, wrap chu, contain/cover anh, cong chan tieng Viet.
 import card
+import image_provenance
 import image_rules_dre
 import logo_card
 import role_spec
@@ -501,6 +502,15 @@ def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False, ov
     canvas.paste(lop, (0, 0), _ramp_mask(top_y, full_y, hi=int(do), ease=VEIL_EASE))
 
 
+def _is_source_capture(path) -> bool:
+    """Anh chup trang nguon (dau `source_capture`, LOW-336)."""
+    try:
+        with Image.open(path) as im:
+            return image_provenance.is_source_capture(im)
+    except OSError:
+        return False
+
+
 def _body_image(canvas, img):
     """Phu anh len canvas, KHONG cho nao la nen den tro va KHONG BAO GIO de lo
     HAI VUNG rieng biet (Ong Chu chot 04/09/2026):
@@ -896,9 +906,10 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
     flat, zone = plan if plan is not None else (_flat_source(img), None)     # LOW-341
     if flat:
         cover = None                              # LOW-341: dan SAU khi biet dinh hook (ben duoi)
-    elif cluttered:
+    elif cluttered or _is_source_capture(img_path):
         # Anh roi lam bia (LOW-47): KHONG cover-crop — cat hai canh la mat chu
         # khoa o mep (do that A9: "NVIDIA" cut). Hien NGUYEN be ngang nhu slide than.
+        # Anh chup trang nguon cung vay (LOW-336): cover-crop cat hai canh vao chu cua trang.
         cover = _body_image(canvas, img)
     else:
         cover = _fit_cover(img, W, H).convert("RGB")
@@ -1068,6 +1079,7 @@ def _gate_image(paths):
 
         collect(image_rules_dre.check_crop_landscape(nhan, img, w, h_px, muc.get("crop_ok")))
         collect(image_rules_dre.check_resolution(nhan, w, h_px))
+        collect(image_rules_dre.check_side_bars(nhan, img))            # LOW-336
         collect(image_rules_dre.check_unnamed_face(nhan, p, muc.get("subject")))
         collect(image_rules_dre.check_repeated_subject_portrait(nhan, p, muc, da_subject))
         # LOW-267: tep ghep co 2 mat nen cong tren bo qua — kiem tung tam thanh phan.

@@ -353,7 +353,19 @@ def read_manifest(nguon) -> dict | None:
         print(f"[schema] manifest {ten} la ban {pv}, can ban {VERSION_MANIFEST} (khoa English, LOW-227) — khong doc")
         return None
     m["version"] = pv
+    _unpad_old_captures(m)
     return m
+
+
+def _unpad_old_captures(m: dict) -> None:
+    """Manifest truoc LOW-336: anh chup trang nguon co `original_path` la ban DEM VIEN
+    DEN 4:5 (`padding_color` set), ban goc nam o `unpadded_path`. Doc qua day thi moi
+    vai dung ban goc — vien den la pixel that, cong `check_side_bars` se chan ban dem.
+    Chi doi trong bo nho, khong ghi lai tep."""
+    for a in m.get("images") or []:
+        if isinstance(a, dict) and a.get("padding_color") and a.get("unpadded_path")                 and Path(a["unpadded_path"]).exists():
+            a["original_path"] = a["unpadded_path"]
+            a.pop("padding_color", None)
 
 
 def merge_meta(cu: dict | None, moi: dict) -> dict:

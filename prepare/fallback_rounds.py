@@ -686,26 +686,16 @@ def _round_capture_source(anh: list, link: str, source_pages: list, wd: Path,
              "domain": _domain(u), "score": 0, "chart_hint": False, **c}
         moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
         moi.parent.mkdir(parents=True, exist_ok=True)
-        # DEM NEN DEN (Ong Chu 13/09/2026, sua lai cung ngay): tam chup khoi lead
-        # thuong la anh NGANG, de nguyen thi dinh luat "ngang phai ghep doi hoac
-        # cat_ngang" va thanh tam le khong dung duoc. Dem xong no la 4:5 dung,
-        # dung MOT MINH lam mot slide. Mau dem la DEN co dinh (khong sample mau
-        # nen trang cua trang nguon) - carousel toi dung nen den + chu trang, dem
-        # trang tao khoang trang lac long giua anh va khung, buoc carousel.py
-        # phai phu them lop mo (_layer_if_can) len tren de chu doc duoc ("vet
-        # nhat"). Dem den tu dau: khop luon voi nen anh, khong con khoang trang,
-        # khong can lop phu nua.
+        # TI LE TU NHIEN, KHONG DEM (LOW-336, Ong Chu 21/09/2026: "ko bao gio de
+        # vien 2 ben, cung ko cat sat vao noi dung"). Truoc do `count_background`
+        # dem den 4:5 cho carousel — vien den la pixel that, di vao the Ethan va
+        # slide Dre. Nay chi lam sach mep (day cat ngang dong chu, le trong hai
+        # ben) va dong dau `source_capture`; renderer tu lap khung bang chinh anh
+        # lam mo, cong ti le cua Dre mien cho dau nay.
         try:
-            capture_page.count_background(tam, moi, "#000000")
-            # GIU LAI `tam` (ti le tu nhien, chua dem vien) thay vi xoa (LOW-262):
-            # renderer full-bleed cua Kite (render_edu.py) tu lo full-width fit/crop
-            # rieng, dua no anh da dem vien den (quy uoc cua carousel.py/Dre) thi
-            # vien do la pixel that, bi trai theo luon len slide. `unpadded_path`
-            # la loi ra cho renderer do — `kite_submit.py` uu tien dung no.
-            a["padding_color"] = "#000000"
-            a["unpadded_path"] = str(tam)
+            capture_page.frame_source_capture(tam, moi)      # `tam` (ban chup tho) giu lai de soi
         except Exception as e:                               # noqa: BLE001
-            print(f"[chup nguon] {_domain(u)}: dem nen hong ({type(e).__name__}), giu tam goc",
+            print(f"[chup nguon] {_domain(u)}: lam sach mep hong ({type(e).__name__}), giu tam goc",
                   file=sys.stderr)
             Path(a["original_path"]).replace(moi)
         a["original_path"] = str(moi)

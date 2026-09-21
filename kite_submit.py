@@ -75,6 +75,8 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
             # (Dre) — render_edu.py (Kite) tu lo full-width fit/crop, dua no
             # anh da dem vien thi vien do la pixel that, bi trai theo len
             # slide. Dung `unpadded_path` (ti le tu nhien, chua dem) khi co.
+            # Tu LOW-336 khong con dem nua (`original_path` da la ti le tu
+            # nhien); nhanh nay chi con cho manifest cu.
             img_path = hinh[img].get("unpadded_path") or hinh[img]["original_path"]
 
             s2["image"] = img_path
@@ -134,6 +136,12 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
                     canh += c
 
                     l, c = image_rules_kite.check_resolution(nhan, _im.width, _im.height)
+
+                    loi += l
+
+                    canh += c
+
+                    l, c = image_rules_kite.check_side_bars(nhan, _im)
 
                     loi += l
 

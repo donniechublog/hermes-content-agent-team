@@ -72,6 +72,10 @@ def test_chunks_rebuild_the_exact_line_and_leave_punctuation_plain():
 def test_no_false_positive_on_plain_compounds_and_codes():
     for text in ["AI-FIRST", "ĐA-PHƯƠNG-THỨC", "H100 B200", "V4.1-FLASH", "Một chủ đề bình thường"]:
         assert _named(text) == [], (text, _named(text))
+    # LOW-336: the Ethan bat `codes` -> ma chip/model khong kem hang la vai "key" (mau du phong
+    # cua kenh), KHONG phai vai "name" cua mot hang.
+    vai = [(t, r) for w in brand_names.line_segments("H100 B200", codes=True) for t, r, _k in w if r]
+    assert vai == [("H100", "key"), ("B200", "key")], vai
 
 
 # ------------------------------------------------------------- mau
