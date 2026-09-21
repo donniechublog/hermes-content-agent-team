@@ -975,7 +975,6 @@ def _text_bg_overlay(canvas, frame_top, fade=QUOTE_BLUR_COUNT):
 # alpha tran TEXT_BOX_OPACITY = 84% — duoi tran overlay 88% cua LOW-286/330, anh van
 # hien nhe qua nhung khong con mang. Khung phang roi thi ca khoi mot mau chu.
 TEXT_BOX_OPACITY = 215
-TEXT_BG_MODE = "overlay"        # TAM: "overlay" (LOW-336) | "solid" (LOW-343) — xem _render_ceiling
 
 
 def _text_box_overlay(canvas, box, radius):
@@ -1014,35 +1013,6 @@ def _blur_below(canvas, fade_top, full_top):
         t = (y + 1) / doan
         mask.paste(int(255 * t * t * (3 - 2 * t)), (0, y, vung.width, y + 1))
     canvas.paste(Image.composite(mo, vung, mask), (0, top))
-
-
-CLEAN_QUIET_SEARCH = 140      # px tim "khoang lang" TREN net khung (LOW-343)
-CLEAN_QUIET_STD = 8.0         # hang anh co do lech sang < muc nay = khoang lang (nen tron / duong ke)
-
-
-def _clean_region_text(canvas, frame_top) -> int:
-    """Vung chu the khung chu nhat: MOT MAU TRON tu khoang lang gan nhat tren khung xuong day
-    the. Sua canvas tai cho, tra hang bat dau phu.
-
-    Ong Chu 21/09/2026 (LOW-343), sau khi bo dai mo dan tren khung: *"lam no sach tron di, de
-    lai nhung lom dom nay rat thieu chuyen nghiep"* — lam mo 30px chi san duoc chi tiet nho,
-    mang mau lon cua anh (logo do, bieu tuong xanh) van thanh vet nhoe trong va duoi khung.
-    Mau phu lay tu chinh hang anh o diem bat dau (trung vi), nen phan phu noi lien voi nen anh
-    (bang trang -> trang, nen den -> den). Diem bat dau doi len KHOANG LANG gan nhat (duong ke,
-    nen trong) de net khung khong cat ngang nua hang chu cua anh."""
-    import numpy as np
-    W_, H_ = canvas.size
-    arr = np.asarray(canvas.convert("RGB"), dtype=np.float32)
-    xam = arr[..., :3].mean(axis=2)[:, 60:W_ - 60]
-    top = int(frame_top)
-    tren = max(0, top - CLEAN_QUIET_SEARCH)
-    lech = xam[tren:top + 1].std(axis=1)
-    lang = [y for y in range(top, tren - 1, -1) if lech[y - tren] < CLEAN_QUIET_STD]
-    bat_dau = lang[0] if lang else tren + int(lech.argmin())
-    mau = tuple(int(v) for v in np.median(arr[bat_dau, 60:W_ - 60, :3], axis=0))
-    phu = Image.new(canvas.mode, (W_, H_ - bat_dau), mau + ((255,) if canvas.mode == "RGBA" else ()))
-    canvas.paste(phu, (0, bat_dau))
-    return bat_dau
 
 
 def _open_region_text(canvas, frame_top, fade=QUOTE_BLUR_COUNT):
@@ -1593,19 +1563,13 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
     bottom_y = H - g4 - via_h
     frame_top = max(CEILING_FRAME_PAD, cum_top - CEILING_FRAME_PAD)
     frame_bot = min(bottom_y - 16, cum_bot + CEILING_FRAME_PAD)
-    # Nen chu (LOW-336 / LOW-343): TAM giu hai cach de Ong Chu so tren the that, chot xong bo
-    # cach bi loai. "overlay" = anh phu kin the, overlay deu TRONG khung (LOW-336);
-    # "solid" = mot mau tron tu khoang lang tren khung xuong day (LOW-343).
-    if TEXT_BG_MODE == "solid":
-        _clean_region_text(canvas, frame_top)
-        mau_khoi = FG if _bright_region(canvas, (CEILING_FRAME_X, frame_top, W - CEILING_FRAME_X,
-                                                 frame_bot)) < THRESHOLD_BACKGROUND_BRIGHT else BG
-    else:
-        # Chi lam mo + phu overlay BEN TRONG khung chu. Dai DUOI khung (ten kenh) chi mo khi
-        # BAN (vd dong bang xep hang). Mep tan 40px bat dau TRONG khung nen khong thanh ke.
-        _blur_below(canvas, frame_bot - 40, frame_bot)
-        mau_khoi = _text_box_overlay(canvas, (CEILING_FRAME_X, frame_top, W - CEILING_FRAME_X, frame_bot),
-                                     CEILING_FRAME_R)
+    # Nen chu (LOW-336; Ong Chu so A/B 21/09/2026 voi cach LOW-343 "mot mau tron tu khoang lang
+    # xuong day" roi chot: *"Overlay trong khung la style dat chuan"*): anh phu kin the, chi lam
+    # mo + phu overlay BEN TRONG khung chu. Dai DUOI khung (ten kenh) chi mo khi BAN (vd dong
+    # bang xep hang). Mep tan 40px bat dau TRONG khung nen khong thanh duong ke.
+    _blur_below(canvas, frame_bot - 40, frame_bot)
+    mau_khoi = _text_box_overlay(canvas, (CEILING_FRAME_X, frame_top, W - CEILING_FRAME_X, frame_bot),
+                                 CEILING_FRAME_R)
 
     buoc, tren = _step_line(f_title, title_lines, lead)
     # LOW-336: khung da la MOT lop overlay deu (`_text_box_overlay`) -> ca khoi mot mau
