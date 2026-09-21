@@ -18,9 +18,9 @@ mã A1, A2…, nhãn "dùng được ở đâu", tư liệu và khung spec. Nop 
 cách sửa.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python ethan_prepare.py <id>   # 1. đọc brief
+cd /home/dc-group/content-team && venv/bin/python ethan_prepare.py <id>   # 1. đọc brief
 # 2. viết spec.json vào đúng đường dẫn brief in ra (mã ảnh + chữ)
-cd /home/donniechu/content-team && venv/bin/python ethan_submit.py <id>        # 3. nộp
+cd /home/dc-group/content-team && venv/bin/python ethan_submit.py <id>        # 3. nộp
 ```
 
 Ngoài ba lệnh trên không chạy gì khác: không `curl`, không `ls`/`grep`, không mở

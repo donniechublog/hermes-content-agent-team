@@ -26,7 +26,7 @@ hay tải trang thẳng chỉ nhận được tường đăng nhập. Endpoint n
 ## Chạy
 
 ```bash
-/home/donniechu/content-team/venv/bin/python /home/donniechu/content-team/hermes/skills/social-crawl/scripts/social_fetch.py "<url>"
+/home/dc-group/content-team/venv/bin/python /home/dc-group/content-team/hermes/skills/social-crawl/scripts/social_fetch.py "<url>"
 ```
 
 Chạy ĐÚNG một dòng, đường dẫn tuyệt đối, link trong ngoặc kép. Dạng lệnh này nằm
@@ -45,7 +45,7 @@ mặc định 6 lần.
 thứ tự slide trong carousel (video ra `NN.mp4` kèm `NN-thumb.jpg`):
 
 ```bash
-/home/donniechu/content-team/venv/bin/python /home/donniechu/content-team/hermes/skills/social-crawl/scripts/social_fetch.py "<url>" --download "<thư mục>"
+/home/dc-group/content-team/venv/bin/python /home/dc-group/content-team/hermes/skills/social-crawl/scripts/social_fetch.py "<url>" --download "<thư mục>"
 ```
 
 `?img_index=N` trong link Instagram là **slide thứ N** của carousel, ứng với tệp

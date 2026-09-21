@@ -48,7 +48,7 @@ venv/bin/python tao_nen_ai.py --list-providers
 ## Cách dùng
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python tao_nen_ai.py \
+cd /home/dc-group/content-team && venv/bin/python tao_nen_ai.py \
   --prompt "flat abstract geometric background, dark navy, minimal, editorial" \
   --out /tmp/nen_ai_<id>_<n>.png
 ```

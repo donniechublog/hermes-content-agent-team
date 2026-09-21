@@ -58,7 +58,7 @@ Chạy thật một lượt, không gửi Telegram: `python <vai>_submit.py --kh
 /tmp/x` hoặc task kanban mẫu. Ghi **lệnh và kết quả nguyên văn**.
 
 ```bash
-ssh donniechu@donniechu-01.netbird.mated 'cd ~/content-team && <lệnh>'
+ssh dc-group@dc-group-system-product-name.netbird.mated 'cd ~/content-team && <lệnh>'   # máy không thấy trực tiếp: thêm -J donniechu-01
 ```
 
 **Vì sao là luật, không phải lời khuyên.** Bản vá `0b395ad` (nấc chụp trang

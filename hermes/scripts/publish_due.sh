@@ -6,7 +6,7 @@
 # xong ngoi cho dung mot vong cron. 5 phut la ngoi nhin man hinh.
 # Vong nao khong co bai toi gio thi run_due() tra rong -> stdout rong -> im.
 #
-# Duong dan theo $HOME, khong go cung /home/donniechu: doi ten user Unix hoac
+# Duong dan theo $HOME, khong go cung /home/dc-group: doi ten user Unix hoac
 # chay thu tren may khac la gay im lang (cung ly do voi moat_publish_watch.sh).
 
 # Hermes ghi MOT file .md cho moi lan chay (ke ca lan im lang) va khong tu don.

@@ -26,10 +26,10 @@ Hai vai, chia theo **nền dưới chữ**, không theo công đoạn.
 Cả hai vai **tự làm trọn ảnh của mình**, không ai bàn giao nửa chừng cho ai.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python gin_prepare.py "<link|id>"       # Gin 1
-cd /home/donniechu/content-team && venv/bin/python gin_submit.py <id>                   # Gin 3 (bước 2: spec.json)
-cd /home/donniechu/content-team && venv/bin/python itachi_prepare.py <id> [<id2>…]  # Itachi 1
-cd /home/donniechu/content-team && venv/bin/python itachi_submit.py <id>                # Itachi 3 (bước 2: spec.json)
+cd /home/dc-group/content-team && venv/bin/python gin_prepare.py "<link|id>"       # Gin 1
+cd /home/dc-group/content-team && venv/bin/python gin_submit.py <id>                   # Gin 3 (bước 2: spec.json)
+cd /home/dc-group/content-team && venv/bin/python itachi_prepare.py <id> [<id2>…]  # Itachi 1
+cd /home/dc-group/content-team && venv/bin/python itachi_submit.py <id>                # Itachi 3 (bước 2: spec.json)
 ```
 
 `<id>` là message_id trong dòng `[Ảnh đính kèm đã tải về: …/<id>.jpg]`, hoặc

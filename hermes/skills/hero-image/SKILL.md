@@ -25,9 +25,9 @@ phải của Ethan** (Ông Chủ 21/09/2026, LOW-343): `ethan_submit` từ chố
 ## Luồng
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python ethan_prepare.py <id>   # 1. brief
+cd /home/dc-group/content-team && venv/bin/python ethan_prepare.py <id>   # 1. brief
 # 2. viết spec.json vào đường dẫn brief in ra
-cd /home/donniechu/content-team && venv/bin/python ethan_submit.py <id>        # 3. nộp
+cd /home/dc-group/content-team && venv/bin/python ethan_submit.py <id>        # 3. nộp
 ```
 
 Brief in ảnh đã tải với mã A1, A2…, nhãn theo luật của renderer (nền hero một

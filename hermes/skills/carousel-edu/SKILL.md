@@ -31,9 +31,9 @@ viết chữ**. Chữ thuần là đường cuối: ý nào có hình nói nhanh
 ## Luồng
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python kite_prepare.py <id>   # 1. brief
+cd /home/dc-group/content-team && venv/bin/python kite_prepare.py <id>   # 1. brief
 # 2. viết spec.json vào đường dẫn brief in ra
-cd /home/donniechu/content-team && venv/bin/python kite_submit.py <id>        # 3. nộp
+cd /home/dc-group/content-team && venv/bin/python kite_submit.py <id>        # 3. nộp
 ```
 
 Brief in tư liệu, hình thật đã nhìn và liên quan (mã A?), theme/hero gợi ý
