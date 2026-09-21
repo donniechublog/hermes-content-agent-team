@@ -119,8 +119,9 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     import image_rules_ethan
     chi_logo_bang = image_rules_ethan.model_story_only(m.get("category"))
     if chi_logo_bang:
-        L.append("⛔ TIN MODEL/BENCHMARK (luật riêng của Ethan, LOW-337): chỉ dùng THẺ LOGO hoặc BẢNG "
-                 "XẾP HẠNG/BENCHMARK. Ưu tiên logo, rồi tới bảng. Không có cả hai thì báo thiếu ảnh.")
+        L.append("⛔ TIN MODEL/BENCHMARK (luật riêng của Ethan, LOW-337): chỉ dùng THẺ LOGO CỦA MODEL (Qwen, "
+                 "ChatGPT, Gemini… — KHÔNG logo hãng mẹ) hoặc BẢNG XẾP HẠNG/BENCHMARK. Ưu tiên logo, rồi tới bảng. "
+                 "Không có cả hai thì báo thiếu ảnh.")
     if m.get("is_ranking_story"):
         L.append(cb.ranking_brief_line(m, "", "ethan_submit"))
     for a in m["images"]:
@@ -130,7 +131,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
             continue
         dung, ghi = label_ethan(a)
         if chi_logo_bang and not image_rules_ethan.model_story_image_ok(a):
-            L.append(f"- {a['id']}: ⛔ TIN MODEL — Ethan chỉ dùng logo/bảng benchmark → KHÔNG DÙNG "
+            L.append(f"- {a['id']}: ⛔ TIN MODEL — Ethan chỉ dùng logo model/bảng benchmark → KHÔNG DÙNG "
                      f"({manifest_values.kind_label(a['kind'])}, nguồn: {a['domain'] or manifest_values.source_label(a['source'])})")
             continue
         if (dung[0].startswith("nền hero") or role.is_brand_logo_card(a)) and not a.get("faces"):

@@ -87,6 +87,15 @@ BOARD_IMAGE_BY_TYPE = {
 DEFAULT = _UU_TIEN_ANH_HANG + ("concept",)   # tin không có category hợp lệ
 
 
+# LOW-337 (Ong Chu 21/09/2026): tin nhac toi MODEL chi duoc dung logo CUA MODEL (Qwen,
+# ChatGPT, Gemini), khong dung logo hang me (Alibaba, OpenAI, Google) — ap cho MOI designer.
+MODEL_STORY_TYPES = ("MODEL", "BENCHMARK")
+
+
+def is_model_story(category) -> bool:
+    return standard_type(category) in MODEL_STORY_TYPES
+
+
 def order_image(category) -> tuple:
     return BOARD_IMAGE_BY_TYPE.get(standard_type(category), DEFAULT)
 

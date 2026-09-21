@@ -829,6 +829,99 @@ def image_wikidata(hang, wd=None) -> list:
     return ra
 
 
+# ---- Logo của MODEL (LOW-337) -----------------------------------------------------
+# Ông Chủ 21/09/2026: *"logo của Qwen ko phải là logo của Alibaba, cũng giống như logo của
+# ChatGPT ko phải là logo của OpenAI, Gemini ko phải là Google. Khi nhắc tới model, chỉ được
+# phép dùng logo của model, ko được phép dùng logo của công ty mẹ"*. `vendors_in_story` quy
+# tên model về hãng mẹ (Qwen -> alibaba) nên đường cũ chỉ ra logo Alibaba (P154 của hãng).
+#
+# Bảng tay trước (tệp Commons đã kiểm 21/09/2026, cạnh dài 1800): tìm Commons theo tên thì
+# nhiễu nặng ("Kimi" ra anime, "Claude" ra phim 1977). Họ model ngoài bảng thì hỏi Wikidata,
+# chỉ nhận mục có MÔ TẢ là chatbot/model AI, không nhận mục "công ty".
+# khoá -> (tên hiển thị, tệp logo Commons, regex bắt trong tiêu đề)
+MODEL_LOGO = {
+    "qwen": ("Qwen", "Qwen Logo.svg", r"qwen"),
+    "chatgpt": ("ChatGPT", "ChatGPT-Logo.svg", r"chatgpt|gpt[-\s]?\d"),
+    "gemini": ("Gemini", "Google Gemini logo 2025.svg", r"gemini"),
+    "gemma": ("Gemma", "Gemma icon.png", r"gemma"),
+    "claude": ("Claude", "Claude AI logo.svg", r"claude"),
+    "llama": ("Llama", "Llama logo (2026) light.svg", r"llama"),
+    "grok": ("Grok", "Grok logo (2023-2025).svg", r"grok"),
+    "deepseek": ("DeepSeek", "DeepSeek logo.svg", r"deepseek"),
+    "mistral": ("Mistral", "Mistral AI logo (2025–).svg", r"mistral|magistral|devstral|codestral"),
+}
+MODEL_DESCRIPTION = re.compile(r"chatbot|language model|llms?|ai model|artificial intelligence model|"
+                               r"text-to-(image|video)|image generat|video generat|generative", re.I)
+NOT_MODEL_DESCRIPTION = re.compile(r"company|corporation|startup|firm|racing driver|television|game", re.I)
+
+
+def model_families_in_story(tieu_de: str) -> list:
+    """Họ model được nhắc trong tiêu đề: [{"key", "name", "file"}]. `file` rỗng = họ ngoài
+    bảng, cần hỏi Wikidata (tên lấy từ `ranking.extract_model`). Thuần."""
+    vb = re.sub(r"^\s*[\w.-]+/(?=[A-Za-z])", "", tieu_de or "").lower()
+    ra = []
+    for khoa, (ten, tep, rx) in MODEL_LOGO.items():
+        if re.search(r"(?<![a-z])(" + rx + r")", vb):
+            ra.append({"key": khoa, "name": ten, "file": tep})
+    if not ra:
+        import ranking
+        for m in ranking.extract_model(tieu_de or "")[-1:]:
+            ho = re.split(r"[-\s_.]|(?<=[a-z])(?=\d)", m.strip(), maxsplit=1)[0]
+            if len(ho) >= 3:
+                ra.append({"key": ho.lower(), "name": ho, "file": ""})
+    return ra
+
+
+def _wikidata_model_logo(ten: str) -> str:
+    """Tệp logo (P154) của mục Wikidata là MODEL/CHATBOT tên `ten`, hoặc ''."""
+    r = _ask_api(WIKIDATA, action="wbsearchentities", search=ten, language="en", limit=8, type="item")
+    ids = [x["id"] for x in (r or {}).get("search", [])]
+    if not ids:
+        return ""
+    e = (_ask_api(WIKIDATA, action="wbgetentities", ids="|".join(ids), props="claims|descriptions",
+                  languages="en") or {}).get("entities", {})
+    for i in ids:
+        mo_ta = ((e.get(i, {}).get("descriptions") or {}).get("en") or {}).get("value", "")
+        if MODEL_DESCRIPTION.search(mo_ta) and not NOT_MODEL_DESCRIPTION.search(mo_ta):
+            tep = _file_claim(e[i].get("claims", {}), P_LOGO)
+            if tep:
+                return tep[0]
+    return ""
+
+
+def model_logo_images(tieu_de: str, wd) -> list:
+    """Ứng viên THẺ LOGO của chính MODEL trong tin (không phải logo hãng mẹ). Mạng."""
+    ra = []
+    for ho in model_families_in_story(tieu_de):
+        if deadline_passed():
+            note_deadline(f"model_logo_images({ho['key']})")
+            break
+        tep = ho["file"] or _wikidata_model_logo(ho["name"])
+        if not tep:
+            print(f"[thuong_hieu] model {ho['name']}: khong tim duoc logo rieng cua model", file=sys.stderr)
+            continue
+        u = commons_urls([tep]).get(tep)
+        if not u:
+            continue
+        thu_muc = Path(wd) / ("model_" + re.sub(r"[^a-z0-9]+", "_", ho["key"]))
+        try:
+            thu_muc.mkdir(parents=True, exist_ok=True)
+            goc = thu_muc / state_paths.LOGO_ORIGINAL_FILE
+            import httpx
+            goc.write_bytes(httpx.get(u["url"], headers={"User-Agent": env_load.UA_WIKI},
+                                      timeout=cap_timeout(30), follow_redirects=True).content)
+            the, nen, fill = card_logo(goc, thu_muc / state_paths.LOGO_CARD_FILE, env_load.brand_long())
+        except Exception as e:                               # noqa: BLE001
+            print(f"[thuong_hieu] the logo model hong: {type(e).__name__}", file=sys.stderr)
+            continue
+        c = _candidate(u, tep, ho["name"], "model_" + ho["key"], "logo", f"logo của model {ho['name']}")
+        c["brand_match"].update({"model_logo": True, "background_tone": nen, "logo_fill": round(fill, 4)})
+        c["alt"] = f"Commons: logo model {ho['name']} ({tep})"
+        c.update({"file_path": str(the), "image_url": str(the), "graphic_allowed": True})
+        ra.append(c)
+    return ra
+
+
 def _candidate(u: dict, ten_tep: str, hang: str, khoa: str, loai: str, ly_do: str) -> dict:
     return {"image_url": u["url"], "alt": "Commons: " + ten_tep, "og": False, "mime": u.get("mime"),
             "source": "brand", "w": u["w"], "h": u["h"],

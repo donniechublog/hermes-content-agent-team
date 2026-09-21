@@ -986,6 +986,12 @@ riêng biệt"*. Thứ tự: **logo > bảng benchmark** (rộng hơn cho vai kh
   `card.py --logo-card`), và không bị ép đổi sang `XH` khi engine chụp được bảng thật (logo đứng trước).
 - Bảng chung `story_type.MODEL` đổi thành logo > xếp hạng > chart công bố > founder > trụ sở > khái niệm
   (Dre/Kite vẫn dùng bảng rộng này, không bị luật hai-thứ ở trên).
-- CÒN THIẾU: logo của chính MODEL (Qwen) — engine quy Qwen về hãng Alibaba nên hiện chỉ có
-  logo Alibaba; và nguồn Twitter của arena.ai chưa có đường lấy.
+- **Logo là logo CỦA MODEL, không phải hãng mẹ** (Ông Chủ 21/09/2026: *"logo của Qwen ko phải
+  là logo của Alibaba, cũng giống như logo của ChatGPT ko phải là logo của OpenAI, Gemini ko phải
+  là Google"*). Áp cho MỌI designer: vòng thương hiệu (`fallback_rounds._round_brand_body`) với
+  tin MODEL/BENCHMARK bỏ thẻ logo hãng mẹ, thêm thẻ logo model (`image_brand.model_logo_images`:
+  bảng `MODEL_LOGO` đã kiểm tay, họ model ngoài bảng hỏi Wikidata và chỉ nhận mục là chatbot/model
+  AI). Ảnh hãng khác (trụ sở, founder) vẫn vào kho cho Dre/Kite; Ethan thì bị chặn như trên.
+- CÒN THIẾU: nguồn Twitter của arena.ai chưa có đường lấy; model không có logo trên Wikidata/bảng
+  (Xingchen, lab nhỏ) thì Ethan báo thiếu ảnh.
 

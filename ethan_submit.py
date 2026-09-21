@@ -67,8 +67,8 @@ def _check_model_story(anh: dict, ma, ma2, m: dict) -> list:
     if not sai:
         return []
     dung = [i for i, x in anh.items() if image_rules_ethan.model_story_image_ok(x)]
-    return [f"TIN MODEL/BENCHMARK: {', '.join(sai)} không phải logo hay bảng benchmark. Thẻ Ethan "
-            f"của tin model CHỈ dùng thẻ logo hoặc bảng xếp hạng (dùng được: {', '.join(dung) or 'không có'}"
+    return [f"TIN MODEL/BENCHMARK: {', '.join(sai)} không phải logo MODEL hay bảng benchmark. Thẻ "
+            f"Ethan của tin model CHỈ dùng thẻ logo của chính model (không logo hãng mẹ) hoặc bảng xếp hạng (dùng được: {', '.join(dung) or 'không có'}"
             "). Không có thì báo thiếu ảnh, không dùng ảnh toà nhà/founder/ảnh bài báo."]
 
 

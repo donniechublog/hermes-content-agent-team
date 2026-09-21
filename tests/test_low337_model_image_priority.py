@@ -17,7 +17,8 @@ import role  # noqa: E402
 import story_type  # noqa: E402
 
 LOGO = {"id": "A4", "kind": "chart", "ratio": 0.8, "short_side": 1200, "logo_card": True, "uses": ["bìa"], "relevant": True,
-        "brand_match": {"kind": "logo", "company": "Alibaba"}}
+        "brand_match": {"kind": "logo", "company": "Qwen", "model_logo": True}}
+PARENT_LOGO = {**LOGO, "id": "A5", "brand_match": {"kind": "logo", "company": "Alibaba"}}
 OFFICE = {"id": "A11", "kind": "photo", "ratio": 1.33, "uses": ["bìa"], "relevant": True,
           "brand_match": {"kind": "photo", "company": "Alibaba"}}
 PLAIN_CHART = {"id": "A9", "kind": "chart", "ratio": 1.2, "uses": ["thân"], "relevant": True}
@@ -69,6 +70,7 @@ def test_ethan_model_story_only_logo_or_benchmark():
     assert not r.model_story_only("BUSINESS") and not r.model_story_only("")
     assert r.model_story_image_ok(LOGO) and r.model_story_image_ok(XH)
     assert not r.model_story_image_ok(OFFICE)
+    assert not r.model_story_image_ok(PARENT_LOGO), "logo hang me (Alibaba) khong duoc dung cho tin model"
 
 
 def _loi(category, pick, images):
@@ -96,6 +98,60 @@ def test_logo_not_forced_to_xh_when_board_captured():
 def test_resolve_spec_calls_model_gate():
     src = (ROOT / "ethan_submit.py").read_text(encoding="utf-8")
     assert "loi += _check_model_story(anh, ma, ma2, m)" in src and "if _must_use_ranking(m, a):" in src
+
+
+
+def test_model_families_are_the_model_not_the_parent():
+    import image_brand as th
+    fam = lambda t: [x["key"] for x in th.model_families_in_story(t)]   # noqa: E731
+    assert fam("Qwen/Qwen-Image-2.1 mô hình tạo ảnh mở từ Alibaba") == ["qwen"]
+    assert fam("GPT-5.5 vào bảng") == ["chatgpt"] and fam("ChatGPT thêm bộ nhớ") == ["chatgpt"]
+    assert fam("Gemini Omni Flash leo 2 bậc") == ["gemini"]
+    assert fam("Kimi K3 ra mắt") == ["kimi"]                  # ngoai bang -> hoi Wikidata
+    assert th.MODEL_LOGO["qwen"][1] != "" and "alibaba" not in th.MODEL_LOGO["qwen"][1].lower()
+
+
+def test_wikidata_model_description_filter():
+    import image_brand as th
+    assert th.MODEL_DESCRIPTION.search("artificial intelligence chatbot developed by Alibaba")
+    assert th.NOT_MODEL_DESCRIPTION.search("Chinese artificial intelligence company")
+    assert th.NOT_MODEL_DESCRIPTION.search("Finnish racing driver")
+
+
+def test_brand_round_drops_parent_logo_keeps_model_logo():
+    """Vong thuong hieu, tin MODEL: logo Alibaba (hang me) bi bo, logo Qwen vao; tin BUSINESS
+    thi logo hang van giu."""
+    import image_brand as th
+    from prepare import fallback_rounds as fr
+    parent = {"image_url": "p.png", "score": 18, "brand_match": {"key": "alibaba", "kind": "logo"}}
+    office = {"image_url": "o.png", "score": 28, "brand_match": {"key": "alibaba", "kind": "photo"}}
+    model = {"image_url": "q.png", "score": 18, "brand_match": {"key": "model_qwen", "company": "Qwen", "kind": "logo", "model_logo": True}}
+    seen = {}
+
+    class Stop(Exception):
+        pass
+
+    def fake_download(cands, wd):
+        seen["cands"] = [c["image_url"] for c in cands]
+        raise Stop
+
+    saved = (th.vendors_in_story, th.vendor_images, th.model_logo_images, fr.download_and_filter,
+             th.confirm_unlisted_vendor)
+    th.vendors_in_story = lambda *a, **k: [{"key": "alibaba", "company": "Alibaba"}]
+    th.vendor_images = lambda h, wd=None: [dict(parent), dict(office)]
+    th.model_logo_images = lambda t, wd: [dict(model)]
+    fr.download_and_filter = fake_download
+    try:
+        for cat, want, drop in (("MODEL", "q.png", "p.png"), ("BUSINESS", "p.png", "q.png")):
+            try:
+                fr._round_brand_body([], "Qwen-Image-2.1 từ Alibaba", "", Path(tempfile.gettempdir()),
+                                     khong_browser=True, category=cat)
+            except Stop:
+                pass
+            assert want in seen["cands"] and drop not in seen["cands"], (cat, seen["cands"])
+    finally:
+        (th.vendors_in_story, th.vendor_images, th.model_logo_images, fr.download_and_filter,
+         th.confirm_unlisted_vendor) = saved
 
 
 if __name__ == "__main__":
