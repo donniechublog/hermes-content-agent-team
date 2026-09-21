@@ -33,5 +33,9 @@ venv/bin/python monitor_9router.py --ngay "$HOM_QUA" --im $GUI 2>&1 | tail -3
 ma9=${PIPESTATUS[0]}
 [ "$ma9" -eq 0 ] || { echo "LOI: monitor_9router.py $HOM_QUA (ma $ma9)"; loi=1; }
 
+# Chay bong tu giao viec (LOW-349): cham goi y cho tin quet moi, gui do trung voi lua
+# chon cua Ong Chu vao topic Ada. Moi brand chay tren state/<brand>/ va topic Ada cua minh.
+venv/bin/python dispatch_shadow.py --send >/dev/null || { echo "LOI: dispatch_shadow.py"; loi=1; }
+
 echo "nhat ky: da chot $HOM_QUA, mo trang $HOM_NAY"
 exit $loi
