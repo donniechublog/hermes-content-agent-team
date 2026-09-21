@@ -272,7 +272,8 @@ def call_y_tone(title: str) -> tuple:
     import render_edu
     gan = render_edu._theme_near_bottom(4)
     try:
-        theme, hero = render_edu.pick_theme_auto({"folio": title}, False)
+        # "subject": tieu de tin goc — cho render_edu do hang chu the (LOW-340)
+        theme, hero = render_edu.pick_theme_auto({"subject": title, "folio": title}, False)
     except SystemExit:
         theme, hero = "orbit", "orbit"
     return theme, hero, gan
@@ -280,6 +281,8 @@ def call_y_tone(title: str) -> tuple:
 
 def write_brief(m: dict, da_dung: dict | None) -> str:
     theme, hero, gan = call_y_tone(m["title"])
+    import render_edu
+    theme_locked = render_edu.is_brand_theme(theme)
     # Khung in sẵn MỘT `figure` cho mỗi mã bắt buộc, để vai khỏi phải tự suy ra
     # "à, ba hình thì ba slide". `figure_right_use` đã trừ tấm lên bìa, nên khung
     # không bao giờ in cùng một mã ở cả cover lẫn `figure` (`check_duplicate` chặn).
@@ -292,8 +295,10 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         "art vector gốc, KHÔNG ảnh thật trừ hình thật liệt kê dưới")
     L += brief_common.block_redo(
         da_dung, f"theme={da_dung.get('theme')} hero={da_dung.get('hero')}, hook "
-                 f"“{da_dung.get('hook', '')}”. Lần này BẮT BUỘC đổi theme hoặc hero, "
-                 "và đổi hook/cách chia slide." if da_dung else "")
+                 f"“{da_dung.get('hook', '')}”. Lần này BẮT BUỘC "
+                 + ("đổi hook/cách chia slide (theme đã khoá theo hãng; bìa vector thì đổi cả hero)."
+                    if theme_locked else "đổi theme hoặc hero, và đổi hook/cách chia slide.")
+        if da_dung else "")
     L += brief_common.block_material(
         m, tieu_de="## Tư liệu (diễn đạt lại cho tường minh, KHÔNG bịa số, KHÔNG bịa quote)",
         n_cau=25, n_doan=1500,
@@ -370,11 +375,17 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     if rac:
         L.append(f"Không dùng (engine đánh dấu không liên quan): {', '.join(rac)}")
     L.append(f"Nhìn tất cả trong MỘT tấm: {m['workdir']}/{state_paths.CONTACT_SHEET_FILE} (chỉ khi cần).")
-    L += ["", "## Tone cho bộ này (mỗi bộ một tone, không trùng bộ gần đây)",
-          f"Gợi ý: theme={theme}, hero={hero}. Gần đây đã dùng: {gan or 'chưa có'}.",
-          "theme: orbit (agent/hệ thống) | ember (hiệu năng/cảnh báo) | moss (dữ liệu mở/tăng trưởng) | "
-          "ink (benchmark/học thuật) | rose (sinh ảnh/sáng tạo). hero: orbit (phân việc) | grid (bảng số) | "
-          "wave (xu hướng) | rings (độ chính xác) | graph (quan hệ)."]
+    L += ["", "## Tone cho bộ này (mỗi bộ một tone, không trùng bộ gần đây)"]
+    if theme_locked:
+        L.append(f"🎨 theme={theme} ĐÃ KHOÁ: palette nhận diện của hãng trong tin — giữ nguyên, "
+                 "đổi thì `kite_submit.py` tự ghi đè. Chỉ chọn hero (khi bìa vẽ vector).")
+    else:
+        L.append(f"Gợi ý: theme={theme}, hero={hero}. Gần đây đã dùng: {gan or 'chưa có'}.")
+        L.append("theme: orbit (agent/hệ thống) | ember (hiệu năng/cảnh báo) | moss (dữ liệu mở/tăng trưởng) | "
+                 "ink (benchmark/học thuật) | rose (sinh ảnh/sáng tạo). Palette hãng (deepseek, anthropic…) "
+                 "chỉ dành cho tin của chính hãng đó.")
+    L.append("hero: orbit (phân việc) | grid (bảng số) | wave (xu hướng) | rings (độ chính xác) | "
+             "graph (quan hệ).")
     L += ["", f"## Viết spec vào: {m['workdir']}/spec.json  (6..10 slide; mỗi slide MỘT ý; tiếng Việt có dấu)"]
     khung = {
         "theme": theme, "hero": hero,
