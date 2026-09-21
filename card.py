@@ -802,7 +802,7 @@ def _layer_image(canvas, src_img, H) -> int:
 TEXT_OVERLAY_CLUTTERED = 205
 
 
-def _text_bg_overlay(canvas, frame_top):
+def _text_bg_overlay(canvas, frame_top, fade=QUOTE_BLUR_COUNT):
     """Nen chu cho ANH ROI buoc phai dung. `_open_region_text` chi lam mo — tren anh co
     chu in san, chu cu van lo mo mo sau chu moi, doc ra lem nhem (LOW-47). O day: van mo
     cuc bo nhu anh sach, sau do phu them mot lop tinh mau nen theo gradient, tran
@@ -812,9 +812,9 @@ def _text_bg_overlay(canvas, frame_top):
     ban truoc (`_text_bg_strict`, LOW-47) phu NEN DAC mau BG tu khoang lang gan nhat xuong
     day the — chinh cai ma LOW-286 da bac o slide than carousel. Nay the di cung mot duong
     voi carousel: chi overlay, khong bao gio la mang mau dac."""
-    _open_region_text(canvas, frame_top)
+    _open_region_text(canvas, frame_top, fade)
     W_, H_ = canvas.size
-    top = max(0, int(frame_top - QUOTE_BLUR_COUNT))
+    top = max(0, int(frame_top - fade))
     doan = max(1, int(frame_top) - top)
     mat_na = Image.new("L", (W_, H_), 0)
     for y in range(top, H_):
@@ -824,7 +824,7 @@ def _text_bg_overlay(canvas, frame_top):
                  (0, 0), mat_na)
 
 
-def _open_region_text(canvas, frame_top):
+def _open_region_text(canvas, frame_top, fade=QUOTE_BLUR_COUNT):
     """Lam MO CUC BO vung anh nam duoi chu, sua canvas tai cho (Ong Chu 06/09/2026:
     chu co vien "phen nhu karaoke" — bo vien, thay bang lam mo).
 
@@ -837,7 +837,7 @@ def _open_region_text(canvas, frame_top):
     ao trang cat doc khoi chu) thi mo bao nhieu cung khong san phang, do la
     viec cua `_can_board_line`."""
     W_, H_ = canvas.size
-    top = max(0, int(frame_top - QUOTE_BLUR_COUNT))
+    top = max(0, int(frame_top - fade))
     vung = canvas.crop((0, top, W_, H_))
     mo = vung.filter(ImageFilter.GaussianBlur(QUOTE_BLUR))
     # Mat na: full mo tu frame_top tro xuong, rieng doan `dem` phia tren la fade.
@@ -1368,7 +1368,11 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False):
     bottom_y = H - g4 - via_h
     frame_top = max(CEILING_FRAME_PAD, cum_top - CEILING_FRAME_PAD)
     frame_bot = min(bottom_y - 16, cum_bot + CEILING_FRAME_PAD)
-    (_text_bg_overlay if cluttered else _open_region_text)(canvas, frame_top)
+    # LOW-343 (Ong Chu 21/09/2026: *"loai bo triet de nhung phan lo nho nam duoi quote, vi no
+    # lam hinh bi do"*): dai mo dan QUOTE_BLUR_COUNT px TREN khung de lai mot dai anh nua sac nua
+    # nhoe (hang bang xep hang mo mo) ngay tren net khung. Kieu khung chu nhat co NET KHUNG lam
+    # mep san: mo bat dau DUNG tai net tren cua khung, phia tren giu nguyen anh sac.
+    (_text_bg_overlay if cluttered else _open_region_text)(canvas, frame_top, fade=0)
 
     # DO THEO TUNG DAI DONG, khong phai mot trung binh cho ca khoi: ranh
     # sang/toi ngang cat qua khoi chu la ca rat thuong (anh chup hero toi tren
