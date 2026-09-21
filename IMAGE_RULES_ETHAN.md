@@ -961,3 +961,46 @@ Bố cục là việc riêng của từng khung, và chúng **phải** khác nha
 
 Ông Chủ đã chốt riêng: **bố cục bìa/hero là thứ đã duyệt** — không áp luật ≤30%
 của carousel lên đó.
+
+---
+
+## LOW-342 (21/09/2026): chữ ≤ 20% khung, nền chữ chỉ là overlay hẹp
+
+Ông Chủ, thẻ Qwen-Image-2.1: nền chữ quá lớn; chữ chỉ chiếm ~20% diện tích, nền chỉ là
+một lớp overlay trên hình. Thẻ quote: cỡ chữ tự hạ tới khi khối quote ≤ `TEXT_MAX_SHARE`
+(20%) chiều cao thẻ. Thẻ tran: vùng chữ `CEILING_TEXTBOX` 40% → 30%, tiêu đề ≤ 20%. Mờ nền
+`QUOTE_BLUR` 56 → 30, dải chuyển tiếp `QUOTE_BLUR_COUNT` 110 → 80.
+
+## LOW-337 (21/09/2026): tin MODEL/BENCHMARK — chỉ logo và bảng benchmark
+
+Ông Chủ, thẻ Qwen-Image-2.1: Ethan dùng ảnh toà nhà Alibaba thay vì logo. *"Với tất cả
+thông tin về benchmark model, chỉ dùng 2 thứ là logo và bảng benchmark từ các trang
+benchmark uy tín và twitter của arena.ai ... chính vì thế các designer mới cần bộ rule
+riêng biệt"*. Thứ tự: **logo > bảng benchmark** (rộng hơn cho vai khác: founder > office).
+
+- Luật RIÊNG của Ethan (`image_rules_ethan.MODEL_ONLY_TYPES`, `model_story_image_ok`):
+  tin `MODEL`/`BENCHMARK` chỉ dùng **thẻ logo** (`image_brand.card_logo`) hoặc **ảnh xếp
+  hạng** (`XH`). `ethan_submit._check_model_story` chặn toà nhà, founder, ảnh bài báo; brief
+  đánh dấu ⛔ và chỉ gợi ý hai loại này. Không có cả hai thì báo thiếu ảnh.
+- Thẻ logo 4:5 không còn bị coi là "chart đi một mình": được làm nền hero (`role.is_brand_logo_card`,
+  `card.py --logo-card`), và không bị ép đổi sang `XH` khi engine chụp được bảng thật (logo đứng trước).
+- Bảng chung `story_type.MODEL` đổi thành logo > xếp hạng > chart công bố > founder > trụ sở > khái niệm
+  (Dre/Kite vẫn dùng bảng rộng này, không bị luật hai-thứ ở trên).
+- **Logo là logo CỦA MODEL, không phải hãng mẹ** (Ông Chủ 21/09/2026: *"logo của Qwen ko phải
+  là logo của Alibaba, cũng giống như logo của ChatGPT ko phải là logo của OpenAI, Gemini ko phải
+  là Google"*). Áp cho MỌI designer: vòng thương hiệu (`fallback_rounds._round_brand_body`) với
+  tin MODEL/BENCHMARK bỏ thẻ logo hãng mẹ, thêm thẻ logo model (`image_brand.model_logo_images`:
+  bảng `MODEL_LOGO` đã kiểm tay, họ model ngoài bảng hỏi Wikidata và chỉ nhận mục là chatbot/model
+  AI). Ảnh hãng khác (trụ sở, founder) vẫn vào kho cho Dre/Kite; Ethan thì bị chặn như trên.
+- **Thẻ logo đặt trên nền SÁNG** như mọi model (Ông Chủ 21/09/2026: *"qwen cần đặt trên nền sáng giống
+  các model khác, ko sử dụng nền tối, trừ phi là logo âm bản"*). `image_brand.card_logo` chỉ ra nền
+  tối khi quá nửa điểm ảnh logo chìm trên nền sáng (`NEGATIVE_LOGO_SHARE`).
+- **Bảng benchmark lấy từ X của arena.ai TRƯỚC** (*"cứ lấy hình từ tài khoản twitter của arena.ai là
+  chuẩn nhất … ko tìm được thì mới dùng bảng của bên khác"*): `arena_x.py`, gọi đầu
+  `ranking.find_and_capture(_many)`. Chỉ nhận tweet @arena có ảnh, ≤ 45 ngày, và tên model nằm ở
+  ĐOẠN ĐẦU tweet kèm đúng số phiên bản (tweet "Gemini Omni 1.1 Flash #1" nhắc "Gemini Omni Flash"
+  để so sánh — không được lấy cho tin bản cũ). Không có mới chụp trang bảng như trước.
+- CÒN THIẾU: ID tweet @arena chưa có nguồn ổn định (DuckDuckGo chặn bot sau vài lượt, crawler
+  social-publishing dừng từ 13/09/2026 và không theo dõi riêng @arena); model không có logo trên
+  Wikidata/bảng (Xingchen, lab nhỏ) thì Ethan báo thiếu ảnh.
+

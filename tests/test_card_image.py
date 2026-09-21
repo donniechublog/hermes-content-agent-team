@@ -172,17 +172,17 @@ def test_card_ceiling_no_remaining_network_background_solid_cell_bottom():
 
 
 def test_card_ceiling_has_frame_text_most_net():
-    """Ong Chu chot 07/09/2026: co khung. Net doc cua khung la mot cot pixel
+    """Ong Chu chot 07/09/2026: co khung (LOW-342: vung chu 30% the, khung tu ~70%). Net doc cua khung la mot cot pixel
     gan nhu khong doi mau — anh (ke ca da lam mo) thi khong bao gio nhu vay."""
     import card
     with tempfile.TemporaryDirectory() as t:
         im = _use_card(t, (1920, 1080), "Nvidia mở kho mô hình Nemotron")
         x = card.CEILING_FRAME_X + card.CEILING_FRAME_LW // 2
-        cot = [im.getpixel((x, y)) for y in range(int(1500 * 0.68), int(1500 * 0.88))]
+        cot = [im.getpixel((x, y)) for y in range(int(1500 * 0.72), int(1500 * 0.88))]
         lech = max(max(abs(p[i] - cot[0][i]) for i in range(3)) for p in cot)
         assert lech < 24, f"khong thay net doc cua khung o x={x} (lech {lech})"
         # ...va ngay ben trong khung thi KHONG phai net (khong phai ca vung mot mau)
-        trong = [im.getpixel((x + 60, y)) for y in range(int(1500 * 0.68), int(1500 * 0.88))]
+        trong = [im.getpixel((x + 60, y)) for y in range(int(1500 * 0.72), int(1500 * 0.88))]
         assert max(max(abs(p[i] - trong[0][i]) for i in range(3))
                    for p in trong) > 24, "ben trong khung cung phang: van la mang dac"
 

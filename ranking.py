@@ -201,7 +201,8 @@ TOPIC = [
 # thi stub "chup" nen xanh gia. Nguoi doc hoi qua `is_capture`, khong so chuoi.
 # Ma English tu LOW-230 (bang cu -> table, bang-ghep -> table-stitched, danh-sach -> list,
 # danh-sach-ghep -> list-stitched, the -> card).
-KIND_CAPTURE = frozenset({"table", "table-stitched", "list", "list-stitched", "svg"})
+# "x_post": do hoa xep hang chinh chu tu tweet @arena (arena_x.py, LOW-337) — anh THAT cua nguon.
+KIND_CAPTURE = frozenset({"table", "table-stitched", "list", "list-stitched", "svg", "x_post"})
 
 
 def is_capture(kieu) -> bool:
@@ -1116,11 +1117,26 @@ def _try_source(phien: SessionCapture, n: dict, models: list, out: Path, in_log)
 ARGS_CAPTURE = ("--no-sandbox", "--disable-dev-shm-usage", "--force-color-profile=srgb")
 
 
+def _arena_first(models: list, out_dir: Path, in_log) -> list:
+    """LOW-337 (Ong Chu 21/09/2026): *"cu lay hinh tu tai khoan twitter cua arena.ai la chuan
+    nhat, khi noi toi benchmark, ko tim duoc thi moi dung bang cua ben khac"*. Hong gi cung
+    khong chan duong cu: tra [] va di chup cac trang bang nhu truoc."""
+    try:
+        import arena_x
+        return arena_x.find_arena_images(models, out_dir, in_log)
+    except Exception as e:                                   # noqa: BLE001
+        in_log(f"[xep_hang] arena X hong ({type(e).__name__}), di chup trang bang")
+        return []
+
+
 def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
                 hang_goi_y=None, in_log=print, phien_browser=None) -> dict:
     """Đi qua từng nguồn, nguồn nào ra ảnh khoanh được model thì dừng; không nguồn
     nào ra thì dựng thẻ dự phòng. Luôn trả về dict mô tả ảnh (file_path, kind, source,
     site, board, rank, model, url). `models` phải khác rỗng."""
+    arena = _arena_first(models, out_dir, in_log)
+    if arena:
+        return arena[0]
     from browser_session import session_or_new
     t0 = time.time()
     logo = None
@@ -1261,6 +1277,9 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
 
     Tra danh sach KHONG RONG — thẻ dự phòng (1 phan tu) khi khong nguon nao
     chup duoc."""
+    arena = _arena_first(models, out_dir, in_log)
+    if arena:
+        return arena[:toi_da]
     from browser_session import session_or_new
     t0 = time.time()
     logo = None

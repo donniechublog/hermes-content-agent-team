@@ -62,7 +62,8 @@ F_MARK = str(FONTS / "Oswald.ttf")                    # dau ngoac kep — glyph 
 W = 1200                          # bề ngang cố định
 # Tran chieu cao textbox khi ti le bi khoa. Anh la noi dung chinh, textbox chi
 # la phan chu thich; cho nao thua thi tra cho anh chu khong don vao textbox.
-CEILING_TEXTBOX = 0.40
+CEILING_TEXTBOX = 0.30
+TEXT_MAX_SHARE = 0.20                     # LOW-342: khoi chu (khong tinh le/chip) <= 20% chieu cao the
 PAD = 44
 
 # ---- Thuong hieu ----------------------------------------------------------
@@ -170,12 +171,12 @@ QUOTE_LEAD = 16                         # gian dong quote — thoang hon tieu de
 QUOTE_MAX_LINES = 7                     # dai hon la cau qua dai cho mot the
 QUOTE_PAD = 64                          # le trong hon hero: quote can khoang tho
 MARK_SIZE = 210                         # dau ngoac kep (Oswald: ink that ~28% co font)
-QUOTE_BLUR = 56                         # ban kinh mo vung chu de len (Gaussian) — LOW-165: tang gap
+QUOTE_BLUR = 30                         # ban kinh mo vung chu de len (Gaussian) — LOW-165: tang gap
                                 # doi tu 28, van khong xoa het mot mang lech tong hang tram px
                                 # (xem docstring _open_region_text) nhung giam manh do "sot" —
                                 # truong hop nang giai bang cach mo rong dinh nghia CLUTTERED
                                 # (prepare/vision.py) de di duong nen dac thay vi blur.
-QUOTE_BLUR_COUNT = 110                    # khoang dem TREN diem chu bat dau, de mo tan dan khong dot ngot
+QUOTE_BLUR_COUNT = 80                     # khoang dem TREN diem chu bat dau, de mo tan dan khong dot ngot
 
 # ---- Kieu tran: khung chu nhat quanh khoi chu ------------------------------
 # Ong Chu chot 07/09/2026: bo nen dac, dat chu thang len anh voi mau tuong phan,
@@ -922,9 +923,13 @@ def _quote_geometry(d, quote, attrib, handle, H):
     avail_w = W - 2 * TEXT_X
 
     # Cau trich dan — giu nguyen HOA/thuong (khong .upper() nhu tieu de).
-    f_q, q_lines = _fit_text(d, quote, avail_w, max_lines=QUOTE_MAX_LINES,
-                             hi=QUOTE_SIZE_HI, lo=QUOTE_SIZE_LO, path=F_QUOTE)
-    buoc, tren = _step_line(f_q, q_lines, QUOTE_LEAD)
+    # LOW-342: khoi quote chi chiem <= 20% chieu cao the — co chu ha dan toi khi vua.
+    for size_hi in range(QUOTE_SIZE_HI, QUOTE_SIZE_LO - 1, -2):
+        f_q, q_lines = _fit_text(d, quote, avail_w, max_lines=QUOTE_MAX_LINES,
+                                 hi=size_hi, lo=size_hi, path=F_QUOTE)
+        buoc, tren = _step_line(f_q, q_lines, QUOTE_LEAD)
+        if buoc * len(q_lines) <= H * TEXT_MAX_SHARE and not q_lines[-1].endswith("…"):
+            break
     quote_h = buoc * len(q_lines)
 
     f_at = _f(F_QUOTE_REG, 26)
@@ -1142,7 +1147,7 @@ _RE_EXPORT = (NEGATIVE_FACE_MARK, PHRASE_FACE_MARK, MARK_FORBID)
 
 def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
           brand="donniechublog", bo_qua_dau=False, kieu="quote", kicker="",
-          attrib="", bo_qua_anh=False, nhan_vat="", cluttered=False):
+          attrib="", bo_qua_anh=False, nhan_vat="", cluttered=False, logo_card=False):
     """Dung the `quote` (mac dinh) hoac `full_bleed`. `src`: mot duong dan, hoac danh
     sach hai duong dan (ghep doc). `title` la cau trich dan (quote) hoac cau
     tieu de (full_bleed). `kieu` nhan ca gia tri cu `tran` (LOW-248, role_spec)."""
@@ -1171,7 +1176,8 @@ def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
     _block_crop(src)          # anh ngang bi cat bot be ngang: dung o moi kieu
     if not bo_qua_anh:
         _block_standard_image(src, nhan_vat)   # chuan anh chung: do net, mat nguoi, trung
-        _block_chart(src)     # chart di mot minh vao hero: ep sang --image2/carousel
+        if not logo_card:     # LOW-337: the logo 4:5 (image_brand.card_logo) la hero, khong phai chart
+            _block_chart(src)     # chart di mot minh vao hero: ep sang --image2/carousel
     # Moi kieu the mot ham ve rieng; `build` chi con la cong chan + re nhanh.
     if kieu == "quote":
         return _render_quote(src, title, attrib, out, handle, ratio, tagline, cluttered=cluttered)
@@ -1254,7 +1260,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False):
         _g1, _g2, _g3, _g4 = _range(nen)
         frame_h = _cao_dau(nen) + _g3 + max(via_h, 34) + _g4
         f_title, title_lines = _grow_title(probe, title.upper(), avail_w,
-                                           box_h - frame_h,
+                                           min(box_h - frame_h, round(H * TEXT_MAX_SHARE)),
                                            max_lines=CEILING_TITLE_LINES,
                                            lead=lead, path=F_HERO,
                                            weight=HERO_WEIGHT,
@@ -1418,13 +1424,16 @@ def main():
                    choices=["free"] + list(RATIOS),
                    help="free: chiều cao trôi theo ảnh. 1:1/4:5/3:4: khoá tỉ lệ")
     p.add_argument("--out", required=True)
+    p.add_argument("--logo-card", action="store_true",
+                   help="Anh la THE LOGO 4:5 cua hang (LOW-337): dung mot minh lam hero, khong bi chan nhu chart")
     p.add_argument("--cluttered", action="store_true",
                    help="Anh roi (cluttered) buoc phai dung: nen chu dac thay lam mo (LOW-47)")
     a = p.parse_args()
     build([a.image, a.image2] if a.image2 else a.image, a.title, a.out,
           handle=a.handle, ratio=a.ratio, tagline=a.tagline, brand=a.brand,
           bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker, attrib=a.attrib,
-          bo_qua_anh=a.bo_qua_anh, nhan_vat=a.nhan_vat, cluttered=a.cluttered)
+          bo_qua_anh=a.bo_qua_anh, nhan_vat=a.nhan_vat, cluttered=a.cluttered,
+          logo_card=a.logo_card)
 
 
 if __name__ == "__main__":
