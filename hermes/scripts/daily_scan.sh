@@ -28,9 +28,9 @@ case "$VAI" in
   finn)  TIEU_DE="Quet tin sang"
          VIEC="cham hai thanh phan diem con lai (suc nang ky thuat 0-30, lien quan 0-20) va viet summary_vi theo dung khung BUOC 1 in ra" ;;
   nova)  TIEU_DE="Quet model sang"
-         VIEC="noi ra Y NGHIA (manh/re hon cai gi, bang nao, gia vao/ra, thay duoc vai nao) cho tung model bat buoc va xep thu tu" ;;
+         VIEC="noi ra Y NGHIA (manh/re hon cai gi, bang nao, gia vao/ra, thay duoc vai nao) cho tung model bat buoc, xep thu tu, va cham hai diem (tac dong 0-50, lien quan 0-50) theo dung khung BUOC 1 in ra" ;;
   vera)  TIEU_DE="Quet tin kinh doanh"
-         VIEC="loc tin co HE QUA (IPO, thau tom, ha tang, chinh sach, lao dong, kien tung), ghi muc chac chan theo so bao, viet tom tat co so" ;;
+         VIEC="loc tin co HE QUA (IPO, thau tom, ha tang, chinh sach, lao dong, kien tung), ghi muc chac chan theo so bao, viet tom tat co so, va cham hai diem (he qua 0-50, lien quan 0-50) theo dung khung BUOC 1 in ra" ;;
   qinn)  TIEU_DE="Quet X luot"
          VIEC="loc tin KY THUAT DUNG DUOC LAU (tool/repo, bao mat, kien truc, cach lam), bo thong bao phat hanh / benchmark / hype, toi da 6 tin, va bao ngay neu brief noi CRAWLER DUNG" ;;
   *) echo "Dung: $(basename "$0") finn|nova|vera|qinn (slug profile, khong phai role cu)" >&2; exit 2 ;;

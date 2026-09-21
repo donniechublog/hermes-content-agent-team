@@ -62,6 +62,11 @@ def _crop(bao_cao: str, tran: int = CEILING_REPORT) -> str:
 # expr cua job `qinn-scan`, va cong thuc LUOT trong hermes/scripts/daily_scan.sh.
 FRAME_HOURS = 12
 
+# LOW-352: Nova/Vera cham hai thanh phan 0-50 (manifest_write.SCORE_PARTS). Noi ro
+# diem khong len bao cao: vai biet diem khong phai de "trinh bay" thi cham that hon.
+SCORE_NOTE = ("Điểm = score_impact + score_relevance (0–100). Chấm trung thực, dùng hết thang: điểm KHÔNG "
+              "lên báo cáo và KHÔNG đổi thứ tự — đội dùng nó để đo xem đoán được Ông Chủ chọn tin nào.")
+
 
 def turn(gio_vn: int = None) -> int:
     """Luot trong ngay cho vai chay nhieu lan: khung FRAME_HOURS tieng tu 05:00 VN.
@@ -243,7 +248,15 @@ def brief_nova(wd: Path, lam_moi: bool, vai: str) -> str:
                                "chỉ ghi URL thật khi là tin ngoài danh sách>",
                        "summary_vi": "<MỘT mệnh đề ≤ 15 từ: giá vào/ra mỗi triệu token hoặc hạng bảng; chỉ làm ngữ cảnh "
                                      "cho vai viết, KHÔNG lên báo cáo>",
-                       "source_note": "<bảng/nguồn + ngày>"}], ensure_ascii=False, indent=1),
+                       "source_note": "<bảng/nguồn + ngày>",
+                       "score_impact": "<0-50: vào top 3 bảng lớn (text, WebDev, coding, trí tuệ, ECI, agentic) thì "
+                                       "40-50; leo hạng bảng khó bão hoà (HLE, ARC-AGI-2, Terminal-Bench) 30-40; chỉ "
+                                       "ra mắt hay đổi giá, bản :free/preview thì dưới 20>",
+                       "score_relevance": "<0-50: thay được vai nào của đội, rẻ hay mạnh hơn rõ rệt model đang dùng, "
+                                          "frontier Mỹ / top Trung Quốc / hãng ảnh-video dẫn đầu thì cao; thứ đội đã "
+                                          "đo và loại thì thấp>",
+                       "score_reason": "<1 câu vì sao điểm này>"}], ensure_ascii=False, indent=1),
+          SCORE_NOTE,
           "Xếp thứ tự: vào top 3 bảng lớn (text, WebDev, coding, trí tuệ, ECI, agentic) lên đầu; kế đến là leo hạng "
           "ở bảng khó bão hoà (HLE, ARC-AGI-2, Terminal-Bench). Không có gì đáng lên kênh thì "
           "chạy bước 3 với --khong-co.",
@@ -277,7 +290,14 @@ def brief_market(wd: Path, lam_moi: bool, vai: str) -> str:
           json.dumps([{"k": "<số thứ tự #k trong danh sách — script tự lấy link và số báo, KHÔNG chép URL>",
                        "title": "<HEADLINE một dòng: chủ thể + việc + con số, tiếng Việt có dấu; đây là thứ DUY NHẤT Ông Chủ đọc>",
                        "summary_vi": "<MỘT mệnh đề ≤ 15 từ vì sao đáng quan tâm; chỉ làm ngữ cảnh cho vai viết, "
-                                     "KHÔNG lên báo cáo>"}], ensure_ascii=False, indent=1),
+                                     "KHÔNG lên báo cáo>",
+                       "score_impact": "<0-50: IPO, đổi sở hữu/thâu tóm, tiền lớn vào hạ tầng-chip-điện, chính sách, "
+                                       "lao động, phán quyết tiền lệ thì cao, con số càng lớn càng cao; PR sản phẩm, "
+                                       "giá cổ phiếu trong ngày, dự đoán thì dưới 15>",
+                       "score_relevance": "<0-50: xoay quanh AI hoặc hãng AI lớn, độc giả dcgr cần biết ngay thì cao; "
+                                          "chuyện ngoài lề AI thì thấp>",
+                       "score_reason": "<1 câu vì sao điểm này>"}], ensure_ascii=False, indent=1),
+          SCORE_NOTE,
           "Mọi tin [W] phải có mặt. Không có gì đáng lên kênh thì chạy bước 3 với --khong-co.",
           "", "## Rồi chạy đúng MỘT lệnh:",
           submit_command(vai),
