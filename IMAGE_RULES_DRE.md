@@ -846,6 +846,12 @@ nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IM
   Bìa Dre là ảnh chụp nguồn thì KHÔNG cover-crop (cover-crop cắt hai cạnh vào chữ của trang).
 - **Thẻ Ethan** (Ông Chủ chốt style cùng ngày): ảnh LẤP KÍN thẻ, khung quote/tít là lớp overlay
   đè lên ảnh — không tách chữ khỏi hình. Ảnh chụp nguồn cao hơn thẻ thì giữ ĐỈNH trang.
+- **Nền chữ thẻ trần Ethan PHẲNG** (Ông Chủ bác 5 thẻ cùng ngày: *"nền của text bị loang lổ là
+  ko được phép"*): BÊN TRONG khung chữ là MỘT lớp overlay một màu (sáng hoặc tối theo nền đã mờ,
+  alpha `card.TEXT_BOX_OPACITY` = 84%, dưới trần 88%), cả khối một màu chữ — không còn dải mờ
+  tràn hết bề ngang trên khung (biến nút tối/lá cờ thành vệt) và không còn dải phủ riêng từng
+  dòng. Ngoài khung ảnh giữ sắc nét; riêng dải dưới khung (tên kênh) được làm mờ. Từ khoá tô màu
+  riêng: mã model chữ lẫn số tự tô, cụm khác Ethan khai `"highlight"`.
 - **Slide Dre**: ảnh chụp nguồn dừng TRÊN vùng chữ, cắt tại dải trống dài nhất trong vùng cho
   phép (`image_rules_common.quiet_cut_row`) — ranh giới giữa hai khối (ảnh | chú thích | tít),
   không bao giờ cắt ngang một dòng. Khoảng hở `carousel.CAPTURE_TEXT_GAP`.
@@ -891,7 +897,8 @@ mảng nhìn tách rời:
   - **Carousel (Dre)**: FG một màu cố định cho cả bộ; chỉ thêm lớp mờ+tinh khi
     đo THẬT trên pixel WYSIWYG thấy vùng dưới chữ không đủ tương phản hoặc quá
     "rối" (`carousel.py::_layer_if_can`).
-  - **Hero cả hai kiểu** `quote` (06/09/2026) và `full_bleed` (07/09/2026): không còn
+  - **Hero cả hai kiểu** `quote` (06/09/2026) và `full_bleed` (07/09/2026; từ 21/09/2026
+    `full_bleed` đổi sang overlay phẳng TRONG khung chữ, xem §6c): không còn
     TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_open_region_text`, tan dần
     theo đường cong power, không đột ngột), màu chữ tự đổi tương phản với vùng
     đã mờ đó (`_color_change_background_hide_whole`, đo qua `_can_board_line` nên một mảng sáng cục

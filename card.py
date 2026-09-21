@@ -818,6 +818,20 @@ def _text_box_overlay(canvas, box, radius):
     return FG if toi else BG
 
 
+def _blur_below(canvas, fade_top, full_top):
+    """Lam mo tu `full_top` xuong day the, tan dan trong [fade_top, full_top)."""
+    W_, H_ = canvas.size
+    top = max(0, int(fade_top))
+    vung = canvas.crop((0, top, W_, H_))
+    mo = vung.filter(ImageFilter.GaussianBlur(QUOTE_BLUR))
+    mask = Image.new("L", vung.size, 255)
+    doan = max(1, int(full_top) - top)
+    for y in range(doan):
+        t = (y + 1) / doan
+        mask.paste(int(255 * t * t * (3 - 2 * t)), (0, y, vung.width, y + 1))
+    canvas.paste(Image.composite(mo, vung, mask), (0, top))
+
+
 def _open_region_text(canvas, frame_top):
     """Lam MO CUC BO vung anh nam duoi chu, sua canvas tai cho (Ong Chu 06/09/2026:
     chu co vien "phen nhu karaoke" — bo vien, thay bang lam mo).
@@ -1361,6 +1375,10 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
     # LOW-336: chi lam mo + phu overlay BEN TRONG khung chu. Dai mo tran het be ngang
     # (`_open_region_text`, tu frame_top - 110) bien vat toi/mau manh ngay tren khung
     # thanh vet loang (nut toi, la co do) — khung da co overlay rieng thi dai do thua.
+    # Dai DUOI khung (cho ten kenh) van mo — ten kenh chu nho, de len anh sac thi chim
+    # vao chi tiet (vd dong bang xep hang). Mep tan 40px bat dau TRONG khung nen khong
+    # thanh duong ke o hai le.
+    _blur_below(canvas, frame_bot - 40, frame_bot)
     mau_khoi = _text_box_overlay(canvas, (CEILING_FRAME_X, frame_top, W - CEILING_FRAME_X, frame_bot),
                                  CEILING_FRAME_R)
 

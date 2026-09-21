@@ -236,6 +236,36 @@ def test_card_title_key_drawn_in_accent_color():
         assert gan(b) > gan(a) + 500, (gan(a), gan(b))
 
 
+def test_card_text_box_background_is_flat_over_blotchy_image():
+    """Ong Chu bac 5 the tran: *"nen cua text bi loang lo la ko duoc phep"*. Anh la cac
+    MANG lon sang/toi xen ke (nhu nut toi HuggingFace, la co): trong khung chu phai
+    PHANG — do tren le trong cua khung (giua net khung va chu), khong dinh chu."""
+    import card
+    from PIL import ImageStat
+    im = Image.new("RGB", (1200, 1500), (240, 240, 240))
+    d = ImageDraw.Draw(im)
+    for i, y in enumerate(range(0, 1500, 150)):
+        d.rectangle([0, y, 1200, y + 90], fill=(30, 30, 30) if i % 2 else (220, 40, 40))
+    d.rectangle([0, 0, 500, 1500], fill=(20, 60, 200))
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / "a.png"
+        im.save(p)
+        o = Path(t) / "c.png"
+        card.build(str(p), "Tiêu đề ba dòng để thử nền khung chữ có phẳng hay không nhé", str(o),
+                   ratio="4:5", kieu="full_bleed", kicker="MODEL RELEASE", brand="dcgr", bo_qua_anh=True)
+        c = Image.open(o).convert("L")
+        H, Wc = c.height, c.width
+        # Le trong TRAI nam tren mang xanh, le PHAI tren dai xam/do/den: hai mang anh rat
+        # khac nhau. Nen khung phang thi hai le gan nhu cung do sang.
+        y0, y1 = int(H * 0.70), int(H * 0.85)
+        a, b = card.CEILING_FRAME_X + 10, card.CEILING_TEXT_X - 12
+        trai = ImageStat.Stat(c.crop((a, y0, b, y1)))
+        phai = ImageStat.Stat(c.crop((Wc - b, y0, Wc - a, y1)))
+        lech = abs(trai.mean[0] - phai.mean[0])
+        assert lech < 30, f"nen trong khung chu loang lo: le trai {trai.mean[0]:.0f} vs phai {phai.mean[0]:.0f}"
+        assert phai.stddev[0] < 12, f"nen trong khung chu loang lo: stddev {phai.stddev[0]:.1f}"
+
+
 if __name__ == "__main__":
     ok = 0
     ten = [n for n in dir() if n.startswith("test_")]
