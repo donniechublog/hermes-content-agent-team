@@ -834,7 +834,7 @@ thoại chạy app ở slide 5 và 6). Cổng riêng `submit_common.check_same_p
 
 Ông Chủ, sau thẻ Ethan chụp trang HuggingFace ra một dải hẹp giữa hai mảng đen: *"nguyên
 tắc ảnh này là chung cho mọi role designer, ko bao giờ để viền 2 bên, cũng ko cắt sát vào
-nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE/ETHAN/KITE.md` — sửa một thì sửa cả ba.
+nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IMAGE_RULES_ETHAN.md`, `IMAGE_RULES_KITE.md` — sửa một thì sửa cả ba.
 
 - **Ảnh chụp trang nguồn giữ tỉ lệ tự nhiên, không đệm.** `capture_page.frame_source_capture`
   chỉ bỏ phần TRỐNG ở mép (đáy cắt ngang dòng chữ thì lùi về hàng trống; lề đặc hai bên của
@@ -844,9 +844,11 @@ nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE/ETHAN/KI
 - **Renderer luôn dán ảnh FULL BỀ NGANG**; phần khung còn thiếu là chính ảnh đó làm mờ
   (`card._layer_image`, `carousel._body_image`) — Kite vẫn theo luật riêng (nền palette, §7).
   Bìa Dre là ảnh chụp nguồn thì KHÔNG cover-crop (cover-crop cắt hai cạnh vào chữ của trang).
-- **Ảnh chụp nguồn dừng TRÊN vùng chữ**, cắt tại dải trống dài nhất trong vùng cho phép
-  (`image_rules_common.quiet_cut_row`) — ranh giới giữa hai khối (ảnh | chú thích | tít), không
-  bao giờ cắt ngang một dòng, và khối nào còn thì còn trọn. Khoảng hở `card.CAPTURE_TEXT_GAP`.
+- **Thẻ Ethan** (Ông Chủ chốt style cùng ngày): ảnh LẤP KÍN thẻ, khung quote/tít là lớp overlay
+  đè lên ảnh — không tách chữ khỏi hình. Ảnh chụp nguồn cao hơn thẻ thì giữ ĐỈNH trang.
+- **Slide Dre**: ảnh chụp nguồn dừng TRÊN vùng chữ, cắt tại dải trống dài nhất trong vùng cho
+  phép (`image_rules_common.quiet_cut_row`) — ranh giới giữa hai khối (ảnh | chú thích | tít),
+  không bao giờ cắt ngang một dòng. Khoảng hở `carousel.CAPTURE_TEXT_GAP`.
 - **Cổng pixel**: `check_side_bars` (mỗi module vai, đo bằng `image_rules_common.has_side_bars`)
   chặn ảnh đầu vào có mảng màu đặc ≥ 1.5% bề ngang chạy suốt hai bên. Thẻ logo / thẻ xếp hạng dự
   phòng được miễn (nền đặc phủ kín là chính thiết kế của chúng). Ảnh `source_capture` được miễn
