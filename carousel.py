@@ -180,12 +180,19 @@ def _fit_block(d, paragraphs, max_w, max_h, hi, lo, weight=None, lead=BODY_LEAD)
     return f, wrapped, lh, sum(len(w) for w in wrapped) * lh
 
 
-def _draw_paragraphs(d, x, y, wrapped, font, lh, fill):
-    """Ve lan luot cac doan tu (x, y) xuong. Tra ve y sau khi ve xong."""
+def _draw_paragraphs(d, x, y, wrapped, font, lh, fill, brand_colors=False):
+    """Ve lan luot cac doan tu (x, y) xuong. Tra ve y sau khi ve xong.
+
+    `brand_colors` (LOW-344): to ten hang/ten model theo palette hang, cung ham
+    ve voi tieu de the Ethan (`card.draw_brand_line`)."""
     gap = int(lh * PARA_GAP)
     for pi, lines in enumerate(wrapped):
         for ln in lines:
-            d.text((x, y), ln, font=font, fill=fill)
+            if brand_colors:
+                card.draw_brand_line(d, x, y, ln, font, fill,
+                                     nen_sang=(BACKGROUND_SHOW == "light"))
+            else:
+                d.text((x, y), ln, font=font, fill=fill)
             y += lh
         if pi != len(wrapped) - 1:
             y += gap
@@ -712,7 +719,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
     _layer_if_can(canvas, cover, y, H, image_cluttered=cluttered)
     if report is not None:                      # LOW-330: bia cung bi do nhu slide than
         report.update(_text_bg_report(truoc_nen, canvas))
-    _draw_paragraphs(d, PAD, y, wrapped, hf, lh, FG)
+    _draw_paragraphs(d, PAD, y, wrapped, hf, lh, FG, brand_colors=True)
     if label:
         # Hang duoi cung: chip CATEGORY (cyan) + chip label (trang), cung y.
         bb = _watermark(canvas, category, y=y_label)

@@ -28,6 +28,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
+import brand_names
 import image_rules_ethan
 import role_spec
 import text_bg
@@ -72,9 +73,9 @@ PAD = 44
 BRAND = {
     "donniechublog": {
         "handle": "donniechublog",
-        # Ten hang trong tieu de lay CYAN cua bo nhan dien. Bang mau nay da co
-        # mot mau nhan manh roi, muon them mau rieng cua tung hang nua thi doi
-        # "cyan" thanh "company" o day, khong phai sua cho nao khac.
+        # Co to ten hang trong tieu de hay khong (None = khong). MAU to tu LOW-344
+        # (Ong Chu 21/09/2026) theo PALETTE cua hang cho moi thuong hieu va moi vai
+        # (brand_names.colors_for), khong con blog = CYAN / dcgr = mau hang.
         "company_name_color": "cyan",
         # Ten kenh ro va dung mau CYAN nhan dien.
         "handle_clarity": 1.0,
@@ -95,7 +96,8 @@ BRAND = {
         # Nho vay bang mau van don sac o moi cho khac, va cham mau duy nhat tren
         # the luon mang y nghia.
         "company_name_color": "company",
-        "fallback_company_color": (255, 176, 32),   # hang chua biet mau: ho phach
+        # hang den trang (LOW-344): CYAN cua dcgr la trang = mau chu, nen dung ho phach
+        "fallback_company_color": (255, 176, 32),
         # Chan the la thong tin PHU: nho va mo hon de lui ve sau.
         "footer_size_scale": 0.85,        # co chu o chan the: 85% co goc
         "footer_brightness": 0.55,        # do sang chu chan, 1.0 la bang FG
@@ -112,12 +114,14 @@ BRAND = {
 
 # Gia tri mac dinh; build() ghi de theo --brand
 BG = BG_CARD = FG = MUTED = ACCENT = ACCENT_DIM = CYAN = LINE = None
+BRAND_NAME_FALLBACK = (255, 176, 32)   # nap lai theo thuong hieu o set_brand
 THRESHOLD_BACKGROUND_BRIGHT = None    # diem sang nen (0..255) FG/BG hoa nhau — dat qua set_brand
 
 
 def set_brand(ten: str):
     """Nap bang mau cua mot thuong hieu."""
     global BG, BG_CARD, FG, MUTED, ACCENT, ACCENT_DIM, CYAN, LINE, THRESHOLD_BACKGROUND_BRIGHT
+    global BRAND_NAME_FALLBACK
     b = BRAND.get(ten)
     if b is None:
         raise SystemExit(f"Khong biet thuong hieu {ten!r}. "
@@ -132,6 +136,11 @@ def set_brand(ten: str):
     # mot con so co dinh (116, tinh rieng cho FG/BG cua donniechublog) se sai
     # nguong voi dcgr (FG/BG gan nhu trang tuyet doi / den tuyet doi).
     THRESHOLD_BACKGROUND_BRIGHT = text_bg.threshold_wall_part(FG, BG)
+    # Mau to ten hang DEN TRANG (OpenAI, xAI...) — LOW-344: "mau tuong phan,
+    # mien la noi bat". CYAN cua kenh, tru khi no trung mau chu (dcgr: CYAN =
+    # FG = trang) thi lay mau thu ba cua kenh.
+    BRAND_NAME_FALLBACK = CYAN if text_bg.ratio_wall_part(CYAN, FG) >= 1.5 \
+        else tuple(b.get("fallback_company_color", (255, 176, 32)))
     return b
 
 TITLE_SIZE_HI, TITLE_SIZE_LO = 56, 38
@@ -392,39 +401,64 @@ def _extract_label(dong: str):
 
 
 def _color_rank_within(text: str):
-    """Mau cua ten hang DAU TIEN nhan ra trong `text`, hoac None. Dung de to
-    dau ngoac quote theo mau hang duoc nhac toi trong chu de."""
-    for _tu, khoa in _extract_label(text or ""):
-        if khoa:
-            mau = _color_of_rank(khoa)
-            if mau:
-                return mau
-    return None
+    """Mau cua ten hang DAU TIEN nhan ra trong `text` (ke ca trong ten model
+    viet lien, LOW-344), theo palette cua hang; None neu khong nhac hang nao
+    hoac hang den trang. Dung de to dau ngoac quote (Ethan + Dre)."""
+    keys = brand_names.brand_keys(text or "")
+    return brand_names.colors_for(keys[0], None)[0] if keys else None
+
+
+def brand_fill(key, role, nen_sang=False, fallback=None):
+    """Mau ve mot khuc ten hang (`role` "name"/"org") tren the/slide PIL.
+
+    Mau theo palette hang (brand_names.colors_for); hang den trang lay
+    `fallback` — mac dinh BRAND_NAME_FALLBACK cua thuong hieu dang nap. Keo
+    sang tren nen toi, keo toi tren nen SANG (`nen_sang`)."""
+    ten, org = brand_names.colors_for(key, fallback or BRAND_NAME_FALLBACK)
+    goc = org if role == "org" else ten
+    return _enough_dark(goc) if nen_sang else _enough_bright(goc)
 
 
 def _empty_line(d, dong, font):
-    """Be ngang mot dong khi ve tung tu mot.
+    """Be ngang mot dong khi ve tung khuc mot (`draw_brand_line`).
 
-    Phai do dung cach se ve, khong duoc do ca chuoi mot lan: ve tung tu thi be
+    Phai do dung cach se ve, khong duoc do ca chuoi mot lan: ve tung khuc thi be
     ngang la tong cua tung manh, lech vai pixel so voi do ca chuoi, va cho lech
     do du de mot dong can giua nhin ra la lech.
     """
     if not dong:
         return 0
     khoang = d.textlength(" ", font=font)
-    return sum(d.textlength(t, font=font) for t in dong.split(" ")) \
-        + khoang * (len(dong.split(" ")) - 1)
+    words = brand_names.line_segments(dong)
+    return sum(d.textlength(t, font=font) for w in words for t, _v, _k in w) \
+        + khoang * (len(words) - 1)
+
+
+def draw_brand_line(d, x, y, dong, font, mau, colored=True, nen_sang=False, fallback=None):
+    """Ve mot dong chu, to ten hang/ten model theo palette hang (LOW-344).
+
+    Dung chung cho Ethan (`_about_line`) va Dre (hook bia carousel). Ve tung
+    KHUC (ten model, tien to to chuc, dau cau) noi lien nhau, dau cach giua
+    cac tu — be ngang do bang `_empty_line`, cung cach ve. `colored=False`:
+    ca dong mot mau (the tin kieu dai)."""
+    khoang = d.textlength(" ", font=font)
+    for word in brand_names.line_segments(dong):
+        for text, role, key in word:
+            f_mau = brand_fill(key, role, nen_sang, fallback) if (colored and role) else mau
+            d.text((x, y), text, font=font, fill=f_mau)
+            x += d.textlength(text, font=font)
+        x += khoang
 
 
 def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
              nen_sang=False):
-    """Ve mot dong, to rieng ten thuong hieu.
+    """Ve mot dong tieu de the Ethan, to rieng ten hang/ten model.
 
-    che_do:
-      None    — khong to gi, ca dong mot mau (the tin kieu dai)
-      "cyan"  — ten hang lay CYAN cua bo nhan dien (donniechublog)
-      "company" — ten hang lay MAU RIENG CUA HANG do (dcgr). Hang chua biet mau
-                thi dung `mau_du_phong` (BRAND `fallback_company_color`).
+    che_do: None — khong to gi, ca dong mot mau (the tin kieu dai); co gia tri
+    ("cyan"/"company", khoa `company_name_color` cua thuong hieu) — to. Tu
+    LOW-344 (Ong Chu 21/09/2026) MAU khong con theo che_do (blog = CYAN, dcgr =
+    mau hang) ma theo PALETTE cua hang, giong Dre va Kite. `mau_du_phong` giu cho
+    noi goi cu; mau hang den trang gio lay tu BRAND_NAME_FALLBACK (set_brand).
 
     `nen_sang`: dong nay nam tren mot dai anh SANG. Khi do mau ten hang phai
     keo ve phia TOI (`_enough_dark`), khong phai sang them — dung cai loi da sua cho
@@ -432,16 +466,7 @@ def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
     mat chu). Chi kieu `full_bleed` truyen co nay: no dat chu thang len anh khong man
     toi nen dai chu co the sang; kieu the tin luon co nen toi.
     """
-    khoang = d.textlength(" ", font=font)
-    for tu, khoa in _extract_label(dong):
-        f_mau = mau
-        if khoa and che_do == "cyan":
-            f_mau = _enough_dark(CYAN) if nen_sang else CYAN
-        elif khoa and che_do == "company":
-            goc = _color_of_rank(khoa) or mau_du_phong or CYAN
-            f_mau = _enough_dark(goc) if nen_sang else _enough_bright(goc)
-        d.text((x, y), tu, font=font, fill=f_mau)
-        x += d.textlength(tu, font=font) + khoang
+    draw_brand_line(d, x, y, dong, font, mau, colored=bool(che_do), nen_sang=nen_sang)
 
 
 def _empty_tracked(d, text, font, track):
