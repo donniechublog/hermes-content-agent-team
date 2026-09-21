@@ -849,7 +849,9 @@ mảng nhìn tách rời:
 tới nền chữ"*. Luật chung cho mọi vai, chi tiết và số đo ở `IMAGE_RULES_DRE.md` §7.0b
 (ảnh nền phẳng: khung là màu nền của ảnh, nội dung 90% bề ngang — không thu cho vừa —,
 phần lấn vào vùng chữ phủ đúng màu nền, chữ đổi màu; không dải mờ/lớp phủ tối). Thẻ Ethan
-(`card.py`) CHƯA áp — theo dõi ở LOW-287.
+(`card.py`) đi luật riêng (LOW-336, §6c; Ông Chủ so A/B 21/09/2026): đáy ảnh là nền phẳng thì
+kéo dài chính màu nền đó, ảnh chụp thường phủ kín thẻ, nền chữ là overlay đều TRONG khung —
+KHÔNG phải một màu trơn từ khoảng lặng xuống đáy (cách LOW-343, đã bỏ).
 
 ### 7.1 Ảnh rối: chỉ dùng khi hết ảnh sạch, dùng thì nền chữ đậm hơn (vẫn là overlay)
 

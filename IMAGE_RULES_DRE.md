@@ -892,8 +892,8 @@ nền đặc: mờ 44px từ khoảng lặng (cắt ngang mặt người) + ph�
 - **Cổng đo trên pixel thật** (`carousel._gate_text_background`): mọi slide thân/quote
   bị so canvas trước/sau nền chữ. Độ phủ > 88% hoặc vùng đổi bắt đầu cao hơn 42% khung
   thì `carousel.py` dừng, không gửi album. Đây là lỗi code, vai `kanban_block`.
-- Bìa (`build_cover`) giữ bố cục đã duyệt. Thẻ Ethan và slide Kite chưa kiểm theo
-  luật này (LOW-287).
+- Bìa (`build_cover`) giữ bố cục đã duyệt. Thẻ Ethan đi luật riêng (LOW-336, §6c: nền chữ là
+  overlay đều TRONG khung, ảnh phủ kín thẻ); slide Kite chưa kiểm theo luật này (LOW-287).
 
 ### 7.0b Màu chữ tương phản TRƯỚC, nền chữ SAU — ảnh nền phẳng không có nền chữ (LOW-341)
 
@@ -938,7 +938,8 @@ rồi đặt quote màu đen lên nền trắng là được"*. Cùng ngày: *"b
   CODE, không phải spec.
 - Slide Kite: `render_edu.py` đã có nhánh nền phẳng (lấp màu nền, đổi màu chữ) từ
   08/09 nhưng ảnh phẳng cao quá vẫn bị cắt mép dưới — LOW-339 (gộp vào LOW-341). Thẻ Ethan
-  chưa áp (LOW-287).
+  đi luật riêng (LOW-336, §6c): đáy ảnh là nền phẳng thì kéo dài chính màu nền đó, nền chữ là
+  overlay đều TRONG khung.
 
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
 mảng nhìn tách rời:
