@@ -1116,6 +1116,49 @@ def _try_source(phien: SessionCapture, n: dict, models: list, out: Path, in_log)
 ARGS_CAPTURE = ("--no-sandbox", "--disable-dev-shm-usage", "--force-color-profile=srgb")
 
 
+_VERSION_TOKEN = re.compile(r"\d+(?:\.\d+)*")
+
+
+def row_carries_version(models: list, kq: dict) -> bool:
+    """LOW-338: hàng khoanh được phải mang PHIÊN BẢN của bài.
+
+    `extract_model("… Qwen Image 2.1")` -> ['Qwen Image 2.1', 'Qwen Image']. Ứng viên
+    ngắn bỏ mất "2.1" nên khớp `qwen-image-edit`, `qwen-image-edit-2511`,
+    `qwen-image-prompt-extend`: bìa nói 2.1 mà ảnh khoanh một bản khác. Bảng không có
+    hàng của model đó thì không có ảnh khoanh, không được khoanh hàng cùng họ.
+
+    Ứng viên khớp còn giữ đủ số phiên bản của tên đầy đủ thì hợp lệ. Ngược lại hàng
+    phải chứa các số đó (chỉ xét ô có chữ, tránh ăn nhầm điểm/hạng), cho phép
+    "2.1" / "2-1" / "2 1" / "21".
+    """
+    if not models or not kq:
+        return True
+    full_name = models[0]
+    tokens = _VERSION_TOKEN.findall(full_name)
+    if not tokens:
+        return True
+    candidate = kq.get("model") or ""
+    if all(t in _VERSION_TOKEN.findall(candidate) for t in tokens):
+        return True
+    text_cells = " ".join(c for c in str(kq.get("row") or "").split("|") if re.search(r"[A-Za-z]", c))
+    for t in tokens:
+        parts = t.split(".")
+        pat = r"(?<!\d)" + r"[.\-_ ]?".join(re.escape(p) for p in parts) + r"(?!\d)"
+        if not re.search(pat, text_cells):
+            return False
+    return True
+
+
+def _drop_row_without_version(models: list, kq, ly_do, out: Path):
+    """Huỷ ảnh chụp nếu hàng khoanh không mang phiên bản của bài (LOW-338); trả
+    (kq, ly_do) để nhánh "bỏ nguồn" sẵn có xử lý tiếp."""
+    if kq and not row_carries_version(models, kq):
+        out.unlink(missing_ok=True)
+        return None, (f"hàng {str(kq.get('row'))[:60]!r} không mang phiên bản của bài "
+                      f"({models[0]!r}); khớp lỏng {kq.get('model')!r}")
+    return kq, ly_do
+
+
 def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
                 hang_goi_y=None, in_log=print, phien_browser=None) -> dict:
     """Đi qua từng nguồn, nguồn nào ra ảnh khoanh được model thì dừng; không nguồn
@@ -1140,6 +1183,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
             kq, ly_do, pg = _try_source(phien, n, models, out, in_log)
             if kq is None and ly_do is None:
                 continue
+            kq, ly_do = _drop_row_without_version(models, kq, ly_do, out)
             if not kq:
                 # Khop duoc hang nhung khong chup noi bang: van vot lay logo model
                 # tu chinh hang do cho THE DU PHONG (duong duy nhat the do chay toi).
@@ -1282,6 +1326,7 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
             kq, ly_do, pg = _try_source(phien, n, models, out, in_log)
             if kq is None and ly_do is None:
                 continue
+            kq, ly_do = _drop_row_without_version(models, kq, ly_do, out)
             if not kq:
                 if logo is None:
                     logo = capture_logo(pg, out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}logo.png")
