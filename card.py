@@ -805,11 +805,14 @@ def _text_box_overlay(canvas, box, radius):
     """Phu lop overlay mot mau deu vao TRONG khung chu `box` (bo goc `radius`). Tra ve
     mau chu tuong phan voi lop do (FG tren lop toi, BG tren lop sang)."""
     x0, y0, x1, y1 = _within_card(canvas, box)
+    mask = Image.new("L", canvas.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle([x0, y0, x1, y1], radius=radius, fill=255)
+    # Mo TRONG khung truoc (xoa chi tiet con lo qua 16% con lai), roi moi do phe sang/toi.
+    canvas.paste(canvas.filter(ImageFilter.GaussianBlur(QUOTE_BLUR)), (0, 0), mask)
     sang = _bright_region(canvas, (x0, y0, x1, y1))
     toi = sang < THRESHOLD_BACKGROUND_BRIGHT
     tone = tuple(BG[:3]) if toi else tuple(FG[:3])
-    mask = Image.new("L", canvas.size, 0)
-    ImageDraw.Draw(mask).rounded_rectangle([x0, y0, x1, y1], radius=radius, fill=TEXT_BOX_OPACITY)
+    mask = mask.point(lambda v: TEXT_BOX_OPACITY if v else 0)
     canvas.paste(Image.new(canvas.mode, canvas.size,
                            tone + ((255,) if canvas.mode == "RGBA" else ())), (0, 0), mask)
     return FG if toi else BG
@@ -1355,7 +1358,9 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
     bottom_y = H - g4 - via_h
     frame_top = max(CEILING_FRAME_PAD, cum_top - CEILING_FRAME_PAD)
     frame_bot = min(bottom_y - 16, cum_bot + CEILING_FRAME_PAD)
-    (_text_bg_overlay if cluttered else _open_region_text)(canvas, frame_top)
+    # LOW-336: chi lam mo + phu overlay BEN TRONG khung chu. Dai mo tran het be ngang
+    # (`_open_region_text`, tu frame_top - 110) bien vat toi/mau manh ngay tren khung
+    # thanh vet loang (nut toi, la co do) — khung da co overlay rieng thi dai do thua.
     mau_khoi = _text_box_overlay(canvas, (CEILING_FRAME_X, frame_top, W - CEILING_FRAME_X, frame_bot),
                                  CEILING_FRAME_R)
 
