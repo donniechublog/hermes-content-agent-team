@@ -852,6 +852,13 @@ nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IM
   tràn hết bề ngang trên khung (biến nút tối/lá cờ thành vệt) và không còn dải phủ riêng từng
   dòng. Ngoài khung ảnh giữ sắc nét; riêng dải dưới khung (tên kênh) được làm mờ. Từ khoá tô màu
   riêng: mã model chữ lẫn số tự tô, cụm khác Ethan khai `"highlight"`.
+- **Ảnh tốt trước, biện pháp che sau** (Ông Chủ cùng ngày: *"một bức ảnh tốt là ko cần phải dùng
+  những biện pháp phức tạp như blur mà text quote vẫn hiển thị rõ ràng, nội dung chính của phần
+  hình vẫn được đảm bảo"*). Thẻ trần: ảnh chụp thường PHỦ KÍN thẻ quanh chủ thể; ảnh có đáy là nền
+  phẳng thì kéo dài chính màu nền đó; không còn dải mờ lộ ra. Brief Ethan đo từng ảnh ĐẶT ĐÚNG như
+  thẻ sẽ dựng (`card.text_zone_report`): vùng khung chữ sạch (`busy` ≤ 8) và không cắt mất chi
+  tiết mép khi phủ kín (`lost` ≤ 25%) xếp trước; ảnh rối/mất mép có nhãn ⚠️, `ethan_submit` cảnh
+  báo khi chọn ảnh rối mà bài còn ảnh sạch (không chặn).
 - **Slide Dre**: ảnh chụp nguồn dừng TRÊN vùng chữ, cắt tại dải trống dài nhất trong vùng cho
   phép (`image_rules_common.quiet_cut_row`) — ranh giới giữa hai khối (ảnh | chú thích | tít),
   không bao giờ cắt ngang một dòng. Khoảng hở `carousel.CAPTURE_TEXT_GAP`.

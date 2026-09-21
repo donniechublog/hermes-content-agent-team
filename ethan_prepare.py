@@ -81,6 +81,52 @@ def label_ethan(a: dict) -> tuple:
     return dung, ghi
 
 
+# LOW-336 (Ong Chu 21/09/2026): *"mot buc anh tot la ko can phai dung nhung bien phap phuc
+# tap nhu blur ma text quote van hien thi ro rang, noi dung chinh cua phan hinh van duoc
+# dam bao"*. Do anh DAT DUNG nhu the se dung (`card.text_zone_report`), roi xep anh co vung
+# khung chu SACH va KHONG mat chi tiet o mep len truoc. Nguong can tren 42 anh that o
+# may chu 21/09: anh chup trang/toa nha/logo nen tron busy 0.5-7.7; anh khai niem/thuc
+# the/thuong hieu roi 24-63; Xiaomi A2 (logo o goc) phu kin mat 32% chi tiet o mep.
+ZONE_CLEAN = 8.0
+ZONE_BUSY = 15.0
+EDGE_LOST_MAX = 0.25
+
+
+def text_zone(a: dict) -> dict | None:
+    """`card.text_zone_report` cho mot anh trong manifest, dat nhu `ethan_submit` se dat.
+    None neu khong do duoc (tep hong / thieu)."""
+    try:
+        import card
+        import ethan_submit
+        return card.text_zone_report(a["original_path"], cover_focus=ethan_submit.cover_focus(a, False),
+                                     top_anchor=a.get("source") == "capture_source")
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[ethan_prepare] khong do duoc vung chu {a.get('id')}: {type(e).__name__}", file=sys.stderr)
+        return None
+
+
+def zone_notes(z: dict | None) -> list:
+    """Nhan ngan cho brief tu ket qua `text_zone`."""
+    if not z:
+        return []
+    ghi = []
+    if z["busy"] <= ZONE_CLEAN:
+        ghi.append("✅ vùng khung chữ SẠCH (chữ rõ, không cần che)")
+    elif z["busy"] > ZONE_BUSY:
+        ghi.append(f"⚠️ vùng khung chữ RỐI (đo {z['busy']:.0f}) — chữ đè lên chi tiết, tránh nếu còn ảnh sạch")
+    if z["lost"] > EDGE_LOST_MAX:
+        ghi.append(f"⚠️ phủ kín thẻ sẽ CẮT MẤT ~{z['lost']:.0%} chi tiết ở mép (chữ/logo) — tránh nếu còn ảnh khác")
+    return ghi
+
+
+def zone_rank(z: dict | None) -> tuple:
+    """Khoa xep: sach & khong mat mep truoc; chua do duoc xep giua."""
+    if not z:
+        return (1, 0.0)
+    xau = (z["busy"] > ZONE_BUSY) + (z["lost"] > EDGE_LOST_MAX)
+    return (xau, z["busy"] + 40 * z["lost"])
+
+
 def stackable_pairs_hero(m: dict) -> list:
     """Cap anh ngang ghep doc duoc cho card.py: cung tone (da tinh trong engine)
     va ti le sau ghep <= 1.6."""
@@ -121,8 +167,11 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                      f"(nguồn: {a['domain'] or manifest_values.source_label(a['source'])})")
             continue
         dung, ghi = label_ethan(a)
-        if dung[0].startswith("nền hero") and not a.get("faces"):
-            goi_y.append((a.get("bottom_left_brightness", 0), -a.get("short_side", 0), a["id"]))
+        if dung[0].startswith("nền hero") or a.get("ranking"):
+            z = text_zone(a)
+            ghi = zone_notes(z) + ghi
+            if dung[0].startswith("nền hero") and not a.get("faces"):
+                goi_y.append((zone_rank(z), -a.get("short_side", 0), a["id"]))
         dong = (f"- {a['id']}: {a['w']}x{a['h']} ({a['ratio']}) {manifest_values.kind_label(a['kind']).upper()} | {'; '.join(dung)}"
                 f" | nguồn: {a['domain'] or manifest_values.source_label(a['source'])}")
         if a.get("description"):
@@ -134,7 +183,8 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         L.append(dong)
     goi_y.sort()
     if goi_y:
-        L.append("Gợi ý nền hero (không chart, không mặt, nửa dưới tối trước): " + ", ".join(g[2] for g in goi_y[:3]))
+        L.append("Gợi ý nền hero (không chart, không mặt; vùng khung chữ SẠCH và không mất chi tiết mép "
+                 "trước — ảnh tốt là chữ rõ mà không cần che): " + ", ".join(g[2] for g in goi_y[:3]))
     cap = stackable_pairs_hero(m)
     import story_type
     L += story_type.line_brief(m)

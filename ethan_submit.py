@@ -100,6 +100,29 @@ def cover_focus(a: dict, has_image2: bool):
     return ((x0 + x1) / 2, (y0 + y1) / 2, max(0.0, x1 - x0))
 
 
+def zone_warning(kq: dict, m: dict) -> list:
+    """LOW-336: anh chon co vung khung chu ROI / phu kin mat chi tiet mep trong khi bai con
+    anh SACH -> canh bao (khong chan: bai chi co anh roi van phai ra the)."""
+    if kq.get("image2"):
+        return []
+    import ethan_prepare
+    chon = kq["image"]
+    z = ethan_prepare.text_zone(chon)
+    if not z or ethan_prepare.zone_rank(z)[0] == 0:
+        return []
+    sach = []
+    for a in m.get("images") or []:
+        if a["id"] == chon["id"] or a.get("relevant") is False or a.get("faces")                 or a.get("kind") == "chart" or not ethan_prepare.label_ethan(a)[0][0].startswith("nền hero"):
+            continue
+        za = ethan_prepare.text_zone(a)
+        if za and za["busy"] <= ethan_prepare.ZONE_CLEAN and za["lost"] <= ethan_prepare.EDGE_LOST_MAX:
+            sach.append(a["id"])
+    if not sach:
+        return []
+    return [f"ảnh {chon['id']}: " + "; ".join(ethan_prepare.zone_notes(z))
+            + f". Bài còn ảnh vùng chữ SẠCH: {', '.join(sach[:3])} — cân nhắc đổi"]
+
+
 def _check_subject_above_quote(spec: dict, kieu: str, a: dict, ma: str, ma2, m: dict) -> list:
     """CHU THE CHINH phai nam TREN khung chu cua the `quote` (LOW-273, Ong Chu 19/09/2026:
     "ko chap nhan nhung hinh nhu the nay o moi designer ... main character dat vua trong
@@ -230,6 +253,8 @@ def main() -> int:
         return nc.count_round_error(wd, loi,
                                f"venv/bin/python ethan_submit.py {a.draft_id}")
 
+    for c in zone_warning(kq, m):
+        print(f"[CANH BAO] {c}")
     out = Path(a.out or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png"))
     out.parent.mkdir(parents=True, exist_ok=True)
     args = [sys.executable, str(ROOT / "card.py"), "--image", kq["image"]["original_path"],

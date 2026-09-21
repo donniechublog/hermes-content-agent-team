@@ -731,6 +731,37 @@ def _densest_center(img, fw, fh):
     return _best(cot, max(1, round(fw * w))), _best(hang, max(1, round(fh * h)))
 
 
+def text_zone_report(src, cover_focus=None, top_anchor=False, ratio="4:5") -> dict:
+    """Do TRUOC khi chon anh (LOW-336, Ong Chu 21/09/2026: *"mot buc anh tot la ko can phai
+    dung nhung bien phap phuc tap nhu blur ma text quote van hien thi ro rang, noi dung
+    chinh cua phan hinh van duoc dam bao"*). Dat anh dung nhu the tran se dat, roi do:
+
+      busy — nang luong canh trung binh (0..255) cua VUNG KHUNG CHU (CEILING_TEXTBOX duoi
+             the): cao = chu de len chi tiet roi, can overlay che nhieu.
+      lost — ti le chi tiet (nang luong canh theo cot/hang) nam NGOAI khung cat khi anh
+             phu kin the (0 neu khong phu kin): cao = cat mat chu logo/san pham o mep.
+    """
+    H = RATIOS.get(ratio) or RATIOS["4:5"]
+    img = _open_image(src)
+    canvas = Image.new("RGBA", (W, H), (0, 0, 0, 255))
+    _layer_image(canvas, img, H, top_anchor=top_anchor, cover_focus=cover_focus)
+    y0 = H - int(H * CEILING_TEXTBOX)
+    vung = canvas.convert("L").crop((CEILING_FRAME_X, y0, W - CEILING_FRAME_X, H - PAD))
+    e = vung.filter(ImageFilter.FIND_EDGES).crop((1, 1, vung.width - 1, vung.height - 1))
+    busy = ImageStat.Stat(e).mean[0]
+    lost = 0.0
+    if cover_focus is not None:
+        crop = _cover_window(img, W, H, cover_focus)
+        if crop is not None:
+            nho = img.convert("L").filter(ImageFilter.FIND_EDGES)
+            nho = nho.crop((1, 1, nho.width - 1, nho.height - 1))
+            tong = ImageStat.Stat(nho).sum[0] or 1.0
+            trong = ImageStat.Stat(nho.crop((max(0, crop[0] - 1), max(0, crop[1] - 1),
+                                             crop[2] - 1, crop[3] - 1))).sum[0]
+            lost = max(0.0, 1 - trong / tong)
+    return {"busy": round(busy, 1), "lost": round(lost, 3)}
+
+
 def _fit_cover(img, box_w, box_h):
     src_r, box_r = img.width / img.height, box_w / box_h
     if src_r > box_r:

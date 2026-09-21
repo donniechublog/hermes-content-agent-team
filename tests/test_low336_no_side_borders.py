@@ -321,6 +321,46 @@ def test_cover_without_subject_keeps_logo_corner():
     assert x0 <= 30 and x1 >= 330, (x0, x1)
 
 
+# ---- Uu tien chon anh: vung khung chu sach, khong mat chi tiet mep ---------------------
+
+def test_text_zone_clean_page_vs_busy_photo():
+    """Ong Chu 21/09: *"mot buc anh tot la ko can phai dung nhung bien phap phuc tap nhu
+    blur ma text quote van hien thi ro rang"*. Trang nen tron (chu o nua tren) -> vung khung
+    chu sach; anh nhieu chi tiet kin khung -> roi."""
+    import card
+    import ethan_prepare
+    card.set_brand("dcgr")
+    with tempfile.TemporaryDirectory() as t:
+        sach, roi = Path(t) / "sach.png", Path(t) / "roi.png"
+        _page(1200, 700, [(40, 400)]).save(sach)
+        _noise_photo(400, 500).save(roi)
+        z1 = card.text_zone_report(str(sach))
+        z2 = card.text_zone_report(str(roi), cover_focus=(0.5, 0.5, 0.0))
+    assert z1["busy"] <= ethan_prepare.ZONE_CLEAN, z1
+    assert z2["busy"] > ethan_prepare.ZONE_BUSY, z2
+    assert ethan_prepare.zone_rank(z1) < ethan_prepare.zone_rank(z2)
+    assert any("SẠCH" in g for g in ethan_prepare.zone_notes(z1))
+    assert any("RỐI" in g for g in ethan_prepare.zone_notes(z2))
+
+
+def test_text_zone_lost_edge_detail_when_cover_cuts_logo():
+    """Logo chu o SAT hai mep anh vuong: phu kin 4:5 buoc phai cat mot ben -> `lost` cao
+    va brief canh bao (the Xiaomi 21/09)."""
+    import card
+    import ethan_prepare
+    im = Image.new("RGB", (1200, 1200), (200, 90, 30))
+    d = ImageDraw.Draw(im)
+    for x0 in (10, 1000):
+        for x in range(x0, x0 + 180, 16):
+            d.rectangle([x, 80, x + 8, 300], fill=(255, 255, 255))
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / "logo.png"
+        im.save(p)
+        z = card.text_zone_report(str(p), cover_focus=(0.5, 0.5, 0.0))
+    assert z["lost"] > ethan_prepare.EDGE_LOST_MAX, z
+    assert any("CẮT MẤT" in g for g in ethan_prepare.zone_notes(z))
+
+
 if __name__ == "__main__":
     ok = 0
     ten = [n for n in dir() if n.startswith("test_")]
