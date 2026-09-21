@@ -86,6 +86,11 @@ class Role:
     anh_muc_tieu_tim_flagship: int = 0
     ti_le_don_max: float = 0.0
     chart_don: bool = True                     # chart dung MOT MINH duoc khong
+    # LOW-343 (Ong Chu 21/09/2026: *"phong cach o tren la cua Dre, phong cach duoi la cua
+    # Ethan"*): kieu the `card.py` (role_spec.CARD_STYLES) VAI nay duoc dung, phan tu dau la
+    # mac dinh. Rong = vai khong dung card.py. Kieu `quote` (ngoac kep, chip, "via") la
+    # phong cach cua Dre (slide quote carousel), khong cho vai the khac muon.
+    card_styles: tuple = ()
 
 
 ROLE = {v.slug: v for v in [
@@ -102,7 +107,7 @@ ROLE = {v.slug: v for v in [
     # duong ghep doc, khong dung mot minh duoc.
     Role("ethan", "Ethan", go=("img", "anh"), slug_cu=("designer", "chad"),
         renderer="card", nhan_anh=True, anh_toi_thieu=1, rules="image_rules_ethan",
-        ti_le_don_max=1.6, chart_don=False),
+        ti_le_don_max=1.6, chart_don=False, card_styles=("full_bleed",)),
     # 6 va 7 la carousel.MIN_SLIDE / carousel.FLAGSHIP_MIN (12/09/2026). Chep so o day chu
     # khong import carousel: tep nay la BAN DANG KY, phai nhe (carousel keo theo
     # card + PIL). test_vai giu hai ban khong troi khoi nhau.
@@ -460,6 +465,12 @@ def is_brand_logo_card(a: dict) -> bool:
     """The logo cua hang (image_brand.card_logo): 4:5, logo dan tren nua tren, chua san cho chu.
     Kind = chart vi no phang, nhung day la mot the hero dung duoc MOT MINH (LOW-337)."""
     return bool(a.get("logo_card") and (a.get("brand_match") or {}).get("kind") == "logo")
+
+
+def card_styles_for(slug: str) -> tuple:
+    """Kieu the `card.py` vai `slug` duoc dung (LOW-343), phan tu dau la mac dinh."""
+    v = ROLE.get(slug) or ROLE.get(canonical_slug(slug or ""))
+    return v.card_styles if v else ()
 
 
 def can_be_hero(slug: str, a: dict) -> bool:

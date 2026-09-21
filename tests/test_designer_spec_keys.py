@@ -58,10 +58,11 @@ DRE_NEW = {
         {"image": "A3", "text": "Cái cần theo dõi tiếp theo"},
     ],
 }
-ETHAN_OLD = {"anh": "N1", "anh2": "N2", "kieu": "quote", "nhan_vat": "Jensen Huang",
-             "hook": "Nvidia mở kho mô hình Nemotron", "tagline": "MODEL RELEASE", "attrib": "via Reuters"}
-ETHAN_NEW = {"image": "N1", "image2": "N2", "card_style": "quote", "subject": "Jensen Huang",
-             "hook": "Nvidia mở kho mô hình Nemotron", "tagline": "MODEL RELEASE", "attrib": "via Reuters"}
+# LOW-343: Ethan chi con full_bleed — cap cu/moi doi ten khoa van phai ra cung dau vao the.
+ETHAN_OLD = {"anh": "N1", "anh2": "N2", "kieu": "tran", "nhan_vat": "Jensen Huang",
+             "title": "Nvidia mở kho mô hình Nemotron", "kicker": "MODEL RELEASE"}
+ETHAN_NEW = {"image": "N1", "image2": "N2", "card_style": "full_bleed", "subject": "Jensen Huang",
+             "title": "Nvidia mở kho mô hình Nemotron", "kicker": "MODEL RELEASE"}
 
 
 def _kite(old: bool) -> dict:
@@ -223,7 +224,7 @@ def test_ethan_old_and_new_spec_give_same_card_inputs():
             assert set(b[0]) == {"card_style", "image", "image2", "cluttered"}
         assert b[0]["card_style"] == "full_bleed"
         _kq, loi, _c = ethan_submit.resolve_spec({"image": "N1", "card_style": "tran"}, m, wd)
-    assert any('"card_style" phải là "quote" (mặc định) hoặc "full_bleed"' in x for x in loi), loi
+    assert not any("không phải kiểu của Ethan" in x for x in loi), loi   # "tran" = full_bleed cu
     assert any('kiểu full_bleed: thiếu "title"' in x for x in loi), loi
 
 

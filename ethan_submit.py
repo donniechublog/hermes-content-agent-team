@@ -131,9 +131,16 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     (ten moi, LOW-248)."""
     anh = {a["id"]: a for a in m["images"]}
     loi = []
-    kieu = (spec.get("card_style") or "quote").strip().lower()
-    if kieu not in role_spec.CARD_STYLES:
-        loi.append("\"card_style\" phải là \"quote\" (mặc định) hoặc \"full_bleed\"")
+    # LOW-343: kieu the khoa theo VAI (role.card_styles_for) — Ethan chi khung chu nhat;
+    # `quote` la phong cach cua Dre. Spec cu ghi "quote" bi tu choi (khong tu doi): vai phai
+    # viet lai "title"/"kicker", mot cau hook kieu quote khong tu thanh tieu de duoc.
+    duoc = role.card_styles_for("ethan")
+    kieu = role_spec.card_style_value((spec.get("card_style") or duoc[0]).strip().lower())
+    if kieu not in duoc:
+        vi_sao = " — quote là phong cách của Dre" if kieu == "quote" else ""
+        loi.append(f"\"card_style\": \"{kieu}\" không phải kiểu của Ethan{vi_sao}. "
+                   f"Ethan chỉ dùng \"{duoc[0]}\" (khung chữ nhật): viết \"title\" (một câu hoàn chỉnh) "
+                   "+ \"kicker\", bỏ hook/tagline/attrib.")
     ma, ma2 = spec.get("image"), spec.get("image2")
     if not ma or ma not in anh:
         loi.append(f"\"image\" không tồn tại: {ma} (có: {', '.join(anh) or 'không có ảnh nào'})")
@@ -233,15 +240,16 @@ def main() -> int:
         args.append("--cluttered")
     if role.is_brand_logo_card(kq["image"]) and not kq["image2"]:
         args.append("--logo-card")        # LOW-337: the logo 4:5 la hero, khong phai chart di mot minh
-        if kq["card_style"] != "quote":
-            args += ["--ratio", "4:5"]    # the logo da la 4:5; ti le tu do keo the cao 0.65, trang mot khoang lon
     if kq["card_style"] == "quote":
         hook = str(spec["hook"]).strip()
         args += ["--ratio", "4:5", "--title", hook, "--tagline", str(spec["tagline"]).strip().upper(),
                  "--attrib", str(spec["attrib"]).strip()]
     else:
         hook = str(spec["title"]).strip()
-        args += ["--title", hook, "--kicker", str(spec.get("kicker") or "").strip().upper()]
+        # LOW-343 (Ong Chu 21/09/2026: "khong gian can lon hon, hien dang bi qua hep so voi toan
+        # canh"): ti le tu do cho vung chu vua khit chu (13-16% the). Khoa 4:5 thi vung chu lay
+        # CEILING_TEXTBOX (30%) va tieu de no toi TEXT_MAX_SHARE (20%) — dung co the Qwen da duyet.
+        args += ["--ratio", "4:5", "--title", hook, "--kicker", str(spec.get("kicker") or "").strip().upper()]
     r = subprocess.run(args, cwd=str(ROOT), capture_output=True, text=True, timeout=300)
     for dong in (r.stderr or "").splitlines():
         if dong.startswith("[CANH BAO]"):
