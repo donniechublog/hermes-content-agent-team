@@ -676,6 +676,20 @@ def _is_source_capture(src) -> bool:
         return image_provenance.is_source_capture(im)
 
 
+FLAT_BOTTOM_ROWS = 0.04     # dai day anh de xet (ti le chieu cao)
+FLAT_BOTTOM_STD = 6.0      # stddev moi kenh duoi muc nay = nen phang
+
+
+def _flat_bottom_color(img):
+    """Mau (r, g, b) cua DAI DAY anh neu dai do la nen phang, nguoc lai None."""
+    h = img.height
+    dai = img.convert("RGB").crop((0, max(0, h - max(4, int(h * FLAT_BOTTOM_ROWS))), img.width, h))
+    st = ImageStat.Stat(dai)
+    if max(st.stddev) > FLAT_BOTTOM_STD:
+        return None
+    return tuple(int(round(v)) for v in st.mean)
+
+
 def _cover_window(img, box_w, box_h, focus):
     """Khung cat (x0, y0, x1, y1) de anh PHU KIN box quanh `focus` = (cx, cy, rong_chu_the)
     ti le 0..1. None neu chu the rong hon khung cat (cat se vao chu the)."""
@@ -754,13 +768,23 @@ def _layer_image(canvas, src_img, H, top_anchor=False, cover_focus=None) -> int:
         if crop is not None:
             canvas.paste(src_img.crop(crop).resize((W, H), Image.Resampling.LANCZOS), (0, 0))
             return H
-    canvas.paste(_fit_cover(src_img, W, H).filter(ImageFilter.GaussianBlur(40)), (0, 0))
     nat_h = round(src_img.height * W / src_img.width)
     sac = src_img.resize((W, nat_h), Image.Resampling.LANCZOS)
     if nat_h > H:
         top = 0 if top_anchor else (nat_h - H) // 2
         canvas.paste(sac.crop((0, top, W, top + H)), (0, 0))
         return nat_h
+    # LOW-336 (Ong Chu 21/09/2026: *"mot buc anh tot la ko can phai dung nhung bien phap
+    # phuc tap nhu blur"*, vi du logo Qwen tren nen tron): day anh la NEN PHANG (trang web,
+    # logo tren nen tron) thi phan thieu la CHINH mau nen do keo dai — mot mat phang lien,
+    # khong phai vung thu hai. Day anh co chi tiet thi moi con duong nen mo ben duoi.
+    nen_day = _flat_bottom_color(sac)
+    if nen_day is not None:
+        canvas.paste(Image.new(canvas.mode, (W, H), nen_day + ((255,) if canvas.mode == "RGBA" else ())),
+                     (0, 0))
+        canvas.paste(sac, (0, 0))
+        return nat_h
+    canvas.paste(_fit_cover(src_img, W, H).filter(ImageFilter.GaussianBlur(40)), (0, 0))
 
     # ANH THAP HON KHUNG (moi anh ngang: 3:2 ra nat_h=800, 4:3 ra 900 tren
     # khung 1500) — day la cho sinh ra DUONG RANH ma Ong Chu bat nhieu lan.
@@ -834,7 +858,8 @@ def _text_box_overlay(canvas, box, radius):
     x0, y0, x1, y1 = _within_card(canvas, box)
     mask = Image.new("L", canvas.size, 0)
     ImageDraw.Draw(mask).rounded_rectangle([x0, y0, x1, y1], radius=radius, fill=255)
-    # Mo TRONG khung truoc (xoa chi tiet con lo qua 16% con lai), roi moi do phe sang/toi.
+    # Mo TRONG khung (nam duoi overlay 84% nen khong thay nhu mot vung mo) — chi de 16% anh
+    # lo qua khong thanh van loang tren anh nhieu mang.
     canvas.paste(canvas.filter(ImageFilter.GaussianBlur(QUOTE_BLUR)), (0, 0), mask)
     sang = _bright_region(canvas, (x0, y0, x1, y1))
     toi = sang < THRESHOLD_BACKGROUND_BRIGHT
@@ -845,11 +870,17 @@ def _text_box_overlay(canvas, box, radius):
     return FG if toi else BG
 
 
+BUSY_BELOW_STD = 30.0      # dai ten kenh bien dong sang (stddev xam) tren muc nay moi can mo
+
+
 def _blur_below(canvas, fade_top, full_top):
-    """Lam mo tu `full_top` xuong day the, tan dan trong [fade_top, full_top)."""
+    """Lam mo tu `full_top` xuong day the, tan dan trong [fade_top, full_top) — CHI khi dai
+    do BAN (vd dong bang xep hang). Nen sach thi giu nguyen, khong dung bien phap nao."""
     W_, H_ = canvas.size
     top = max(0, int(fade_top))
     vung = canvas.crop((0, top, W_, H_))
+    if ImageStat.Stat(canvas.crop((0, int(full_top), W_, H_)).convert("L")).stddev[0] <= BUSY_BELOW_STD:
+        return
     mo = vung.filter(ImageFilter.GaussianBlur(QUOTE_BLUR))
     mask = Image.new("L", vung.size, 255)
     doan = max(1, int(full_top) - top)
@@ -1404,9 +1435,8 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
     # LOW-336: chi lam mo + phu overlay BEN TRONG khung chu. Dai mo tran het be ngang
     # (`_open_region_text`, tu frame_top - 110) bien vat toi/mau manh ngay tren khung
     # thanh vet loang (nut toi, la co do) — khung da co overlay rieng thi dai do thua.
-    # Dai DUOI khung (cho ten kenh) van mo — ten kenh chu nho, de len anh sac thi chim
-    # vao chi tiet (vd dong bang xep hang). Mep tan 40px bat dau TRONG khung nen khong
-    # thanh duong ke o hai le.
+    # Dai DUOI khung (cho ten kenh): chi mo khi BAN (vd dong bang xep hang) — ten kenh chu
+    # nho de len chi tiet thi chim. Mep tan 40px bat dau TRONG khung nen khong thanh duong ke.
     _blur_below(canvas, frame_bot - 40, frame_bot)
     mau_khoi = _text_box_overlay(canvas, (CEILING_FRAME_X, frame_top, W - CEILING_FRAME_X, frame_bot),
                                  CEILING_FRAME_R)

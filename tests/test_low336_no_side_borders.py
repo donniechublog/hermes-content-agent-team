@@ -296,6 +296,19 @@ def test_cover_only_for_plain_photos():
     assert ethan_submit.cover_focus(photo, True) is None, "anh ghep doc giu full be ngang"
 
 
+def test_flat_bottom_extends_own_background_no_blur():
+    """Ong Chu 21/09: *"mot buc anh tot la ko can phai dung nhung bien phap phuc tap nhu
+    blur"* (vi du logo Qwen tren nen tron). Anh thap hon the ma DAY la nen phang -> phan
+    thieu la CHINH mau nen do, khong phai ban mo cua anh."""
+    import card
+    card.set_brand("dcgr")
+    src = _page(1200, 700, [(60, 400)])                  # trang trang, day phang
+    c = Image.new("RGBA", (card.W, 1500))
+    card._layer_image(c, src, 1500)
+    duoi = c.convert("RGB").crop((0, 900, card.W, 1500))
+    assert duoi.getcolors(4) == [(card.W * 600, PAGE)], "phan thieu khong phai mau nen cua chinh anh"
+
+
 if __name__ == "__main__":
     ok = 0
     ten = [n for n in dir() if n.startswith("test_")]
