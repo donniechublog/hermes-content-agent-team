@@ -26,7 +26,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import env_load                                              # noqa: E402
 
 HANDLES = ("arena", "lmarena_ai")          # lmarena_ai: tên cũ của cùng tài khoản
 MAX_AGE_DAYS = 45
