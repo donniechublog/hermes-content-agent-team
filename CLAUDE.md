@@ -10,11 +10,18 @@ Bối cảnh: repo này được sửa từ nhiều máy (Mac này + 2 máy khá
 
 ## 2. Remotes & thứ tự push
 
-- `origin` (deploy) = **`dc-group@dc-group-system-product-name.netbird.mated:/home/dc-group/content-team`** — production ĐÃ CHUYỂN MÁY 20/09/2026, `donniechu-01` không còn là đích deploy (21/09/2026 phát hiện một lần deploy lạc vào máy cũ). Server có `receive.denyCurrentBranch=updateInstead`. **Push vào `origin` là deploy production ngay lập tức**, không phải một push bình thường.
-- Trên máy production, cách kéo code đang dùng thực tế là `git pull origin main` chạy TAY (xem reflog: toàn `merge origin/main: Fast-forward`) — nên kiểm `hostname` trước khi kéo, phải ra `dc-group-System-Product-Name`.
-- `github` = `donniechublog/hermes-content-agent-team` — remote an toàn, không side-effect, dùng làm nơi chốt/đồng bộ giữa 3 máy.
-- Nhánh task (bất kể tạo từ máy nào) chỉ push lên `github`. Không push nhánh task lên `origin`.
-- Chỉ `git push origin main` sau khi `main` đã chốt xong trên `github`. Coi đây là bước "bấm nút deploy" — làm riêng, có chủ đích, một nơi/một lúc — không phải việc mỗi phiên tự làm ngay khi xong task của mình.
+**Chuẩn tên remote, giống nhau ở MỌI clone** (21/09/2026). Không clone nào có remote tên `origin`: gõ nhầm `git push origin main` theo thói quen sẽ báo lỗi thay vì deploy.
+
+| Tên | URL | Có trên |
+|---|---|---|
+| `github` | `donniechublog/hermes-content-agent-team` (https hoặc ssh) | mọi máy, kể cả production |
+| `deploy` | `dc-group:/home/dc-group/content-team` (hoặc `dc-group@dc-group-system-product-name.netbird.mated:…`) | máy dev; production KHÔNG có |
+
+- Kiểm `git remote -v` trước khi push. Clone còn `origin`: `git remote rename origin github` (hoặc `deploy`, tuỳ URL). Đổi tên chỉ sửa `.git/config` của máy đó, nhánh theo dõi tự chuyển theo.
+- **`deploy` = production**, ĐÃ CHUYỂN MÁY 20/09/2026, `donniechu-01` không còn là đích deploy (21/09/2026 phát hiện một lần deploy lạc vào máy cũ). Server có `receive.denyCurrentBranch=updateInstead`. **Push vào `deploy` là deploy production ngay lập tức**, không phải một push bình thường.
+- Trên máy production, cách kéo code đang dùng thực tế là `git pull github main` chạy TAY — kiểm `hostname` trước khi kéo, phải ra `dc-group-System-Product-Name`.
+- `github` là remote an toàn, không side-effect, nơi chốt/đồng bộ giữa 3 máy. Nhánh task (từ máy nào cũng vậy) chỉ push lên `github`, không bao giờ lên `deploy`.
+- Chỉ `git push deploy main` sau khi `main` đã chốt xong trên `github`. Coi đây là bước "bấm nút deploy" — làm riêng, có chủ đích, một nơi/một lúc — không phải việc mỗi phiên tự làm ngay khi xong task của mình.
 
 ## 3. `main` chỉ tiến ở một chỗ
 
