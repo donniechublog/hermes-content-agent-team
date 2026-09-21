@@ -44,10 +44,14 @@ Hai thương hiệu tô khác nhau, khai báo bằng khoá `company_name_color`:
   mà đến từ chủ thể của tin. Màu quá đậm được `_enough_bright()` kéo lên đủ đọc trên
   nền tối. Hãng chưa biết màu thì dùng `fallback_company_color` (hổ phách).
 
-Cùng bảng `COLOR_RANK` đó còn quyết **palette của carousel EDU** (Kite): khi ảnh
-bìa không có màu rõ ràng, `render_edu.chon_theme_tu_dong` bám màu hãng nhắc
-trong spec thay vì xoay vòng mù màu (LOW-11 — tin DeepSeek xanh dương từng ra
-slide xanh lá). Thứ tự: màu ảnh thật → màu hãng → xoay vòng.
+Cùng bảng `COLOR_RANK` đó còn góp vào **palette của carousel EDU** (Kite). Tin
+DeepSeek xanh dương đã hai lần ra slide xanh lá (LOW-11, LOW-340). Từ LOW-340
+(Ông Chủ 21/09/2026), hãng lớn có **palette riêng** (`render_edu.BRAND_THEME`:
+deepseek, anthropic, gemini, meta, qwen, mistral, nvidia, huggingface,
+perplexity), khoá theo hãng chủ thể của tin, và theme do Kite tự ghi không thắng
+được. Hãng tông đen trắng (OpenAI, xAI, Apple…) không có palette và bỏ qua tầng
+màu hãng. Thứ tự trong `render_edu.pick_theme_auto`: palette hãng → màu ảnh bìa
+thật → màu hãng chưa có palette (theme tâm trạng gần hue nhất) → xoay vòng.
 
 Giãn dòng và khoảng cách kicker đo bằng `_step_line()`, tức là đo **chính các
 dòng sắp vẽ**, không đo bằng chuỗi mẫu `"Ây"`. Tiêu đề tiếng Việt viết hoa trải
