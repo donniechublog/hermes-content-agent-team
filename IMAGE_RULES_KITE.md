@@ -813,6 +813,15 @@ mảng nhìn tách rời:
 - **Không làm tối riêng một mảng** quanh chart để "cho nổi": mảng tối có mép
   thẳng chính là vùng thứ hai.
 
+### 7.0b Màu chữ tương phản TRƯỚC, nền chữ SAU — ảnh nền phẳng (LOW-341, gộp LOW-339)
+
+Ông Chủ 21/09/2026: *"luôn ưu tiên đặt chữ màu tương phản với màu nền trước khi phải dùng
+tới nền chữ"*; ảnh nền phẳng thì *"kéo màu mép ra kín hai bên"*. Luật chung cho mọi vai,
+chi tiết và số đo ở `IMAGE_RULES_DRE.md` §7.0b. Ở Kite, nhánh `phang` của
+`render_edu.image_make_background` đã lấp màu nền của ảnh ra cả thẻ và đổi màu chữ từ
+08/09; chỗ còn hở là ảnh phẳng CAO quá phần trên chữ vẫn bị cắt mép dưới (`set_image`)
+thay vì thu nhỏ vừa — LOW-339, chưa sửa (cần đo lại slide Pirate Face trên máy chủ).
+
 ### 7.1 Ảnh rối: chỉ dùng khi hết ảnh sạch, dùng thì nền chữ đậm hơn (vẫn là overlay)
 
 Ông Chủ 13/09/2026 (LOW-47), nguyên văn: *"không ưu tiên sử dụng tất cả những

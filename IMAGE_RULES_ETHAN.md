@@ -801,6 +801,13 @@ mảng nhìn tách rời:
 - **Không làm tối riêng một mảng** quanh chart để "cho nổi": mảng tối có mép
   thẳng chính là vùng thứ hai.
 
+### 7.0b Màu chữ tương phản TRƯỚC, nền chữ SAU — ảnh nền phẳng (LOW-341)
+
+Ông Chủ 21/09/2026: *"luôn ưu tiên đặt chữ màu tương phản với màu nền trước khi phải dùng
+tới nền chữ"*. Luật chung cho mọi vai, chi tiết và số đo ở `IMAGE_RULES_DRE.md` §7.0b
+(ảnh nền phẳng: khung là màu nền của ảnh, nội dung 90% bề ngang TRÊN chữ, chữ đổi màu,
+không dải mờ/lớp phủ). Thẻ Ethan (`card.py`) CHƯA áp — theo dõi ở LOW-287.
+
 ### 7.1 Ảnh rối: chỉ dùng khi hết ảnh sạch, dùng thì nền chữ đậm hơn (vẫn là overlay)
 
 Ông Chủ 13/09/2026 (LOW-47), nguyên văn: *"không ưu tiên sử dụng tất cả những
