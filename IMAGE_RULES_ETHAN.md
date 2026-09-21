@@ -961,3 +961,13 @@ Bố cục là việc riêng của từng khung, và chúng **phải** khác nha
 
 Ông Chủ đã chốt riêng: **bố cục bìa/hero là thứ đã duyệt** — không áp luật ≤30%
 của carousel lên đó.
+
+---
+
+## LOW-338 (21/09/2026): chữ ≤ 20% khung, nền chữ chỉ là overlay hẹp
+
+Ông Chủ, thẻ Qwen-Image-2.1: nền chữ quá lớn; chữ chỉ chiếm ~20% diện tích, nền chỉ là
+một lớp overlay trên hình. Thẻ quote: cỡ chữ tự hạ tới khi khối quote ≤ `TEXT_MAX_SHARE`
+(20%) chiều cao thẻ. Thẻ tran: vùng chữ `CEILING_TEXTBOX` 40% → 30%, tiêu đề ≤ 20%. Mờ nền
+`QUOTE_BLUR` 56 → 30, dải chuyển tiếp `QUOTE_BLUR_COUNT` 110 → 80.
+
