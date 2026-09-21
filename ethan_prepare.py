@@ -30,6 +30,7 @@ import route_missing_images                                       # noqa: E402
 import role                                                   # noqa: E402
 import manifest_values                                       # noqa: E402
 import state_paths                                            # noqa: E402
+import story_type                                            # noqa: E402
 
 # 1200/750 — nguong kiem_anh_thap cua card.py o kho 4:5. Song o ban dang ky vai
 # vi engine anh cung phai biet no: no la thu quyet dinh mot tam co lam nen hero
@@ -51,7 +52,9 @@ def label_ethan(a: dict) -> tuple:
         if r > RATIO_HERO_MAX:
             ghi.append(f"bảng quá ngang ({r}): thêm \"image2\" ngang cùng tone để ghép dọc")
         return dung, ghi
-    if a["kind"] == "chart":
+    if role.is_brand_logo_card(a):
+        dung.append("THẺ LOGO 4:5 — dùng MỘT MÌNH được làm nền hero (logo nửa trên, chừa sẵn chỗ cho chữ)")
+    elif a["kind"] == "chart":
         dung.append("CHỈ ghép dọc (image2) với một ảnh ngang cùng tone, chart một mình bị chặn")
     elif r > RATIO_HERO_MAX:
         dung.append("ảnh NGANG quá 1.6: CHỈ ghép dọc (image2) với ảnh ngang cùng tone")
@@ -113,6 +116,11 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['not_yet_seen'])} (vision không chạy) — nhãn dưới chỉ là đo "
                  "số, có thể sai; mở contact_sheet.png trước khi dùng.")
     goi_y = []
+    import image_rules_ethan
+    chi_logo_bang = image_rules_ethan.model_story_only(m.get("category"))
+    if chi_logo_bang:
+        L.append("⛔ TIN MODEL/BENCHMARK (luật riêng của Ethan, LOW-337): chỉ dùng THẺ LOGO hoặc BẢNG "
+                 "XẾP HẠNG/BENCHMARK. Ưu tiên logo, rồi tới bảng. Không có cả hai thì báo thiếu ảnh.")
     if m.get("is_ranking_story"):
         L.append(cb.ranking_brief_line(m, "", "ethan_submit"))
     for a in m["images"]:
@@ -121,8 +129,14 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                      f"(nguồn: {a['domain'] or manifest_values.source_label(a['source'])})")
             continue
         dung, ghi = label_ethan(a)
-        if dung[0].startswith("nền hero") and not a.get("faces"):
-            goi_y.append((a.get("bottom_left_brightness", 0), -a.get("short_side", 0), a["id"]))
+        if chi_logo_bang and not image_rules_ethan.model_story_image_ok(a):
+            L.append(f"- {a['id']}: ⛔ TIN MODEL — Ethan chỉ dùng logo/bảng benchmark → KHÔNG DÙNG "
+                     f"({manifest_values.kind_label(a['kind'])}, nguồn: {a['domain'] or manifest_values.source_label(a['source'])})")
+            continue
+        if (dung[0].startswith("nền hero") or role.is_brand_logo_card(a)) and not a.get("faces"):
+            # LOW-337: theo bang story_type (logo > founder > tru so...) truoc, roi moi den do sang.
+            goi_y.append((-story_type.score_by_type(m.get("category"), (a.get("brand_match") or {}).get("kind", "")),
+                          a.get("bottom_left_brightness", 0), -a.get("short_side", 0), a["id"]))
         dong = (f"- {a['id']}: {a['w']}x{a['h']} ({a['ratio']}) {manifest_values.kind_label(a['kind']).upper()} | {'; '.join(dung)}"
                 f" | nguồn: {a['domain'] or manifest_values.source_label(a['source'])}")
         if a.get("description"):
@@ -134,16 +148,15 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         L.append(dong)
     goi_y.sort()
     if goi_y:
-        L.append("Gợi ý nền hero (không chart, không mặt, nửa dưới tối trước): " + ", ".join(g[2] for g in goi_y[:3]))
+        L.append("Gợi ý nền hero (theo thứ tự loại ảnh của bảng, rồi nửa dưới tối; không mặt): " + ", ".join(g[3] for g in goi_y[:3]))
     cap = stackable_pairs_hero(m)
-    import story_type
     L += story_type.line_brief(m)
     if cap:
         L.append("Cặp ghép dọc được (cùng tone, dùng \"image\"+\"image2\"): " + ", ".join("+".join(c) for c in cap))
     L.append(f"Nhìn tất cả ảnh trong MỘT tấm: {m['workdir']}/{state_paths.CONTACT_SHEET_FILE} (mở tối đa một lần, khi thật cần).")
     L += ["", f"## Viết spec vào: {m['workdir']}/spec.json"]
     khung = {
-        "image": (goi_y[0][2] if goi_y else "A?"),
+        "image": (goi_y[0][3] if goi_y else "A?"),
         "card_style": "quote",
         "hook": "<một câu ĐẬP VÀO MẮT trong 3 giây, có dấu, ≤ 120 ký tự: tiêu đề/góc giật có CON SỐ, hoặc lời có thật>",
         "tagline": "<" + " | ".join(TAGLINE_CALL_Y) + ">",

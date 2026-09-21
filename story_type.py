@@ -73,7 +73,9 @@ def standard_type(category) -> str:
 _UU_TIEN_ANH_HANG = ("logo", "founder", "headquarters", "ranking", "stock")
 BOARD_IMAGE_BY_TYPE = {
     "M&A":       ("two_company_pair",) + _UU_TIEN_ANH_HANG,
-    "MODEL":     ("ranking", "announcement_chart", "logo", "founder", "concept"),
+    # LOW-337 (Ong Chu 21/09/2026): tin ve MODEL uu tien logo > benchmark/chart > founder > office.
+    # Qwen-Image-2.1 ra the anh toa nha Alibaba trong khi engine da co san the logo + Jack Ma.
+    "MODEL":     ("logo", "ranking", "announcement_chart", "founder", "headquarters", "concept"),
     "BENCHMARK": ("ranking", "announcement_chart", "logo"),
     "INFRA":     ("infrastructure_concept", "headquarters", "company_country_flag", "logo"),
     "LAB":       _UU_TIEN_ANH_HANG + ("company_country_flag",),
@@ -99,7 +101,9 @@ def is_ranking_story_type(category) -> bool:
     MODEL/BENCHMARK). Khác `late(category, "ranking")`: từ LOW-264 BUSINESS/M&A/
     LAB cũng có `ranking`, nhưng ở cuối bảng, như ảnh BỐI CẢNH của hãng — dùng
     `late` ở chỗ này từng ép mọi tin về một hãng thành tin xếp hạng (LOW-266)."""
-    return order_image(category)[:1] == ("ranking",)
+    # LOW-337: MODEL dat logo len dau nhung van la tin xep hang (ranking o vi tri 2);
+    # BUSINESS/M&A/LAB dat ranking o vi tri 4-5 nen van khong lot vao day (LOW-266).
+    return "ranking" in order_image(category)[:2]
 
 
 # Điểm cộng theo thứ tự trong bảng: vật đứng đầu +100, kế +80, +60, +40, +20,

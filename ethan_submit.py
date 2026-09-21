@@ -27,6 +27,7 @@ import ethan_prepare as eb                                  # noqa: E402
 import submit_common as nc                                       # noqa: E402
 import manifest_values                                       # noqa: E402
 import state_paths                                            # noqa: E402
+import role                                                  # noqa: E402
 import role_spec                                             # noqa: E402
 
 DRAFTS = cb.DRAFTS
@@ -40,7 +41,7 @@ def _check_stack(a: dict, ma: str, ma2, anh: dict, m: dict, loi: list) -> None:
     vai. Chi con giu: chart la chu the (khong bi keo di ghep NEU la xep hang),
     va ghep doc chi hop khi CA HAI anh deu ngang (rang buoc cau truc cua chinh
     co che ghep, khong phai cam doan ve chat luong/nguon)."""
-    can_ghep = a["kind"] == "chart" and not a.get("ranking")
+    can_ghep = a["kind"] == "chart" and not a.get("ranking") and not role.is_brand_logo_card(a)
     if can_ghep and not ma2:
         cap = eb.stackable_pairs_hero(m)
         loi.append(f"{ma} là CHART — card.py chặn một mình. Thêm \"image2\" (cặp gợi ý: "
@@ -49,6 +50,26 @@ def _check_stack(a: dict, ma: str, ma2, anh: dict, m: dict, loi: list) -> None:
         b = anh[ma2]
         if b["ratio"] < 1.2 or a["ratio"] < 1.2:
             loi.append(f"ghép dọc chỉ dành cho hai ảnh NGANG (≥1.2); {ma}={a['ratio']}, {ma2}={b['ratio']}")
+
+
+def _must_use_ranking(m: dict, a: dict) -> bool:
+    """Tin xep hang, engine chup duoc bang, ma anh chinh khong phai bang -> phai doi sang XH.
+    LOW-337: the logo dung TRUOC bang (logo > benchmark), nen the logo khong bi ep doi."""
+    return nc.needs_ranking_image(m, a) and not role.is_brand_logo_card(a)
+
+
+def _check_model_story(anh: dict, ma, ma2, m: dict) -> list:
+    """LOW-337: tin MODEL/BENCHMARK — the Ethan chi dung the logo hoac bang benchmark."""
+    import image_rules_ethan
+    if not image_rules_ethan.model_story_only(m.get("category")):
+        return []
+    sai = [x for x in (ma, ma2) if x in anh and not image_rules_ethan.model_story_image_ok(anh[x])]
+    if not sai:
+        return []
+    dung = [i for i, x in anh.items() if image_rules_ethan.model_story_image_ok(x)]
+    return [f"TIN MODEL/BENCHMARK: {', '.join(sai)} không phải logo hay bảng benchmark. Thẻ Ethan "
+            f"của tin model CHỈ dùng thẻ logo hoặc bảng xếp hạng (dùng được: {', '.join(dung) or 'không có'}"
+            "). Không có thì báo thiếu ảnh, không dùng ảnh toà nhà/founder/ảnh bài báo."]
 
 
 def _check_text(spec: dict, kieu: str, loi: list) -> None:
@@ -126,10 +147,11 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     a = anh[ma]
     # TIN XEP HANG (Ong Chu 06/09/2026): anh chinh PHAI la anh xep hang (ma XH),
     # nhung CHI khi engine da CHUP duoc bang — xem submit_common.needs_ranking_image.
-    if nc.needs_ranking_image(m, a):
+    if _must_use_ranking(m, a):
         loi.append(f"TIN XẾP HẠNG mà \"image\" = {ma} không phải bảng xếp hạng. Dùng \"image\": \"XH\" — "
                    + cb.describe_ranking_image(m) + ".")
     _check_stack(a, ma, ma2, anh, m, loi)
+    loi += _check_model_story(anh, ma, ma2, m)
     # ẢNH KHÔNG LIÊN QUAN BÀI (Ông Chủ bắt lỗi 06/09/2026) — điều kiện dùng chung
     # với Dre (submit_common.irrelevant_images), câu báo của Ethan dài hơn vì Ethan
     # hay đi tìm ảnh khác khi chart bị chặn một mình.
@@ -209,6 +231,8 @@ def main() -> int:
         args.append("--bo-qua-dau")
     if kq.get("cluttered"):
         args.append("--cluttered")
+    if role.is_brand_logo_card(kq["image"]) and not kq["image2"]:
+        args.append("--logo-card")        # LOW-337: the logo 4:5 la hero, khong phai chart di mot minh
     if kq["card_style"] == "quote":
         hook = str(spec["hook"]).strip()
         args += ["--ratio", "4:5", "--title", hook, "--tagline", str(spec["tagline"]).strip().upper(),

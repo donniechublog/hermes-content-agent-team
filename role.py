@@ -456,6 +456,12 @@ def blocked_empty(a: dict, slug: str = "") -> bool:
     return subject_fit.too_empty(a.get("empty_share"), limit)
 
 
+def is_brand_logo_card(a: dict) -> bool:
+    """The logo cua hang (image_brand.card_logo): 4:5, logo dan tren nua tren, chua san cho chu.
+    Kind = chart vi no phang, nhung day la mot the hero dung duoc MOT MINH (LOW-337)."""
+    return bool(a.get("logo_card") and (a.get("brand_match") or {}).get("kind") == "logo")
+
+
 def can_be_hero(slug: str, a: dict) -> bool:
     """Tam anh `a` (mot muc trong manifest) co dung MOT MINH lam ANH CHINH cua
     vai `slug` khong — bia cua bo carousel, hay nen hero cua the card.
@@ -471,7 +477,7 @@ def can_be_hero(slug: str, a: dict) -> bool:
     if not v.ti_le_don_max:
         # Vai xep NHIEU anh: "anh chinh" la tam lam BIA, nhan do classify dan.
         return has_label_cover(a.get("uses"))
-    if a.get("kind") == "chart" and not v.chart_don:
+    if a.get("kind") == "chart" and not v.chart_don and not is_brand_logo_card(a):
         return False
     if float(a.get("ratio") or 0) > v.ti_le_don_max:
         return False

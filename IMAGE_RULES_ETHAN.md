@@ -971,3 +971,21 @@ một lớp overlay trên hình. Thẻ quote: cỡ chữ tự hạ tới khi kh�
 (20%) chiều cao thẻ. Thẻ tran: vùng chữ `CEILING_TEXTBOX` 40% → 30%, tiêu đề ≤ 20%. Mờ nền
 `QUOTE_BLUR` 56 → 30, dải chuyển tiếp `QUOTE_BLUR_COUNT` 110 → 80.
 
+## LOW-337 (21/09/2026): tin MODEL/BENCHMARK — chỉ logo và bảng benchmark
+
+Ông Chủ, thẻ Qwen-Image-2.1: Ethan dùng ảnh toà nhà Alibaba thay vì logo. *"Với tất cả
+thông tin về benchmark model, chỉ dùng 2 thứ là logo và bảng benchmark từ các trang
+benchmark uy tín và twitter của arena.ai ... chính vì thế các designer mới cần bộ rule
+riêng biệt"*. Thứ tự: **logo > bảng benchmark** (rộng hơn cho vai khác: founder > office).
+
+- Luật RIÊNG của Ethan (`image_rules_ethan.MODEL_ONLY_TYPES`, `model_story_image_ok`):
+  tin `MODEL`/`BENCHMARK` chỉ dùng **thẻ logo** (`image_brand.card_logo`) hoặc **ảnh xếp
+  hạng** (`XH`). `ethan_submit._check_model_story` chặn toà nhà, founder, ảnh bài báo; brief
+  đánh dấu ⛔ và chỉ gợi ý hai loại này. Không có cả hai thì báo thiếu ảnh.
+- Thẻ logo 4:5 không còn bị coi là "chart đi một mình": được làm nền hero (`role.is_brand_logo_card`,
+  `card.py --logo-card`), và không bị ép đổi sang `XH` khi engine chụp được bảng thật (logo đứng trước).
+- Bảng chung `story_type.MODEL` đổi thành logo > xếp hạng > chart công bố > founder > trụ sở > khái niệm
+  (Dre/Kite vẫn dùng bảng rộng này, không bị luật hai-thứ ở trên).
+- CÒN THIẾU: logo của chính MODEL (Qwen) — engine quy Qwen về hãng Alibaba nên hiện chỉ có
+  logo Alibaba; và nguồn Twitter của arena.ai chưa có đường lấy.
+
