@@ -786,6 +786,16 @@ def _image_two_tone(w, h, ra, ranh):
     return ra
 
 
+def _line_left(dong):
+    """y -> x trai nhat cua dong. Tu LOW-344 mot dong quote ve theo TUNG KHUC (ten
+    hang to rieng), khong con mot lan `d.text` cho ca dong; dai nen van do tu mep
+    trai dong, nhu truoc."""
+    trai: dict = {}
+    for (x, y), _tx, _mau in dong:
+        trai[y] = min(x, trai.get(y, x))
+    return trai
+
+
 def test_new_line_quote_read_ok_when_background_two_tone():
     """Ranh sang/toi NGANG cat qua khoi chu la ca rat thuong (anh chup co hero
     toi tren, bang trang duoi; anh ghep doc hai tam khac tone). Truoc 06/09/2026
@@ -819,10 +829,11 @@ def test_new_line_quote_read_ok_when_background_two_tone():
                 ImageDraw.ImageDraw.text = ve_goc
             im = Image.open(ra).convert("RGB")
             dong = [(xy, tx, f) for xy, tx, f in da_ve if tx and tx in quote and f]
+            x_dong = _line_left(dong)
             assert len(dong) >= 3, f"khong ghi nhan du dong quote ({len(dong)})"
             for (x, y), tx, mau in dong:
                 # nen = trung vi cua dai chua dong (chu chi chiem thieu so pixel)
-                dai = im.crop((int(x), int(y) + 20, im.width - int(x), int(y) + 95))
+                dai = im.crop((int(x_dong[y]), int(y) + 20, im.width - int(x_dong[y]), int(y) + 95))
                 px = sorted(dai.convert("L").getdata())
                 nen = px[len(px) // 2]
                 assert _cr(mau, (nen,) * 3) >= 4.0, (
@@ -887,9 +898,10 @@ def test_new_line_quote_read_ok_when_has_network_bright_read():
                 ImageDraw.ImageDraw.text = ve_goc
             im = Image.open(ra).convert("RGB")
             dong = [(xy, tx, f) for xy, tx, f in da_ve if tx and tx in quote and f]
+            x_dong = _line_left(dong)
             assert len(dong) >= 3, f"khong ghi nhan du dong quote ({len(dong)})"
             for (x, y), tx, mau in dong:
-                dai = im.crop((int(x), int(y) + 20, im.width - int(x), int(y) + 95))
+                dai = im.crop((int(x_dong[y]), int(y) + 20, im.width - int(x_dong[y]), int(y) + 95))
                 for wx in range(0, dai.width - 90, 30):
                     o = dai.crop((wx, 0, wx + 90, dai.height)).convert("L")
                     px = sorted(o.getdata())
