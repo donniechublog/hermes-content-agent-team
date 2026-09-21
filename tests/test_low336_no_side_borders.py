@@ -309,6 +309,18 @@ def test_flat_bottom_extends_own_background_no_blur():
     assert duoi.getcolors(4) == [(card.W * 600, PAGE)], "phan thieu khong phai mau nen cua chinh anh"
 
 
+def test_cover_without_subject_keeps_logo_corner():
+    """Khong biet chu the -> khung cat giu vung NHIEU CHI TIET (the Xiaomi 21/09: cat giua
+    lam mat chu logo o goc trai)."""
+    import card
+    im = Image.new("RGB", (1200, 800), (200, 90, 30))
+    ImageDraw.Draw(im).rectangle([30, 60, 330, 200], fill=(255, 255, 255))
+    for x in range(40, 320, 18):                             # "chu logo" o goc trai
+        ImageDraw.Draw(im).rectangle([x, 90, x + 8, 170], fill=(10, 10, 10))
+    x0, _, x1, _ = card._cover_window(im, card.W, 1500, (0.5, 0.5, 0.0))
+    assert x0 <= 30 and x1 >= 330, (x0, x1)
+
+
 if __name__ == "__main__":
     ok = 0
     ten = [n for n in dir() if n.startswith("test_")]

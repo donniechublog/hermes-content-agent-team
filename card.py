@@ -701,9 +701,34 @@ def _cover_window(img, box_w, box_h, focus):
         cw, ch = w, round(w * box_h / box_w)
     if sw * w > cw:
         return None
+    if not sw:
+        # Khong biet chu the (anh khong co subject_box/mat): dat khung o cho GIU NHIEU CHI
+        # TIET nhat — chu logo, san pham — thay vi cat giua mu (the Xiaomi 21/09 mat chu
+        # "xiaomi MiMo" o goc trai). Do bang nang luong canh theo cot/hang tren ban nho.
+        cx, cy = _densest_center(img, cw / w, ch / h)
     x0 = min(max(0, round(cx * w - cw / 2)), w - cw)
     y0 = min(max(0, round(cy * h - ch / 2)), h - ch)
     return (x0, y0, x0 + cw, y0 + ch)
+
+
+def _densest_center(img, fw, fh):
+    """Tam (cx, cy) 0..1 cua cua so ti le (fw, fh) chua NHIEU nang luong canh nhat."""
+    nho = img.convert("L").resize((200, max(1, round(200 * img.height / img.width))),
+                                  Image.Resampling.BOX).filter(ImageFilter.FIND_EDGES)
+    w, h = nho.size
+    nho = nho.crop((1, 1, w - 1, h - 1))
+    w, h = nho.size
+
+    def _best(profile, win):
+        if win >= len(profile):
+            return 0.5
+        tong = [sum(profile[i:i + win]) for i in range(len(profile) - win + 1)]
+        i = max(range(len(tong)), key=lambda k: (tong[k], -abs(k - (len(tong) - 1) / 2)))
+        return (i + win / 2) / len(profile)
+
+    cot = list(nho.resize((w, 1), Image.Resampling.BOX).getdata())
+    hang = list(nho.resize((1, h), Image.Resampling.BOX).getdata())
+    return _best(cot, max(1, round(fw * w))), _best(hang, max(1, round(fh * h)))
 
 
 def _fit_cover(img, box_w, box_h):
