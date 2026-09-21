@@ -140,7 +140,57 @@ THEMES = {
                    a="#8FB3FF", b="#F2C94C", stand="#C1C9DC"),   # xanh navy x vang
     "rose":   dict(bg="#1F1721", panel="#2B1F2F", line="#3E2C43",
                    a="#FF7EB6", b="#B892FF", stand="#D2C0CF"),   # hong x tim oai huong
+    # Palette THEO HANG (LOW-340, Ong Chu 21/09/2026): tin DeepSeek (xanh duong
+    # · xam · trang) ra slide xanh la "moss". Tin ve mot hang co mau nhan dien
+    # ro thi palette di theo hang, khong theo tam trang. Chi dung qua
+    # BRAND_THEME (khong tham gia so hue / xoay vong). Mau goc cua hang ghi ben
+    # canh; mau nao thieu tuong phan tren nen toi da tron them trang (giu hue)
+    # cho toi >= 5:1 — tests/test_low340_brand_palettes.py khoa nguong 4.5.
+    "deepseek":    dict(bg="#141821", panel="#1D2330", line="#303848",
+                        a="#7189FE", b="#C3C9D4", stand="#C9CFDA"),  # #4D6BFE x xam x trang
+    "anthropic":   dict(bg="#1F1D1A", panel="#2A2723", line="#3E3A33",
+                        a="#DB7E5F", b="#F0EEE6", stand="#D3CCC0"),  # cam dat Claude #D97757 x nga
+    "gemini":      dict(bg="#141824", panel="#1D2334", line="#2F3850",
+                        a="#4796E3", b="#9D86CD", stand="#C4CBDB"),  # xanh #4796E3 x tim #9177C7
+    "meta":        dict(bg="#121821", panel="#1A2330", line="#2B3648",
+                        a="#2493FC", b="#C5CCD6", stand="#C3CBD8"),  # xanh Meta #0081FB x xam
+    "qwen":        dict(bg="#17162A", panel="#211F38", line="#34314F",
+                        a="#8885F2", b="#C9C6F5", stand="#CCC9E0"),  # tim Qwen #615CED x lavender
+    "mistral":     dict(bg="#1D1611", panel="#29201A", line="#40322A",
+                        a="#FF8205", b="#FFD800", stand="#D6C8BA"),  # cam x vang Mistral
+    "nvidia":      dict(bg="#141612", panel="#1E211A", line="#33382B",
+                        a="#76B900", b="#D0D0D0", stand="#C8CCC0"),  # xanh NVIDIA x xam
+    "huggingface": dict(bg="#1D1A12", panel="#29251A", line="#403A2A",
+                        a="#FFD21E", b="#FF9D00", stand="#D6CDB8"),  # vang x cam Hugging Face
+    "perplexity":  dict(bg="#091717", panel="#122222", line="#1F3535",
+                        a="#20B8CD", b="#FBFAF4", stand="#C2D0CE"),  # ngoc x trang giay
 }
+# 5 theme tam trang: dung cho tin KHONG gan hang co palette — so hue voi anh
+# bia / mau hang, va xoay vong. Palette hang khong vao day: mot tin Microsoft
+# anh xanh khong duoc ra palette Meta chi vi hue gan.
+MOOD_THEMES = ("orbit", "ember", "moss", "ink", "rose")
+# Khoa hang (tuple cua `card._extract_label`) -> palette hang.
+BRAND_THEME = {
+    ("DEEPSEEK",): "deepseek",
+    ("ANTHROPIC",): "anthropic", ("CLAUDE",): "anthropic",
+    ("GOOGLE",): "gemini", ("GEMINI",): "gemini", ("DEEPMIND",): "gemini",
+    ("META",): "meta", ("META", "AI"): "meta", ("LLAMA",): "meta",
+    ("QWEN",): "qwen",
+    ("MISTRAL",): "mistral", ("MISTRAL", "AI"): "mistral",
+    ("NVIDIA",): "nvidia",
+    ("HUGGING", "FACE"): "huggingface",
+    ("PERPLEXITY",): "perplexity",
+}
+# Hang tong chu dao DEN TRANG: khong can palette — nen toi chu trang cua Kite
+# da la tone do (Ong Chu 21/09/2026). Bang mau cua Ethan (`card.COLOR_RANK`)
+# van cho OpenAI xanh la / Kimi xanh duong de to TEN hang, nen phai liet ke;
+# hang co mau xam trong COLOR_RANK thi `is_mono_brand` tu nhan theo do bao hoa.
+MONO_BRANDS = {("OPENAI",), ("CHATGPT",), ("KIMI",), ("MOONSHOT",)}
+# Noi dang model/ma nguon, khong phai chu the: tin "deepseek-ai/... tha trong so
+# tren Hugging Face" la tin DeepSeek. Chi tinh khi khong nhac hang nao khac.
+PLATFORM_BRANDS = {("HUGGING", "FACE"), ("GITHUB",)}
+# Tu khong nam trong `card.BRAND_FROM` (bang cua Ethan, khong doi o day).
+BRAND_ALIAS = {"GPT": ("OPENAI",), "HUGGINGFACE": ("HUGGING", "FACE")}
 HEROES = ("orbit", "grid", "wave", "rings", "graph")   # ten hero SVG tren bia
 
 W, H = 1080, 1350
@@ -1316,7 +1366,10 @@ def _write_theme(out, theme, hero):
         pass
 
 
-THRESHOLD_HUE_OFFSET_COLOR = 0.28    # >nguong nay (vong tron hue, 0..0.5) la LECH TONG
+# >nguong nay (vong tron hue, 0..0.5) la LECH TONG. Tung la 0.28 (~100 do):
+# moss xanh la lech xanh DeepSeek 0.262 van coi la "cung tong", khong mot dong
+# canh bao (LOW-340). 0.15 ~ 54 do: cyan-xanh duong con cung tong, xanh la thi khong.
+THRESHOLD_HUE_OFFSET_COLOR = 0.15
 RATIO_IMAGE_HAS_COLOR = 0.01       # duoi muc nay pixel co mau tren CA TAM -> anh coi nhu khong mau
 RATIO_COLOR_APPLY_INVERT = 0.05       # mau noi bat phai chiem tung nay so pixel DA LOC
 
@@ -1381,30 +1434,79 @@ def offset_hue(rgb, ten: str) -> float:
 
 
 def theme_near_color(rgb) -> str | None:
-    """Ten THEME co mau `a` (accent chinh) GAN NHAT voi `rgb` theo khoang cach
-    hue tren vong tron mau. None neu rgb la None (anh khong co mau ro ret)."""
+    """Ten THEME TAM TRANG co mau `a` (accent chinh) GAN NHAT voi `rgb` theo
+    khoang cach hue tren vong tron mau. None neu rgb la None (anh khong co mau
+    ro ret). Palette hang khong du so hue — xem MOOD_THEMES."""
     if rgb is None:
         return None
-    return min(THEMES, key=lambda ten: offset_hue(rgb, ten))
+    return min(MOOD_THEMES, key=lambda ten: offset_hue(rgb, ten))
+
+
+def subject_brand(texts) -> tuple | None:
+    """Khoa hang CHU THE cua tin: hang dau tien nhac toi trong `texts` (theo
+    thu tu), bo qua noi dang model (PLATFORM_BRANDS) neu con hang khac. None
+    neu khong nhac hang nao.
+
+    Tach `-` `/` `:` `_`, va chu dinh so phien ban, thanh dau cach truoc khi
+    tra: ten model gan nhu luon viet lien ("DeepSeek-V4.1-Flash",
+    "deepseek-ai/...", "Swift-Qwen3.8-27b"), ma `card._extract_label` chi tach
+    theo dau cach nen truot het (LOW-340). Chi tach o day — Ethan to ten hang
+    bang `_extract_label` nguyen ban, khong doi o ticket nay."""
+    import card
+    found = []
+    for text in texts:
+        flat = re.sub(r"[-/:_]+", " ", text or "")
+        flat = re.sub(r"(?<=[A-Za-z])(?=\d)", " ", flat)
+        for word, key in card._extract_label(flat):
+            key = key or BRAND_ALIAS.get(word.strip(card._RIA).upper())
+            if key and key not in found:
+                found.append(key)
+    return next((k for k in found if k not in PLATFORM_BRANDS), found[0] if found else None)
+
+
+def is_mono_brand(key) -> bool:
+    """Hang tong den trang (MONO_BRANDS, hoac mau trong COLOR_RANK gan nhu xam):
+    khong co mau de bam — hue cua mau xam la ngau nhien (xAI (225,225,225) tung
+    ra theme hong 'rose')."""
+    import card
+    import colorsys
+    if key in MONO_BRANDS:
+        return True
+    mau = card._color_of_rank(key)
+    return bool(mau) and colorsys.rgb_to_hsv(*(c / 255 for c in mau))[1] < 0.2
+
+
+def _brand_texts(spec) -> tuple:
+    """Cho do hang chu the, theo thu tu tin cay: `subject` (tieu de tin goc,
+    kite_submit ghi vao tu manifest — chu the luon dung dau) -> folio -> eyebrow
+    -> title cua bia (do vai viet, hay nhac hang khac trong cau so sanh)."""
+    bia = (spec.get("slides") or [{}])[0]
+    return (spec.get("subject"), spec.get("folio"), bia.get("eyebrow"), bia.get("title"))
+
+
+def brand_theme_of(spec) -> tuple:
+    """(palette, khoa_hang) cua hang chu the. palette None khi khong nhac hang,
+    hang den trang, hoac hang chua co palette rieng."""
+    key = subject_brand(_brand_texts(spec))
+    return BRAND_THEME.get(key) if key else None, key
+
+
+def is_brand_theme(theme) -> bool:
+    return theme in THEMES and theme not in MOOD_THEMES
 
 
 def color_rank_within_spec(spec) -> tuple | None:
-    """Mau nhan dien cua hang duoc nhac toi trong spec, hoac None.
+    """Mau nhan dien cua hang CHU THE trong spec, hoac None (khong nhac hang,
+    hoac hang den trang).
 
     Tra cuu CUNG mot bang voi cho to ten hang trong tieu de cua Ethan
     (`card.COLOR_RANK` / `COLOR_PHRASE`) — mot bang mau cho ca doi, khong dung bang
-    thu hai roi de hai cho troi khoi nhau.
-
-    Doc `folio` TRUOC roi moi toi eyebrow/title cua bia: folio la nhan chu de
-    ("GOOGLE ANTIGRAVITY"), gan nhu luon la chinh chu the cua tin, con title
-    thi hay nhac hang khac trong cau so sanh ("... vuot GPT-5")."""
+    thu hai roi de hai cho troi khoi nhau."""
     import card
-    bia = (spec.get("slides") or [{}])[0]
-    for text in (spec.get("folio"), bia.get("eyebrow"), bia.get("title")):
-        mau = card._color_rank_within(text or "")
-        if mau:
-            return mau
-    return None
+    key = subject_brand(_brand_texts(spec))
+    if key is None or is_mono_brand(key):
+        return None
+    return card._color_of_rank(key)
 
 
 def pick_theme_auto(spec, bia_anh=False, anh_mau=None):
@@ -1420,11 +1522,14 @@ def pick_theme_auto(spec, bia_anh=False, anh_mau=None):
     "hình thì tông green, yellow mà slide thì toàn pink purple ko được liên
     quan lắm" — anh that mau CO SAN, theme phai chay theo no).
 
-    THU TU chon mau cho theme (Ong Chu chot 10/09/2026, LOW-11):
-      1. mau NOI BAT cua anh bia that — manh nhat, khong doi duoc;
-      2. mau NHAN DIEN CUA HANG nhac trong spec (`card.COLOR_RANK`) — palette
-         cua slide di cung mau brand, giong cho to ten hang cua Ethan;
-      3. xoay vong cho khoi lap bo truoc — chi khi ca hai tren deu khong co.
+    THU TU chon mau cho theme (Ong Chu chot 21/09/2026, LOW-340 — thay thu tu
+    10/09 cua LOW-11, khi anh bia con dung dau):
+      1. PALETTE CUA HANG CHU THE (BRAND_THEME) — thang ca theme spec tu ghi:
+         tin DeepSeek ma vai ghi "moss" van ra "deepseek";
+      2. mau NOI BAT cua anh bia that;
+      3. mau nhan dien cua hang chua co palette (`card.COLOR_RANK`) -> theme tam
+         trang gan hue nhat; hang den trang thi bo qua tang nay;
+      4. xoay vong 5 theme tam trang cho khoi lap bo truoc.
     Nen mot loat tin cung hang se cung tone: do la y muon, khong phai trui."""
     gan = _theme_near_bottom()
     theme, hero = spec.get("theme"), spec.get("hero")
@@ -1446,19 +1551,26 @@ def pick_theme_auto(spec, bia_anh=False, anh_mau=None):
             return chua[xoay % len(chua)]
         return sorted(ung_vien, key=lambda x: -thu_tu[x])[0]
 
-    rgb = color_say_catch(anh_mau) if (bia_anh and anh_mau) else None
-    nguon = "anh bia"
-    if rgb is None:
-        # Anh bia khong co mau ro ret (hoac bia ve vector): bam MAU NHAN DIEN
-        # CUA HANG duoc nhac toi, thay vi xoay vong mu mau — tin DeepSeek (xanh
-        # #4D6CF7) tung ra slide theme moss xanh la (LOW-11). Tang nay chi do
-        # cho cho VONG XOAY, khong dung tren mau anh that: luat 09/09/2026
-        # "anh that mau co san, theme phai chay theo anh" van thang.
-        rgb = color_rank_within_spec(spec)
-        nguon = "mau hang nhac trong spec"
-    theme_khop_mau = theme_near_color(rgb)
+    locked, key = brand_theme_of(spec)
+    if locked:
+        # Tang 1: theme do vai tu ghi KHONG thang palette hang — canh bao stderr
+        # thi LLM bo qua (bo DeepSeek 21/09 ghi "moss" ma khong ai hay).
+        if theme and theme != locked:
+            print(f"[theme] tin {' '.join(key)} -> {locked} (bo theme={theme} "
+                  "trong spec: palette khoa theo hang chu the)", file=sys.stderr)
+        theme = locked
+        rgb = theme_khop_mau = None
+    else:
+        rgb = color_say_catch(anh_mau) if (bia_anh and anh_mau) else None
+        nguon = "anh bia"
+        if rgb is None:
+            # Anh bia khong co mau ro ret (hoac bia ve vector): bam MAU NHAN
+            # DIEN CUA HANG (chua co palette rieng) thay vi xoay vong mu mau.
+            rgb = color_rank_within_spec(spec)
+            nguon = "mau hang nhac trong spec"
+        theme_khop_mau = theme_near_color(rgb)
     if not theme:
-        theme = theme_khop_mau or it_dung_nhat(list(THEMES), [t for t, _ in gan], seed)
+        theme = theme_khop_mau or it_dung_nhat(list(MOOD_THEMES), [t for t, _ in gan], seed)
     elif theme_khop_mau and theme != theme_khop_mau and offset_hue(rgb, theme) > THRESHOLD_HUE_OFFSET_COLOR:
         # R-r2-3: chi bao khi theme DA CHON lech tong ro (qua nguong), khong
         # phai moi khi no khac theme gan nhat — moss (0.37) vs orbit (0.51)
