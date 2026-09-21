@@ -56,9 +56,12 @@ def model_keys(models: list) -> list:
 
 
 def tweet_matches(text: str, models: list) -> str:
-    """Tên model (đã chuẩn hoá) mà tweet nhắc ĐÚNG, hoặc ''. Biên từ hai phía để
-    'qwen image 2.1' không khớp 'qwen image 2.15'."""
-    vb = _norm(re.sub(r"https?://\S+", " ", text or ""))
+    """Tên model (đã chuẩn hoá) mà ĐOẠN ĐẦU của tweet nhắc ĐÚNG, hoặc ''. Biên từ hai phía để
+    'qwen image 2.1' không khớp 'qwen image 2.15'. Chỉ đoạn đầu (tiêu đề): tweet "Gemini Omni
+    1.1 Flash has landed #1 …" có nhắc "Gemini Omni Flash" ở cuối để SO SÁNH — bảng khoanh bản
+    1.1, không phải bản cũ (đo 21/09/2026)."""
+    dau = re.split(r"\n\s*\n", (text or "").strip(), maxsplit=1)[0]
+    vb = _norm(re.sub(r"https?://\S+", " ", dau))
     for k in model_keys(models):
         if re.search(r"(?<![a-z0-9.])" + re.escape(k) + r"(?![a-z0-9]|\.\d)", vb):
             return k

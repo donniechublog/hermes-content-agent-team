@@ -30,6 +30,13 @@ def test_exact_model_with_version_only():
     assert not arena_x.tweet_matches("Qwen-Image-2.15 preview", m)
 
 
+def test_only_the_headline_counts():
+    t = ("Big news: Gemini Omni 1.1 Flash has landed #1 in the Text-to-Video Arena!\n\n"
+         "For Image-to-Video the release is a strong +25pt improvement from Gemini Omni Flash")
+    assert arena_x.tweet_matches(t, ["Gemini Omni 1.1 Flash"])
+    assert not arena_x.tweet_matches(t, ["Gemini Omni Flash", "Gemini Omni"]), "ban cu chi duoc nhac de so sanh"
+
+
 def test_short_names_without_version_allowed_when_full_has_none():
     assert arena_x.model_keys(["Gemini Omni Flash", "Gemini Omni"]) == ["gemini omni flash", "gemini omni"]
     assert arena_x.model_keys(["GPT-6 Astra (max)", "GPT-6 Astra", "GPT-6"])[-1] == "gpt 6"
