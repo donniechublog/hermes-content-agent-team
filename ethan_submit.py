@@ -76,6 +76,30 @@ def _check_text(spec: dict, kieu: str, loi: list) -> None:
                     loi.append(f"\"highlight\": cụm {cum!r} không có trong title — chép đúng từ trong title")
 
 
+# LOW-336: anh CO CHU (chup trang, bang, chart, anh ghep) giu full be ngang — cat canh la mat
+# tieu de (Ong Chu 03/09/2026). Chi ANH CHUP THUONG moi phu kin the.
+TEXT_SOURCES = ("capture_source", "browser_capture", "ranking", "arxiv_figure", "arxiv_cover")
+TEXT_SUBJECTS = ("screen", "chart", "logo")
+
+
+def cover_focus(a: dict, has_image2: bool):
+    """(cx, cy, rong_chu_the) 0..1 cho `card.py --cover-focus`, hoac None (giu full be ngang).
+
+    Ong Chu 21/09/2026: *"dong nhoe nhoet phia duoi van la diem tru tham my lon"* — anh
+    thuong thap hon the thi phan thieu la dai nen mo. Anh chup thuong duoc phu kin the,
+    cat canh quanh CHU THE: hop mat nguoi (neu co) hoac `subject_box` cua vision."""
+    if has_image2 or a.get("kind") != "photo" or a.get("ranking")             or a.get("source") in TEXT_SOURCES or a.get("subject_kind") in TEXT_SUBJECTS:
+        return None
+    import image_rules_ethan
+    import subject_fit
+    faces = image_rules_ethan.face_boxes(a["original_path"]) if a.get("faces") else None
+    box = subject_fit.head_box(faces) if faces else a.get("subject_box")
+    if not box:
+        return (0.5, 0.5, 0.0)
+    x0, y0, x1, y1 = box
+    return ((x0 + x1) / 2, (y0 + y1) / 2, max(0.0, x1 - x0))
+
+
 def _check_subject_above_quote(spec: dict, kieu: str, a: dict, ma: str, ma2, m: dict) -> list:
     """CHU THE CHINH phai nam TREN khung chu cua the `quote` (LOW-273, Ong Chu 19/09/2026:
     "ko chap nhan nhung hinh nhu the nay o moi designer ... main character dat vua trong
@@ -225,6 +249,9 @@ def main() -> int:
     else:
         hook = str(spec["title"]).strip()
         args += ["--title", hook, "--kicker", str(spec.get("kicker") or "").strip().upper()]
+        tam = cover_focus(kq["image"], bool(kq["image2"]))
+        if tam is not None:
+            args += ["--cover-focus", ",".join(f"{v:.4f}" for v in tam)]
         for cum in spec.get("highlight") or []:
             args += ["--highlight", str(cum).strip()]
     r = subprocess.run(args, cwd=str(ROOT), capture_output=True, text=True, timeout=300)

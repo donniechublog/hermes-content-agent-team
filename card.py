@@ -676,6 +676,22 @@ def _is_source_capture(src) -> bool:
         return image_provenance.is_source_capture(im)
 
 
+def _cover_window(img, box_w, box_h, focus):
+    """Khung cat (x0, y0, x1, y1) de anh PHU KIN box quanh `focus` = (cx, cy, rong_chu_the)
+    ti le 0..1. None neu chu the rong hon khung cat (cat se vao chu the)."""
+    cx, cy, sw = focus
+    w, h = img.size
+    if w / h > box_w / box_h:                  # anh ngang hon the: cat hai canh
+        cw, ch = round(h * box_w / box_h), h
+    else:                                      # anh doc hon: cat tren/duoi
+        cw, ch = w, round(w * box_h / box_w)
+    if sw * w > cw:
+        return None
+    x0 = min(max(0, round(cx * w - cw / 2)), w - cw)
+    y0 = min(max(0, round(cy * h - ch / 2)), h - ch)
+    return (x0, y0, x0 + cw, y0 + ch)
+
+
 def _fit_cover(img, box_w, box_h):
     src_r, box_r = img.width / img.height, box_w / box_h
     if src_r > box_r:
@@ -705,7 +721,7 @@ def _range(nen: float) -> tuple:
             max(22, int(PAD * nen)))     # le duoi
 
 
-def _layer_image(canvas, src_img, H, top_anchor=False) -> int:
+def _layer_image(canvas, src_img, H, top_anchor=False, cover_focus=None) -> int:
     """Lop ANH cua the — dung chung cho CA HAI kieu (`quote` va `full_bleed`).
 
     ANH LUON HIEN FULL BE NGANG, KHONG CAT HAI CANH (Ong Chu bat loi 03/09/2026:
@@ -725,8 +741,19 @@ def _layer_image(canvas, src_img, H, top_anchor=False) -> int:
     chup trang nguon (`top_anchor`) cao hon the thi giu DINH (tit/ten trang nam o
     tren), khong cat giua.
 
+    `cover_focus` (LOW-336, Ong Chu 21/09/2026: *"dong nhoe nhoet phia duoi van la diem
+    tru tham my lon"*): ANH CHUP THUONG (khong chu: la co, toa nha, san pham) thi PHU KIN
+    the, cat bot hai canh quanh tam chu the (x, y 0..1) — khong con dai nen mo. Anh co
+    chu (chup trang, bang, chart) KHONG di nhanh nay: cat canh la mat tieu de (03/09).
+    Chu the rong hon khung cat thi quay ve full be ngang — khong cat vao chu the.
+
     Tra ve `nat_h` — chieu cao tu nhien cua anh o be ngang W.
     """
+    if cover_focus is not None:
+        crop = _cover_window(src_img, W, H, cover_focus)
+        if crop is not None:
+            canvas.paste(src_img.crop(crop).resize((W, H), Image.Resampling.LANCZOS), (0, 0))
+            return H
     canvas.paste(_fit_cover(src_img, W, H).filter(ImageFilter.GaussianBlur(40)), (0, 0))
     nat_h = round(src_img.height * W / src_img.width)
     sac = src_img.resize((W, nat_h), Image.Resampling.LANCZOS)
@@ -1220,7 +1247,7 @@ _RE_EXPORT = (NEGATIVE_FACE_MARK, PHRASE_FACE_MARK, MARK_FORBID)
 
 def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
           brand="donniechublog", bo_qua_dau=False, kieu="quote", kicker="",
-          attrib="", bo_qua_anh=False, nhan_vat="", cluttered=False, highlight=()):
+          attrib="", bo_qua_anh=False, nhan_vat="", cluttered=False, highlight=(), cover_focus=None):
     """Dung the `quote` (mac dinh) hoac `full_bleed`. `src`: mot duong dan, hoac danh
     sach hai duong dan (ghep doc). `title` la cau trich dan (quote) hoac cau
     tieu de (full_bleed). `kieu` nhan ca gia tri cu `tran` (LOW-248, role_spec)."""
@@ -1254,10 +1281,11 @@ def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
     if kieu == "quote":
         return _render_quote(src, title, attrib, out, handle, ratio, tagline, cluttered=cluttered)
     return _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=cluttered,
-                           highlight=highlight)
+                           highlight=highlight, cover_focus=cover_focus)
 
 
-def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, highlight=()):
+def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, highlight=(),
+                    cover_focus=None):
     """The hero TRAN: anh phu kin the, tieu de MOT cau tron ven de len anh
     trong mot khung chu nhat net.
 
@@ -1348,7 +1376,8 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     # Lop anh dung chung voi kieu quote: nen mo phu kin + anh sac full be ngang,
     # mep duoi tan dan. KHONG con nhanh "anh thap -> nen mau dac" (xem _layer_image).
-    _layer_image(canvas, src_img, H, top_anchor=_is_source_capture(src))
+    _layer_image(canvas, src_img, H, top_anchor=_is_source_capture(src),
+                 cover_focus=cover_focus if ratio in RATIOS else None)
     d = ImageDraw.Draw(canvas)
     g1, _g2, g3, g4 = _range(nen)
 
@@ -1496,6 +1525,9 @@ def main():
     p.add_argument("--out", required=True)
     p.add_argument("--cluttered", action="store_true",
                    help="Anh roi (cluttered) buoc phai dung: nen chu dac thay lam mo (LOW-47)")
+    p.add_argument("--cover-focus", default=None,
+                   help="ANH CHUP THUONG: phu kin the, cat canh quanh chu the 'cx,cy,rong' (0..1). "
+                        "Khong dung cho anh co chu (chup trang, bang, chart) — LOW-336")
     p.add_argument("--highlight", action="append", default=[],
                    help="Cum TU KHOA trong tieu de to mau rieng (lap lai duoc; LOW-336). Ten hang da biet "
                         "va ma model (chu lan so) tu to, khong can khai")
@@ -1504,7 +1536,8 @@ def main():
           handle=a.handle, ratio=a.ratio, tagline=a.tagline, brand=a.brand,
           bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker, attrib=a.attrib,
           bo_qua_anh=a.bo_qua_anh, nhan_vat=a.nhan_vat, cluttered=a.cluttered,
-          highlight=a.highlight)
+          highlight=a.highlight,
+          cover_focus=tuple(float(v) for v in a.cover_focus.split(",")) if a.cover_focus else None)
 
 
 if __name__ == "__main__":

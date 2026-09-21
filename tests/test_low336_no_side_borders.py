@@ -266,6 +266,36 @@ def test_card_text_box_background_is_flat_over_blotchy_image():
         assert phai.stddev[0] < 12, f"nen trong khung chu loang lo: stddev {phai.stddev[0]:.1f}"
 
 
+def test_plain_photo_fills_card_no_blur_band():
+    """Ong Chu 21/09: *"dong nhoe nhoet phia duoi van la diem tru tham my lon"* (la co, toa
+    nha, Xiaomi). Anh chup THUONG thap hon the -> phu kin the quanh chu the, khong con dai
+    nen mo; chu the rong hon khung cat -> quay ve full be ngang (khong cat vao chu the)."""
+    import card
+    card.set_brand("donniechublog")
+    photo = _noise_photo(600, 400)                        # 3:2 -> nat_h 800/1500
+    c1 = Image.new("RGBA", (card.W, 1500))
+    card._layer_image(c1, photo, 1500, cover_focus=(0.4, 0.5, 0.3))
+    c0 = Image.new("RGBA", (card.W, 1500))
+    card._layer_image(c0, photo, 1500)
+    band = (0, 1150, card.W, 1450)
+    assert _col_energy_band(c1.convert("RGB"), *band[1::2]) > 20, "anh thuong van con dai nen mo"
+    assert _col_energy_band(c0.convert("RGB"), *band[1::2]) < 20
+    # Chu the rong 90% anh > khung cat (2/3 * 0.8 = 53%) -> khong cat, giu full be ngang.
+    assert card._cover_window(photo, card.W, 1500, (0.5, 0.5, 0.9)) is None
+
+
+def test_cover_only_for_plain_photos():
+    import ethan_submit
+    photo = {"kind": "photo", "source": "brand", "original_path": "x"}
+    assert ethan_submit.cover_focus(photo, False) == (0.5, 0.5, 0.0)
+    got = ethan_submit.cover_focus({**photo, "subject_box": [0.2, 0.1, 0.6, 0.9]}, False)
+    assert all(abs(a - b) < 1e-9 for a, b in zip(got, (0.4, 0.5, 0.4))), got
+    for khong in ({**photo, "source": "capture_source"}, {**photo, "kind": "chart"},
+                  {**photo, "ranking": {"kind": "table"}}, {**photo, "subject_kind": "screen"}):
+        assert ethan_submit.cover_focus(khong, False) is None, khong
+    assert ethan_submit.cover_focus(photo, True) is None, "anh ghep doc giu full be ngang"
+
+
 if __name__ == "__main__":
     ok = 0
     ten = [n for n in dir() if n.startswith("test_")]
