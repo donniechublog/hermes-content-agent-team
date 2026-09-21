@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+"""LOW-336 (21/09/2026) — luat khung CHUNG moi vai designer: khong vien hai ben,
+khong cat sat vao noi dung.
+
+Ong Chu, the Ethan task #02 (anh chup trang HuggingFace la mot dai hep giua hai
+mang den, day sat khung tit): *"Ethan lam anh van bi vien hai ben va cat qua sat
+vao text"*, roi *"nguyen tac anh nay la chung cho moi role designer, ko bao gio de
+vien 2 ben, cung ko cat sat vao noi dung"*.
+
+Goc: `capture_page.count_background` cat bot hai canh (dut chu o mep) roi DEM DEN
+tam chup trang nguon thanh 4:5 — mang den la pixel that, di vao the Ethan va slide
+Dre. Do tren 10 ban dem that o may chu: ca 10 co mang dac 1.7–12.5% moi ben.
+
+Chay:  venv/bin/python tests/test_low336_no_side_borders.py
+"""
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from PIL import Image, ImageDraw  # noqa: E402
+
+import capture_page  # noqa: E402
+import image_provenance  # noqa: E402
+import image_rules_common  # noqa: E402
+import image_rules_dre  # noqa: E402
+import image_rules_ethan  # noqa: E402
+
+TEXT = (20, 20, 20)
+PAGE = (250, 250, 250)
+
+
+def _page(w, h, blocks, margin=0):
+    """Trang gia: nen trang, cac KHOI dong chu (thanh ngang den mong, cach deu)
+    tai [(y0, y1), ...]; `margin` = le trong hai ben (ti le be ngang)."""
+    im = Image.new("RGB", (w, h), PAGE)
+    d = ImageDraw.Draw(im)
+    x0, x1 = int(w * margin) + 8, w - int(w * margin) - 8
+    for y0, y1 in blocks:
+        for y in range(y0, y1, 30):
+            for x in range(x0, x1, 23):                     # "chu": cac net rieng le
+                d.rectangle([x, y, x + 15, y + 16], fill=TEXT)
+    return im
+
+
+def _noise_photo(w, h):
+    import random
+    rnd = random.Random(7)
+    im = Image.new("RGB", (w, h))
+    im.putdata([(rnd.randrange(40, 220), rnd.randrange(40, 220), rnd.randrange(40, 220))
+                for _ in range(w * h)])
+    return im
+
+
+def _old_padded(photo):
+    """Dung dang ban `count_background` cu: anh giua, mang DEN hai ben va duoi."""
+    c = Image.new("RGB", (1080, 1350), (0, 0, 0))
+    p = photo.resize((800, 800))
+    c.paste(p, (140, 60))
+    return c
+
+
+# ---- Phep do vien -----------------------------------------------------------------
+
+def test_side_bars_measured_on_old_padding_not_on_real_photo():
+    pad = _old_padded(_noise_photo(300, 300))
+    co, mo_ta = image_rules_common.has_side_bars(pad)
+    assert co, mo_ta
+    assert not image_rules_common.has_side_bars(_noise_photo(540, 675))[0]
+    # Anh mot mau la anh RONG (cong rieng), khong bao nham la vien.
+    assert not image_rules_common.has_side_bars(Image.new("RGB", (500, 600), (0, 0, 0)))[0]
+
+
+def test_gate_side_bars_blocks_every_role_but_exempts_logo_card():
+    pad = _old_padded(_noise_photo(300, 300))
+    for mod in (image_rules_dre, image_rules_ethan):
+        loi, _ = mod.check_side_bars("A1", pad)
+        assert loi and "VIEN" in loi[0], mod.__name__
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / "logo.png"
+        pad.save(p, pnginfo=image_provenance.stamp_provenance("logo_card"))
+        assert image_rules_dre.check_side_bars("L", Image.open(p)) == ([], [])
+
+
+# ---- Nguon: tam chup giu ti le tu nhien, chi bo phan TRONG ----------------------
+
+def test_capture_keeps_full_width_and_trims_only_empty_margins():
+    """Le trang 10% moi ben la VIEN cua chinh trang nguon -> got; cot co chu
+    (ke ca net ngoai cung) khong duoc mat."""
+    src = _page(1000, 700, [(40, 300), (380, 640)], margin=0.10)
+    with tempfile.TemporaryDirectory() as t:
+        vao, ra = Path(t) / "in.png", Path(t) / "out.png"
+        src.save(vao)
+        w, h = capture_page.frame_source_capture(vao, ra)
+        out = Image.open(ra)
+        assert image_provenance.is_source_capture(out)
+        assert not image_rules_common.has_side_bars(out)[0], image_rules_common.has_side_bars(out)[1]
+        assert h == 700, "day sach thi khong duoc cat"
+        # Noi dung rong 1000 - 2*108 = 784px: khong mat cot nao, le da got gan het.
+        assert 784 <= w <= 1000 * 0.86, w
+
+
+def test_capture_bottom_cut_through_a_line_steps_back_to_quiet_row():
+    """Clip dung giua mot dong chu (day bi cat ngang) -> lui ve khe trong."""
+    src = _page(1000, 700, [(40, 300), (380, 700)])        # khoi duoi tran het day
+    im = image_rules_common.trim_busy_bottom(src)
+    assert im.height < 700
+    e = image_rules_common.row_energy(im)
+    assert max(e[-3:]) <= image_rules_common.QUIET_ROW_ENERGY, "day moi phai la hang trong"
+
+
+def test_quiet_cut_prefers_gap_between_blocks_over_gap_between_lines():
+    """Tit hai dong ngay tren moc: cat giua hai dong cua tit la sai (con mot dong
+    lung lung) — phai cat o khoang trong GIUA HAI KHOI, truoc ca cum tit."""
+    im = _page(1000, 1000, [(40, 500), (620, 680)])       # khoi than, roi tit 2 dong
+    y = image_rules_common.quiet_cut_row(im, 400, 670)
+    assert 510 <= y <= 620, y
+
+
+# ---- Renderer: full be ngang, lop sac dung TREN vung chu --------------------------
+
+def _capture_file(tmp, im):
+    p = Path(tmp) / "cap.png"
+    im.save(p, pnginfo=image_provenance.stamp_provenance("source_capture"))
+    return p
+
+
+def _col_energy_band(img, y0, y1):
+    e = image_rules_common.row_energy(img.crop((0, y0, img.width, y1)))
+    return max(e) if e else 0
+
+
+def test_card_capture_full_width_and_stops_above_text_frame():
+    import card
+    # Trang VUONG kin chu tu tren xuong day: ban cu cho no chay xuong duoi khung tit.
+    src = _page(1000, 1000, [(20, 330), (400, 700), (760, 1000)])
+    with tempfile.TemporaryDirectory() as t:
+        p = _capture_file(t, src)
+        out = Path(t) / "card.png"
+        card.build(str(p), "Tiêu đề thử nghiệm cho thẻ trần", str(out), ratio="4:5",
+                   kieu="full_bleed", kicker="MODEL RELEASE", brand="dcgr", bo_qua_anh=True)
+        im = Image.open(out).convert("RGB")
+        assert not image_rules_common.has_side_bars(im)[0], image_rules_common.has_side_bars(im)[1]
+        H = im.height
+        split = H - int(H * card.CEILING_TEXTBOX)
+        # Mot dai ngay tren khung chu: KHONG con net chu sac cua trang (chi nen mo).
+        y1 = split + card.PAD - card.CEILING_FRAME_PAD - card.CAPTURE_TEXT_GAP
+        assert _col_energy_band(im, y1 - 30, y1) < 20, "lop sac cua trang con chay sat xuong khung chu"
+        # Nguoc lai phan tren the van la chu sac (khong bi thu nho vao giua).
+        assert _col_energy_band(im, 60, 300) > 20
+
+
+def test_carousel_cover_capture_not_cover_cropped_and_no_bars():
+    import carousel
+    src = _page(1400, 700, [(40, 320), (400, 660)])        # anh chup NGANG
+    d = ImageDraw.Draw(src)
+    d.rectangle([4, 100, 30, 600], fill=(220, 20, 20))       # dau do sat MEP TRAI trang
+    with tempfile.TemporaryDirectory() as t:
+        p = _capture_file(t, src)
+        out = Path(t) / "cover.png"
+        carousel.build_cover(str(p), "Hook thu nghiem", "LABEL", str(out), handle="@x")
+        im = Image.open(out).convert("RGB")
+        assert not image_rules_common.has_side_bars(im)[0], image_rules_common.has_side_bars(im)[1]
+        # Cover-crop cu cat hai canh -> mat dau do; full be ngang thi dau do o cot
+        # 0..25 (anh ngang dat giua vung tren: y0 = (0.6H - 540) / 2 = 135, dau do 212..597).
+        do = [im.getpixel((x, 400)) for x in range(0, 30)]
+        assert any(r > 180 and g < 80 for r, g, _ in do), "bia cat mat mep trai cua anh chup"
+
+
+def test_carousel_body_capture_no_bars():
+    import carousel
+    src = _page(1000, 1000, [(20, 330), (400, 1000)])
+    with tempfile.TemporaryDirectory() as t:
+        p = _capture_file(t, src)
+        out = Path(t) / "body.png"
+        carousel.build_body(str(p), "Chu slide than.", "@x", str(out))
+        im = Image.open(out).convert("RGB")
+        assert not image_rules_common.has_side_bars(im)[0]
+        top = carousel.TEXT_BASE - carousel.TEXT_MAX_H
+        assert _col_energy_band(im, top - 40, top - 10) < 20, "chu sac cua trang chay xuong vung chu"
+
+
+if __name__ == "__main__":
+    ok = 0
+    ten = [n for n in dir() if n.startswith("test_")]
+    for n in ten:
+        try:
+            globals()[n]()
+            ok += 1
+        except AssertionError as e:
+            print(f"FAIL {n}: {e}")
+    print(f"{ok}/{len(ten)} test qua")
+    sys.exit(0 if ok == len(ten) else 1)

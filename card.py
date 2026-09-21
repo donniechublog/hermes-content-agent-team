@@ -28,6 +28,8 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
+import image_provenance
+import image_rules_common
 import image_rules_ethan
 import role_spec
 import text_bg
@@ -64,6 +66,10 @@ W = 1200                          # bề ngang cố định
 # la phan chu thich; cho nao thua thi tra cho anh chu khong don vao textbox.
 CEILING_TEXTBOX = 0.40
 PAD = 44
+# LOW-336: anh chup trang nguon dung TREN vung chu mot khoang ho, va cat o hang trong
+# tim trong [CAPTURE_CUT_MIN * moc, moc] — khong bao gio de lop sac chay duoi chu.
+CAPTURE_TEXT_GAP = 36
+CAPTURE_CUT_MIN = 0.55
 
 # ---- Thuong hieu ----------------------------------------------------------
 # Bo cuc, font va moi rang buoc bo cuc GIU NGUYEN giua cac thuong hieu — day la
@@ -590,6 +596,7 @@ def _block_standard_image(src, nhan_vat=""):
             w, h = im.size
             rgb = im.convert("RGB")
             for l, c in (image_rules_ethan.check_blank_image(nhan, rgb),
+                         image_rules_ethan.check_side_bars(nhan, im),
                          image_rules_ethan.check_resolution(nhan, w, h),
                          image_rules_ethan.check_unnamed_face(nhan, q, nhan_vat),
                          image_rules_ethan.check_duplicate(nhan, q, da_thay)):
@@ -643,6 +650,15 @@ def _open_image(src):
     return Image.open(src).convert("RGB")
 
 
+def _is_source_capture(src) -> bool:
+    """Mot tam duy nhat va la anh chup trang nguon (dau `source_capture`, LOW-336)."""
+    duong = [q for q in (src if isinstance(src, (list, tuple)) else [src]) if q]
+    if len(duong) != 1:
+        return False
+    with Image.open(duong[0]) as im:
+        return image_provenance.is_source_capture(im)
+
+
 def _fit_cover(img, box_w, box_h):
     src_r, box_r = img.width / img.height, box_w / box_h
     if src_r > box_r:
@@ -672,7 +688,7 @@ def _range(nen: float) -> tuple:
             max(22, int(PAD * nen)))     # le duoi
 
 
-def _layer_image(canvas, src_img, H) -> int:
+def _layer_image(canvas, src_img, H, content_bottom=None) -> int:
     """Lop ANH cua the — dung chung cho CA HAI kieu (`quote` va `full_bleed`).
 
     ANH LUON HIEN FULL BE NGANG, KHONG CAT HAI CANH (Ong Chu bat loi 03/09/2026:
@@ -687,11 +703,21 @@ def _layer_image(canvas, src_img, H) -> int:
     kieu full_bleed cung da ghi la phai dung nen mo. Hai duong ve cho cung mot viec la
     cach mot ban sua duoc mot nua.
 
+    `content_bottom` (LOW-336, chi cho ANH CHUP TRANG NGUON): hang cuoi cung lop SAC
+    duoc cham toi — tren vung chu mot khoang ho. Anh chup la chu/giao dien; de no
+    chay xuong duoi khung chu thi chu cua the de len chu cua trang, doc ra "cat
+    sat vao noi dung" (Ong Chu 21/09/2026). Cao hon moc do thi CAT TAI MOT HANG
+    TRONG (`image_rules_common.quiet_cut_row`) — giua hai khoi, khong ngang dong.
+
     Tra ve `nat_h` — chieu cao tu nhien cua anh o be ngang W.
     """
     canvas.paste(_fit_cover(src_img, W, H).filter(ImageFilter.GaussianBlur(40)), (0, 0))
     nat_h = round(src_img.height * W / src_img.width)
     sac = src_img.resize((W, nat_h), Image.Resampling.LANCZOS)
+    if content_bottom is not None and nat_h > content_bottom:
+        cut = image_rules_common.quiet_cut_row(sac, int(content_bottom * CAPTURE_CUT_MIN), content_bottom)
+        sac = sac.crop((0, 0, W, cut))
+        nat_h = cut
     if nat_h > H:
         top = (nat_h - H) // 2
         canvas.paste(sac.crop((0, top, W, top + H)), (0, 0))
@@ -715,7 +741,10 @@ def _layer_image(canvas, src_img, H) -> int:
     # man toi, ma cho lop SAC TAN dan vao lop nen mo qua mot dai ngan ket thuc
     # dung tai nat_h. Dung smoothstep (dao ham bang 0 o CA HAI dau) nen khong
     # sinh mep moi o dau dai — mot dai chuyen muot thay cho mot duong ke.
-    dai = max(1, min(int(nat_h * 0.16), 180))
+    # Anh chup da cat o hang TRONG: mep la mot dai nen phang, chi can tan ngan —
+    # dai 16% se lam mo chinh dong chu cuoi cua trang.
+    dai = (image_rules_common.cut_fade(nat_h) if content_bottom is not None
+           else max(1, min(int(nat_h * 0.16), 180)))
     mat_na = Image.new("L", (W, nat_h), 255)
     for y in range(dai):
         t = (y + 1) / dai
@@ -1002,10 +1031,12 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", cluttered=
     # goc, chi mo). Lop sac: anh nguyen ti le, full W, dat sat tren (chu quote
     # nam duoi). Anh cao hon khung thi chi cat theo chieu doc, giu tron be
     # ngang. Dong nhip voi carousel._body_image.
-    _layer_image(canvas, src_img, H)
-
     d = ImageDraw.Draw(canvas)
     g = _quote_geometry(d, quote, attrib, handle, H)
+    # Anh chup trang nguon dung TREN khung quote (va chip ten kenh cam o net tren).
+    _layer_image(canvas, src_img, H,
+                 content_bottom=(min(g.frame_top, g.frame_top - g.chip_h // 2) - CAPTURE_TEXT_GAP
+                                 if _is_source_capture(src) else None))
     FRAME_X, TEXT_X, CHIP_INSET = g.FRAME_X, g.TEXT_X, g.CHIP_INSET
     f_q, q_lines, buoc, tren = g.f_q, g.q_lines, g.buoc, g.tren
     f_at, at_lines, at_lh, at_h = g.f_at, g.at_lines, g.at_lh, g.at_h
@@ -1269,7 +1300,12 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False):
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     # Lop anh dung chung voi kieu quote: nen mo phu kin + anh sac full be ngang,
     # mep duoi tan dan. KHONG con nhanh "anh thap -> nen mau dac" (xem _layer_image).
-    _layer_image(canvas, src_img, H)
+    # Anh chup trang nguon dung TREN vung chu (LOW-336): moc la net tren som nhat
+    # co the cua khung chu (`frame_top` ben duoi >= split + g1 - CEILING_FRAME_PAD vi
+    # can giua doc chi day cum chu XUONG). Ti le tu do thi chu da nam DUOI anh.
+    _layer_image(canvas, src_img, H,
+                 content_bottom=(split + _range(nen)[0] - CEILING_FRAME_PAD - CAPTURE_TEXT_GAP
+                                 if ratio in RATIOS and _is_source_capture(src) else None))
     d = ImageDraw.Draw(canvas)
     g1, _g2, g3, g4 = _range(nen)
 

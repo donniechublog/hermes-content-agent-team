@@ -59,6 +59,8 @@ from PIL import Image, ImageDraw, ImageFilter
 # Tai dung nguyen xi cac helper da kiem chung cua card.py thay vi viet lai:
 # nap font co truc bien thien, wrap chu, contain/cover anh, cong chan tieng Viet.
 import card
+import image_provenance
+import image_rules_common
 import image_rules_dre
 import role_spec
 import text_bg
@@ -484,7 +486,27 @@ def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False, ov
     canvas.paste(lop, (0, 0), _ramp_mask(top_y, full_y, hi=int(do), ease=VEIL_EASE))
 
 
-def _body_image(canvas, img):
+def _is_source_capture(path) -> bool:
+    """Anh chup trang nguon (dau `source_capture`, LOW-336)."""
+    try:
+        with Image.open(path) as im:
+            return image_provenance.is_source_capture(im)
+    except OSError:
+        return False
+
+
+def _bottom_fade(w, h):
+    """Mat na tan ngan o mep duoi lop sac (smoothstep, nhu card._layer_image): mep
+    cat da nam o hang trong nen chi can mot dai ngan de khong thanh duong ke."""
+    dai = image_rules_common.cut_fade(h)
+    mask = Image.new("L", (w, h), 255)
+    for y in range(dai):
+        t = (y + 1) / dai
+        mask.paste(int(255 * (1 - t * t * (3 - 2 * t))), (0, h - dai + y, w, h - dai + y + 1))
+    return mask
+
+
+def _body_image(canvas, img, content_bottom=None):
     """Phu anh len canvas, KHONG cho nao la nen den tro va KHONG BAO GIO de lo
     HAI VUNG rieng biet (Ong Chu chot 04/09/2026):
 
@@ -512,6 +534,14 @@ def _body_image(canvas, img):
     nh = round(img.height * scale)
     resized = img.resize((W, nh), Image.Resampling.LANCZOS)
     y0 = 0
+    if content_bottom is not None and nh > content_bottom:
+        # LOW-336: anh chup trang nguon khong chay xuong duoi chu — cat o HANG TRONG
+        # (giua hai khoi), khong cat ngang dong chu cua trang. Xem card._layer_image.
+        cut = image_rules_common.quiet_cut_row(resized, int(content_bottom * card.CAPTURE_CUT_MIN),
+                                               content_bottom)
+        resized, nh = resized.crop((0, 0, W, cut)), cut
+        canvas.paste(resized, (0, 0), _bottom_fade(W, nh))
+        return cover
     if nh > H:                                    # cao hon khung: cat giua doc, full be ngang
         top = (nh - H) // 2
         resized = resized.crop((0, top, W, top + H))
@@ -533,7 +563,10 @@ def build_body(img_path, text, handle, out, cluttered=False, report=None, logo_b
         canvas.paste(_open(img_path).convert("RGB").resize((W, H)), (0, 0))
         base = None
     else:
-        base = _body_image(canvas, _open(img_path))
+        # Anh chup trang nguon dung tren dinh cao nhat co the cua khoi chu (LOW-336).
+        base = _body_image(canvas, _open(img_path),
+                           content_bottom=(TEXT_BASE - TEXT_MAX_H - card.CAPTURE_TEXT_GAP
+                                           if _is_source_capture(img_path) else None))
     truoc_nen = canvas.copy() if report is not None else None
 
     # Do khoi chu TRUOC (tran 30%), NEO TU DUOI: mep duoi luon o TEXT_BASE, chu
@@ -604,9 +637,7 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, repo
     quote. MAU: net khung + brand text CO DINH xanh Apple; DAU " doi theo hang
     duoc nhac. Duoi khung: chip ten kenh canh trai, roi dong nguon canh giua sat day."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    base = _body_image(canvas, _open(img_path))
-    truoc_nen = canvas.copy() if report is not None else None
-    d = ImageDraw.Draw(canvas)
+    d = ImageDraw.Draw(canvas)            # do chu truoc; anh dan sau khi biet frame_top (LOW-336)
 
     FRAME_X, TEXT_X, avail = Q_FRAME_X, Q_TEXT_X, Q_AVAIL
 
@@ -631,6 +662,12 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, repo
     last_line_bottom = frame_bottom - BOX_PAD_Y
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
+
+    # Anh chup trang nguon dung TREN khung quote va chip ten kenh cam o net tren.
+    base = _body_image(canvas, _open(img_path),
+                       content_bottom=(frame_top - 30 - card.CAPTURE_TEXT_GAP
+                                       if _is_source_capture(img_path) else None))
+    truoc_nen = canvas.copy() if report is not None else None
 
     # Chi them lop khi do THAT can (xem _layer_if_can). Overlay neo o DONG CHU DAU
     # (LOW-286), khong phai dinh khung: truoc day tu frame_top nen nen chu phu ~47% khung.
@@ -679,14 +716,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
     'MODEL RELEASE' / 'MODEL UPDATE'...) + chip label trang (ten model/hang).
     Ten kenh chi xuat hien tren cac slide than."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    if cluttered:
-        # Anh roi lam bia (LOW-47): KHONG cover-crop — cat hai canh la mat chu
-        # khoa o mep (do that A9: "NVIDIA" cut). Hien NGUYEN be ngang nhu slide than.
-        cover = _body_image(canvas, _open(img_path))
-    else:
-        cover = _fit_cover(_open(img_path), W, H).convert("RGB")
-        canvas.paste(cover, (0, 0))
-    d = ImageDraw.Draw(canvas)
+    d = ImageDraw.Draw(canvas)            # do hook truoc; anh dan sau khi biet y (LOW-336)
     # Nhan nho o duoi cung; hook nam ngay tren nhan.
     label = (label or "").strip().upper()          # category -> chip, viet hoa
     y_label = None
@@ -705,6 +735,17 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
         d, [hook], W - 2 * PAD, int(H * 0.5), HOOK_HI, HOOK_LO,
         weight=HOOK_WEIGHT, lead=HOOK_LEAD)
     y = hook_bottom - total
+    capture = _is_source_capture(img_path)
+    if cluttered or capture:
+        # Anh roi lam bia (LOW-47): KHONG cover-crop — cat hai canh la mat chu
+        # khoa o mep (do that A9: "NVIDIA" cut). Hien NGUYEN be ngang nhu slide than.
+        # Anh chup trang nguon cung vay (LOW-336): cover-crop cat hai canh vao chu
+        # cua trang; lop sac dung TREN hook.
+        cover = _body_image(canvas, _open(img_path),
+                            content_bottom=(y - card.CAPTURE_TEXT_GAP) if capture else None)
+    else:
+        cover = _fit_cover(_open(img_path), W, H).convert("RGB")
+        canvas.paste(cover, (0, 0))
     # Do vi tri hook TRUOC roi moi quyet dinh co can lop khong (xem
     # _layer_if_can) — the tich category/label o duoi la chip dac, tu doc duoc,
     # khong can lop bao ve.
@@ -827,6 +868,7 @@ def _gate_image(paths):
 
         collect(image_rules_dre.check_crop_landscape(nhan, img, w, h_px, muc.get("crop_ok")))
         collect(image_rules_dre.check_resolution(nhan, w, h_px))
+        collect(image_rules_dre.check_side_bars(nhan, img))            # LOW-336
         collect(image_rules_dre.check_unnamed_face(nhan, p, muc.get("subject")))
         collect(image_rules_dre.check_repeated_subject_portrait(nhan, p, muc, da_subject))
         # LOW-267: tep ghep co 2 mat nen cong tren bo qua — kiem tung tam thanh phan.

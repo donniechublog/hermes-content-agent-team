@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CHỤP MÀN HÌNH NHIỀU BÁO CÙNG TIN, đệm nền cùng màu trang gốc — mỗi tấm là MỘT slide.
+"""CHỤP MÀN HÌNH NHIỀU BÁO CÙNG TIN, mỗi tấm là MỘT slide (LOW-336: giữ tỉ lệ tự nhiên, không đệm).
 
 Ông Chủ 13/09/2026, đưa 6 ảnh chụp 6 báo khác nhau cùng một tin TSMC: *"ai nói
 với bạn là chỉ được chụp từ một trang nguồn duy nhất... 1 article hot thì có
@@ -39,31 +39,18 @@ def _temp(tmp: Path, w, h, mau=(200, 30, 30)):
     return p
 
 
-def test_image_landscape_count_background_into_frame_4_5_use_alone():
-    """Tấm chụp ngang 1200x500 -> 4:5, phần thừa tô đúng màu nền trang."""
+def test_image_landscape_keep_natural_ratio_no_padding():
+    """LOW-336: tam chup NGANG giu ti le tu nhien — khong dem mau thanh 4:5 nua
+    (vien dem la pixel that, di vao the/slide thanh vien hai ben)."""
     from PIL import Image
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t)
         vao = _temp(tmp, 1200, 500)
         ra = tmp / "ra.png"
-        w, h = capture_page.count_background(vao, ra, "rgb(18, 18, 20)")
-        assert abs(w / h - 0.8) < 0.01, f"phai la 4:5, duoc {w}x{h}"
-        im = Image.open(ra).convert("RGB")
-        assert im.getpixel((5, 5)) == (18, 18, 20), "goc tren phai la MAU NEN cua trang"
-        assert im.getpixel((w // 2, h - 5)) == (18, 18, 20), "day cung la mau nen"
-
-
-def test_image_over_height_ok_try_small_fit_frame_no_got_crop():
-    from PIL import Image
-    with tempfile.TemporaryDirectory() as t:
-        tmp = Path(t)
-        vao = _temp(tmp, 900, 3000)
-        ra = tmp / "ra.png"
-        w, h = capture_page.count_background(vao, ra, "#ffffff")
-        assert abs(w / h - 0.8) < 0.01
-        im = Image.open(ra).convert("RGB")
-        # anh goc mau do phai con nguyen ven ben trong, khong bi cat mat
-        assert im.getpixel((w // 2, h // 2)) == (200, 30, 30)
+        w, h = capture_page.frame_source_capture(vao, ra)
+        assert (w, h) == (1200, 500), f"khong duoc dem/cat, duoc {w}x{h}"
+        import image_provenance
+        assert image_provenance.is_source_capture(Image.open(ra))
 
 
 def test_round_capture_keep_new_temp_no_use_cell_temp_mark():
@@ -71,21 +58,9 @@ def test_round_capture_keep_new_temp_no_use_cell_temp_mark():
     vong = src[src.index("def _round_capture_source"):src.index("def _round_concept")]
     assert "MAX_PAGE_CAPTURE" in vong
     assert "\n        break\n" not in vong, "khong duoc break sau tam dau — carousel can nhieu slide"
-    assert "count_background" in vong, "phai dem nen cung mau trang truoc khi classify"
+    assert "frame_source_capture(tam, moi)" in vong, "phai lam sach mep + dong dau truoc khi classify"
+    assert "capture_page.count_background(" not in vong, "LOW-336: khong dem vien nua"
     assert "other_outlets_bing" in vong, "kho URL mong thi phai tu hoi them bao cung tin"
-
-
-def test_count_background_capture_source_is_black_no_take_color_page_source():
-    """Ong Chu 13/09/2026: dem bang mau trang cua trang nguon tao khoang trang
-    lac long voi anh chinh (nhieu anh nguon nen toi/den), buoc carousel.py phu
-    them lop mo (_layer_if_can) len tren de chu doc duoc - chinh la "vet nhat".
-    Dem DEN co dinh: khop voi nen toi cua carousel va voi nen anh, khong con
-    khoang trang, khong can lop phu."""
-    src = (ROOT / "prepare" / "fallback_rounds.py").read_text(encoding="utf-8")
-    vong = src[src.index("def _round_capture_source"):src.index("def _round_concept")]
-    assert 'count_background(tam, moi, "#000000")' in vong, (
-        "phai dem nen DEN co dinh, khong sample mau nen (thuong la trang) "
-        "cua trang nguon")
 
 
 def test_ceiling_capture_enough_wait_one_carousel():

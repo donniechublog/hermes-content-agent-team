@@ -830,6 +830,29 @@ thoại chạy app ở slide 5 và 6). Cổng riêng `submit_common.check_same_p
 
 ---
 
+## 6c. Không viền hai bên, không cắt sát nội dung — luật CHUNG mọi vai (LOW-336, 21/09/2026)
+
+Ông Chủ, sau thẻ Ethan chụp trang HuggingFace ra một dải hẹp giữa hai mảng đen: *"nguyên
+tắc ảnh này là chung cho mọi role designer, ko bao giờ để viền 2 bên, cũng ko cắt sát vào
+nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE/ETHAN/KITE.md` — sửa một thì sửa cả ba.
+
+- **Ảnh chụp trang nguồn giữ tỉ lệ tự nhiên, không đệm.** `capture_page.frame_source_capture`
+  chỉ bỏ phần TRỐNG ở mép (đáy cắt ngang dòng chữ thì lùi về hàng trống; lề đặc hai bên của
+  chính trang thì gọt) và đóng dấu `source_capture`. Không cắt hai cạnh vào nội dung, không tô màu
+  đệm. Bản đệm đen 4:5 cũ (`count_background`, 13/09) đã bỏ: mảng đen là pixel thật, đi vào thẻ/slide
+  thành viền hai bên — đo trên 10 bản đệm thật: cả 10 có mảng đặc 1.7–12.5% mỗi bên.
+- **Renderer luôn dán ảnh FULL BỀ NGANG**; phần khung còn thiếu là chính ảnh đó làm mờ
+  (`card._layer_image`, `carousel._body_image`) — Kite vẫn theo luật riêng (nền palette, §7).
+  Bìa Dre là ảnh chụp nguồn thì KHÔNG cover-crop (cover-crop cắt hai cạnh vào chữ của trang).
+- **Ảnh chụp nguồn dừng TRÊN vùng chữ**, cắt tại dải trống dài nhất trong vùng cho phép
+  (`image_rules_common.quiet_cut_row`) — ranh giới giữa hai khối (ảnh | chú thích | tít), không
+  bao giờ cắt ngang một dòng, và khối nào còn thì còn trọn. Khoảng hở `card.CAPTURE_TEXT_GAP`.
+- **Cổng pixel**: `check_side_bars` (mỗi module vai, đo bằng `image_rules_common.has_side_bars`)
+  chặn ảnh đầu vào có mảng màu đặc ≥ 1.5% bề ngang chạy suốt hai bên. Thẻ logo / thẻ xếp hạng dự
+  phòng được miễn (nền đặc phủ kín là chính thiết kế của chúng). Ảnh `source_capture` được miễn
+  cổng tỉ lệ 4:5..1:1 và cổng chart (§1.2b2: ảnh chụp nguồn được làm bìa).
+- Test: `tests/test_low336_no_side_borders.py`.
+
 ## 7. Không bao giờ để ra hai vùng riêng biệt
 
 ### 7.0 Chữ ~20% khung, nền chữ CHỈ là overlay (LOW-286 — luật trên hết của mục này)
