@@ -1018,5 +1018,8 @@ của Ethan. đó là lý do vì sao chúng ta cần tách một số phần tro
   "via …") không tự thành tiêu đề được, vai phải viết lại `title` + `kicker`.
 - Brief, task body, SOUL (`hermes/profiles/shared/ethan.SOUL.md`) và skill `hero-image` chỉ
   còn kiểu khung chữ nhật. Cổng chống trôi: `tests/test_low343_card_style_by_role.py`.
+- Thẻ khung chữ nhật của Ethan LUÔN khoá 4:5 (Ông Chủ 21/09/2026: *"không gian cần lớn hơn, hiện
+  đang bị quá hẹp so với toàn cảnh"*): tỉ lệ tự do cho vùng chữ vừa khít chữ (13–16% thẻ); khoá 4:5
+  thì vùng chữ lấy `CEILING_TEXTBOX` (30%), tiêu đề nở tới `TEXT_MAX_SHARE` (20%).
 - `card.py` vẫn giữ `_render_quote` (chưa gỡ): không vai nào của `card.py` còn dùng nó,
   gỡ hay giữ phải hỏi Ông Chủ trước.

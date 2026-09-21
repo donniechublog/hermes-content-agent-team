@@ -50,6 +50,13 @@ def test_ethan_prompts_do_not_offer_quote():
     assert "phong cách của Dre" in skill
 
 
+
+def test_ethan_full_bleed_is_locked_4_5():
+    """Ong Chu 21/09/2026: "khong gian can lon hon" — ti le tu do bop vung chu con 13-16% the."""
+    src = _read("ethan_submit.py")
+    assert 'args += ["--ratio", "4:5", "--title", hook, "--kicker"' in src
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca
     chay_tat_ca(globals())
