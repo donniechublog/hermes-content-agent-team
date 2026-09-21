@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""LOW-338 (21/09/2026) — the quote/tran cards: text block <= 20% of card height, overlay narrow.
+"""LOW-342 (21/09/2026) — the quote/tran cards: text block <= 20% of card height, overlay narrow.
 
 Ong Chu, the Qwen-Image-2.1 cards: text background too big; text only ~20% of the area,
-background just an overlay layer. Run:  python tests/test_low338_card_text_share.py
+background just an overlay layer. Run:  python tests/test_low342_card_text_share.py
 """
 import sys
 from pathlib import Path

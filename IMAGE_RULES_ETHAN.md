@@ -964,7 +964,7 @@ của carousel lên đó.
 
 ---
 
-## LOW-338 (21/09/2026): chữ ≤ 20% khung, nền chữ chỉ là overlay hẹp
+## LOW-342 (21/09/2026): chữ ≤ 20% khung, nền chữ chỉ là overlay hẹp
 
 Ông Chủ, thẻ Qwen-Image-2.1: nền chữ quá lớn; chữ chỉ chiếm ~20% diện tích, nền chỉ là
 một lớp overlay trên hình. Thẻ quote: cỡ chữ tự hạ tới khi khối quote ≤ `TEXT_MAX_SHARE`

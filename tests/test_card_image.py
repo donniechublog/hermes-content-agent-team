@@ -172,7 +172,7 @@ def test_card_ceiling_no_remaining_network_background_solid_cell_bottom():
 
 
 def test_card_ceiling_has_frame_text_most_net():
-    """Ong Chu chot 07/09/2026: co khung (LOW-338: vung chu 30% the, khung tu ~70%). Net doc cua khung la mot cot pixel
+    """Ong Chu chot 07/09/2026: co khung (LOW-342: vung chu 30% the, khung tu ~70%). Net doc cua khung la mot cot pixel
     gan nhu khong doi mau — anh (ke ca da lam mo) thi khong bao gio nhu vay."""
     import card
     with tempfile.TemporaryDirectory() as t:

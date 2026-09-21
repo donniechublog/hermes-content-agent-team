@@ -63,7 +63,7 @@ W = 1200                          # bề ngang cố định
 # Tran chieu cao textbox khi ti le bi khoa. Anh la noi dung chinh, textbox chi
 # la phan chu thich; cho nao thua thi tra cho anh chu khong don vao textbox.
 CEILING_TEXTBOX = 0.30
-TEXT_MAX_SHARE = 0.20                     # LOW-338: khoi chu (khong tinh le/chip) <= 20% chieu cao the
+TEXT_MAX_SHARE = 0.20                     # LOW-342: khoi chu (khong tinh le/chip) <= 20% chieu cao the
 PAD = 44
 
 # ---- Thuong hieu ----------------------------------------------------------
@@ -923,7 +923,7 @@ def _quote_geometry(d, quote, attrib, handle, H):
     avail_w = W - 2 * TEXT_X
 
     # Cau trich dan — giu nguyen HOA/thuong (khong .upper() nhu tieu de).
-    # LOW-338: khoi quote chi chiem <= 20% chieu cao the — co chu ha dan toi khi vua.
+    # LOW-342: khoi quote chi chiem <= 20% chieu cao the — co chu ha dan toi khi vua.
     for size_hi in range(QUOTE_SIZE_HI, QUOTE_SIZE_LO - 1, -2):
         f_q, q_lines = _fit_text(d, quote, avail_w, max_lines=QUOTE_MAX_LINES,
                                  hi=size_hi, lo=size_hi, path=F_QUOTE)
