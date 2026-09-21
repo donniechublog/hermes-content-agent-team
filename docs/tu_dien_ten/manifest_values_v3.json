@@ -28,7 +28,8 @@
     "bang-ghep": "table-stitched",
     "danh-sach": "list",
     "the": "card",
-    "danh-sach-ghep": "list-stitched"
+    "danh-sach-ghep": "list-stitched",
+    "tweet-arena": "x_post"
   },
   "brand_match.kind": {
     "anh": "photo",

@@ -13,9 +13,9 @@ mục BẮT BUỘC, đối chiếu, đánh số, viết báo cáo, gửi topic. 
 ứng viên một dòng mỗi tin với số thứ tự, mục bắt buộc và khung tệp nộp.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python scan_prepare.py --vai finn   # 1. đọc brief
+cd /home/dc-group/content-team && venv/bin/python scan_prepare.py --vai finn   # 1. đọc brief
 # 2. viết picks.json vào đúng đường dẫn brief in ra (tối đa 8 tin, chọn bằng số thứ tự #k)
-cd /home/donniechu/content-team && venv/bin/python scan_submit.py --vai finn        # 3. nộp
+cd /home/dc-group/content-team && venv/bin/python scan_submit.py --vai finn        # 3. nộp
 ```
 
 Không tin nào đạt 50 điểm thì bước 3 chạy với `--khong-co`. Ngoài ba lệnh trên
@@ -43,7 +43,7 @@ x.com và instagram.com chặn khách chưa đăng nhập, nên tải trang th�
 Giờ có: skill `social-crawl`, chạy ĐÚNG một dòng, đường dẫn tuyệt đối:
 
 ```bash
-/home/donniechu/content-team/venv/bin/python /home/donniechu/content-team/hermes/skills/social-crawl/scripts/social_fetch.py "<link>"
+/home/dc-group/content-team/venv/bin/python /home/dc-group/content-team/hermes/skills/social-crawl/scripts/social_fetch.py "<link>"
 ```
 
 Trả về nguyên văn bài, tác giả, số liệu tương tác, thread và reply. Mất 10–40

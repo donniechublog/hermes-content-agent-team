@@ -25,9 +25,9 @@ và trắng là hai màu ưu tiên. Spec có `"background_tone": "dark"` (màn t
 ## Luồng
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python dre_prepare.py <id>   # 1. brief
+cd /home/dc-group/content-team && venv/bin/python dre_prepare.py <id>   # 1. brief
 # 2. viết spec.json vào đường dẫn brief in ra
-cd /home/donniechu/content-team && venv/bin/python dre_submit.py <id>        # 3. nộp
+cd /home/dc-group/content-team && venv/bin/python dre_submit.py <id>        # 3. nộp
 ```
 
 Brief in ảnh đã tải với mã A1, A2…, cột "ảnh là", nhãn dùng được ở đâu, cặp ghép,

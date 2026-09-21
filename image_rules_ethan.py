@@ -313,6 +313,24 @@ EMPTY_SHARE_MAX = 0.60
 # hop mat/hop vision). Ethan quote: khung + chip ten kenh DE LEN anh (card._quote_geometry).
 SUBJECT_TEXT_TOLERANCE = 0.02
 
+# LOW-337 (Ong Chu 21/09/2026): *"voi tat ca thong tin ve benchmark model, chi dung 2 thu la
+# logo va bang benchmark tu cac trang benchmark uy tin va twitter cua arena.ai ... chinh vi the
+# cac designer moi can bo rule rieng biet"*. Luat RIENG cua Ethan (the mot anh): tin model /
+# benchmark khong dung toa nha, founder, anh bai bao — chi the logo hoac bang xep hang.
+# Dre/Kite (carousel nhieu slide) khong ap luat nay.
+def model_story_only(category) -> bool:
+    """Tin nay co bi gioi han 'chi logo model + bang benchmark' cho Ethan khong."""
+    import story_type
+    return story_type.is_model_story(category)
+
+
+def model_story_image_ok(a: dict) -> bool:
+    """Anh dung duoc cho the Ethan cua tin model: bang xep hang, hoac the logo CUA MODEL
+    (khong phai logo hang me — Qwen chu khong Alibaba)."""
+    import role
+    return bool(a.get("ranking")) or (role.is_brand_logo_card(a)
+                                      and bool((a.get("brand_match") or {}).get("model_logo")))
+
 
 def face_boxes(path):
     """Hop MAT nguoi trong anh, toa do 0..1 — dat chu the nguoi tren vung chu (LOW-273).

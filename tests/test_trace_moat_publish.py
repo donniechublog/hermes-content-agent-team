@@ -434,18 +434,26 @@ def test_intake_unreadable_draft_never_reaches_moat():
         h.__exit__()
 
 
-def test_repost_one_platform_PIN_is_swallowed_by_the_already_pushed_guard():
-    """PIN (nghi la loi): nut "Dang lai Facebook" (approve_post._bottom_again_moat)
-    goi intake(platforms=[...], external_id=<moi>) tren bai DA co workflow_id —
-    cong "da day truoc do" tra ve truoc, KHONG co request nao toi moat, va nhanh
-    `moat_history` khong bao gio chay."""
+def test_repost_one_platform_di_toi_moat_du_da_co_workflow_id():
+    """Nut "Dang lai Facebook" (approve_post._bottom_again_moat) goi
+    intake(platforms=[...], external_id=<moi>) tren bai DA co workflow_id.
+
+    Truoc 19/09/2026 cong "da day truoc do" nuot cu nay: khong request nao toi
+    moat, bam bao nhieu lan cung chi thay "da day truoc do" (gap that khi dang
+    lai Facebook bi mat anh). Cong do gio CHI chan cu day MAC DINH
+    (external_id is None and platforms is None), nen cu nay di toi moat that,
+    sinh workflow moi va day workflow cu xuong `moat_history`."""
     h = _harness()
     try:
         _pushed(h, "r1", reported={"t-facebook": "failed", "t-instagram": "published"})
         out = mp.intake("r1", platforms=["facebook_post"], external_id="r1-lai2")
-        assert out == (True, "da day truoc do"), out
-        assert _http(h) == []
-        assert "moat_history" not in h.read_draft("r1")
+        assert out == (True, "da xep 1 task publish"), out
+        body = h.trace.of("http")[0][1]["body"]
+        assert body["externalId"] == "r1-lai2", body
+        assert body["platforms"] == ["facebook_post"], body
+        d = h.read_draft("r1")
+        assert d["moat"]["workflow_id"] == "wf-r1-lai2", d["moat"]
+        assert [m["external_id"] for m in d["moat_history"]] == ["r1"]
     finally:
         h.__exit__()
 

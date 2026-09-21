@@ -21,7 +21,10 @@ dan theo thoi gian.
 
 Vi sao cron chu khong phai threading.Timer: lich phai song sot systemctl
 restart, OOM va mat dien. Con tro + publish_at nam tren dia, nen may tat ba
-tieng roi bat lai thi tick dau tien dang bu het bai qua gio.
+tieng roi bat lai thi hang doi van duoc dang bu -- nhung RAI RA, moi tick
+mot bai va cach nhau dung GAP_SECONDS (xem `run_due`). Bu DON tung lam
+channel ra 13 bai trong 15 phut toi 20/09/2026, dung cai file nay sinh ra
+de chan.
 
 Toan bo ly do va cac luat da chot: docs/publish_schedule.md
 """
@@ -47,9 +50,16 @@ DRAFTS = ROOT / "drafts"
 # doc duoc "tu bao gio" trong git log.
 GAP_SECONDS = 3600
 
+# Dung sai khi do nhip giua hai lan dang THAT. Cron chay moi phut nen lan
+# dang truoc luon tre vai giay so voi gio hen; tru khoan nay di thi bai ke
+# tiep khong bi day lui them vai giay moi lan, don lai thanh vai phut sau
+# mot ngay.
+GAP_TOLERANCE_SECONDS = 120
+
 # Trang thai draft ma file nay them vao vong doi cu (draft/publishing/published/
 # publish_failed/rejected).
 SCHEDULED = "scheduled"          # da duyet, dang cho toi gio
+LAST_PUBLISH_KEY = "last_publish"   # moc lan dang THAT gan nhat, cung file con tro
 CANCELLED = "cancelled"          # Ong Chu huy lich truoc khi toi gio
 
 
@@ -80,15 +90,35 @@ def _locked(name):
             fcntl.flock(fh, fcntl.LOCK_UN)
 
 
-def _read_cursor():
+def _read_state():
+    """Ca file trang thai. Doc ca cum chu khong tung khoa: `reserve` va
+    `run_due` ghi hai khoa khac nhau vao CUNG mot file, ai ghi de nguyen
+    file la xoa moc cua ben kia."""
     try:
         d = json.loads(_state_file(state_paths.PUBLISH_SCHEDULE_FILE)
                        .read_text(encoding="utf-8"))
-        return int(d.get("last_slot") or 0)
+        return d if isinstance(d, dict) else {}
     except Exception:                                    # noqa: BLE001
         # Chua co file, file hong, hoac khoa lac kieu -- coi nhu hang trong.
         # Mat con tro chi lam bai ke tiep dang som hon, khong lam hong gi.
-        return 0
+        return {}
+
+
+def _read_cursor():
+    return int(_read_state().get("last_slot") or 0)
+
+
+def _read_last_publish():
+    """Epoch cua lan dang THAT gan nhat (0 = chua dang bao gio)."""
+    return int(_read_state().get(LAST_PUBLISH_KEY) or 0)
+
+
+def _write_last_publish(now):
+    with _locked(state_paths.PUBLISH_SLOT_LOCK):
+        d = _read_state()
+        d[LAST_PUBLISH_KEY] = int(now)
+        moat_publish._write_json(
+            _state_file(state_paths.PUBLISH_SCHEDULE_FILE), d)
 
 
 def reserve(now=None):
@@ -99,9 +129,11 @@ def reserve(now=None):
     """
     now = int(now if now is not None else time.time())
     with _locked(state_paths.PUBLISH_SLOT_LOCK):
-        slot = max(now, _read_cursor() + GAP_SECONDS)
+        d = _read_state()
+        slot = max(now, int(d.get("last_slot") or 0) + GAP_SECONDS)
+        d["last_slot"] = slot
         moat_publish._write_json(
-            _state_file(state_paths.PUBLISH_SCHEDULE_FILE), {"last_slot": slot})
+            _state_file(state_paths.PUBLISH_SCHEDULE_FILE), d)
     return slot
 
 
@@ -229,12 +261,12 @@ def publish_one(draft_id):
                     else "⚠️ Đăng lỗi: " + str(res.get("description")))
             if ok:
                 # Chi day khi Telegram DA nhan: bai chua len channel la bai
-                # chua duyet xong. Loi ben moat chi them mot dong vao the.
+                # chua duyet xong. Loi ben moat chi them mot line vao the.
                 pushed, why = moat_publish.intake(draft_id)
                 note += ("\n\U0001f4e4 moat: " + why) if pushed else ("\n⚠️ moat: " + why)
                 if not pushed:
                     # Nut cua the bi go ngay sau day, nen loi moat nam trong
-                    # `note` la mot dong chu chet. Mot tin RIENG co nut de
+                    # `note` la mot line chu chet. Mot tin RIENG co nut de
                     # con nguoi ra tay bat cu luc nao.
                     moat_publish.report_card(
                         draft_id,
@@ -252,23 +284,47 @@ def publish_one(draft_id):
             return False, "⚠️ Đăng lỗi: " + type(e).__name__ + ": " + str(e)
 
 
+def _publish_with_card(draft_id):
+    """Dang mot bai + sua the. Tra (ok, line ban ghi)."""
+    ok, note = publish_one(draft_id)
+    _finish_card(draft_id, note)
+    return ok, ("✅ " if ok else "⚠️ ") + draft_id + ": " + note.replace("\n", " | ")
+
+
 def run_due(now=None, brand=None):
-    """Dau vao cua cron `publish-due`: dang moi bai da toi gio, tra ve cac dong
+    """Dau vao cua cron `publish-due`: dang moi bai da toi gio, tra ve cac line
     ban ghi. Im lang khi khong co gi -- cron chay moi phut.
 
     KHONG giu khoa quanh ca vong lap: `publish_one` tu khoa tung bai, nen mot
     bai upload lau khong chan nut "Duyet" cua bai khac (khoa slot la khoa
     khac).
     """
+    now = int(now if now is not None else time.time())
     lines = []
+    queue = []
     for draft_id in due(now=now, brand=brand):
-        ok, note = publish_one(draft_id)
-        _finish_card(draft_id, note)
-        lines.append(("✅ " if ok else "⚠️ ") + draft_id + ": "
-                     + note.replace("\n", " | "))
+        try:
+            teaser = _is_teaser(_read_draft(draft_id))
+        except Exception:                                 # noqa: BLE001
+            teaser = False          # doc khong duoc thi cu coi la bai thuong
+        if teaser:
+            lines.append(_publish_with_card(draft_id)[1])
+            continue
+        queue.append(draft_id)
+
+    # Chi MOT bai moi nhip. Khong co dieu kien nay thi mot khoang chet
+    # (20/09/2026: ca ngay vi chuyen may) lam moi bai qua han cung luc va
+    # tick dau tien day het len channel trong vai phut.
+    if queue and now - _read_last_publish() >= GAP_SECONDS - GAP_TOLERANCE_SECONDS:
+        ok, line = _publish_with_card(queue[0])
+        lines.append(line)
+        # Chi ghi moc khi Telegram DA nhan: dang loi thi tick sau phai duoc
+        # thu lai ngay, khong phai cho them mot tieng.
+        if ok:
+            _write_last_publish(now)
     return lines
 
 
 if __name__ == "__main__":
-    for dong in run_due():
-        print(dong)
+    for line in run_due():
+        print(line)

@@ -40,18 +40,18 @@ Link: {link}
 Chu de: {title}
 Tom tat: {summary}
 
-NHIEM VU: dung MOT the anh (hero, mac dinh kieu quote/HOOK 4:5) cho tin nay,
+NHIEM VU: dung MOT the anh (hero, kieu full_bleed: khung chu nhat) cho tin nay,
 thuong hieu {brand}. Phan CO HOC — tim anh that, tai, do, cat/ghep, cong chan,
 dung the, gui Telegram, ban giao cho Miles — DA LA SCRIPT (da chay nen tu luc
-Ong Chu chon tin). Viec cua ban chi co MOT: chon anh theo ma va viet cau hook.
+Ong Chu chon tin). Viec cua ban chi co MOT: chon anh theo ma va viet tieu de.
 Lam dung BA BUOC, khong them lenh nao khac.
 
 BUOC 1 — doc ban chuan bi (anh da tai + xu ly san, tu lieu, khung spec):
 cd {goc} && venv/bin/python ethan_prepare.py {draft_id}
 
 BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1. Chi
-dien MA ANH (A1, A2...) va CHU (hook, tagline, attrib; hoac title+kicker cho
-kieu full_bleed). KHONG tai anh, KHONG crop, KHONG mo tung anh, KHONG chay
+dien MA ANH (A1, A2...) va CHU (title + kicker; kieu full_bleed la kieu DUY NHAT
+cua Ethan, quote la phong cach cua Dre). KHONG tai anh, KHONG crop, KHONG mo tung anh, KHONG chay
 article_images.py/card.py/send_telegram.py tay. Chu tieng Viet co dau.
 
 BUOC 3 — nop:

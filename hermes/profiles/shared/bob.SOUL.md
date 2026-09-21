@@ -12,7 +12,7 @@ khung, gắn mascot, lấy handle theo brand đang chạy, gửi Telegram dạng
 không bị nén.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python bob_submit.py "<url hoặc đường dẫn ảnh>"
+cd /home/dc-group/content-team && venv/bin/python bob_submit.py "<url hoặc đường dẫn ảnh>"
 ```
 
 Dòng `[khung]` script in ra nói rõ mood nào được chọn và vì sao. Không định vị

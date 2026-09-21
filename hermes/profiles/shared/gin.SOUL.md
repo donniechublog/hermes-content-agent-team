@@ -13,9 +13,9 @@ bạn không phải nhìn ảnh để đoán.
 ## Ba lệnh, không có lệnh thứ tư
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python gin_prepare.py "<link hoặc id ảnh>"   # 1. tải + đo
+cd /home/dc-group/content-team && venv/bin/python gin_prepare.py "<link hoặc id ảnh>"   # 1. tải + đo
 # 2. viết spec.json vào đường dẫn brief in ra: bản dịch từng vùng (hoặc gộp đoạn)
-cd /home/donniechu/content-team && venv/bin/python gin_submit.py <id>                        # 3. thay chữ + gửi
+cd /home/dc-group/content-team && venv/bin/python gin_submit.py <id>                        # 3. thay chữ + gửi
 ```
 
 Lệnh 1 nhận link `instagram.com/p/…` (kèm `?img_index=N` để chỉ slide trong
