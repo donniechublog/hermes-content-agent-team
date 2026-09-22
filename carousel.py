@@ -527,7 +527,7 @@ def _is_source_capture(path) -> bool:
         return False
 
 
-def _body_image(canvas, img):
+def _body_image(canvas, img, keep_top=False):
     """Phu anh len canvas, KHONG cho nao la nen den tro va KHONG BAO GIO de lo
     HAI VUNG rieng biet (Ong Chu chot 04/09/2026):
 
@@ -562,6 +562,14 @@ def _body_image(canvas, img):
         # Anh NGANG (chart/bang "chart": true) thap hon vung anh: dat vao GIUA
         # vung tren (0..~60% cao, tren scrim chu) thay vi dinh mep tren.
         y0 = max(0, (int(H * 0.6) - nh) // 2)
+    # LOW-364 (`keep_top`, bia): dinh anh (tieu de chart/trang) nam trong dai bi cat 1:1. Dinh la
+    # nen phang thi ha anh xuong vung an toan, dai tren la chinh mau dinh keo dai (mot mat phang).
+    # Chi bia: slide than ha anh xuong thi anh ghep duoi bi chu che them (cong LOW-215).
+    top_color = card._flat_top_color(resized) if keep_top and y0 < FLAT_TOP else None
+    if top_color is not None:
+        resized = resized.crop((0, 0, W, min(resized.height, H - FLAT_TOP)))
+        canvas.paste(top_color, (0, 0, W, FLAT_TOP))
+        y0 = FLAT_TOP
     canvas.paste(resized, (0, y0))                # lop sac uncropped len tren nen cover
     return cover
 
@@ -936,7 +944,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
         # Anh roi lam bia (LOW-47): KHONG cover-crop — cat hai canh la mat chu
         # khoa o mep (do that A9: "NVIDIA" cut). Hien NGUYEN be ngang nhu slide than.
         # Anh chup trang nguon cung vay (LOW-336): cover-crop cat hai canh vao chu cua trang.
-        cover = _body_image(canvas, img)
+        cover = _body_image(canvas, img, keep_top=True)
     else:
         cover = _fit_cover(img, W, H).convert("RGB")
         canvas.paste(cover, (0, 0))

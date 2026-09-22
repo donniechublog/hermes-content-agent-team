@@ -854,9 +854,11 @@ thuộc vào hình lúc publish nữa"*. Cùng một nội dung ở cả ba tệ
   tên kênh góc dưới-trái slide thân, **dòng nguồn quote** ngay dưới khung. Dòng nguồn không kéo
   vào: kéo vào thì khối chữ quote dài lên cao thêm ~45px và nền chữ vượt trần LOW-286 (§7.0, 42%
   khung) — đo 0.424. Luật §7.0 đứng trên.
-- **Ảnh chụp trang** (`source_capture`) thẻ Ethan: đỉnh trang có viền phẳng (6 hàng sát mép cùng
-  một màu) thì hạ ảnh xuống vùng an toàn, dải trên là chính màu đó kéo dài — một mặt phẳng liền
-  (§7). Đỉnh không phẳng thì giữ như cũ, không đặt một dải màu lạ lên trên.
+- **Ảnh đặt từ mép trên** — thẻ Ethan (ảnh chụp trang, bảng xếp hạng, mọi ảnh thấp hơn thẻ) và
+  bìa Dre đi đường full bề ngang: đỉnh ảnh có viền phẳng (6 hàng sát mép cùng một màu) thì hạ ảnh
+  xuống vùng an toàn, dải trên là chính màu đó kéo dài — một mặt phẳng liền (§7). Đỉnh không phẳng
+  thì giữ như cũ, không đặt một dải màu lạ lên trên. Slide thân Dre không hạ (ảnh ghép dưới sẽ bị
+  chữ che thêm — cổng LOW-215).
 - **Cổng hình học** `safe_zone.gate` trong từng hàm vẽ (`card._render_ceiling`, `card._render_quote`,
   `carousel.build_cover` / `build_body` / `build_body_quote`): nội dung trên ra ngoài vùng an toàn
   thì dừng — lỗi CODE bố cục, không phải spec. Test đo trên pixel: `tests/test_instagram_safe_zone.py`.

@@ -114,6 +114,23 @@ def test_ethan_source_capture_top_moves_into_safe_zone():
         assert a[:safe_zone.top(1200, 1500)].min() > 245, "dai tren khong phai mau nen trang"
 
 
+def test_ethan_ranking_table_top_moves_into_safe_zone():
+    """Anh bang xep hang (KHONG mang dau source_capture, thap hon the): the Grok 4.7 that van
+    dat hang tieu de bang o y=0 sau ban dau — nhanh ha dinh chi nhin anh chup trang."""
+    tab = Image.new("RGB", (1200, 1000), (255, 255, 255))
+    d = ImageDraw.Draw(tab)
+    d.rectangle([0, 20, 1200, 60], fill=(20, 20, 20))
+    for k in range(15):
+        d.rectangle([40, 100 + k * 55, 1160, 120 + k * 55], fill=(120 + k, 120, 140))
+    with tempfile.TemporaryDirectory() as t:
+        out = str(Path(t) / "r.png")
+        card.build(_save(tab, t, "tab.png"), TITLE, out, ratio="4:5", brand="dcgr",
+                   kieu="full_bleed", kicker="BENCHMARK", bo_qua_anh=True)
+        a = np.asarray(Image.open(out).convert("L"), dtype=np.float32)
+        header_rows = [y for y in range(600) if a[y, 100:1100].mean() < 60]
+        assert header_rows and header_rows[0] >= safe_zone.top(1200, 1500), header_rows[:1]
+
+
 def test_ethan_quote_card_inside_safe_zone():
     with tempfile.TemporaryDirectory() as t:
         out = str(Path(t) / "q.png")

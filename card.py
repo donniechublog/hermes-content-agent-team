@@ -893,12 +893,13 @@ def _layer_image(canvas, src_img, H, top_anchor=False, cover_focus=None) -> int:
             return H
     nat_h = round(src_img.height * W / src_img.width)
     sac = src_img.resize((W, nat_h), Image.Resampling.LANCZOS)
-    # LOW-364: DINH anh chup trang (tieu de bang, ten trang) nam trong dai bi cat khi dang 1:1
-    # (the Grok 4.7 mat hang tieu de bang). Dinh trang la nen phang (thanh dieu huong, le
-    # trang) thi ha anh xuong vung an toan, dai tren la CHINH mau do keo dai — mot mat phang
-    # lien. Dinh khong phang thi giu nhu cu: mot dai mau khac se thanh vung thu hai (§7).
+    # LOW-364: DINH anh dat tu mep tren (tieu de bang, ten trang) nam trong dai bi cat khi dang
+    # 1:1 (the Grok 4.7 mat hang tieu de bang). Dinh la nen phang (le trang cua bang, thanh
+    # dieu huong) thi ha anh xuong vung an toan, dai tren la CHINH mau do keo dai — mot mat
+    # phang lien. Dinh khong phang thi giu nhu cu: mot dai mau khac se thanh vung thu hai (§7).
+    # Anh cao hon the ma cat GIUA thi dinh da mat san, khong ha.
     shift = 0
-    top_color = _flat_top_color(sac) if top_anchor else None
+    top_color = _flat_top_color(sac) if (top_anchor or nat_h <= H) else None
     if top_color is not None:
         shift = safe_zone.top(W, H)
         canvas.paste(top_color + ((255,) if canvas.mode == "RGBA" else ()), (0, 0, W, shift))
