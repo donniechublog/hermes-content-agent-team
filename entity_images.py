@@ -64,6 +64,21 @@ def entity_within_title(tieu_de: str, models: list | None = None) -> list:
     return ra[:MAX_ENTITY]
 
 
+def article_matches(query: str, title: str) -> bool:
+    """Bài Wikipedia có đúng là bài về `query` không (LOW-357).
+
+    `generator=search` + `gsrlimit=1` luôn trả MỘT bài, kể cả khi không bài nào
+    đúng. Đo trên máy chủ 22/09/2026: 24/36 tên thực thể thật ra bài sai
+    ("Expert Composition" → Chess title → Kasparov; "Toyota Bets" → Lexus ES).
+    Khớp CỤM như nhánh Commons (`_has_phrase`, LOW-36), theo một trong hai chiều:
+    truy vấn nằm trong tên bài, hoặc tên bài (bỏ ngoặc phân biệt như "(AI)",
+    "(company)") nằm trong truy vấn — "Behind OpenAI Anthropic" → Anthropic."""
+    import image_brand as th
+    bare_title = re.sub(r"\s*\([^)]*\)", "", title or "")
+    return (th._has_phrase(th._from_distinctive(query), (title or "").lower())
+            or th._has_phrase(th._from_distinctive(bare_title), (query or "").lower()))
+
+
 def pageimages(ten: str) -> dict | None:
     """Ảnh đại diện của bài Wikipedia gần nhất với `ten`. None khi không có/hỏng."""
     import httpx
@@ -79,6 +94,8 @@ def pageimages(ten: str) -> dict | None:
         return None
     o = pg.get("original") or {}
     if not o.get("source") or min(o.get("width", 0), o.get("height", 0)) < SHORT_SIDE_MIN:
+        return None
+    if not article_matches(ten, pg.get("title", "")):
         return None
     return {"image_url": o["source"], "alt": f"Wikipedia: {pg.get('title', ten)}", "og": False,
             "source": "entity", "w": o["width"], "h": o["height"],

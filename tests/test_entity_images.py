@@ -42,6 +42,35 @@ def test_pageimages_drop_image_small_and_no_has():
         assert tt.pageimages("DeepSeek") is None
 
 
+def test_pageimages_article_must_match_query_phrase():
+    """LOW-357: `gsrlimit=1` lay bai DAU TIEN ma Wikipedia tim ra. Do tren may chu
+    22/09/2026: 24/36 ten thuc the that ra bai sai — "Expert Composition" (tieu de
+    paper IntBMoE) ra *Chess title* -> chan dung Kasparov. Bai chi duoc nhan khi
+    khop CUM theo mot trong hai chieu: truy van nam trong ten bai, hoac ten bai (bo
+    ngoac phan biet) nam trong truy van ("Claude Opus" -> *Claude (AI)*)."""
+    def _pg(title):
+        return {"query": {"pages": {"1": {"title": title,
+                                          "original": {"source": f"https://x/{title}.jpg",
+                                                       "width": 2000, "height": 1500}}}}}
+    class R:
+        def __init__(self, j): self._j = j
+        def raise_for_status(self): pass
+        def json(self): return self._j
+    cases = [("Expert Composition", "Chess title", False),
+             ("Took Decades", "Lost Decades", False),
+             ("Toyota Bets", "Lexus ES", False),
+             ("Data Centers Reach", "Data center", False),
+             ("Google DeepMind", "Google DeepMind", True),
+             ("Mistral AI", "Mistral AI", True),
+             ("Behind OpenAI Anthropic", "Anthropic", True),
+             ("FIS Acquires", "FIS (company)", True),
+             ("Claude Opus", "Claude (AI)", True)]
+    with mock.patch("httpx.get", side_effect=[R(_pg(t)) for _, t, _ in cases]):
+        for q, title, keep in cases:
+            got = tt.pageimages(q)
+            assert (got is not None) == keep, (q, title, got)
+
+
 def test_commons_by_phrase_no_pass_two_person_stack_name():
     def _p(w, h, ten):
         return {"title": f"File:{ten}", "imageinfo": [{"width": w, "height": h, "mime": "image/jpeg",
