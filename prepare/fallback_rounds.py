@@ -142,8 +142,23 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
     import story_type
     if story_type.is_ranking_story_type(meta.get("category")):
         tin_xep_hang = True
+    models = ranking.extract_model(nguon.get("title_en") or "") or ranking.extract_model(title)
+    # @arena TRUOC MOI NGUON cho moi tin MODEL RELEASE (Ong Chu 22/09/2026, lan nhac thu n, tweet
+    # Grok 4.7): *"mien la tin ve model release, cu lay tu arena.ai dau tien, ko co thi moi qua
+    # nguon khac"*. Truoc day @arena chi duoc hoi BEN TRONG `find_and_capture_many`, tuc chi
+    # khi tin da la "tin xep hang" VA co browser — "xAI ra mat Grok 4.7" (is_ranking_story
+    # False) khong bao gio toi duoc. Chi mang, khong browser. Ra anh -> bai thanh tin xep
+    # hang: cong `needs_ranking_image` co san ep anh chinh/bia la XH o moi designer.
+    if models:
+        arena = ranking.arena_first(models, wd / state_paths.ORIGINAL_DIR,
+                                    lambda t: print(t, file=sys.stderr),
+                                    extra_urls=[link, nguon.get("link") or "", bp.get("article_text") or "",
+                                                tom.get("summary") or ""])
+        if arena:
+            print(f"[xep_hang] {len(arena)} anh tu X @arena cho {models[0]!r} — dung truoc moi nguon",
+                  file=sys.stderr)
+            return arena, True
     if not khong_browser and tin_xep_hang:
-        models = ranking.extract_model(nguon.get("title_en") or "") or ranking.extract_model(title)
         if models:
             ds = ranking.suggest_sources(tieu_de_xh, link, meta.get("via", ""), bp.get("article_text", ""))
             print(f"[xep_hang] tin xep hang: model={models[0]!r}, thu {', '.join(n['id'] for n in ds[:4])}...",
@@ -159,7 +174,8 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
                 xhs = ranking.find_and_capture_many(
                     models, ds, wd / state_paths.ORIGINAL_DIR, _brand_of(meta),
                     ranking.extract_rank(title, models[0]) or ranking.extract_rank(nguon.get("title_en") or "", models[0]),
-                    in_log=lambda t: print(t, file=sys.stderr), phien_browser=phien)
+                    in_log=lambda t: print(t, file=sys.stderr), phien_browser=phien,
+                    arena_checked=True)
             except Exception as e:                           # noqa: BLE001
                 print(f"[xep_hang] HONG: {type(e).__name__}: {e} — di tiep khong co anh XH",
                       file=sys.stderr)
@@ -178,6 +194,13 @@ def _image_item_ranking(i: int, xh: dict) -> dict:
     Khong di qua `download_and_filter`: ham do luu lai PNG voi dau xuat xu cua no, se de
     mat dau `ranking_capture` + model/hang/site cua anh nay."""
     ma = "XH" if i == 0 else f"XH{i + 1}"
+    import arena_x
+    if xh["kind"] == arena_x.KIND:
+        # Anh chinh chu @arena, engine khong khoanh gi — dung noi "da khoanh hang model".
+        mo_ta_xh = f"đồ hoạ chính chủ từ tweet X @arena ({xh['board']}) — {xh['model']}"
+        return {"id": ma, "original_path": xh["file_path"], "url": xh["url"], "alt": mo_ta_xh[:120],
+                "source": "ranking", "page_url": xh["url"], "domain": _domain(xh["url"]),
+                "chart_hint": True, "ranking": xh}
     mo_ta_xh = (f"bảng xếp hạng {xh['site']} ({xh['board']}) — {xh['model']}"
                 + (f" #{xh['rank']}" if xh.get("rank") else "")
                 + (" — THẺ DỰ PHÒNG (không chụp được bảng)" if xh["kind"] == "card" else ", đã khoanh hàng model"))

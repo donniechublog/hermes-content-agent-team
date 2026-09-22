@@ -230,7 +230,9 @@ _XEP_HANG = re.compile(
 # seed do Nvidia dẫn đầu" ra models=['seed'] va keo ca engine di luc 11 bang
 # xep hang cho mot tin goi von.
 _HO = (r"GPT|Claude|Gemini|Gemma|Grok|Kimi|Qwen|GLM|DeepSeek|Llama|Mistral|Mixtral|Muse Spark|"
-       r"MiniMax|Nemotron|Jamba|Hunyuan|Doubao|o\d")
+       r"MiniMax|Nemotron|Jamba|Hunyuan|Doubao|MiMo|o\d")
+# MiMo (Xiaomi, 22/09/2026): thieu ho nay thi tin "XiaomiMiMo/MiMo-V2.6-Pro-RL tha trong so" tach ra
+# [] va khong bao gio hoi toi X @arena, du @arena vua dang "MiMo-V2.6-Pro just landed … top 10".
 _HO_CAN_SO = r"Seed|Solar|Granite|Phi|Command|Nova|Step|Yi"
 # Duoi cho phep: TU dat ten (khong phai dong tu/tu Viet) hoac so phien ban. So tran
 # (khong cham) chi nhan khi KHONG di truoc mot tu thuong: "Opus 4 (Thinking)" co,
@@ -1160,13 +1162,15 @@ def _drop_row_without_version(models: list, kq, ly_do, out: Path):
     return kq, ly_do
 
 
-def _arena_first(models: list, out_dir: Path, in_log) -> list:
+def arena_first(models: list, out_dir: Path, in_log, extra_urls=()) -> list:
     """LOW-337 (Ong Chu 21/09/2026): *"cu lay hinh tu tai khoan twitter cua arena.ai la chuan
-    nhat, khi noi toi benchmark, ko tim duoc thi moi dung bang cua ben khac"*. Hong gi cung
-    khong chan duong cu: tra [] va di chup cac trang bang nhu truoc."""
+    nhat, khi noi toi benchmark, ko tim duoc thi moi dung bang cua ben khac"*; 22/09/2026: *"mien
+    la tin ve model release, cu lay tu arena.ai dau tien"* — nen `fallback_rounds._capture_ranking`
+    goi ham nay cho MOI tin tach duoc ten model, khong can browser. Hong gi cung khong chan duong
+    cu: tra [] va di chup cac trang bang nhu truoc."""
     try:
         import arena_x
-        return arena_x.find_arena_images(models, out_dir, in_log)
+        return arena_x.find_arena_images(models, out_dir, in_log, extra_urls=extra_urls)
     except Exception as e:                                   # noqa: BLE001
         in_log(f"[xep_hang] arena X hong ({type(e).__name__}), di chup trang bang")
         return []
@@ -1177,7 +1181,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
     """Đi qua từng nguồn, nguồn nào ra ảnh khoanh được model thì dừng; không nguồn
     nào ra thì dựng thẻ dự phòng. Luôn trả về dict mô tả ảnh (file_path, kind, source,
     site, board, rank, model, url). `models` phải khác rỗng."""
-    arena = _arena_first(models, out_dir, in_log)
+    arena = arena_first(models, out_dir, in_log)
     if arena:
         return arena[0]
     from browser_session import session_or_new
@@ -1302,7 +1306,8 @@ def _skip_source(n: dict, da_chup_thuong: bool) -> bool:
 
 
 def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
-                      hang_goi_y=None, in_log=print, toi_da: int = MAX_XH, phien_browser=None) -> list:
+                      hang_goi_y=None, in_log=print, toi_da: int = MAX_XH, phien_browser=None,
+                      arena_checked: bool = False) -> list:
     """Nhu `find_and_capture`, nhung KHONG dung o thanh cong dau tien: nguon mang
     `independent: True` (xem chu thich tai NGUON) la NANG LUC RIENG cua model, cu gang
     lay CA nguon do lan mot nguon "thuong" khac, khong coi thanh cong o nguon nay
@@ -1320,8 +1325,10 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
     ve dict don cua cac noi da goi no (`_ranking_context_edge`, CLI `main()`).
 
     Tra danh sach KHONG RONG — thẻ dự phòng (1 phan tu) khi khong nguon nao
-    chup duoc."""
-    arena = _arena_first(models, out_dir, in_log)
+    chup duoc.
+
+    `arena_checked`: nguoi goi DA hoi @arena roi (khong ra) — khong doc lai X lan nua."""
+    arena = [] if arena_checked else arena_first(models, out_dir, in_log)
     if arena:
         return arena[:toi_da]
     from browser_session import session_or_new

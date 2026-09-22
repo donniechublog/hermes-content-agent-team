@@ -1028,7 +1028,8 @@ một lớp overlay trên hình. Thẻ quote: cỡ chữ tự hạ tới khi kh�
 Ông Chủ, thẻ Qwen-Image-2.1: Ethan dùng ảnh toà nhà Alibaba thay vì logo. *"Với tất cả
 thông tin về benchmark model, chỉ dùng 2 thứ là logo và bảng benchmark từ các trang
 benchmark uy tín và twitter của arena.ai ... chính vì thế các designer mới cần bộ rule
-riêng biệt"*. Thứ tự: **logo > bảng benchmark** (rộng hơn cho vai khác: founder > office).
+riêng biệt"*. Thứ tự: **ảnh X @arena > logo > bảng benchmark khác** (rộng hơn cho vai khác:
+founder > office) — @arena đứng đầu từ 22/09/2026, xem mục cuối.
 
 - Luật RIÊNG của Ethan (`image_rules_ethan.MODEL_ONLY_TYPES`, `model_story_image_ok`):
   tin `MODEL`/`BENCHMARK` chỉ dùng **thẻ logo** (`image_brand.card_logo`) hoặc **ảnh xếp
@@ -1048,13 +1049,43 @@ riêng biệt"*. Thứ tự: **logo > bảng benchmark** (rộng hơn cho vai kh
   các model khác, ko sử dụng nền tối, trừ phi là logo âm bản"*). `image_brand.card_logo` chỉ ra nền
   tối khi quá nửa điểm ảnh logo chìm trên nền sáng (`NEGATIVE_LOGO_SHARE`).
 - **Bảng benchmark lấy từ X của arena.ai TRƯỚC** (*"cứ lấy hình từ tài khoản twitter của arena.ai là
-  chuẩn nhất … ko tìm được thì mới dùng bảng của bên khác"*): `arena_x.py`, gọi đầu
-  `ranking.find_and_capture(_many)`. Chỉ nhận tweet @arena có ảnh, ≤ 45 ngày, và tên model nằm ở
-  ĐOẠN ĐẦU tweet kèm đúng số phiên bản (tweet "Gemini Omni 1.1 Flash #1" nhắc "Gemini Omni Flash"
-  để so sánh — không được lấy cho tin bản cũ). Không có mới chụp trang bảng như trước.
-- CÒN THIẾU: ID tweet @arena chưa có nguồn ổn định (DuckDuckGo chặn bot sau vài lượt, crawler
-  social-publishing dừng từ 13/09/2026 và không theo dõi riêng @arena); model không có logo trên
-  Wikidata/bảng (Xingchen, lab nhỏ) thì Ethan báo thiếu ảnh.
+  chuẩn nhất … ko tìm được thì mới dùng bảng của bên khác"*): `arena_x.py`. Chỉ nhận tweet @arena có ảnh,
+  ≤ 45 ngày, và tên model nằm ở ĐOẠN ĐẦU tweet kèm đúng số phiên bản (tweet "Gemini Omni 1.1 Flash #1"
+  nhắc "Gemini Omni Flash" để so sánh — không được lấy cho tin bản cũ).
+- Model không có logo trên Wikidata/bảng (Xingchen, lab nhỏ) thì Ethan báo thiếu ảnh.
+
+### Bổ sung 22/09/2026: tin MODEL RELEASE lấy @arena ĐẦU TIÊN (mọi designer)
+
+Ông Chủ, lần nhắc thứ n (tweet Grok 4.7 `x.com/arena/status/2102080801462689999` không được dùng):
+*"miễn là tin về model release, cứ lấy từ arena.ai đầu tiên, ko có thì mới qua nguồn khác. trong
+repo của chúng ta có sẵn code để crawl hình từ tweet, check kỹ lại đi và sử dụng nó mỗi khi các
+designer tìm ảnh"*. Ảnh poll/xu hướng chưa có điểm cũng lấy.
+
+- **Khi nào hỏi:** MỌI tin tách được tên model (`ranking.extract_model`), ngay đầu
+  `fallback_rounds._capture_ranking`, không cần browser, không cần là "tin xếp hạng". Trước đây
+  @arena chỉ được hỏi bên trong `find_and_capture_many` (tin xếp hạng + có browser) nên "xAI ra mắt
+  Grok 4.7" không bao giờ tới. Có ảnh → bài thành tin có `XH` (`is_ranking_story`), cổng
+  `needs_ranking_image` ép ảnh chính/bìa là `XH` ở Dre và Ethan; Kite đặt ảnh @arena lên bìa
+  (`kite_prepare.figure_hero`).
+- **Ethan: @arena thắng cả thẻ logo** (`ethan_submit._must_use_ranking`); bảng chụp từ trang xếp
+  hạng khác thì logo vẫn đứng trước như LOW-337. Brief in dòng 🥇 và khung spec đặt sẵn `"image": "XH"`.
+- **Tìm tweet — chỉ code có sẵn** (`get_source.py` của skill url-mascot-frame), theo thứ tự, dừng ở
+  nguồn đầu tiên có tweet khớp: (1) link tweet @arena trong link gốc/thân bài; (2) trang `x.com/arena`
+  không đăng nhập (`get_source.x_page_posts`, ~6 tweet mới nhất kèm nguyên văn — đo trên máy chủ
+  22/09); (3) kho crawler X; (4) social-crawl. Tweet MỚI NHẤT trước. Không nguồn nào đọc được thì log
+  "⚠️ KHÔNG ĐỌC ĐƯỢC nguồn tweet @arena" — trước đây đường này chết im lặng từ 13/09.
+- **Tải ảnh:** `get_source.save_x_photo` — chỉ ảnh người đăng tải lên, bản `name=orig`; KHÔNG rơi về
+  thẻ og:image hay ảnh chụp tường đăng nhập.
+- **Mọi post X làm nguồn bài** (`social_post.read` → `prepare/source.candidate_social`): crawl-queue
+  trả `media[]` rỗng cho post ảnh trên X nên trước đây ra 0 ảnh; nay rơi về `get_source.save_x_photo`
+  (cả khi crawl-queue hỏng hẳn).
+- `get_source.SOCIAL_FETCH` trỏ skill anh em `social-crawl` (đường `~/.claude/skills` cũ không có trên
+  máy chủ nên nhánh media của Bob luôn rỗng).
+- **Ông Chủ duyệt 22/09/2026** ba thẻ dựng thật (Grok 4.7 chart xu hướng @arena, Grok 4.7 "is in Agent
+  Arena", MiMo-V2.6-Pro Code Arena WebDev): *"3 hình này đạt chuẩn. và đây cũng nên là tiêu chuẩn cho mọi
+  role designer"*. Chuẩn: đồ hoạ CHÍNH CHỦ của @arena giữ nguyên (không crop mất tiêu đề/logo Arena), khung
+  chữ đè phần dưới ≤20% khung, tên model tô màu. Áp cho Ethan, Dre, Kite.
+- Khoá bằng `tests/test_low337_arena_release_first.py` (17 test, 0/17 qua trên code cũ).
 
 
 ## LOW-343 (21/09/2026): Ethan chỉ dùng kiểu khung chữ nhật — quote là của Dre

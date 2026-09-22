@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
-"""arena_x.py — ảnh xếp hạng lấy từ tài khoản X của arena.ai (@arena), NGUỒN ĐẦU TIÊN
-cho tin benchmark model (LOW-337).
+"""arena_x.py — ảnh lấy từ tài khoản X của arena.ai (@arena), NGUỒN ĐẦU TIÊN cho MỌI tin
+model release / benchmark, ở mọi designer (LOW-337).
 
 Ông Chủ 21/09/2026: *"cứ lấy hình từ tài khoản twitter của arena.ai là chuẩn nhất, khi nói
-tới benchmark, ko tìm được thì mới dùng bảng của bên khác"*. @arena đăng đồ hoạ xếp hạng
-chính chủ cho từng model mới ("Gemini Omni 1.1 Flash has landed #1 in the Text-to-Video
-Arena" kèm ảnh bảng) — đẹp và đúng hơn ảnh engine tự chụp trang bảng.
+tới benchmark, ko tìm được thì mới dùng bảng của bên khác"*. 22/09/2026, lần nhắc tiếp theo
+(tweet Grok 4.7): *"miễn là tin về model release, cứ lấy từ arena.ai đầu tiên, ko có thì mới
+qua nguồn khác"* — kể cả tweet poll/xu hướng chưa có điểm. @arena đăng đồ hoạ chính chủ
+cho từng model mới — đẹp và đúng hơn ảnh engine tự chụp trang bảng.
 
-Đường đi — CHỈ dùng hạ tầng sẵn có của đội, không tự mò (Ông Chủ 21/09/2026: *"skill crawl X
-trong repo của chúng ta có rồi, tận dụng thôi"*):
-  - Tweet của @arena: kho tweet của crawler X (`scan_x.read_tweets`, GET /tweets) và skill
-    `social-crawl` đọc trang `x.com/arena` (tweet đầu/ghim + thread của nó) qua crawl-queue.
-  - Ảnh: `url-mascot-frame/scripts/get_source.py` — post X trả `media[]` rỗng, script đó đọc
-    `pbs.twimg.com/media/<id>` trong HTML và tải bản `name=orig`.
-  Crawl-queue chỉ đọc MỘT post mỗi lần (trang hồ sơ/trang tìm kiếm đều trả một tweet), nên
-  danh sách tweet mới dựa vào kho crawler X — kho đó dừng từ 13/09/2026 (xem báo cáo LOW-337).
+Đường đi — CHỈ dùng hạ tầng sẵn có của đội, không tự mò (Ông Chủ 21/09 + 22/09/2026: *"skill
+crawl X trong repo của chúng ta có rồi, tận dụng thôi"*). Nguồn tweet, theo thứ tự, dừng ở
+nguồn đầu tiên có tweet khớp:
+  1. Link tweet @arena có sẵn trong tư liệu của bài (link gốc, thân bài) — đọc thẳng post đó.
+  2. Trang `x.com/arena` không đăng nhập (`get_source.x_page_posts`): ~6 tweet mới nhất kèm
+     nguyên văn. Đây là đường chính từ 22/09/2026 — trước đó hai đường dưới gần như luôn rỗng
+     (crawler chết từ 13/09, crawl-queue chỉ trả MỘT tweet đầu/ghim), `find_arena_images` trả
+     [] im lặng và tweet Grok 4.7 không bao giờ được thấy.
+  3. Kho tweet của crawler X (`scan_x.read_tweets`, GET /tweets).
+  4. Skill `social-crawl` đọc trang `x.com/arena` qua crawl-queue (chậm, 10–40s).
+  Ảnh: `url-mascot-frame/scripts/get_source.py` (`save_x_photo`) — post X trả `media[]` rỗng,
+  script đó đọc `pbs.twimg.com/media/<id>` trong HTML và tải bản `name=orig`; KHÔNG rơi về
+  thẻ og:image hay ảnh chụp tường đăng nhập.
 
 Khớp CHẶT tên model: tìm "Qwen-Image-2.1" ra toàn tweet Qwen-Image-2.0 / Qwen 3 cũ, nên
 chỉ nhận tweet chứa đúng tên (kể cả số phiên bản), đăng trong `MAX_AGE_DAYS` ngày, có ảnh.
@@ -74,6 +80,42 @@ def _record(url: str, handle: str, created: str, text: str) -> dict:
             "text": text or ""}
 
 
+def _get_source():
+    """Module `get_source.py` của skill url-mascot-frame (không phải package, nạp theo đường dẫn)."""
+    if str(GET_SOURCE.parent) not in sys.path:
+        sys.path.insert(0, str(GET_SOURCE.parent))
+    import get_source
+    return get_source
+
+
+def created_from_id(tid: str) -> str:
+    """Giờ đăng suy từ ID tweet (snowflake: 41 bit mili-giây từ mốc Twitter 1288834974657)."""
+    ms = (int(tid) >> 22) + 1288834974657
+    return datetime.fromtimestamp(ms / 1000, timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
+def page_tweets(url: str) -> list:
+    """Tweet hiện trên một trang x.com không đăng nhập (hồ sơ hoặc một post) — qua
+    `get_source.x_page_posts`. Hỏng -> []."""
+    try:
+        posts = _get_source().x_page_posts(url)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[arena_x] doc trang {url} hong: {type(e).__name__}", file=sys.stderr)
+        return []
+    return [_record(p["url"], p["handle"], created_from_id(p["id"]), p["text"]) for p in posts]
+
+
+def status_urls(texts) -> list:
+    """Link tweet @arena nằm sẵn trong tư liệu của bài (link gốc, thân bài), không trùng."""
+    ra = []
+    for t in texts or []:
+        for m in _STATUS.finditer(t or ""):
+            u = f"https://x.com/{m.group(1).lower()}/status/{m.group(2)}"
+            if u not in ra:
+                ra.append(u)
+    return ra
+
+
 def crawler_tweets() -> list:
     """Tweet @arena trong kho crawler X (GET /tweets). Không đọc được -> []."""
     import scan_x
@@ -106,14 +148,13 @@ def profile_tweets() -> list:
 
 
 def download_image(url: str, out: Path) -> bool:
-    """Ảnh gốc của post X qua skill url-mascot-frame (`get_source.py`)."""
-    import subprocess
+    """Ảnh gốc của post X qua skill url-mascot-frame (`get_source.save_x_photo`). Chỉ ảnh
+    người đăng tải lên: chạy script cả bộ thì post không ảnh rơi về thẻ og:image/ảnh chụp
+    tường đăng nhập, và thẻ đó sẽ thành "ảnh xếp hạng" của bài."""
     try:
-        subprocess.run([sys.executable, str(GET_SOURCE), url, str(out)], capture_output=True,
-                       text=True, timeout=240)
+        return _get_source().save_x_photo(url, str(out))
     except Exception:                                        # noqa: BLE001
         return False
-    return out.exists() and out.stat().st_size > 0
 
 
 def usable(tw: dict, models: list, now=None) -> str:
@@ -129,18 +170,47 @@ def usable(tw: dict, models: list, now=None) -> str:
     return tweet_matches(tw.get("text"), models)
 
 
-def find_arena_images(models: list, out_dir: Path, in_log=print) -> list:
-    """Ảnh xếp hạng từ tweet @arena cho `models`, cùng dạng kết quả với
-    `ranking.find_and_capture_many`. Không có -> []."""
+def tweet_sources(extra_urls=()) -> list:
+    """(tên, hàm trả danh sách tweet) theo thứ tự thử — xem docstring đầu tệp."""
+    ds = [(f"link {u}", lambda u=u: page_tweets(u)) for u in status_urls(extra_urls)]
+    return ds + [("trang x.com/arena", lambda: page_tweets(PROFILE_URL)),
+                 ("kho crawler X", crawler_tweets),
+                 ("social-crawl x.com/arena", profile_tweets)]
+
+
+def matching_tweets(models: list, extra_urls=(), in_log=print) -> list:
+    """[(id, tweet)] @arena khớp `models`, MỚI NHẤT trước. Dừng ở nguồn đầu tiên có tweet
+    khớp. Không nguồn nào đọc được gì thì báo TO — khác hẳn "đọc được mà không có tweet
+    khớp": từ 13/09 tới 22/09/2026 đường này chết im lặng mà không ai biết."""
+    candidates, seen, read_ok = [], set(), []
+    for name, fetch in tweet_sources(extra_urls):
+        tweets = fetch()
+        if tweets:
+            read_ok.append(f"{name} ({len(tweets)})")
+        for tw in tweets:
+            m = _STATUS.search(tw["url"])
+            if m and m.group(2) not in seen and usable(tw, models):
+                seen.add(m.group(2))
+                candidates.append((m.group(2), tw))
+        if candidates:
+            break
+    if not read_ok:
+        in_log("[arena_x] ⚠️ KHÔNG ĐỌC ĐƯỢC nguồn tweet @arena nào (trang x.com/arena, kho "
+               "crawler, social-crawl đều rỗng) — ảnh @arena bị bỏ qua vì HỎNG NGUỒN, không phải vì "
+               "@arena chưa đăng")
+    elif not candidates:
+        in_log(f"[arena_x] đã đọc {', '.join(read_ok)}: không tweet nào nhắc đúng {models[:2]}")
+    return sorted(candidates, key=lambda x: -int(x[0]))
+
+
+def find_arena_images(models: list, out_dir: Path, in_log=print, extra_urls=()) -> list:
+    """Ảnh từ tweet @arena cho `models`, cùng dạng kết quả với
+    `ranking.find_and_capture_many`. `extra_urls`: link gốc/thân bài — link tweet @arena
+    trong đó được đọc TRƯỚC. Không có -> []."""
     from PIL import Image
     import image_provenance
     import state_paths
-    ungvien, da = [], set()
-    for tw in crawler_tweets() + profile_tweets():
-        m = _STATUS.search(tw["url"])
-        if m and m.group(2) not in da and usable(tw, models):
-            da.add(m.group(2))
-            ungvien.append((m.group(2), tw))
+    ungvien = matching_tweets(models, extra_urls, in_log)
     ra = []
     for tid, tw in ungvien[:MAX_TWEETS_CHECKED]:
         khop = usable(tw, models)

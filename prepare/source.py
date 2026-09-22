@@ -93,10 +93,11 @@ def candidate_social(link: str, wd: Path) -> list:
     import social_post
     if not social_post.is_social(link):
         return []
-    d = social_post.read(link, tai_ve=wd / "social",
-                        in_log=lambda t: print(f"[social] {t}", file=sys.stderr))
+    log = lambda t: print(f"[social] {t}", file=sys.stderr)   # noqa: E731
+    d = social_post.read(link, tai_ve=wd / "social", in_log=log)
     if not d:
-        return []
+        # crawl-queue hong van lay duoc anh post X tu chinh trang post (get_source).
+        d = {"author": "", "link": link, "media": social_post.x_photos(link, wd / "social", log)}
     cands = []
     for i, m in enumerate(d["media"], 1):
         if m["type"] != "image" or not m["file_path"]:
