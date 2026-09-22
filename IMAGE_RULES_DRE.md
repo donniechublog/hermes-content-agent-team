@@ -1176,9 +1176,12 @@ và đây cũng nên là tiêu chuẩn cho mọi role designer"* — đồ hoạ
 "Google confirms Gemini models hacked three companies" (BUSINESS) ra 8 slide toà nhà/logo Google.
 
 - Tiêu đề nhắc họ model có logo riêng (Gemini, Gemma, ChatGPT/GPT, Claude, Qwen, Llama, Mistral…) thì
-  **bất kể loại tin, kể cả khi tiêu đề có gọi tên hãng mẹ**: dùng logo model, giao diện/app của model, sự kiện
-  ra mắt model, người (CEO/nhà nghiên cứu). **Không** dùng trụ sở, campus, biển hiệu, logo hãng mẹ.
+  **bất kể loại tin**: dùng logo model, giao diện/app của model, sự kiện ra mắt model, người (CEO/nhà
+  nghiên cứu). **Không** dùng trụ sở, campus, biển hiệu của hãng mẹ.
+- Logo hãng mẹ: tiêu đề **có gọi tên** hãng mẹ ("Google confirms Gemini…") thì dùng **cả hai logo** — Ông Chủ
+  22/09: *"trong headline có cả google và gemini thì dùng cả 2 logo, ko vấn đề, đừng dùng toàn bộ google như
+  bài cũ là ổn"*. Hãng mẹ chỉ suy ra từ tên model ("Gemini hacked…") thì không dùng logo hãng mẹ.
 - Engine tự làm: vòng tìm rộng hỏi theo tên model thay cho tên hãng mẹ đứng đầu tiêu đề; vòng thương hiệu
-  bỏ logo/trụ sở/báo/cổ phiếu hãng mẹ, thêm thẻ logo model và báo tìm theo tên model.
+  bỏ trụ sở/báo/cổ phiếu hãng mẹ (giữ logo nếu tiêu đề gọi tên), thêm thẻ logo model và báo tìm theo tên model.
 - `find_more_images.py` **từ chối** từ khoá chỉ theo hãng mẹ ("Google headquarters", "Alphabet logo") —
   thêm tên model vào ("Google Gemini app interface") hoặc tìm theo tên model.

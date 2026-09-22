@@ -894,14 +894,15 @@ MODEL_PARENT_EXTRA = {"gemma": "google deepmind"}
 def model_parents(tieu_de: str) -> dict:
     """Hãng mẹ của các họ model CÓ logo riêng (bảng `MODEL_LOGO`) được nhắc trong tiêu
     đề: {khoá hãng: {"model": "Gemini", "names": ("google", "alphabet", ...)}}. `names` là
-    tên gọi HÃNG (không gồm tên model) để chặn truy vấn/ảnh theo hãng mẹ. Thuần.
+    tên gọi HÃNG (không gồm tên model) để chặn truy vấn/ảnh theo hãng mẹ; `named` = tiêu đề
+    tự gọi tên hãng mẹ ("Google confirms Gemini…") — khi đó dùng CẢ HAI logo. Thuần.
 
     LOW-354 (Ông Chủ 22/09/2026): *"gemini có logo riêng và rất nhiều hình ảnh dùng được,
     tại sao cứ dùng logo của cty mẹ ?"* — tin "Google confirms Gemini models hacked three
     companies" (BUSINESS) ra 8 slide toà nhà/logo Google: vòng tìm rộng hỏi Yandex/Commons
     chữ "Google" (tên riêng đầu tiêu đề), vòng thương hiệu hỏi trụ sở Google, Dre tự tìm
-    "Google headquarters". Luật LOW-337 là tuyệt đối — nhắc model thì không dùng hình hãng
-    mẹ, kể cả khi tiêu đề có gọi tên hãng mẹ."""
+    "Google headquarters". Ông Chủ chốt cùng ngày: *"trong headline có cả google và gemini
+    thì dùng cả 2 logo, ko vấn đề, đừng dùng toàn bộ google như bài cũ là ổn"*."""
     import brand_names
     import scan_business
     model_words = {k.lower() for k in brand_names.MODEL_FAMILY} | set(MODEL_LOGO)
@@ -916,7 +917,9 @@ def model_parents(tieu_de: str) -> dict:
         ten = sorted({t.strip().lower() for t in list(scan_business.WATCHLIST) + list(NAME_EXTRA)
                       if (NAME_EXTRA.get(t.strip()) or scan_business.RANK_OF_NAME.get(t, t).strip()) == khoa
                       and t.strip().lower().split()[0] not in model_words} | {khoa})
-        ra[khoa] = {"model": ho["name"], "names": tuple(ten)}
+        thap = (tieu_de or "").lower()
+        ra[khoa] = {"model": ho["name"], "names": tuple(ten),
+                    "named": any(re.search(r"(?<!\w)" + re.escape(n) + r"(?!\w)", thap) for n in ten)}
     return ra
 
 

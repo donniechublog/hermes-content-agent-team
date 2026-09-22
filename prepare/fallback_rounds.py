@@ -497,13 +497,17 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     import story_type
     # LOW-337: tin MODEL/BENCHMARK — logo CUA MODEL (Qwen, khong phai Alibaba).
     tin_model = story_type.is_model_story(category)
-    # LOW-354: tin nhac model co logo rieng (Gemini) — bat ke loai tin, bat ke tieu de
-    # co goi ten hang me — la tin ve model: logo model, KHONG anh tru so/toa nha/logo/
-    # bao/co phieu cua hang me; thay bang bao that tim theo TEN MODEL.
-    chi_qua_model = set(th.model_parents(tieu_de_nhin))
+    # LOW-354: tin nhac model co logo rieng (Gemini) — bat ke loai tin — la tin ve model:
+    # logo model + bao that tim theo TEN MODEL; KHONG tru so/campus/bao theo hang me (bai
+    # cu ra toan toa nha Google). Tieu de TU GOI ten hang me ("Google confirms Gemini...")
+    # thi dung CA HAI logo (Ong Chu 22/09/2026); chi suy ra tu ten model thi bo logo hang me.
+    cha_model = th.model_parents(tieu_de_nhin)
+    chi_qua_model = set(cha_model)
+    cha_co_ten = {k for k, v in cha_model.items() if v["named"]}
     if chi_qua_model:
-        print("[thuong hieu] tin nhac model, bo anh hang me: "
-              + ", ".join(sorted(chi_qua_model)), file=sys.stderr)
+        print("[thuong hieu] tin nhac model, bo tru so/bao hang me: " + ", ".join(sorted(chi_qua_model))
+              + (f"; giu logo (co ten trong tieu de): {', '.join(sorted(cha_co_ten))}" if cha_co_ten else ""),
+              file=sys.stderr)
     if tin_model:
         logo_model = th.model_logo_images(tieu_de_nhin, wd4)
     elif chi_qua_model:
@@ -529,9 +533,10 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
             break
         cands_h = th.vendor_images(h, wd=wd4 / h["key"])
         if h["key"] in chi_qua_model:
-            # Chi giu NGUOI (founder/CEO — "dung Claude" van la chan dung Dario, LOW-267);
-            # logo, tru so, campus mang ten hang me thi bo; khong bao/co phieu theo hang me.
-            cands += [c for c in cands_h if (c.get("brand_match") or {}).get("kind") == "person"]
+            # Giu NGUOI (founder/CEO — "dung Claude" van la chan dung Dario, LOW-267) va,
+            # neu tieu de goi ten hang me, LOGO hang me; tru so/campus va bao theo hang me bo.
+            giu = {"person", "logo"} if h["key"] in cha_co_ten else {"person"}
+            cands += [c for c in cands_h if (c.get("brand_match") or {}).get("kind") in giu]
             continue
         if not khong_browser and not th.deadline_passed(th.BROWSER_STEP_MIN_LEFT):
             # LUON tim them bao THAT theo ten hang, SONG SONG voi Commons/
@@ -547,8 +552,10 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
                 and not th.deadline_passed(th.BROWSER_STEP_MIN_LEFT)):
             cands += th.image_has_ballot(h, wd4 / h["key"], phien=phien)
     if tin_model or chi_qua_model:
-        # Logo hang me KHONG duoc dung cho tin model (Ong Chu 21/09/2026) — chi logo model.
-        cands = [c for c in cands if (c.get("brand_match") or {}).get("kind") != "logo"] + logo_model
+        # Logo hang me KHONG duoc dung cho tin model (Ong Chu 21/09/2026) — chi logo model,
+        # tru hang me co ten trong tieu de thi dung ca hai logo (LOW-354).
+        cands = [c for c in cands if (c.get("brand_match") or {}).get("kind") != "logo"
+                 or (c.get("brand_match") or {}).get("key") in cha_co_ten] + logo_model
     # Diem theo LOAI TIN cong vao diem goc truoc khi sort: cung bo ung vien,
     # tin M&A day logo len truoc chan dung, tin LAB day tru so/founder len
     # truoc logo (story_type.BOARD_IMAGE_BY_TYPE, Ong Chu 12/09/2026).
