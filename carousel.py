@@ -1125,10 +1125,23 @@ def _gate_stack_last_hidden(nhan, muc, touched):
     visible = max(0, min(touched, H, y0 + h) - max(0, y0))
     if h <= 0 or visible / h >= STACK_BOTTOM_VISIBLE_MIN:
         return ""
-    return (f"{nhan}: anh ghep duoi chi con ro {visible}/{h}px "
-            f"({round(visible / h * 100)}% < {round(STACK_BOTTOM_VISIBLE_MIN * 100)}%) — "
-            "nền chữ của ảnh RỐI phủ gần hết. Đặt ảnh RỐI lên TRÊN trong \"images\", "
-            "hoặc dùng một ảnh sạch thay cho cặp ghép.")
+    head = (f"{nhan}: anh ghep duoi chi con ro {visible}/{h}px "
+            f"({round(visible / h * 100)}% < {round(STACK_BOTTOM_VISIBLE_MIN * 100)}%) — ")
+    if muc.get("cluttered"):
+        return head + ("nền chữ của ảnh RỐI phủ gần hết. Đặt ảnh RỐI lên TRÊN trong \"stack\", "
+                       "hoặc dùng một ảnh sạch thay cho cặp ghép.")
+    # 22/09/2026: khong anh nao roi ma van bi che — overlay bat vi DAY anh duoi qua
+    # sang (nen dark) / qua toi (nen light). Loi cu bao "dat anh ROI len tren" nen
+    # Dre dcgr dao thu tu 27 lan, het 90 vong ma khong qua (t_b7a7ebb1).
+    if FG == (255, 255, 255):
+        why, pick = "đáy ảnh dưới quá SÁNG cho nền dark", "`bottom_brightness` THẤP (đáy tối)"
+    else:
+        why, pick = "đáy ảnh dưới quá TỐI cho nền light", "`bottom_brightness` CAO (đáy sáng)"
+    what = "câu quote" if muc.get("quote") else "đoạn chữ"
+    return head + (f"{why} nên phải phủ nền chữ, mà {what} cao nên che gần hết. "
+                   "Không ảnh nào RỐI — đảo thứ tự hai ảnh KHÔNG chữa được. Sửa (chọn một): "
+                   f"(1) dùng MỘT ảnh \"image\" thay cặp \"stack\"; (2) rút ngắn {what}; "
+                   f"(3) đổi ảnh dưới sang ảnh có {pick} trong manifest.")
 
 
 def _gate_count(spec: dict, cover: dict, slides: list, out: Path) -> None:
