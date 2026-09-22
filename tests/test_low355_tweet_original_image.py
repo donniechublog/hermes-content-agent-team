@@ -235,7 +235,7 @@ def test_official_flag_reaches_manifest_and_provenance():
         p.write_bytes(CHART.read_bytes())
         for handle, official in (("SpaceXAI", True), ("elonmusk", False)):
             url = f"https://x.com/{handle}/status/{ELON_QUOTE}"
-            with mock.patch.object(source, "embedded_tweet_urls", lambda h, now, skip_urls=(): [url]),                  mock.patch.object(article_images, "_download", lambda u, t=15: None),                  mock.patch("social_post.x_photos", lambda u, out, log: [{"type": "image", "url": u, "file_path": str(p)}]):
+            with mock.patch.object(source, "embedded_tweet_urls", lambda h, now, skip_urls=(), u=url: [u]),                  mock.patch.object(article_images, "_download", lambda u, t=15: None),                  mock.patch("social_post.x_photos", lambda u, out, log: [{"type": "image", "url": u, "file_path": str(p)}]):
                 cands = source.candidate_embedded_tweets([{"url": "https://decrypt.co/a"}], "https://s.com/a",
                                                          Path(d), story=GROK_TITLE)
             kept = download_filter.download_and_filter(cands, Path(d) / f"wd_{handle}")
