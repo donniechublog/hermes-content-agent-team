@@ -109,7 +109,7 @@ flowchart TB
         gwB["hermes-gateway@blog<br/>chat routing + kanban dispatcher<br/>max_in_progress: 10 (21/09/2026)"]:::container
         apB["hermes-approve@blog<br/>approve_service + duyet_*"]:::container
         dashB["hermes-dashboard-blog :9120"]:::container
-        cronB{{"cron: finn-scan, qinn-scan @05:00<br/>daily-log @06:00 · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:00"}}:::cron
+        cronB{{"cron: finn-scan, qinn-scan @06:00<br/>daily-log @06:00 · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:00"}}:::cron
         stateB[("state/blog/<br/>candidates · prepare/ · required_* ·<br/>used_images.jsonl")]:::datastore
     end
 
@@ -117,7 +117,7 @@ flowchart TB
         gwD["hermes-gateway@dcgr<br/>+ multiplex 8 profile_routes"]:::container
         apD["hermes-approve@dcgr<br/>approve_service — cùng mã nguồn"]:::container
         dashD["hermes-dashboard-dcgr :9121"]:::container
-        cronD{{"cron: vera-scan, nova-scan @05:00<br/>daily-log · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:10"}}:::cron
+        cronD{{"cron: vera-scan, nova-scan @06:00<br/>daily-log · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:10"}}:::cron
         stateD[("state/dcgr/")]:::datastore
     end
 
@@ -175,7 +175,7 @@ flowchart TD
     classDef external fill:#f3f4f6,stroke:#6b7280,stroke-width:1.5px,stroke-dasharray:4 3,color:#374151;
 
     subgraph S1["1 · QUÉT TIN"]
-        cron1{{"cron 05:00 VN"}}:::cron
+        cron1{{"cron 06:00 VN"}}:::cron
         scan["scan_prepare.py --vai finn|nova|vera|qinn<br/>Finn / Nova / Vera / Qinn"]:::container
         manifest["manifest_common/_build/_write<br/>+ required.py"]:::container
         candidates[("candidates_*.json")]:::datastore
@@ -285,7 +285,7 @@ sequenceDiagram
     autonumber
     participant OC as "Ông Chủ"
     participant TG as "Telegram"
-    participant CR as "Cron 05:00"
+    participant CR as "Cron 06:00"
     participant SC as "Vai quét (Finn/Nova/Vera)"
     participant AP as "approve_service"
     participant PR as "image_prepare (engine)"
@@ -295,7 +295,7 @@ sequenceDiagram
     participant PB as "publish.py"
     participant MO as "Moat"
 
-    CR->>SC: kích hoạt quét (05:00 VN)
+    CR->>SC: kích hoạt quét (06:00 VN)
     SC->>SC: ghi manifest + candidates.json
     SC->>TG: báo cáo đánh số (topic vai quét)
     TG->>OC: hiển thị danh sách

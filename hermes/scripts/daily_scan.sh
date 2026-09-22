@@ -47,10 +47,10 @@ if [ ! -d "$NHA/profiles/$VAI" ]; then
 fi
 
 H=$HOME/hermes-agent/venv/bin/python
-# Ngay lay theo GIO VN, khong phai UTC. Cron chay 22:00 UTC = 05:00 VN hom sau,
-# nen `date -u` tra ve ngay HOM TRUOC — khoa chong trung trung voi lan chay cu,
-# kanban tra ve task cu thay vi tao moi, va script im lang tuong da thanh cong.
-# Da dinh dung loi nay sang 23/08: ba vai deu khong chay.
+# Ngay lay theo GIO VN, khong phai UTC. Tu LOW-353 (22/09/2026) lich cron viet
+# theo GIO VN (`timezone: Asia/Ho_Chi_Minh` trong config.yaml cua brand, quet
+# 06:00 VN). Truoc do expr viet theo UTC (22:00 UTC = 05:00 VN hom sau) — `date -u`
+# tra ve ngay HOM TRUOC, trung khoa voi lan chay cu (23/08: ba vai deu khong chay).
 KEY="$VAI-daily-$(TZ=Asia/Ho_Chi_Minh date +%Y%m%d)"
 DAY=$(TZ=Asia/Ho_Chi_Minh date +%Y-%m-%d)
 
@@ -58,12 +58,12 @@ DAY=$(TZ=Asia/Ho_Chi_Minh date +%Y-%m-%d)
 # tieu de. Khong co thi luot sau trung khoa cua luot dau: kanban tra ve task CU
 # (da done), khoi kiem ben duoi thoat 1, va luot sau im lang khong chay.
 # KHUNG_GIO phai khop scan_prepare.FRAME_HOURS va cron expr cua job qinn-scan:
-# 12 = hai luot/ngay (05:00 va 17:00 VN).
+# 12 = hai luot/ngay (06:00 va 18:00 VN), khung tinh tu 06:00 = scan_prepare.FRAME_START.
 case "$VAI" in
   qinn)
     KHUNG_GIO=12
     GIO=$(TZ=Asia/Ho_Chi_Minh date +%H)
-    LUOT=$(( ((10#$GIO - 5 + 24) % 24) / KHUNG_GIO ))
+    LUOT=$(( ((10#$GIO - 6 + 24) % 24) / KHUNG_GIO ))
     KEY="$KEY-p$LUOT"
     DAY="$DAY luot $((LUOT + 1))/$((24 / KHUNG_GIO))"
     ;;
@@ -104,13 +104,25 @@ OUT=$($H -m hermes_cli.main kanban create "$TIEU_DE $DAY" \
 #  2. task tra ve co phai task MOI khong. Trung khoa chong trung thi kanban tra
 #     ve TASK CU voi tieu de cu, ma van co truong "id" — grep cu chi nhin "id"
 #     nen im lang, tuong da chay. Sang 23/08 ca ba vai deu khong chay vi loi nay.
+#     Nhan task CU bang `created_at`, KHONG bang tieu de: tieu de mang ngay VN,
+#     nen hai luot cung ngay VN co cung tieu de. 21/09/2026 (LOW-353) lich trot
+#     sang 22:00 VN, luot 22:00 trung khoa voi luot 05:00 cung ngay, cong so
+#     tieu de cho qua -> exit 0, khong tao task, sang 22/09 khong ai quet.
+created_at=$(echo "$OUT" | $H -c '
+import json, sys
+s = sys.stdin.read()
+try:
+    print(int(float(json.loads(s[s.index("{"):]).get("created_at") or 0)))
+except Exception:
+    print(0)' 2>/dev/null)
+task_age=$(( $(date +%s) - ${created_at:-0} ))
 if ! echo "$OUT" | grep -q '"id"'; then
   echo "${VAI}_daily_scan LOI: khong tao duoc task"
   echo "$OUT" | head -5
   exit 1
-elif ! echo "$OUT" | grep -qF "\"title\": \"$TIEU_DE $DAY\""; then
-  echo "${VAI}_daily_scan CANH BAO: kanban tra ve task CU (trung idempotency-key)."
-  echo "  Task hom nay KHONG duoc tao. Kiem tra khoa: $KEY"
+elif [ "$task_age" -gt 600 ]; then
+  echo "${VAI}_daily_scan CANH BAO: kanban tra ve task CU (trung idempotency-key, tao ${task_age}s truoc)."
+  echo "  Task luot nay KHONG duoc tao. Kiem tra khoa: $KEY"
   echo "$OUT" | grep '"title"' | head -2
   exit 1
 fi

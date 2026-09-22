@@ -32,7 +32,7 @@ cho người đang ít việc hơn. Vai **ảnh** do Ông Chủ chọn theo từ
 | Tên | Profile hermes | Role | Việc |
 |---|---|---|---|
 | Finn | `finn` | scout | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số — **chỉ donniechublog** |
-| Qinn | `qinn` | scout.x | Đọc tin kỹ thuật trên X, 2 lượt/ngày (05:00, 17:00 VN) — **chỉ donniechublog**, tin đi sang Jika |
+| Qinn | `qinn` | scout.x | Đọc tin kỹ thuật trên X, 2 lượt/ngày (06:00, 18:00 VN) — **chỉ donniechublog**, tin đi sang Jika |
 | Nova | `nova` | model | Quét 22 bảng xếp hạng model — **chỉ dcgr.tech** |
 | Vera | `vera` | market | Quét tin kinh doanh/đầu tư quanh AI |
 | Ethan | `ethan` | designer | Ảnh hero, mặc định thẻ **quote**; `--kieu full_bleed` cho ảnh phủ kín |
@@ -49,7 +49,7 @@ cho người đang ít việc hơn. Vai **ảnh** do Ông Chủ chọn theo từ
 ## Luồng
 
 ```
-cron 05:00 VN → task cho vai quét → quét, ghi manifest, gửi báo cáo
+cron 06:00 VN → task cho vai quét → quét, ghi manifest, gửi báo cáo
                         ↓
         Ông Chủ trả lời số thứ tự trong topic của vai quét
                         ↓
@@ -125,7 +125,7 @@ trong repo chỉ là **bản chụp**, sửa nó không tạo được job.
 
 | Job | Lịch | Việc |
 |---|---|---|
-| `finn-daily-scan` / `nova-daily-scan` / `vera-daily-scan` | 05:00 VN | Quét tin; cùng gọi `hermes/scripts/daily_scan.sh <vai>` |
+| `finn-daily-scan` / `nova-daily-scan` / `vera-daily-scan` | 06:00 VN | Quét tin; cùng gọi `hermes/scripts/daily_scan.sh <vai>` |
 | `daily-log` | 06:00 VN | Nhật ký ngày + chốt nhật ký 9router → topic `ada` |
 | `audit-cron` | 07:00 (blog) / 07:10 (dcgr) | Soát job hỏng của cả hai home |
 | `model-watch` | `*/30` trừ 08–10h và 13–16h VN | Dò sức khoẻ model |

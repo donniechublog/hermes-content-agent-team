@@ -108,7 +108,7 @@ def _bear_error_db(khi_loi):
 
 # ---------- cac nguon ----------
 
-# Trang thai hermes dat cho luot da nhan nhung chua xong. Nhat ky chay 23:00 UTC
+# Trang thai hermes dat cho luot da nhan nhung chua xong. Nhat ky chay 06:00 VN
 # cung dot voi cac viec ngay khac, doc trung luc chung con dang chay - khong phai loi.
 FORM_RUN = ("running", "claimed", "started", "pending")
 

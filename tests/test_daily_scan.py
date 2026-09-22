@@ -10,12 +10,15 @@ truyen slug hien tai, va than script phai tu choi slug la va profile khong co.
 
 Chay:  venv/bin/python tests/test_daily_scan.py
 """
+import json
 import os
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -72,6 +75,53 @@ def test_reject_slug_old_and_profile_missing():
         # trong home gia) — chung to cong khong chan nham profile co that.
         r = _run("vera", home)
         assert "khong co profile" not in r.stderr, f"vera co profile ma van bi chan: {r.stderr}"
+
+
+def _run_with_fake_kanban(home: Path, created_at: float, title: str):
+    """Chay daily_scan.sh finn voi `python` gia: `-m hermes_cli...` in JSON task
+    dung san, con lai chuyen sang python that (script dung no de doc JSON)."""
+    (home / "profiles" / "finn").mkdir(parents=True, exist_ok=True)
+    bin_dir = home / "hermes-agent" / "venv" / "bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    (home / "task.json").write_text(json.dumps(
+        {"id": "t_old", "title": title, "status": "done", "created_at": created_at}, indent=2),
+        encoding="utf-8")
+    fake = bin_dir / "python"
+    real = Path(sys.executable).as_posix()
+    fake.write_text(
+        "#!/bin/bash\n"
+        f'if [ "$1" = "-m" ]; then cat "{(home / "task.json").as_posix()}"; exit 0; fi\n'
+        f'exec "{real}" "$@"\n', encoding="utf-8")
+    fake.chmod(0o755)
+    return _run("finn", home)
+
+
+def test_old_task_same_vn_day_is_rejected():
+    """LOW-353: luot thu hai cung ngay VN trung khoa -> kanban tra task CU co DUNG
+    tieu de hom nay. Cong cu so tieu de nen cho qua (exit 0, khong tao task, sang
+    22/09/2026 Finn/Nova/Vera khong quet). Cong moi so created_at -> thoat 1."""
+    if not BASH:
+        print("  (bo qua: khong co bash)")
+        return
+    today = datetime.now(timezone(timedelta(hours=7))).strftime("%Y-%m-%d")
+    title = f"Quet tin sang {today}"
+    with tempfile.TemporaryDirectory() as d:
+        r = _run_with_fake_kanban(Path(d), time.time() - 17 * 3600, title)
+        assert r.returncode == 1 and "task CU" in r.stdout, \
+            f"task cu cung tieu de phai bi bat (ma 1), duoc {r.returncode}: {r.stdout}{r.stderr}"
+    with tempfile.TemporaryDirectory() as d:
+        r = _run_with_fake_kanban(Path(d), time.time() - 2, title)
+        assert r.returncode == 0, f"task vua tao phai qua cong, duoc {r.returncode}: {r.stdout}{r.stderr}"
+
+
+def test_qinn_turn_matches_scan_prepare():
+    """Cong thuc LUOT trong daily_scan.sh phai cung moc gio voi scan_prepare.turn."""
+    import scan_prepare
+    s = THAN.read_text(encoding="utf-8")
+    m = re.search(r"10#\$GIO - (\d+) \+ 24", s)
+    assert m and int(m.group(1)) == scan_prepare.FRAME_START, \
+        f"daily_scan.sh moc {m and m.group(1)} != scan_prepare.FRAME_START {scan_prepare.FRAME_START}"
+    assert scan_prepare.turn(6) == 0 and scan_prepare.turn(18) == 1
 
 
 if __name__ == "__main__":
