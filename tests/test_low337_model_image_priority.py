@@ -119,8 +119,8 @@ def test_wikidata_model_description_filter():
 
 
 def test_brand_round_drops_parent_logo_keeps_model_logo():
-    """Vong thuong hieu, tin MODEL: logo Alibaba (hang me) bi bo, logo Qwen vao; tin BUSINESS
-    thi logo hang van giu."""
+    """Vong thuong hieu: tin nhac Qwen thi logo Alibaba (hang me) bi bo, logo Qwen vao — ca tin
+    MODEL lan BUSINESS (LOW-354: luat LOW-337 tuyet doi, khong theo loai tin)."""
     import image_brand as th
     from prepare import fallback_rounds as fr
     parent = {"image_url": "p.png", "score": 18, "brand_match": {"key": "alibaba", "kind": "logo"}}
@@ -139,10 +139,10 @@ def test_brand_round_drops_parent_logo_keeps_model_logo():
              th.confirm_unlisted_vendor)
     th.vendors_in_story = lambda *a, **k: [{"key": "alibaba", "company": "Alibaba"}]
     th.vendor_images = lambda h, wd=None: [dict(parent), dict(office)]
-    th.model_logo_images = lambda t, wd: [dict(model)]
+    th.model_logo_images = lambda t, wd, only_table=False: [dict(model)]
     fr.download_and_filter = fake_download
     try:
-        for cat, want, drop in (("MODEL", "q.png", "p.png"), ("BUSINESS", "p.png", "q.png")):
+        for cat, want, drop in (("MODEL", "q.png", "p.png"), ("BUSINESS", "q.png", "o.png")):
             try:
                 fr._round_brand_body([], "Qwen-Image-2.1 từ Alibaba", "", Path(tempfile.gettempdir()),
                                      khong_browser=True, category=cat)
@@ -154,21 +154,43 @@ def test_brand_round_drops_parent_logo_keeps_model_logo():
          th.confirm_unlisted_vendor) = saved
 
 
-def test_vendors_via_model_only():
-    """LOW-354: hang me chi suy ra tu ten model (Gemini -> Google) khac hang duoc goi ten."""
+def test_model_parents_and_parent_only_query():
+    """LOW-354: hang me cua model co logo rieng — ke ca khi tieu de goi ten hang me."""
     import image_brand as th
-    v = th.vendors_via_model_only
-    assert v("Gemini accidentally connected to the internet and hacked 3 companies") == {"google deepmind"}
-    assert v("ChatGPT adds memory") == {"openai"} and v("GPT-5.5 vào bảng") == {"openai"}
-    assert v("Claude Opus 5 hacks") == {"anthropic"}
-    for t in ("Google releases Gemini 3.5", "DeepMind Gemini robotics", "OpenAI GPT-6",
-              "Qwen-Image-2.1 từ Alibaba", "Nvidia buys Groq", "Kimi K3 ra mắt"):
+    v = lambda t: set(th.model_parents(t))   # noqa: E731
+    assert v("Google confirms Gemini models hacked three companies in May 2026") == {"google deepmind"}
+    assert v("Gemini accidentally hacked 3 companies") == {"google deepmind"}
+    assert v("ChatGPT adds memory") == {"openai"} and v("Gemma 4 open weights") == {"google deepmind"}
+    assert v("Researchers used Claude to hack OpenAI") == {"anthropic"}
+    for t in ("Grok 4.7 released", "Nvidia buys Groq", "Kimi K3 ra mắt", "Microsoft opens data center"):
         assert v(t) == set(), t
+    cha = th.model_parents("Google confirms Gemini models hacked")
+    q = lambda k: th.parent_only_query(k, cha)   # noqa: E731
+    assert q("Google headquarters Mountain View building") == "Gemini" and q("Alphabet logo") == "Gemini"
+    for k in ("Google Gemini artificial intelligence", "Sundar Pichai speaking portrait", "cybersecurity hacker"):
+        assert q(k) == "", k
+
+
+def test_widen_search_uses_model_not_leading_parent():
+    """LOW-354: vong tim rong tung hoi Yandex/Commons 'Google' (ten rieng dau tieu de)."""
+    from prepare import fallback_rounds as fr
+    assert fr._model_over_parent("Google", "Google confirms Gemini models hacked three companies") == "Gemini"
+    assert fr._model_over_parent("Microsoft", "Microsoft opens data center") == "Microsoft"
+    assert fr._model_over_parent("Researchers", "Researchers used Claude to hack OpenAI") == "Researchers"
+
+
+def test_find_more_refuses_parent_only_query():
+    import find_more_images as fm
+    t = "Google confirms Gemini models hacked three companies in May 2026"
+    loi = fm.model_parent_query_errors(["Google headquarters Mountain View building",
+                                        "Google Gemini app interface", "Sundar Pichai speaking"], t)
+    assert len(loi) == 1 and "Google headquarters" in loi[0] and "Gemini" in loi[0], loi
+    assert fm.model_parent_query_errors(["Google headquarters"], "Microsoft opens data center") == []
 
 
 def test_research_story_on_gemini_uses_model_not_google():
-    """LOW-354: tin RESEARCH (khong phai MODEL) chi nhac Gemini: khong anh/logo Google tu
-    Commons, co logo Gemini va bao tim theo ten "Gemini". Tren code cu: toan anh Google."""
+    """LOW-354: tin RESEARCH/BUSINESS nhac Gemini (co hay khong goi ten Google): khong anh/logo
+    Google tu Commons, co logo Gemini va bao tim theo ten "Gemini". Tren code cu: toan anh Google."""
     import image_brand as th
     from prepare import fallback_rounds as fr
     office = {"image_url": "googleplex.jpg", "score": 28, "brand_match": {"key": "google deepmind", "kind": "photo"}}
@@ -208,14 +230,15 @@ def test_research_story_on_gemini_uses_model_not_google():
         assert seen["report"] == ["Gemini"], seen["report"]
         # Nguoi (CEO) van giu nhu LOW-267; logo/tru so Google va bao theo "Google" thi bo.
         assert set(seen["cands"]) == {"gemini_logo.png", "gemini_app.jpg", "pichai.jpg"}, seen["cands"]
-        # Tieu de tu goi ten Google -> anh Google van duoc (khong doi hanh vi cu).
+        # Draft that: tieu de GOI TEN Google, loai BUSINESS — van chi hinh Gemini.
         seen["report"] = []
         try:
-            fr._round_brand_body([], "Google releases Gemini 3.5 for enterprises", "",
-                                 Path(tempfile.gettempdir()), category="RESEARCH")
+            fr._round_brand_body([], "Google confirms Gemini models hacked three companies in May 2026", "",
+                                 Path(tempfile.gettempdir()), category="BUSINESS")
         except Stop:
             pass
-        assert "googleplex.jpg" in seen["cands"] and seen["report"] == ["Google"], (seen, )
+        assert seen["report"] == ["Gemini"], seen["report"]
+        assert set(seen["cands"]) == {"gemini_logo.png", "gemini_app.jpg", "pichai.jpg"}, seen["cands"]
     finally:
         (th.vendor_images, th.model_logo_images, th.image_has_ballot, th.deadline_passed,
          fr.download_and_filter, fr._report_brand_empty) = saved

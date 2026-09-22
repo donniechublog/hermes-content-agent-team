@@ -254,7 +254,8 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
     if len(anh) < 5:
         # Tin mong anh: them anh that tu Wikimedia Commons theo ten rieng dau
         # tieu de (tru so, san pham, su kien). Chi bu phan thieu.
-        tk = _leading_proper_noun(nguon.get("title_en") or title)
+        tk = _model_over_parent(_leading_proper_noun(nguon.get("title_en") or title),
+                                nguon.get("title_en") or title)
         if tk:
             them = commons_images(tk, so=6)
             if them is None:
@@ -274,6 +275,16 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
                     a["commons"] = True
                     anh.append(a)
     return anh
+
+
+def _model_over_parent(tk: str, tieu_de: str) -> str:
+    """Ten rieng dau tieu de la HANG ME cua model trong tin ("Google confirms Gemini...")
+    -> tim theo ten MODEL ("Gemini"), khong tim tru so/logo hang me (LOW-354)."""
+    import image_brand as th
+    thay = th.parent_only_query(tk, th.model_parents(tieu_de)) if tk else ""
+    if thay:
+        print(f"[tim rong] '{tk}' la hang me cua model {thay} -> tim '{thay}' (LOW-354)", file=sys.stderr)
+    return thay or tk
 
 
 def _round_widen_search(anh: list, source_pages: list, tieu_de_nhin: str, toi_thieu: int,
@@ -301,7 +312,7 @@ def _round_widen_search(anh: list, source_pages: list, tieu_de_nhin: str, toi_th
         # "+0 tai them", khong mot dong nao cho biet 0 la do trang khong co anh,
         # anh trung, hay tai hong — phai doan.
         print(f"[tim rong] browser boc {len(bp2['cands'])} ung vien tu {len(them_bao)} bao", file=sys.stderr)
-    tk = _leading_proper_noun(tieu_de_nhin)
+    tk = _model_over_parent(_leading_proper_noun(tieu_de_nhin), tieu_de_nhin)
     # TIM NHU NGUOI (Ong Chu 12/09/2026, 7 link TSMC tim tay): anh web (Bing/
     # Yandex qua Chromium) + og:image bao chi VE thuc the — khong doi "cung tin".
     # Truy van = ten rieng dau tieu de (hang/san pham), khong co thi ca tieu de.
@@ -486,12 +497,12 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     import story_type
     # LOW-337: tin MODEL/BENCHMARK — logo CUA MODEL (Qwen, khong phai Alibaba).
     tin_model = story_type.is_model_story(category)
-    # LOW-354: tin loai khac (RESEARCH, SECURITY...) chi nhac hang me QUA ten model
-    # ("Gemini ... xam nhap 3 cong ty") cung la tin ve model: logo model, KHONG anh
-    # tru so/toa nha/logo/co phieu cua hang me — thay bang bao that tim theo TEN MODEL.
-    chi_qua_model = th.vendors_via_model_only(tieu_de_nhin, tom_tat)
+    # LOW-354: tin nhac model co logo rieng (Gemini) — bat ke loai tin, bat ke tieu de
+    # co goi ten hang me — la tin ve model: logo model, KHONG anh tru so/toa nha/logo/
+    # bao/co phieu cua hang me; thay bang bao that tim theo TEN MODEL.
+    chi_qua_model = set(th.model_parents(tieu_de_nhin))
     if chi_qua_model:
-        print("[thuong hieu] hang chi nhac qua ten model, bo anh hang me: "
+        print("[thuong hieu] tin nhac model, bo anh hang me: "
               + ", ".join(sorted(chi_qua_model)), file=sys.stderr)
     if tin_model:
         logo_model = th.model_logo_images(tieu_de_nhin, wd4)

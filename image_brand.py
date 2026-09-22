@@ -887,29 +887,50 @@ def model_families_in_story(tieu_de: str) -> list:
     return ra
 
 
-def vendors_via_model_only(tieu_de: str, tom_tat: str = "") -> set:
-    """Khoá hãng mà tin CHỈ nhắc qua tên model trong bảng `MODEL_LOGO` (Gemini -> google
-    deepmind), không tự gọi tên hãng (Google/Alphabet/DeepMind). Thuần.
+# Họ model mà RANK_OF_NAME chưa quy về hãng mẹ.
+MODEL_PARENT_EXTRA = {"gemma": "google deepmind"}
+
+
+def model_parents(tieu_de: str) -> dict:
+    """Hãng mẹ của các họ model CÓ logo riêng (bảng `MODEL_LOGO`) được nhắc trong tiêu
+    đề: {khoá hãng: {"model": "Gemini", "names": ("google", "alphabet", ...)}}. `names` là
+    tên gọi HÃNG (không gồm tên model) để chặn truy vấn/ảnh theo hãng mẹ. Thuần.
 
     LOW-354 (Ông Chủ 22/09/2026): *"gemini có logo riêng và rất nhiều hình ảnh dùng được,
-    tại sao cứ dùng logo của cty mẹ ?"* — tin RESEARCH về Gemini ra 8 slide toà nhà Google
-    vì `vendors_in_story` quy Gemini về Google rồi vòng thương hiệu tìm ảnh trụ sở Google."""
+    tại sao cứ dùng logo của cty mẹ ?"* — tin "Google confirms Gemini models hacked three
+    companies" (BUSINESS) ra 8 slide toà nhà/logo Google: vòng tìm rộng hỏi Yandex/Commons
+    chữ "Google" (tên riêng đầu tiêu đề), vòng thương hiệu hỏi trụ sở Google, Dre tự tìm
+    "Google headquarters". Luật LOW-337 là tuyệt đối — nhắc model thì không dùng hình hãng
+    mẹ, kể cả khi tiêu đề có gọi tên hãng mẹ."""
     import brand_names
     import scan_business
-    if not any(ho["file"] for ho in model_families_in_story(tieu_de)):
-        return set()                     # chi ho model CO logo rieng trong bang moi thay hang me
-    vb = f"{tieu_de or ''} {tom_tat or ''}".lower()
-    model_rx = re.compile(r"(" + "|".join(rx for _, _, rx in MODEL_LOGO.values()) + r")")
     model_words = {k.lower() for k in brand_names.MODEL_FAMILY} | set(MODEL_LOGO)
-    named, via_model = set(), set()
-    for ten in list(scan_business.WATCHLIST) + list(NAME_EXTRA):
-        t = ten.strip()
-        if len(t) < 3 or not re.search(r"(?<!\w)" + re.escape(t) + r"(?!\w)", vb):
-            continue
-        khoa = NAME_EXTRA.get(t) or scan_business.RANK_OF_NAME.get(ten, ten).strip()
-        is_model = t.lower().split()[0] in model_words or model_rx.match(t.lower())
-        (via_model if is_model else named).add(khoa)
-    return via_model - named
+    ra = {}
+    for ho in model_families_in_story(tieu_de):
+        if not ho["file"]:
+            continue                     # chi ho model CO logo rieng moi thay duoc hang me
+        khoa = (MODEL_PARENT_EXTRA.get(ho["key"]) or NAME_EXTRA.get(ho["key"])
+                or scan_business.RANK_OF_NAME.get(ho["key"], ho["key"]).strip())
+        if khoa == ho["key"] or khoa in ra:
+            continue                     # model khong co hang me rieng (Grok, DeepSeek)
+        ten = sorted({t.strip().lower() for t in list(scan_business.WATCHLIST) + list(NAME_EXTRA)
+                      if (NAME_EXTRA.get(t.strip()) or scan_business.RANK_OF_NAME.get(t, t).strip()) == khoa
+                      and t.strip().lower().split()[0] not in model_words} | {khoa})
+        ra[khoa] = {"model": ho["name"], "names": tuple(ten)}
+    return ra
+
+
+def parent_only_query(tu_khoa: str, cha: dict) -> str:
+    """Tên model thay cho truy vấn CHỈ theo hãng mẹ ('Google headquarters' -> 'Gemini'),
+    '' nếu truy vấn không dính hãng mẹ hoặc đã có tên model. `cha` = `model_parents(...)`."""
+    thap = (tu_khoa or "").lower()
+    for v in cha.values():
+        if v["model"].lower() in thap:
+            return ""
+    for v in cha.values():
+        if any(re.search(r"(?<!\w)" + re.escape(n) + r"(?!\w)", thap) for n in v["names"]):
+            return v["model"]
+    return ""
 
 
 def _wikidata_model_logo(ten: str) -> str:
