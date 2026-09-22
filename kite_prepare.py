@@ -109,8 +109,12 @@ def figure_hero(m: dict) -> dict | None:
 
     MOT nguon cho ca brief lan cong chan (`kite_submit`).
     """
+    import arena_x
+    from_arena = lambda a: (a.get("ranking") or {}).get("kind") == arena_x.KIND   # noqa: E731
+    # Anh X @arena duoc khop CHAT ten model tu chinh tweet chinh chu, khong can doi vision
+    # gat "lien quan"; vision noi KHONG thi figure_real da loai roi.
     ut = [a for a in figure_real(m)
-          if a.get("relevant") is True or a.get("paper_figure")]
+          if a.get("relevant") is True or a.get("paper_figure") or from_arena(a)]
     if not ut:
         return None
     # LOW-254 (18/09/2026): "khoi tit chup trang nguon" (`capture_kind ==
@@ -121,7 +125,9 @@ def figure_hero(m: dict) -> dict | None:
     is_headline_capture = lambda a: a.get("capture_kind") == "headline"   # noqa: E731
     rieng = [a for a in ut
              if not (a.get("concept") or a.get("brand_match") or is_headline_capture(a))]
-    xep = ([a for a in rieng if a.get("paper_figure")] + rieng
+    # Tin model release: anh X @arena DAU TIEN (Ong Chu 22/09/2026 — *"mien la tin ve model
+    # release, cu lay tu arena.ai dau tien, ko co thi moi qua nguon khac"*).
+    xep = ([a for a in ut if from_arena(a)] + [a for a in rieng if a.get("paper_figure")] + rieng
            + [a for a in ut if a.get("brand_match")]
            + [a for a in ut if a.get("concept")]
            + [a for a in ut if is_headline_capture(a)])

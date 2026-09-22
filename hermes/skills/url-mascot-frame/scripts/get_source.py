@@ -28,7 +28,13 @@ from urllib.parse import urlparse, parse_qs, urlencode, urlunparse, urljoin
 
 UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
-SOCIAL_FETCH = Path.home() / ".claude" / "skills" / "social-crawl" / "scripts" / "social_fetch.py"
+# social-crawl is the SIBLING skill (same skills/ dir, in the repo and in the Hermes
+# home copy). The old ~/.claude/skills path does not exist on the production box
+# (checked 22/09/2026), so social_media_urls() silently returned [] for every post.
+SOCIAL_FETCH = next((p for p in (
+    Path(__file__).resolve().parents[2] / "social-crawl" / "scripts" / "social_fetch.py",
+    Path.home() / ".claude" / "skills" / "social-crawl" / "scripts" / "social_fetch.py",
+) if p.exists()), Path(__file__).resolve().parents[2] / "social-crawl" / "scripts" / "social_fetch.py")
 
 
 def twimg_orig(url: str) -> str:
@@ -116,6 +122,70 @@ def twimg_from_page(url: str) -> list:
         thu += [f for f in ("jpg", "png") if f not in thu]
         for f in thu:
             out.append(f"https://pbs.twimg.com/media/{mid}?format={f}&name=orig")
+    return out
+
+
+def save_x_photo(url: str, out: str) -> bool:
+    """The post's OWN uploaded photo only, full resolution. Returns False instead of
+    falling back to the og:image render card or a screenshot: callers that want a
+    real photo (engine candidates, @arena charts) must not get a card or a login
+    wall back and treat it as the image."""
+    for cdn in twimg_from_page(url):
+        try:
+            download(cdn, out)
+        except Exception:
+            continue
+        if _is_image_file(out):
+            return True
+    Path(out).unlink(missing_ok=True)
+    return False
+
+
+# A logged-out x.com page (profile or post) is server-rendered with a Relay store:
+# each tweet's text sits in `"client:<base64 of 'Tweet:<id>'>:details":$R[n]={…
+# full_text:"…"`, and each timeline entry carries `data-href="/<handle>/status/<id>"`.
+# Measured 22/09/2026 from the production box: x.com/arena returns its ~6 latest
+# tweets this way (a browser UA is needed; bot UAs get an empty shell).
+_X_DETAILS_RE = re.compile(
+    r'"client:([A-Za-z0-9+/=]+):details":\$R\[\d+\]=\{.{0,400}?full_text:"((?:[^"\\]|\\.)*)"', re.S)
+_X_HREF_RE = re.compile(r'data-href="/(\w+)/status/(\d{15,20})"')
+_X_STATUS_URL_RE = re.compile(r"(?:x|twitter)\.com/(\w+)/status/(\d{15,20})", re.I)
+
+
+def _js_string(s: str) -> str:
+    try:
+        return json.loads(f'"{s}"')
+    except ValueError:
+        return s.replace("\\n", "\n").replace('\\"', '"')
+
+
+def x_page_posts(url: str) -> list:
+    """Tweets rendered on a logged-out x.com page (a profile or a single post), as
+    [{"id", "handle", "text", "url"}]. `handle` is '' when the page does not say who
+    wrote a tweet. [] on any failure — a hint source, never a blocker."""
+    import base64
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": UA})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            page = r.read().decode("utf-8", "ignore")
+    except Exception:
+        return []
+    handles = {tid: h for h, tid in _X_HREF_RE.findall(page)}
+    m = _X_STATUS_URL_RE.search(url)
+    if m:
+        handles.setdefault(m.group(2), m.group(1))
+    out, seen = [], set()
+    for b64, text in _X_DETAILS_RE.findall(page):
+        try:
+            kind, _, tid = base64.b64decode(b64).decode().partition(":")
+        except Exception:
+            continue
+        if kind != "Tweet" or not tid.isdigit() or tid in seen:
+            continue
+        seen.add(tid)
+        h = handles.get(tid, "")
+        out.append({"id": tid, "handle": h, "text": _htmllib.unescape(_js_string(text)),
+                    "url": f"https://x.com/{h or 'i/web'}/status/{tid}"})
     return out
 
 
@@ -248,16 +318,9 @@ def main():
             return
         # X photo post: no media[] from the crawler and og:image is only the
         # card, so take the upload out of the page before settling for that.
-        if host in ("x.com", "twitter.com"):
-            for cdn in twimg_from_page(url):
-                try:
-                    download(cdn, out)
-                except Exception:
-                    continue
-                if _is_image_file(out):
-                    print(out)
-                    return
-            Path(out).unlink(missing_ok=True)
+        if host in ("x.com", "twitter.com") and save_x_photo(url, out):
+            print(out)
+            return
         # text tweet / no media → the post's og:image, else a screenshot
         if page_fallback(url, out):
             print(out)

@@ -166,8 +166,15 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     chi_logo_bang = image_rules_ethan.model_story_only(m.get("category"))
     if chi_logo_bang:
         L.append("⛔ TIN MODEL/BENCHMARK (luật riêng của Ethan, LOW-337): chỉ dùng THẺ LOGO CỦA MODEL (Qwen, "
-                 "ChatGPT, Gemini… — KHÔNG logo hãng mẹ) hoặc BẢNG XẾP HẠNG/BENCHMARK. Ưu tiên logo, rồi tới bảng. "
+                 "ChatGPT, Gemini… — KHÔNG logo hãng mẹ) hoặc BẢNG XẾP HẠNG/BENCHMARK. Ưu tiên ảnh X @arena, rồi "
+                 "logo, rồi tới bảng của nguồn khác. "
                  "Không có cả hai thì báo thiếu ảnh.")
+    import arena_x
+    from_arena = (m.get("ranking") or {}).get("kind") == arena_x.KIND
+    if from_arena:
+        L.append("🥇 CÓ ẢNH TỪ X @arena (arena.ai) cho model này — mã \"XH\". Ông Chủ 22/09/2026: tin model "
+                 "release lấy từ arena.ai ĐẦU TIÊN, không có mới qua nguồn khác → \"image\": \"XH\" (đứng trước "
+                 "cả thẻ logo). Ảnh poll/xu hướng chưa có điểm cũng dùng.")
     if m.get("is_ranking_story"):
         L.append(cb.ranking_brief_line(m, "", "ethan_submit"))
     for a in m["images"]:
@@ -208,7 +215,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     L.append(f"Nhìn tất cả ảnh trong MỘT tấm: {m['workdir']}/{state_paths.CONTACT_SHEET_FILE} (mở tối đa một lần, khi thật cần).")
     L += ["", f"## Viết spec vào: {m['workdir']}/spec.json"]
     khung = {
-        "image": (goi_y[0][3] if goi_y else "A?"),
+        "image": ("XH" if from_arena else goi_y[0][3] if goi_y else "A?"),
         "card_style": "full_bleed",
         "title": "<MỘT câu hoàn chỉnh bao quát tin, ĐẬP VÀO MẮT trong 3 giây, có dấu, có CON SỐ nếu tin có số>",
         "kicker": "<" + " | ".join(TAGLINE_CALL_Y) + ">",

@@ -54,8 +54,12 @@ def _check_stack(a: dict, ma: str, ma2, anh: dict, m: dict, loi: list) -> None:
 
 def _must_use_ranking(m: dict, a: dict) -> bool:
     """Tin xep hang, engine chup duoc bang, ma anh chinh khong phai bang -> phai doi sang XH.
-    LOW-337: the logo dung TRUOC bang (logo > benchmark), nen the logo khong bi ep doi."""
-    return nc.needs_ranking_image(m, a) and not role.is_brand_logo_card(a)
+    LOW-337: the logo dung TRUOC bang chup tu trang xep hang (logo > benchmark), nen the logo
+    khong bi ep doi — TRU anh tu X @arena: Ong Chu 22/09/2026 *"mien la tin ve model release,
+    cu lay tu arena.ai dau tien, ko co thi moi qua nguon khac"* (arena > logo > bang khac)."""
+    import arena_x
+    from_arena = (m.get("ranking") or {}).get("kind") == arena_x.KIND
+    return nc.needs_ranking_image(m, a) and (from_arena or not role.is_brand_logo_card(a))
 
 
 def _check_model_story(anh: dict, ma, ma2, m: dict) -> list:

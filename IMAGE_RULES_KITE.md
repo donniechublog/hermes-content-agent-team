@@ -1057,3 +1057,14 @@ Bố cục là việc riêng của từng khung, và chúng **phải** khác nha
 
 Ông Chủ đã chốt riêng: **bố cục bìa/hero là thứ đã duyệt** — không áp luật ≤30%
 của carousel lên đó.
+
+## LOW-337 bổ sung (22/09/2026): tin MODEL RELEASE lấy ảnh X @arena ĐẦU TIÊN
+
+Ông Chủ: *"miễn là tin về model release, cứ lấy từ arena.ai đầu tiên, ko có thì mới qua nguồn khác"*.
+Engine chung hỏi `arena_x` cho MỌI tin tách được tên model (không cần browser, không cần là tin xếp
+hạng); có ảnh thì bài có mã `XH` và `kite_prepare.figure_hero` đặt ảnh @arena lên bìa trước mọi ảnh khác. Tìm tweet và tải ảnh chỉ bằng code có sẵn
+(`get_source.x_page_posts` / `save_x_photo`); post X làm nguồn bài cũng lấy ảnh gốc qua
+`get_source` khi crawl-queue trả `media[]` rỗng. Chi tiết: `IMAGE_RULES_ETHAN.md` mục LOW-337.
+
+Ông Chủ duyệt 22/09/2026 ba thẻ @arena dựng thật (Grok 4.7 ×2, MiMo-V2.6-Pro): *"3 hình này đạt chuẩn.
+và đây cũng nên là tiêu chuẩn cho mọi role designer"* — đồ hoạ chính chủ @arena giữ nguyên, chữ ≤20% khung.
