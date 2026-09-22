@@ -57,10 +57,12 @@ def _crop(bao_cao: str, tran: int = CEILING_REPORT) -> str:
               "'khong co gi'. Bao Ong Chu de nang tran.")
 
 
-# Khung gio cua MOT luot, tinh tu 05:00 VN. 12 = hai luot/ngay (05:00 va 17:00
-# VN). Doi so nay la doi CA nhip: phai sua cung luc ba cho — hang so nay, cron
-# expr cua job `qinn-scan`, va cong thuc LUOT trong hermes/scripts/daily_scan.sh.
+# Khung gio cua MOT luot, tinh tu FRAME_START gio VN. 12 = hai luot/ngay (06:00
+# va 18:00 VN, LOW-353). Doi hai so nay la doi CA nhip: phai sua cung luc ba cho —
+# hang so nay, cron expr cua job `qinn-scan`, va cong thuc LUOT trong
+# hermes/scripts/daily_scan.sh.
 FRAME_HOURS = 12
+FRAME_START = 6
 
 # LOW-352: Nova/Vera cham hai thanh phan 0-50 (manifest_write.SCORE_PARTS). Noi ro
 # diem khong len bao cao: vai biet diem khong phai de "trinh bay" thi cham that hon.
@@ -69,13 +71,13 @@ SCORE_NOTE = ("Điểm = score_impact + score_relevance (0–100). Chấm trung 
 
 
 def turn(gio_vn: int = None) -> int:
-    """Luot trong ngay cho vai chay nhieu lan: khung FRAME_HOURS tieng tu 05:00 VN.
+    """Luot trong ngay cho vai chay nhieu lan: khung FRAME_HOURS tieng tu FRAME_START gio VN.
 
     Moc cron nam dau moi khung, vai chay brief o dau khung va nop trong vong vai
-    phut -> luon cung mot luot. Khong dung gio tron vi nop luc 16:59 va 17:01 se
+    phut -> luon cung mot luot. Khong dung gio tron vi nop luc 17:59 va 18:01 se
     ra hai thu muc khac nhau."""
     h = datetime.now(VN).hour if gio_vn is None else gio_vn
-    return ((h - 5) % 24) // FRAME_HOURS
+    return ((h - FRAME_START) % 24) // FRAME_HOURS
 
 
 def workdir(vai: str) -> Path:
