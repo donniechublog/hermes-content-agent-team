@@ -17,7 +17,7 @@ LOW-231 mở rộng (2) và (3) cho tệp/thư mục CẤP STATE (`state/<brand>
 nhật ký, 9router) theo bảng docs/tu_dien_ten/state_files_v2.json: hằng phải khớp
 bảng, mỗi dòng bảng phải có hằng, và tên cũ (`nguon_<id>.json`, `anh_da_dung.jsonl`,
 `quet/`, `tai_ve/`, `vung_ocr.json`…) không được nằm ở chỗ dựng đường dẫn. Thư mục
-`nhat_ky/` Ở GỐC REPO (nhật ký sự cố) không phải state — không tệp .py nào trong
+`incident_journal/` Ở GỐC REPO (nhật ký sự cố, trước LOW-367 là `nhat_ky/`) không phải state — không tệp .py nào trong
 phạm vi quét dựng đường dẫn tới nó, nên không cần ngoại lệ.
 
 Ngoài phạm vi quét: shim LOW-50 (`*chuan_bi*.py`, gói `chuan_bi/`), chính bảng đổi
@@ -367,7 +367,7 @@ OLD_FILE_SHAPES = [
 ]
 
 # LOW-231: ten CU cap state. Ten phang (khong co cho giu {…}) sai o cho duong dan, ca
-# thu muc (quet/tai_ve/nhat_ky cua state — `nhat_ky/` goc repo khong .py nao dung).
+# thu muc (quet/tai_ve/nhat_ky cua state — `incident_journal/` goc repo khong .py nao dung).
 _PLAIN_231 = {cu for muc in SECTIONS_231 for cu in TABLE_231[muc] if "{" not in cu}
 OLD_NAMES |= _PLAIN_231
 # LOW-237: tep workdir image_brand
