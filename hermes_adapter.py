@@ -178,13 +178,14 @@ def create_task(title, assignee, body, parent=None, max_runtime="25m"):
         return None, r.stdout[-300:]
 
 
-def job(tu_ts=None, vai=None, so=None, moi_truoc=False):
+def job(tu_ts=None, vai=None, so=None, moi_truoc=False, db=None):
     """Danh sach task da chuan hoa; None neu khong doc duoc kanban.db.
 
     tu_ts     chi lay task tao TU moc thoi gian nay (epoch giay)
     vai       chi lay task cua mot assignee
     so        gioi han so ban ghi
     moi_truoc sap xep moi nhat len dau (mac dinh: cu nhat truoc)
+    db        kanban.db cua home KHAC container hien tai (audit_cron soat ca hai brand)
     """
     dieu_kien, tham = [], []
     if tu_ts is not None:
@@ -200,7 +201,7 @@ def job(tu_ts=None, vai=None, so=None, moi_truoc=False):
     if so is not None:
         cau += " LIMIT ?"                       # tham so hoa, khong noi chuoi
         tham.append(int(so))
-    hang = _ask(cau, tuple(tham), "doc danh sach task")
+    hang = _ask(cau, tuple(tham), "doc danh sach task", db=db)
     if hang is None:
         return None
     return [dict(zip([k for _, k in _COT_VIEC], h)) for h in hang]
