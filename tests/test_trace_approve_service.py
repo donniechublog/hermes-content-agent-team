@@ -167,7 +167,7 @@ def test_reply_to_latest_report_dispatches_pick_with_parsed_command():
         brand = pick.BRAND
         assert _bg(h) == [("chon", "_process_pick",
                            (h.token, h.group, VERA, "vera",
-                            [(1, "dre", brand), (7, "dre", brand)]))], _bg(h)
+                            [(1, "dre", brand), (7, "dre", brand)], None))], _bg(h)
         assert h.tg.methods() == []
     finally:
         h.__exit__()

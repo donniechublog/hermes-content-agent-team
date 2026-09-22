@@ -1405,6 +1405,13 @@ def handle_callback(token, channel, cq):
         skill_lesson_approve.handle_button(token, action, draft_id, cq)
         return
 
+    # LOW-362: cau hoi "tin da giao, lam lai khong?" cua researcher — "draft_id" o day la
+    # "<khoa>-<vai>" (rpk) / "<khoa>" (rpkno), khong phai tep DRAFTS.
+    if action in ("rpk", "rpkno"):
+        import approve_pick
+        approve_pick.handle_repick_button(token, action, draft_id, cq)
+        return
+
     p = DRAFTS / (draft_id + ".json")
     if not p.exists():
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],

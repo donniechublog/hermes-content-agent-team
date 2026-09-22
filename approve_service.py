@@ -50,7 +50,7 @@ from approve_dispatch import (  # noqa: E402
     report_progress_kanban, role_of_topic,
 )
 from approve_pick import (  # noqa: E402
-    MANIFEST_BY_TOPIC, _is_reply_report, read_pick_command, _process_pick,
+    MANIFEST_BY_TOPIC, read_pick_command, _process_pick, reply_report_target,
 )
 from approve_post import (  # noqa: E402
     _redo_all_done_limit, _label_reason_redo, _process_button, already_len_channel, draft_push,
@@ -123,9 +123,11 @@ def _pick_command_if_has(token, group, msg, thread_id, text, mid):
     khong ra bai" thi mot dong log du de biet cong da xu ra sao."""
     vai = role_of_topic(thread_id)
     lenh = read_pick_command(text) if vai in MANIFEST_BY_TOPIC else None
+    manifest = None
     if lenh is not None:
         rt_that = _reply_real(msg)
-        la_reply = _is_reply_report(vai, msg)
+        # LOW-362: reply vao BAT KY bao cao nao cua vai (ke ca cu) -> manifest cua chinh no.
+        la_reply, manifest = reply_report_target(vai, msg)
         log("route", f"msg={mid} ung-vien-chon vai={vai} "
                      f"reply_that={rt_that.get('message_id') if rt_that else None} "
                      f"la_reply_bao_cao={la_reply}")
@@ -134,7 +136,7 @@ def _pick_command_if_has(token, group, msg, thread_id, text, mid):
                          f"vai={vai} -> coi la hoi thoai")
             _report_no_right_reply(token, group, thread_id, vai, rt_that)
             lenh = None
-    return vai, lenh
+    return vai, lenh, manifest
 
 
 def _report_no_right_reply(token, group, thread_id, vai, rt_that):
@@ -233,7 +235,7 @@ def handle_message(token, group, msg):
     # REPLY dung vao bao cao (xem _is_reply_report). Moi thu khac (ke ca dung
     # so nhung go troi, khong bam Reply) la hoi thoai. Finn, Nova, Vera deu
     # duoc — cung mot cach tra loi.
-    vai, lenh = _pick_command_if_has(token, group, msg, thread_id, text, mid)
+    vai, lenh, manifest = _pick_command_if_has(token, group, msg, thread_id, text, mid)
     is_pick = lenh is not None
     if not is_pick:
         # Thi diem 04/09 (dcgr truoc): chat thuong di qua GATEWAY hermes bang bot
@@ -249,9 +251,9 @@ def handle_message(token, group, msg):
                   token, group, msg, thread_id, text)
         return
 
-    log("route", f"msg={mid} chon so vai={vai} lenh={lenh}")
+    log("route", f"msg={mid} chon so vai={vai} lenh={lenh} manifest={manifest.name if manifest else None}")
     _run_background("chon", _process_pick, token, group, thread_id,
-              token, group, thread_id, vai, lenh)
+              token, group, thread_id, vai, lenh, manifest)
 
 def _write_offset(offset: int):
     """Ghi offset NGUYEN TU. Chet giua luc ghi khong duoc de lai file cut:

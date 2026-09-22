@@ -87,7 +87,9 @@ def _is_reply_report(vai: str, msg: dict) -> bool:
     hoi thoai — du co dung so). Cung nguyen tac voi _label_reason_redo o tren,
     va giai luon mot ke ho khac: truoc day tra loi mot bao cao CU van bi hieu
     la chon tu manifest MOI NHAT (_process_pick luon doc latest_manifest), sai bai
-    ma khong ai biet. Gio reply phai khop dung mid bao cao gan nhat moi qua.
+    ma khong ai biet. Gio reply phai khop mid cua mot bao cao DA GUI — moi nhat, hoac
+    (LOW-362) mot bao cao cu trong lich su, va so doc tren manifest cua chinh bao cao
+    do (xem `reply_report_target`).
 
     scan_submit.py ghi mid nay qua `publish.py --luu-mid` ngay khi gui bao cao.
     Chua co tep (bao cao gui truoc khi co co che nay, hoac ghi loi) thi lui ve
@@ -95,18 +97,54 @@ def _is_reply_report(vai: str, msg: dict) -> bool:
     hoi thoai thuong. Phai loc qua _reply_real truoc: trong topic, Telegram tu
     gan reply_to_message = tin goc topic (do bot tao) cho MOI tin, nen thieu
     buoc loc do thi ca hai nhanh deu luon dung — dung bug 06/09/2026."""
+    return reply_report_target(vai, msg)[0]
+
+
+def _history_manifest(vai: str, mid) -> Path | None:
+    """Manifest cua bao cao CU co manh tin `mid`, tra trong `report_history.<vai>.jsonl`
+    (moi nhat truoc). None khi khong thay hoac manifest da bi don."""
+    p = STATE_DIR / state_paths.REPORT_HISTORY_FILE.format(vai)
+    try:
+        dong = p.read_text(encoding="utf-8").splitlines() if p.exists() else []
+    except OSError:
+        return None
+    for d in reversed(dong):
+        try:
+            rec = json.loads(d)
+        except ValueError:
+            continue
+        if mid in (rec.get("message_ids") or []):
+            q = Path(rec.get("manifest") or "")
+            return q if q.name and q.exists() else None
+    return None
+
+
+def reply_report_target(vai: str, msg: dict) -> tuple:
+    """(la_reply_bao_cao, manifest cua DUNG bao cao do hoac None). Reply dung bao cao moi
+    nhat ma chua co manifest van la lenh chon — `_process_pick` se noi "chua co danh sach".
+
+    LOW-362 (Ong Chu 22/09/2026: "duoc phep reply 1 so nhieu lan vao researcher"): truoc
+    day chi nhan reply vao bao cao MOI NHAT; reply bao cao cu bi coi la hoi thoai. Gio:
+    bao cao moi nhat -> manifest da ghim (hoac moi nhat); bao cao cu -> manifest cua chinh
+    no trong lich su (so thu tu doc tren dung ban Ong Chu dang nhin)."""
     rt = _reply_real(msg)
     if not rt:
-        return False
+        return False, None
     d = _mid_report(vai)
     # MOI manh cua CUNG mot lan gui deu tinh: bao cao 27 muc vuot 4096 ky tu bi
     # Telegram chia doi, muc so 1 nam o manh DAU va Ong Chu reply vao do — chi
     # doi manh cuoi (`message_id`) la tu choi dung tin that (12/09/2026).
     mids = [m for m in (d.get("message_ids") or []) if m] or \
            ([d["message_id"]] if d.get("message_id") else [])
-    if mids:
-        return rt.get("message_id") in mids
-    return bool(rt.get("from", {}).get("is_bot"))
+    mid = rt.get("message_id")
+    if mids and mid in mids:
+        return True, manifest_already_send(vai) or latest_manifest(vai)
+    cu = _history_manifest(vai, mid)
+    if cu is not None:
+        return True, cu
+    if not mids and rt.get("from", {}).get("is_bot"):
+        return True, latest_manifest(vai)
+    return False, None
 
 def read_pick_command(text: str):
     """Phan tich lenh chon tin. Tra ve [(so, vai_anh, thuong_hieu)] hoac None.
@@ -456,9 +494,10 @@ def _report_already_label(token, group, thread_id, manifest_path, lenh):
              thread=thread_id)
 
 
-def _process_pick(token, group, thread_id, vai, lenh):
-    """Tao cap task tu lenh chon so. Chay nen qua _run_background."""
-    manifest_path = manifest_already_send(vai) or latest_manifest(vai)
+def _process_pick(token, group, thread_id, vai, lenh, manifest_path=None):
+    """Tao cap task tu lenh chon so. Chay nen qua _run_background. `manifest_path`: ban
+    cua DUNG bao cao duoc reply (LOW-362); None = bao cao moi nhat nhu cu."""
+    manifest_path = manifest_path or manifest_already_send(vai) or latest_manifest(vai)
     if not manifest_path:
         mau = MANIFEST_BY_TOPIC.get(vai, "?")
         log("chon", f"khong co manifest {mau} trong {STATE_DIR}")
@@ -503,7 +542,7 @@ def _process_pick(token, group, thread_id, vai, lenh):
     try:
         data = json.loads(manifest_path.read_text(encoding="utf-8"))
         items = {it["index"]: it for it in data.get("items", [])}
-        lines = []
+        lines, hoi_lai = [], []
         for n, vai_anh, brand in lenh:
             it = items.get(n)
             if not it:
@@ -514,8 +553,10 @@ def _process_pick(token, group, thread_id, vai, lenh):
             # giao roi -> khoi tao trung task va de file len nhau.
             if any(g.get("image_role") == vai_anh and g.get("brand") == brand
                    for g in it.get("assignments", [])):
+                # LOW-362: khong im lang bo qua nua — hoi lai kem nut lam lai / khong.
                 ten_da = NAME_ROLE_IMAGE.get(vai_anh, vai_anh)
-                lines.append(f"#{n}: đã giao {ten_da} ({brand}) trước đó — bỏ qua")
+                lines.append(f"#{n}: đã giao {ten_da} ({brand}) trước đó — hỏi lại bên dưới")
+                hoi_lai.append((n, it, brand))
                 continue
             tid, err = create_pair(it, vai_anh=vai_anh, brand=brand, vai_quet=vai)
             if err:
@@ -547,3 +588,106 @@ def _process_pick(token, group, thread_id, vai, lenh):
     log("chon", "ket qua: " + " | ".join(lines))
     _send_text(token, group, "<b>Kết quả chọn:</b>\n" + "\n".join(lines),
              thread=thread_id)
+    for n, it, brand in hoi_lai:
+        ask_repick(token, group, thread_id, vai, manifest_path, n, it, brand)
+
+
+# ---- LOW-362: tin da giao -> hoi lai "lam lai khong?" kem nut ------------------------
+# Ong Chu 22/09/2026: "researcher co the hoi lai, bai da duoc [name z] lam, co muon lam lai
+# ko. Nut tra loi [name x] [name y] lam lai / Ko lam lai". Callback `rpk:<khoa>-<vai>` /
+# `rpkno:<khoa>`: phan sau ":" phai khop `_DRAFT_ID_HOP_LE` cua approve_post ([a-z0-9-]),
+# nen dung "-" chu khong ":"; khoa 8 hex tra ve ban ghi o `repick_pending.json` (callback
+# Telegram toi da 64 byte, khong nhet duoc duong dan manifest).
+_REPICK_LOCK = threading.Lock()
+REPICK_KEEP = 100
+
+
+def _repick_file() -> Path:
+    return STATE_DIR / state_paths.REPICK_PENDING_FILE
+
+
+def repick_keyboard(key: str, roles: list) -> dict:
+    """Mot nut "<ten> lam lai" cho moi vai da lam tin nay + nut "Khong lam lai". Thuan."""
+    nut = [[{"text": f"🔄 {NAME_ROLE_IMAGE.get(r, r)} làm lại", "callback_data": f"rpk:{key}-{r}"}]
+           for r in roles]
+    return {"inline_keyboard": nut + [[{"text": "✋ Không làm lại", "callback_data": f"rpkno:{key}"}]]}
+
+
+def ask_repick(token, group, thread_id, vai, manifest_path, n, it, brand) -> str:
+    """Gui cau hoi lam lai cho tin `#n` da giao; tra khoa ban ghi."""
+    import secrets
+    import time
+    giao = [g for g in it.get("assignments", []) if g.get("brand") == brand]
+    roles = list(dict.fromkeys(g.get("image_role") for g in giao if g.get("image_role")))
+    key = secrets.token_hex(4)
+    with _REPICK_LOCK:
+        cho = _load_json(_repick_file(), {})
+        cho[key] = {"scan_role": vai, "manifest": str(manifest_path), "index": n, "brand": brand,
+                    "roles": roles, "title": it.get("title", ""), "ts": time.time()}
+        if len(cho) > REPICK_KEEP:
+            cho = dict(sorted(cho.items(), key=lambda kv: kv[1].get("ts", 0))[-REPICK_KEEP:])
+        _write_json(_repick_file(), cho)
+    ai = ", ".join(f"{NAME_ROLE_IMAGE.get(g['image_role'], g['image_role'])} (task {g.get('image_task') or '?'})"
+                   for g in giao if g.get("image_role"))
+    call(token, "sendMessage", chat_id=group, message_thread_id=thread_id, parse_mode="HTML",
+         text=f"🔁 #{n} <b>{html_escape(it.get('title', ''))}</b> đã được {html_escape(ai)} làm ({brand}). "
+              "Có muốn làm lại không? (làm lại = tìm lại ảnh bằng code hiện tại rồi dựng lại)",
+         reply_markup=repick_keyboard(key, roles))
+    log("chon", f"hoi lam lai #{n} {it.get('title', '')[:60]} vai={roles} khoa={key}")
+    return key
+
+
+def handle_repick_button(token, action, arg, cq) -> None:
+    """Nut cua cau hoi lam lai (goi tu approve_post.handle_callback, da qua is_boss)."""
+    msg = cq["message"]
+    key, _, vai_anh = arg.partition("-")
+    with _REPICK_LOCK:
+        cho = _load_json(_repick_file(), {})
+        rec = cho.pop(key, None)
+        if rec is not None:
+            _write_json(_repick_file(), cho)
+    if rec is None:
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Câu hỏi này đã được trả lời hoặc hết hạn.", show_alert=True)
+        return
+    call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+         text="Không làm lại" if action == "rpkno" else "Đang làm lại…")
+    if action == "rpkno":
+        note = "✋ Không làm lại — giữ nguyên bài đã làm"
+    elif vai_anh not in rec.get("roles", []):
+        note = f"⚠️ Vai {vai_anh!r} không có trong câu hỏi — không làm gì"
+    else:
+        note = _repick(rec, vai_anh)
+    log("chon", f"nut {action} khoa={key} #{rec.get('index')}: {note}")
+    base = msg.get("text") or ""
+    r = call(token, "editMessageText", chat_id=msg["chat"]["id"], message_id=msg["message_id"],
+             text=html_escape(base) + "\n\n<b>" + html_escape(note) + "</b>", parse_mode="HTML",
+             reply_markup={"inline_keyboard": []})
+    if not r.get("ok"):
+        call(token, "editMessageReplyMarkup", chat_id=msg["chat"]["id"], message_id=msg["message_id"],
+             reply_markup={"inline_keyboard": []})
+
+
+def _repick(rec: dict, vai_anh: str) -> str:
+    """Lam lai tin da giao cho `vai_anh`: bai co san thi di duong Lam lai chung
+    (`approve_post._hand_redo` — tim lai anh bang code hien tai, LOW-361); khong con
+    thong tin task anh thi tao cap task moi tu manifest."""
+    import approve_post
+    path = Path(rec["manifest"])
+    with _lock_manifest(path):             # cung khoa voi _process_pick: khong nuot `assignments`
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return "⚠️ Không đọc được danh sách tin của báo cáo này"
+        it = next((x for x in data.get("items", []) if x.get("index") == rec["index"]), None)
+        if it is None:
+            return f"⚠️ Không thấy tin #{rec['index']} trong báo cáo"
+        draft_id = _draft_id(it, rec["brand"], vai_anh)
+        if not (DRAFTS / (draft_id + ".img.json")).exists():
+            tid, err = create_pair(it, vai_anh=vai_anh, brand=rec["brand"], vai_quet=rec.get("scan_role"))
+            if err:
+                return "⚠️ Làm lại lỗi — " + err
+            _write_json(path, data)
+            return f"🔄 {NAME_ROLE_IMAGE.get(vai_anh, vai_anh)} dựng lại từ đầu — task {tid}"
+    note, _ = approve_post._hand_redo(draft_id)     # ngoai khoa: tim lai anh mat toi 20 phut
+    return note
