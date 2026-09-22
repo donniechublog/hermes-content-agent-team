@@ -291,7 +291,9 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                               r"chip|s[uự] ki[eệ]n|v[aă]n ph[oò]ng|nh[aà] m[aá]y|bi[eể]n hi[eệ]u|"
                               r"headquarters|office|building|product|device|event", re.I)
         KHONG = re.compile(r"m[aà]n h[iì]nh|giao di[eệ]n|c[uử]a s[oổ]|driver|ph[aầ]n m[eề]m|screenshot|"
-                           r"ubuntu|windows|terminal|c[aà]i \w*|website|trang web", re.I)
+                           r"ubuntu|windows|terminal(?![\s-]*bench)|c[aà]i \w*|website|trang web", re.I)
+        # LOW-355: "Terminal-Bench 4.0" la TEN benchmark, khong phai cua so terminal — chart
+        # chinh chu Artificial Analysis bi lat "khong lien quan" vi chu nay (chay that 22/09/2026).
         lqv_vision, override = lqv, ""          # LOW-225: ghi lai vision noi gi TRUOC khi regex lat
         if khai_niem or thuong_hieu or chup_nguon:
             pass                                   # tin cau tra loi, khong override theo ten hang

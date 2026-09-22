@@ -235,7 +235,10 @@ def test_official_flag_reaches_manifest_and_provenance():
         p.write_bytes(CHART.read_bytes())
         for handle, official in (("SpaceXAI", True), ("elonmusk", False)):
             url = f"https://x.com/{handle}/status/{ELON_QUOTE}"
-            with mock.patch.object(source, "embedded_tweet_urls", lambda h, now, skip_urls=(), u=url: [u]),                  mock.patch.object(article_images, "_download", lambda u, t=15: None),                  mock.patch("social_post.x_photos", lambda u, out, log: [{"type": "image", "url": u, "file_path": str(p)}]):
+            with mock.patch.object(source, "embedded_tweet_urls", lambda h, now, skip_urls=(), u=url: [u]), \
+                 mock.patch.object(article_images, "_download", lambda u, t=15: None), \
+                 mock.patch("social_post.x_photos",
+                            lambda u, out, log: [{"type": "image", "url": u, "file_path": str(p)}]):
                 cands = source.candidate_embedded_tweets([{"url": "https://decrypt.co/a"}], "https://s.com/a",
                                                          Path(d), story=GROK_TITLE)
             kept = download_filter.download_and_filter(cands, Path(d) / f"wd_{handle}")
@@ -260,7 +263,8 @@ def test_ethan_model_story_accepts_official_chart_only():
 def test_official_chart_exempt_from_clutter_and_empty_gates():
     import submit_common
     assert submit_common.check_empty_image(_official_chart(), "image", 0.5) == []
-    assert submit_common.check_empty_image(_official_chart(official_tweet=False), "image", 0.5),         "anh tweet nguoi ngoai van chiu cong anh trong"
+    assert submit_common.check_empty_image(_official_chart(official_tweet=False), "image", 0.5), \
+        "anh tweet nguoi ngoai van chiu cong anh trong"
     anh = {"A4": _official_chart()}
     assert submit_common.check_image_fall(anh, {"A4": "image"}, {"image_role": "ethan"}) == []
 
@@ -273,6 +277,34 @@ def test_needs_ranking_image_keeps_arena_first():
     assert not submit_common.needs_ranking_image(tbench, _official_chart()), "bang chinh chu ngang bang engine chup"
     assert submit_common.needs_ranking_image(arena, _official_chart()), "@arena van dung dau"
     assert submit_common.needs_ranking_image(tbench, _official_chart(official_tweet=False))
+
+
+
+def test_terminal_bench_is_not_a_terminal_window():
+    """Chay that 22/09 (Ethan Grok top-6): vision noi LIEN_QUAN co cho chart chinh chu
+    "...tren DeepSWE v1.1, Terminal-Bench 4.0..." nhung regex man hinh/UI khop chu `terminal`
+    -> lat `screen_ui_flip_false`. Cua so terminal that van phai bi lat nhu cu."""
+    import json
+    from PIL import Image
+    from prepare import vision
+
+    class _Res:
+        def __init__(self, c):
+            self._c = c
+
+        def read(self):
+            return self._c
+
+    def ask(mo_ta):
+        txt = "\n".join([f"MO_TA: {mo_ta}", "LIEN_QUAN: co", "CLUTTERED: co", "TU_KHOA: co"])
+        body = json.dumps({"choices": [{"message": {"content": txt}}]})
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}), \
+             mock.patch.object(vision, "_call_router", return_value=_Res(body.encode())):
+            p = Path(d) / "a.png"
+            Image.new("RGB", (4, 4), (200, 200, 200)).save(p)
+            return vision.description_image(str(p), "Grok 4.7 lọt top 6 Terminal-Bench", hang="Grok")[1]
+    assert ask("Biểu đồ so sánh điểm benchmark của Grok 4.7 trên DeepSWE v1.1, Terminal-Bench 4.0.") is True
+    assert ask("Ảnh chụp màn hình cửa sổ terminal chạy lệnh cài đặt.") is False
 
 
 if __name__ == "__main__":
