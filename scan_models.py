@@ -175,7 +175,17 @@ def _arena_board(duong_dan: str) -> list:
     if not manh:
         print(f"[arena {duong_dan}] khong thay payload RSC", file=sys.stderr)
         return []
-    raw = "".join(json.loads('"' + c + '"') for c in manh)
+    return arena_rows("".join(json.loads('"' + c + '"') for c in manh))
+
+
+def arena_rows(raw: str) -> list:
+    """Cac hang cua mot bang arena tu payload RSC da giai ma, sap theo hang.
+
+    Model VUA len bang ma khoang tin cay con rong duoc arena ghi `rank: 0`
+    (kem `rankUpper`/`rankLower`). Truoc 22/09/2026 dong do bi bo vi `0` la
+    falsy — dung loai model Nova can bat nhat: MiMo-V2.6-Pro 1628 Elo, 790
+    vote, ~#10 WebDev ma Nova khong he thay (LOW-360). Nay giu lai, hang TAM =
+    vi tri theo Elo giua cac model da co hang, danh dau `provisional`."""
     dec = json.JSONDecoder()
     xep = []
     for m in re.finditer(r'\{"[a-zA-Z]', raw):
@@ -183,19 +193,33 @@ def _arena_board(duong_dan: str) -> list:
             o, _ = dec.raw_decode(raw[m.start():])
         except Exception:                                    # noqa: BLE001
             continue
-        if isinstance(o, dict) and o.get("modelDisplayName") and o.get("rank"):
+        if isinstance(o, dict) and o.get("modelDisplayName") and "rank" in o:
             xep.append(o)
+    co_hang = [o for o in xep if o.get("rank")]
     rows, seen = [], set()
-    for o in sorted(xep, key=lambda x: x.get("rank") or 999):
-        ten = o["modelDisplayName"]
-        if ten in seen:
+    # Hang THAT truoc: mot model nhieu provider, ban co hang thang ban hang tam.
+    for o in sorted(co_hang, key=lambda x: x["rank"]):
+        if o["modelDisplayName"] not in seen:
+            seen.add(o["modelDisplayName"])
+            rows.append(_arena_row(o, o["rank"]))
+    for o in sorted((o for o in xep if not o.get("rank")), key=lambda x: -(x.get("rating") or 0)):
+        if o["modelDisplayName"] in seen:
             continue
-        seen.add(ten)
-        org = (o.get("modelOrganization") or "").lower()
-        rows.append({"rank": o["rank"], "name": ten, "organization": org,
-                     "region": region_of(org), "score": round(o.get("rating") or 0, 1),
-                     "votes": o.get("votes")})
+        seen.add(o["modelDisplayName"])
+        diem = o.get("rating") or 0
+        tam = 1 + sum(1 for k in co_hang if (k.get("rating") or 0) > diem)
+        row = _arena_row(o, tam)
+        row.update(provisional=True, rank_ci=[o.get("rankUpper"), o.get("rankLower")])
+        rows.append(row)
+    rows.sort(key=lambda r: (r["rank"], bool(r.get("provisional"))))
     return rows
+
+
+def _arena_row(o: dict, hang: int) -> dict:
+    org = (o.get("modelOrganization") or "").lower()
+    return {"rank": hang, "name": o["modelDisplayName"], "organization": org,
+            "region": region_of(org), "score": round(o.get("rating") or 0, 1),
+            "votes": o.get("votes")}
 
 
 def fetch_arena() -> dict:
@@ -928,7 +952,7 @@ import required                                              # noqa: E402
 
 
 def write_required(ra_mat_aa: list, leo_hang: list,
-                 hf_moi: list | None = None) -> None:
+                 hf_moi: list | None = None, arena_tweets: list | None = None) -> None:
     """Tich luy moi su kien tat dinh vao danh sach BAT BUOC cua Nova (xem
     required.py). Luat Ong Chu 04/09/2026: xuat hien tren bang la phai dua;
     hom truoc sot thi hom sau bo sung, khong duoc bo."""
@@ -947,7 +971,21 @@ def write_required(ra_mat_aa: list, leo_hang: list,
                     f"tha trong so tren HuggingFace {m.get('released')}, "
                     f"trending {m.get('score')}, {m.get('downloads')} luot tai",
                     f"https://huggingface.co/{m['id']}"))
+    # Tweet @arena nhac mot model: nguon DAU TIEN cho tin model release (LOW-360).
+    # Khoa theo TEN model — tweet ra mat + poll cua cung Grok 4.7 la mot muc.
+    for t in arena_tweets or []:
+        if t.get("model"):
+            dau = t["text"].strip().split("\n", 1)[0]
+            muc.append((f"arena_x|{t['model'].lower()}", t["model"], "arena_x",
+                        f"@arena {t['date']}: {dau[:90]}", t["url"]))
     required.extra_many("nova", muc)
+
+
+def top_rows(rows: list, top: int) -> list:
+    """Top N theo VI TRI, cong model hang TAM cua arena co hang <= N. Hang tam
+    dong hang voi model da co hang (MiMo-V2.6-Pro #10 tam canh #10 that) xep
+    SAU no, nen cat theo vi tri se roi mat dung model moi (LOW-360)."""
+    return rows[:top] + [r for r in rows[top:] if r.get("provisional") and r["rank"] <= top]
 
 
 def count_rank(arena: dict, cu: dict) -> list:
@@ -961,16 +999,68 @@ def count_rank(arena: dict, cu: dict) -> list:
         for r in rows:
             ten, h = r["name"], r["rank"]
             h_cu = truoc.get(ten)
+            # Hang tam cua arena (LOW-360): noi ro, vi #10 tam co the la #8..#18.
+            tam = ""
+            if r.get("provisional"):
+                tren, duoi = (r.get("rank_ci") or [None, None])[:2]
+                tam = f" (hang TAM theo Elo, khoang #{tren}-#{duoi})" if tren and duoi else " (hang TAM)"
             if h_cu is None:
                 if truoc:                       # co du lieu cu ma khong co model nay
                     ra.append({"board": mod, "name": ten, "rank": h, "previous_rank": None,
-                               "climb": None, "note": f"MOI vao bang, thang hang #{h}"})
+                               "climb": None, "note": f"MOI vao bang, thang hang #{h}{tam}"})
             elif h < h_cu:
                 ra.append({"board": mod, "name": ten, "rank": h, "previous_rank": h_cu,
                            "climb": h_cu - h,
-                           "note": f"leo {h_cu - h} bac: #{h_cu} -> #{h}"})
+                           "note": f"leo {h_cu - h} bac: #{h_cu} -> #{h}{tam}"})
     # leo nhieu bac nhat len dau; model moi vao bang xep theo hang
     ra.sort(key=lambda x: (-(x["climb"] or 99), x["rank"]))
+    return ra
+
+
+# ---------- nguon: X @arena (LOW-360) -----------------------------------------
+# Ong Chu 22/09/2026: "mien la tin ve model release, cu lay tu arena.ai dau tien".
+# @arena dang tin model TRUOC khi bang co diem: Grok 4.7 "now in the Agent Arena"
+# + poll 21/09 luc chua bang nao co ten no, nen chi doc bang thi Nova khong bao
+# gio thay. Duong doc x.com/arena khong dang nhap da co san cho designer
+# (`arena_x.page_tweets` -> `get_source.x_page_posts`, LOW-337) — dung lai, khong
+# dung crawler moi.
+# Ten model o DAU tweet, truoc dong tu: "MiMo-V2.6-Pro just landed ...",
+# "Grok 4.7 by @SpaceXAI is now in ...". Ten phai co chu so — "Introducing Agent
+# Mode:" hay "What can user praise ..." khong phai tin mot model.
+_ARENA_TWEET_MODEL = re.compile(
+    r"^\W*(?P<m>[A-Za-z][\w.\-]*(?:[ \-][\w.\-]+){0,4}?)\s+"
+    r"(?:\(|by @|just |is now |is here|has |have |now |lands?\b|landed|debuts?|"
+    r"takes |enters|arrives|climbs|jumps|tops )")
+
+
+def arena_tweet_model(text: str) -> str:
+    """Ten model ma tweet @arena noi toi (dong dau), hoac ''."""
+    dau = (text or "").strip().split("\n", 1)[0]
+    m = _ARENA_TWEET_MODEL.match(dau)
+    ten = m.group("m").strip() if m else ""
+    return ten if re.search(r"\d", ten) else ""
+
+
+def fetch_arena_tweets(ngay: int, now=None) -> list:
+    """Tweet CUA @arena trong `ngay` ngay, moi nhat truoc. Trang khong doc duoc
+    (0 tweet, ke ca tweet ghim cu) thi NEM de `_try` dua vao muc NGUON HONG —
+    tra [] se bi doc thanh 'hom nay @arena khong dang gi'."""
+    import arena_x
+    tweets = arena_x.page_tweets(arena_x.PROFILE_URL)
+    if not tweets:
+        raise RuntimeError(f"{arena_x.PROFILE_URL} khong ra tweet nao")
+    moc = (now or datetime.now(timezone.utc)) - timedelta(days=ngay)
+    ra, seen = [], set()
+    for t in tweets:
+        if t["handle"] not in arena_x.HANDLES or t["url"] in seen:
+            continue                      # retweet cua hang (XiaomiMiMo, SpaceXAI)
+        seen.add(t["url"])
+        luc = datetime.fromisoformat(t["created"].replace("Z", "+00:00"))
+        if luc < moc:
+            continue                      # tweet ghim cu
+        ra.append({"date": t["created"][:10], "url": t["url"], "text": t["text"],
+                   "model": arena_tweet_model(t["text"])})
+    ra.sort(key=lambda t: t["date"], reverse=True)
     return ra
 
 
@@ -1052,6 +1142,8 @@ def main():
         f_media = ex.submit(_try, "aa media", lambda: fetch_aa_media(a.top), {})
         f_hf = ex.submit(
             _try, "hf-trending", lambda: fetch_hf_trending(a.ngay, a.top), [])
+        f_arena_x = ex.submit(
+            _try, "x @arena", lambda: fetch_arena_tweets(a.ngay), [])
 
         catalog = f_catalog.result()
         arena = f_arena.result()
@@ -1064,6 +1156,7 @@ def main():
             top[khoa] = f.result()
         media = f_media.result()
         hf = f_hf.result()
+        arena_tweets = f_arena_x.result()
 
     tat_ca = {m["id"] for m in catalog}
     cu = already_see()
@@ -1114,7 +1207,7 @@ def main():
 
     # Moc trong state giu hang DAY DU (mot model tut xuong #40 roi leo lai #8
     # phai doc ra "leo 32 bac"), nhung chi BAO cai dang o top N.
-    leo_hang = count_rank({m: r[:a.top] for m, r in bang_so.items()}, rank_old())
+    leo_hang = count_rank({m: top_rows(r, a.top) for m, r in bang_so.items()}, rank_old())
 
     # RA MAT THEO BANG CHAM DIEM: nguon "moi" thu hai, doc lap voi router.
     # Router-based `moi` bo sot model khong len router (GPT-6 Astra 03/09) va
@@ -1134,6 +1227,7 @@ def main():
            for b in model_boards.BOARD if b.nguon == "top"},
         "media": media,
         "hf_trending": hf,
+        "arena_tweets": arena_tweets,
         "broken_boards": hong,
         "broken_sources": sorted(set(_HONG_KHAC)),
         "company_news": tin,
@@ -1152,7 +1246,7 @@ def main():
 
     da_bao.update({r["original_name"]: r["released"] for r in ra_mat_aa})
     write_timestamp(tat_ca | cu, hang_moi, da_bao)
-    write_required(ra_mat_aa, leo_hang, hf)
+    write_required(ra_mat_aa, leo_hang, hf, arena_tweets)
     if not a.khong_bat_buoc:
         # In ra STDERR, khong phai stdout: `scan_prepare` chep nguyen stdout vao
         # brief roi TU in danh sach bat buoc mot lan nua — Nova doc hai ban cua
@@ -1239,6 +1333,15 @@ def _in_report(k: dict):
         for r in leo[:10]:
             nhan = LABEL_BOARD.get(r["board"], r["board"])
             print(f"  [{nhan:<9s}] {r['name'][:36]:<37s} {r['note']}")
+
+    tw = k.get("arena_tweets") or []
+    if tw:
+        print(f"\n=== X @arena ({len(tw)}) — tin model release lay tu arena.ai DAU "
+              "TIEN, truoc bang khac (Ong Chu 22/09) ===")
+        for t in tw[:8]:
+            dau = t["text"].strip().split("\n", 1)[0]
+            print(f"  {t['date']}  [{(t.get('model') or '-')[:18]:<18s}] {dau[:90]}")
+            print(f"        {t['url']}")
 
     tin = k.get("company_news") or []
     if tin:
