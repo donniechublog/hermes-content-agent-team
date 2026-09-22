@@ -304,7 +304,7 @@ def test_intake_single_image_field_is_used_when_images_is_empty():
 
 def test_intake_steps_quality_down_until_total_fits_under_ceiling():
     """Cloudflare 524: carousel PNG nang khong di het trong 100 giay. The vuot
-    nguong phai thanh WebP, va tong con vuot tran thi ha chat luong tung bac."""
+    nguong phai thanh JPEG, va tong con vuot tran thi ha chat luong tung bac."""
     from PIL import Image
     h = _harness()
     try:
@@ -320,9 +320,55 @@ def test_intake_steps_quality_down_until_total_fits_under_ceiling():
         _draft(h, "d9", images=[_image(h, "big.png", raw)])
         assert mp.intake("d9")[0] is True
         img, = h.trace.of("http")[0][1]["body"]["images"]
-        assert img["mime"] == "image/webp"
+        assert img["mime"] == "image/jpeg"
         assert len(base64.b64decode(img["base64"])) == q80
         assert [n for n in h.trace.names("print") if "ha them mot bac" in n] != []
+    finally:
+        h.__exit__()
+
+
+def test_background_nen_ra_jpeg_vi_instagram_khong_nhan_webp():
+    """Instagram tu choi WebP: 22/09/2026 bat Instagram len thi moi the deu dung
+    o dialog "Khong ho tro file nay -- Chua tai duoc file media-0.webp len", va
+    extension bao ve "Did not reach caption screen". Facebook thi nhan WebP binh
+    thuong, nen loi chi lo ra khi Instagram chay."""
+    from PIL import Image
+    h = _harness()
+    try:
+        im = Image.frombytes("RGB", (256, 256), os.urandom(256 * 256 * 3))
+        buf = io.BytesIO()
+        im.save(buf, "PNG")
+        raw = buf.getvalue()
+        h.patch(mp, "THRESHOLD_BACKGROUND", 1000)
+        out, mime = mp._background(raw, "image/png", "x", 90)
+        assert mime == "image/jpeg", mime
+        assert len(out) < len(raw)
+        assert Image.open(io.BytesIO(out)).format == "JPEG"
+    finally:
+        h.__exit__()
+
+
+def test_background_nen_trong_suot_thanh_TRANG_khong_thanh_den():
+    """JPEG khong co kenh alpha. `convert("RGB")` thang tay bien nen trong suot
+    thanh DEN -- the carousel chu den tren nen den la mat bai. Phai dan anh len
+    nen trang truoc."""
+    from PIL import Image
+    h = _harness()
+    try:
+        im = Image.new("RGBA", (256, 256), (0, 0, 0, 0))      # trong suot hoan toan
+        # Vai cham mau de anh du "nang" vuot nguong nen.
+        for x in range(0, 256, 2):
+            for y in range(0, 256, 2):
+                im.putpixel((x, y), (x, y, (x + y) % 256, 255))
+        buf = io.BytesIO()
+        im.save(buf, "PNG")
+        raw = buf.getvalue()
+        h.patch(mp, "THRESHOLD_BACKGROUND", 100)
+        out, mime = mp._background(raw, "image/png", "x", 90)
+        assert mime == "image/jpeg", mime
+        goc = Image.open(io.BytesIO(out)).convert("RGB")
+        r, g, b = goc.getpixel((1, 1))                        # o trong suot
+        assert r > 200 and g > 200 and b > 200, (r, g, b)
     finally:
         h.__exit__()
 

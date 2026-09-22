@@ -210,9 +210,17 @@ def pure_text(text):
 def _background(raw, mime, ten="", chat_luong=None):
     """(bytes, mime) sau khi nen. Tra lai nguyen ban neu khong nen duoc/khong loi.
 
-    WebP giu duoc chu tren the carousel o q90 ma nho hon PNG ~6 lan. Giu kenh
-    alpha khi anh co, vi convert("RGB") se bien nen trong suot thanh den.
-    Moi loi o day deu nuot: day duoc bai van hon la nen dep.
+    JPEG chu khong phai WebP: **Instagram tu choi WebP**. 22/09/2026 bat
+    Instagram len thi moi the deu dung o dialog "Khong ho tro file nay -- Chua
+    tai duoc file media-0.webp len", extension bao ve "Did not reach caption
+    screen". Facebook nhan WebP binh thuong nen loi nay an ky cho toi khi
+    Instagram chay. JPEG q90 van nho hon PNG nhieu lan -- du cho tran
+    CEILING_TOTAL ma Cloudflare 524 bat dau tu (xem `_tiers`), chi to hon WebP
+    chung 30-50%.
+
+    JPEG khong co kenh alpha. Dan anh len nen TRANG truoc khi luu: convert("RGB")
+    thang tay bien nen trong suot thanh DEN, va the carousel chu den tren nen den
+    la mat bai. Moi loi o day deu nuot: day duoc bai van hon la nen dep.
     """
     q = QUALITY_BACKGROUND if chat_luong is None else chat_luong
     if not BACKGROUND_IMAGE or len(raw) <= THRESHOLD_BACKGROUND:
@@ -222,17 +230,21 @@ def _background(raw, mime, ten="", chat_luong=None):
         im = Image.open(io.BytesIO(raw))
         buf = io.BytesIO()
         if im.mode in ("RGBA", "LA", "P"):
-            im.convert("RGBA").save(buf, "WEBP", quality=q, method=6)
+            im = im.convert("RGBA")
+            nen = Image.new("RGB", im.size, (255, 255, 255))
+            nen.paste(im, mask=im.split()[-1])
+            im = nen
         else:
-            im.convert("RGB").save(buf, "WEBP", quality=q, method=6)
+            im = im.convert("RGB")
+        im.save(buf, "JPEG", quality=q, optimize=True, progressive=True)
         out = buf.getvalue()
     except Exception as e:                                   # noqa: BLE001
         print("khong nen duoc " + ten + ": " + str(e))
         return raw, mime
-    # PNG nho/da toi uu co the con nho hon ban WebP -- giu cai nao nhe hon.
+    # PNG nho/da toi uu co the con nho hon ban JPEG -- giu cai nao nhe hon.
     if len(out) >= len(raw):
         return raw, mime
-    return out, "image/webp"
+    return out, "image/jpeg"
 
 
 def images_payload(d):
