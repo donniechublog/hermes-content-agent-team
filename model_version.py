@@ -51,12 +51,20 @@ def _family_rx(pat: str) -> re.Pattern:
     return re.compile(r"(?<![a-z])(?:" + pat + r")[\s-]*(?:" + _TIER + r"[\s-]*){0,2}v?" + _NUM, re.I)
 
 
+# Tên model CŨ không kèm số mà vẫn chỉ đúng một phiên bản (dựng lại draft Gemini 22/09/2026:
+# bảng "Gemini Ultra vs GPT-4" lọt cổng vì không có số). Chỉ khớp khi KHÔNG có số theo sau.
+LEGACY_NAMES = {r"gemini\s+ultra": ("gemini", "1.0"), r"\bbard\b": ("gemini", "1.0")}
+
+
 def versions_in_text(text: str) -> dict:
     """{họ: {"3.1", "1.5", ...}} — các phiên bản có số được ghi trong đoạn chữ. Thuần."""
     ra = {}
     for fam, (pat, _) in FAMILIES.items():
         for m in _family_rx(pat).finditer(text or ""):
             ra.setdefault(fam, set()).add(m.group(1))
+    for pat, (fam, v) in LEGACY_NAMES.items():
+        if re.search(r"(?<![a-z])" + pat + r"(?![\s-]*\d)", text or "", re.I):
+            ra.setdefault(fam, set()).add(v)
     return ra
 
 

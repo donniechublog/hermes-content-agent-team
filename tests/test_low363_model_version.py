@@ -30,6 +30,9 @@ def test_versions_in_text():
     assert v("GPT-5.5 Pro") == {"gpt": {"5.5"}} and v("gpt-4o mini") == {"gpt": {"4"}}
     assert v("Qwen3.8 Max") == {"qwen": {"3.8"}} and v("DeepSeek-V4.1-Flash") == {"deepseek": {"4.1"}}
     assert v("Google Gemini interface") == {} and v("Gemini 2026 roadmap") == {}   # nam khong phai phien ban
+    # ten cu khong so (A26 dung lai 22/09: "Gemini Ultra, GPT-4") = Gemini 1.0
+    assert v("Gemini Ultra, GPT-4") == {"gemini": {"1.0"}, "gpt": {"4"}}
+    assert v("Gemini Ultra 2 teaser") == {"gemini": {"2"}}
 
 
 def test_story_date_from_title_or_fallback():
