@@ -797,6 +797,50 @@ nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IM
   cổng tỉ lệ 4:5..1:1 và cổng chart (§1.2b2: ảnh chụp nguồn được làm bìa).
 - Test: `tests/test_low336_no_side_borders.py`.
 
+## 6d. Vùng an toàn khi bị cắt vuông 1:1 — luật CHUNG mọi vai (LOW-364, 22/09/2026)
+
+Ông Chủ, bài dcgr Grok 4.7 (thẻ Ethan 1200×1500, đúng 4:5) lên Instagram/Threads vẫn bị cắt:
+*"lý do đã làm hình ratio 4:5 nhưng đăng ig vẫn bị crop"*. Đo trên tệp thật: bài đăng khớp đúng
+phép **cắt vuông giữa** — mất 150px trên (hàng tiêu đề bảng + hạng 1–2) và 150px dưới (dòng tựa
+cuối + tên kênh). Chốt cùng ngày: *"đưa những thứ quan trọng nhất vào safezone, như vậy ko còn lệ
+thuộc vào hình lúc publish nữa"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`,
+`IMAGE_RULES_ETHAN.md`, `IMAGE_RULES_KITE.md` — sửa một thì sửa cả ba.
+
+- **Vùng an toàn** = ô vuông giữa khung: dải cắt mỗi đầu = (H − W) / 2 (4:5 → 10% chiều cao:
+  135px ở 1080×1350, 150px ở 1200×1500), cộng lề `safe_zone.SAFE_PAD` = 12px. Một chỗ tính:
+  `safe_zone.py`.
+- **Trong vùng an toàn:** khung chữ + kicker + tựa (thẻ Ethan), hook + hàng chip chuyên mục/tên
+  model (bìa Dre), khối chữ slide thân (`carousel.TEXT_BASE` = 1203), khung quote, đỉnh nội dung
+  ảnh nền phẳng (`carousel.FLAT_TOP` = 147 — hàng tiêu đề bảng/hình paper).
+- **Được nằm ở dải cắt:** nền, phần ảnh kéo dài, tên kênh (Instagram đã hiện tên tài khoản), chip
+  tên kênh góc dưới-trái slide thân, dòng nguồn thẻ quote Ethan (`card._render_quote`).
+- **Slide quote Dre không còn dòng nguồn** dưới khung (Ông Chủ khoanh "Lei Jun" / "via Financial
+  Times": *"phần được khoanh có thể bỏ luôn"*) — nguồn ghi ở chú thích bài. `attrib` vẫn qua cổng
+  chữ và quyết định màu dấu ngoặc theo hãng.
+- **Ảnh đặt từ mép trên** — thẻ Ethan (ảnh chụp trang, bảng xếp hạng, mọi ảnh thấp hơn thẻ) và
+  bìa Dre đi đường full bề ngang: đỉnh ảnh có viền phẳng (6 hàng sát mép cùng một màu) thì hạ ảnh
+  xuống vùng an toàn, dải trên là chính màu đó kéo dài — một mặt phẳng liền (§7). Đỉnh không phẳng
+  thì giữ như cũ, không đặt một dải màu lạ lên trên. Slide thân Dre không hạ (ảnh ghép dưới sẽ bị
+  chữ che thêm — cổng LOW-215).
+- **Nền chữ ôm khối chữ** (Ông Chủ cùng ngày, ba vòng xem hình thật: *"làm phần nền text hẹp
+  lại sát vào phần quote / text hơn là ok"*, rồi khoanh các dải nền thừa trên/dưới chữ: *"giữ
+  nguyên vị trí, chỉ có hai phần đó lược đi"*, *"phần nền ở đây cũng lược đi phần được khoanh"*):
+  overlay tối (`_overlay_text`) VÀ lớp màu nền ảnh ghép hai nền (`_cover_below`, bìa/slide) phủ
+  ĐÚNG các dòng chữ: chuyển 24px ngay trên dòng chữ đầu (`OVERLAY_LEAD`, trước 120), đạt mức tối
+  tại đỉnh dòng đầu (`OVERLAY_FULL_BEFORE` = 0), bắt đầu tan NGAY tại nét chữ dòng cuối
+  (`OVERLAY_HOLD_AFTER` = 0), tan hết trong 40px (`OVERLAY_TAIL`). Dòng cuối của bìa là hàng chip;
+  của slide quote là dòng quote cuối — nét khung dưới và dấu đóng ngoặc nằm trên ảnh (vòng 4:
+  *"chỉ cần lược đi phần nền được khoanh như vậy là được"*). Ngoài vùng đó ảnh hiện lại.
+- **Ảnh xếp hạng** (dấu `ranking_*`: arena X, bảng benchmark) tính là chart cho ngưỡng nền phẳng
+  dù spec không khai `"chart"`: bìa Xiaomi (arena vuông) trước bị cover-crop mất hai cạnh, nay đi
+  §7.0b — 90% bề ngang, đặt từ đỉnh vùng an toàn (Ông Chủ: *"thu nhỏ lại khoảng 10% và đẩy lên
+  phía trên, ko cần phải hiển thị full width"*).
+- **Cổng hình học** `safe_zone.gate` trong từng hàm vẽ (`card._render_ceiling`, `card._render_quote`,
+  `carousel.build_cover` / `build_body` / `build_body_quote`): nội dung trên ra ngoài vùng an toàn
+  thì dừng — lỗi CODE bố cục, không phải spec. Test đo trên pixel: `tests/test_instagram_safe_zone.py`.
+- **Chưa áp:** slide Kite (`render_edu.py`, bố cục HTML) — ticket con của LOW-364; chủ thể ảnh
+  chụp thường (`cover_focus`) nằm trong ô vuông — chưa đo.
+
 ## 7. Không bao giờ để ra hai vùng riêng biệt
 
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
