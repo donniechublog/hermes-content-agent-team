@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """LOW-312 — phat lai cau tra loi vision THAT qua code THAT.
 
-Ban ghi: 26 cap (cau hoi, cau tra loi) cua tin "Google confirms Gemini models hacked
+Ban ghi: 22 cap (cau hoi, cau tra loi) cua tin "Google confirms Gemini models hacked
 three companies in May 2026" (blog, 22/09/2026), thu tu `vision_raw` bang
-`tests/replay.py harvest-vision`. LOW-363 doi cau hoi vision (them dong PHIEN_BAN) nen
+`tests/replay.py harvest-vision`. LOW-363 (dong PHIEN_BAN) va LOW-337 (dong AI slop) doi cau hoi vision nen
 ban ghi Gartner cu (LOW-312, dcgr 20/09) het khop; thu dap lai tren may chu bang code
 LOW-363 (/tmp, khong dung production), `call` dung lai tu cau hoi va tu kiem bang cach
 sinh lai cau hoi (26/26 khop tuyet doi). Co 4 bang benchmark (A25-A28) de khoa ca dong
@@ -93,9 +93,10 @@ def test_recordings_cover_both_verdicts_and_every_subject_kind_seen():
     verdicts = {r["expected"]["relevant"] for r in GOLD["recordings"]}
     kinds = {r["expected"]["subject_kind"] for r in GOLD["recordings"]}
     assert verdicts == {True, False}
-    # LOW-363: bo ban ghi Gemini khong con "building" — tin model co y khong lay tru so
-    # hang me (LOW-354); screen/product thay vao.
-    assert {"logo", "person", "chart", "screen", "product"} <= kinds, kinds
+    # LOW-363: bo ban ghi Gemini khong con "building" (tin model co y khong lay tru so hang
+    # me, LOW-354) va "chart" (bang benchmark deu bi cong phien ban lat relevant nen khong
+    # so duoc o tang description_image); screen/product thay vao.
+    assert {"logo", "person", "screen", "product"} <= kinds, kinds
     assert any(r["expected"].get("printed_version") for r in GOLD["recordings"])   # khoa dong PHIEN_BAN
 
 

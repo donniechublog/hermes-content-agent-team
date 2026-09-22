@@ -1,5 +1,104 @@
 {
+ "A1": {
+  "ai_slop": false,
+  "bottom_brightness": 136,
+  "bottom_left_brightness": 136,
+  "chart_stats": "phang 100%, chi 1 mau",
+  "cluttered": false,
+  "decisions": [
+   {
+    "evidence": "vision tra loi True",
+    "outcome": "keep",
+    "rule": "LIEN_QUAN",
+    "stage": "vision"
+   }
+  ],
+  "description": "Biển đèn neon chữ Google phát sáng nhiều màu trên nền kim loại tối.",
+  "empty_share": 0.65,
+  "faces": 0,
+  "h": 3672,
+  "has_keywords": false,
+  "id": "A1",
+  "kind": "chart",
+  "landscape": true,
+  "landscape_crop_ok": null,
+  "logo_card": true,
+  "notes": [
+   "KHÔNG làm bìa"
+  ],
+  "original_path": "A1.png",
+  "printed_name": null,
+  "printed_version": null,
+  "ratio": 1.6,
+  "ready_path": "A1.png",
+  "relevant": true,
+  "short_side": 3672,
+  "source": "other_outlet",
+  "subject_box": [
+   0.29,
+   0.0,
+   0.81,
+   0.99
+  ],
+  "subject_kind": "logo",
+  "url": "https://example.test/A1.png",
+  "uses": [
+   "body_chart_full_width",
+   "stack_vertical"
+  ],
+  "w": 5865
+ },
+ "A1+source": {
+  "ai_slop": false,
+  "bottom_brightness": 136,
+  "bottom_left_brightness": 136,
+  "chart_stats": "phang 100%, chi 1 mau",
+  "cluttered": false,
+  "decisions": [
+   {
+    "evidence": "vision tra loi True",
+    "outcome": "keep",
+    "rule": "LIEN_QUAN",
+    "stage": "vision"
+   }
+  ],
+  "description": "Biển đèn neon chữ Google phát sáng nhiều màu trên nền kim loại tối.",
+  "empty_share": 0.65,
+  "faces": 0,
+  "h": 3672,
+  "has_keywords": false,
+  "id": "A1",
+  "kind": "chart",
+  "landscape": true,
+  "landscape_crop_ok": null,
+  "logo_card": true,
+  "notes": [
+   "KHÔNG làm bìa"
+  ],
+  "original_path": "A1.png",
+  "printed_name": null,
+  "printed_version": null,
+  "ratio": 1.6,
+  "ready_path": "A1.png",
+  "relevant": true,
+  "short_side": 3672,
+  "source": "other_outlet",
+  "subject_box": [
+   0.29,
+   0.0,
+   0.81,
+   0.99
+  ],
+  "subject_kind": "logo",
+  "url": "https://example.test/A1.png",
+  "uses": [
+   "body_chart_full_width",
+   "stack_vertical"
+  ],
+  "w": 5865
+ },
  "A10": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -18,7 +117,7 @@
     "stage": "cluttered"
    }
   ],
-  "description": "Tay cầm điện thoại hiển thị ứng dụng Gemini cạnh màn hình có logo Gemini.",
+  "description": "Bàn tay cầm điện thoại hiển thị ứng dụng trợ lý Gemini trước màn hình có logo Gemini.",
   "empty_share": 0.2,
   "faces": 0,
   "h": 696,
@@ -42,10 +141,10 @@
   "short_side": 696,
   "source": "capture_source",
   "subject_box": [
-   0.0,
    0.47,
-   1.0,
-   0.92
+   0.0,
+   0.92,
+   1.0
   ],
   "subject_kind": "product",
   "url": "https://example.test/A10.png",
@@ -56,6 +155,7 @@
   "w": 1242
  },
  "A10+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -74,7 +174,7 @@
     "stage": "cluttered"
    }
   ],
-  "description": "Tay cầm điện thoại hiển thị ứng dụng Gemini cạnh màn hình có logo Gemini.",
+  "description": "Bàn tay cầm điện thoại hiển thị ứng dụng trợ lý Gemini trước màn hình có logo Gemini.",
   "empty_share": 0.2,
   "faces": 0,
   "h": 696,
@@ -98,10 +198,10 @@
   "short_side": 696,
   "source": "capture_source",
   "subject_box": [
-   0.0,
    0.47,
-   1.0,
-   0.92
+   0.0,
+   0.92,
+   1.0
   ],
   "subject_kind": "product",
   "url": "https://example.test/A10.png",
@@ -112,6 +212,7 @@
   "w": 1242
  },
  "A11": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -124,14 +225,26 @@
     "stage": "vision"
    },
    {
+    "evidence": "True -> False",
+    "outcome": "drop",
+    "rule": "screen_ui_flip_false",
+    "stage": "vision_override"
+   },
+   {
     "evidence": "khong lam bia, xuong cuoi hang",
     "outcome": "demote",
     "rule": "CLUTTERED_without_keyword",
     "stage": "cluttered"
+   },
+   {
+    "evidence": "Ảnh chụp màn hình đoạn văn bản tiếng Anh của bài báo điện tử.",
+    "outcome": "drop",
+    "rule": "vision_not_relevant",
+    "stage": "relevance"
    }
   ],
-  "description": "Ảnh chụp đoạn văn bản tin tức tiếng Anh về sự cố AI tấn công doanh nghiệp.",
-  "empty_share": 0.3,
+  "description": "Ảnh chụp màn hình đoạn văn bản tiếng Anh của bài báo điện tử.",
+  "empty_share": 0.1,
   "faces": 0,
   "h": 1057,
   "has_keywords": false,
@@ -141,6 +254,7 @@
   "landscape_crop_ok": null,
   "logo_card": false,
   "notes": [
+   "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG",
    "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
    "KHÔNG làm bìa"
   ],
@@ -149,7 +263,7 @@
   "printed_version": null,
   "ratio": 1.14,
   "ready_path": "A11.png",
-  "relevant": true,
+  "relevant": false,
   "short_side": 1057,
   "source": "capture_source",
   "subject_box": [
@@ -160,12 +274,11 @@
   ],
   "subject_kind": "screen",
   "url": "https://example.test/A11.png",
-  "uses": [
-   "body_chart_full_width"
-  ],
+  "uses": [],
   "w": 1201
  },
  "A11+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -184,8 +297,8 @@
     "stage": "cluttered"
    }
   ],
-  "description": "Ảnh chụp đoạn văn bản tin tức tiếng Anh về sự cố AI tấn công doanh nghiệp.",
-  "empty_share": 0.3,
+  "description": "Ảnh chụp màn hình đoạn văn bản tiếng Anh của bài báo điện tử.",
+  "empty_share": 0.1,
   "faces": 0,
   "h": 1057,
   "has_keywords": false,
@@ -220,126 +333,7 @@
   "w": 1201
  },
  "A12": {
-  "bottom_brightness": 136,
-  "bottom_left_brightness": 136,
-  "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": true,
-  "decisions": [
-   {
-    "evidence": "vision tra loi False",
-    "outcome": "drop",
-    "rule": "LIEN_QUAN",
-    "stage": "vision"
-   },
-   {
-    "evidence": "khong lam bia, xuong cuoi hang",
-    "outcome": "demote",
-    "rule": "CLUTTERED_without_keyword",
-    "stage": "cluttered"
-   },
-   {
-    "evidence": "Banner tiếng Nhật chia sẻ mẹo dùng Gemini kèm hình minh họa chú chó đeo kính ngồi làm việc bên laptop.",
-    "outcome": "drop",
-    "rule": "vision_not_relevant",
-    "stage": "relevance"
-   }
-  ],
-  "description": "Banner tiếng Nhật chia sẻ mẹo dùng Gemini kèm hình minh họa chú chó đeo kính ngồi làm việc bên laptop.",
-  "empty_share": 0.35,
-  "faces": 0,
-  "h": 670,
-  "has_keywords": false,
-  "id": "A12",
-  "kind": "chart",
-  "landscape": true,
-  "landscape_crop_ok": null,
-  "logo_card": false,
-  "notes": [
-   "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG",
-   "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
-   "KHÔNG làm bìa",
-   "cạnh ngắn 670px, phóng lên hơi mềm"
-  ],
-  "original_path": "A12.png",
-  "printed_name": null,
-  "printed_version": null,
-  "ratio": 1.91,
-  "ready_path": "A12.png",
-  "relevant": false,
-  "short_side": 670,
-  "source": "press_entity",
-  "subject_box": [
-   0.627,
-   0.134,
-   0.956,
-   0.73
-  ],
-  "subject_kind": "other",
-  "url": "https://example.test/A12.png",
-  "uses": [],
-  "w": 1280
- },
- "A12+source": {
-  "bottom_brightness": 136,
-  "bottom_left_brightness": 136,
-  "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": true,
-  "decisions": [
-   {
-    "evidence": "vision tra loi False",
-    "outcome": "drop",
-    "rule": "LIEN_QUAN",
-    "stage": "vision"
-   },
-   {
-    "evidence": "khong lam bia, xuong cuoi hang",
-    "outcome": "demote",
-    "rule": "CLUTTERED_without_keyword",
-    "stage": "cluttered"
-   },
-   {
-    "evidence": "Banner tiếng Nhật chia sẻ mẹo dùng Gemini kèm hình minh họa chú chó đeo kính ngồi làm việc bên laptop.",
-    "outcome": "drop",
-    "rule": "capture_quality",
-    "stage": "relevance"
-   }
-  ],
-  "description": "Banner tiếng Nhật chia sẻ mẹo dùng Gemini kèm hình minh họa chú chó đeo kính ngồi làm việc bên laptop.",
-  "empty_share": 0.35,
-  "faces": 0,
-  "h": 670,
-  "has_keywords": false,
-  "id": "A12",
-  "kind": "chart",
-  "landscape": true,
-  "landscape_crop_ok": null,
-  "logo_card": false,
-  "notes": [
-   "❌ ẢNH HERO TRANG NGUỒN NHƯNG KHÔNG ĐẠT CHẤT LƯỢNG (mờ/cắt lại từ màn hình khác — vision) → KHÔNG DÙNG",
-   "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
-   "KHÔNG làm bìa",
-   "cạnh ngắn 670px, phóng lên hơi mềm"
-  ],
-  "original_path": "A12.png",
-  "printed_name": null,
-  "printed_version": null,
-  "ratio": 1.91,
-  "ready_path": "A12.png",
-  "relevant": false,
-  "short_side": 670,
-  "source": "press_entity",
-  "subject_box": [
-   0.627,
-   0.134,
-   0.956,
-   0.73
-  ],
-  "subject_kind": "other",
-  "url": "https://example.test/A12.png",
-  "uses": [],
-  "w": 1280
- },
- "A13": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -352,8 +346,108 @@
     "stage": "vision"
    }
   ],
-  "description": "Biểu trưng và tên thương hiệu Gemini trên nền xám nhạt.",
-  "empty_share": 0.88,
+  "description": "Biểu tượng ứng dụng Google Gemini hình ngôi sao bốn cánh nhiều màu trên khung nền trắng bo góc.",
+  "empty_share": 0.4,
+  "faces": 0,
+  "h": 630,
+  "has_keywords": false,
+  "id": "A12",
+  "kind": "chart",
+  "landscape": true,
+  "landscape_crop_ok": null,
+  "logo_card": false,
+  "notes": [
+   "KHÔNG làm bìa",
+   "cạnh ngắn 630px, phóng lên hơi mềm"
+  ],
+  "original_path": "A12.png",
+  "printed_name": null,
+  "printed_version": null,
+  "ratio": 1.9,
+  "ready_path": "A12.png",
+  "relevant": true,
+  "short_side": 630,
+  "source": "press_entity",
+  "subject_box": [
+   0.293,
+   0.103,
+   0.707,
+   0.897
+  ],
+  "subject_kind": "logo",
+  "url": "https://example.test/A12.png",
+  "uses": [
+   "body_chart_full_width",
+   "stack_vertical"
+  ],
+  "w": 1200
+ },
+ "A12+source": {
+  "ai_slop": false,
+  "bottom_brightness": 136,
+  "bottom_left_brightness": 136,
+  "chart_stats": "phang 100%, chi 1 mau",
+  "cluttered": false,
+  "decisions": [
+   {
+    "evidence": "vision tra loi True",
+    "outcome": "keep",
+    "rule": "LIEN_QUAN",
+    "stage": "vision"
+   }
+  ],
+  "description": "Biểu tượng ứng dụng Google Gemini hình ngôi sao bốn cánh nhiều màu trên khung nền trắng bo góc.",
+  "empty_share": 0.4,
+  "faces": 0,
+  "h": 630,
+  "has_keywords": false,
+  "id": "A12",
+  "kind": "chart",
+  "landscape": true,
+  "landscape_crop_ok": null,
+  "logo_card": false,
+  "notes": [
+   "KHÔNG làm bìa",
+   "cạnh ngắn 630px, phóng lên hơi mềm"
+  ],
+  "original_path": "A12.png",
+  "printed_name": null,
+  "printed_version": null,
+  "ratio": 1.9,
+  "ready_path": "A12.png",
+  "relevant": true,
+  "short_side": 630,
+  "source": "press_entity",
+  "subject_box": [
+   0.293,
+   0.103,
+   0.707,
+   0.897
+  ],
+  "subject_kind": "logo",
+  "url": "https://example.test/A12.png",
+  "uses": [
+   "body_chart_full_width",
+   "stack_vertical"
+  ],
+  "w": 1200
+ },
+ "A13": {
+  "ai_slop": false,
+  "bottom_brightness": 136,
+  "bottom_left_brightness": 136,
+  "chart_stats": "phang 100%, chi 1 mau",
+  "cluttered": false,
+  "decisions": [
+   {
+    "evidence": "vision tra loi True",
+    "outcome": "keep",
+    "rule": "LIEN_QUAN",
+    "stage": "vision"
+   }
+  ],
+  "description": "Biểu tượng ngôi sao đa sắc và chữ Gemini trên nền trơn.",
+  "empty_share": 0.85,
   "faces": 0,
   "h": 1500,
   "has_keywords": false,
@@ -387,6 +481,7 @@
   "w": 1200
  },
  "A13+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -399,8 +494,8 @@
     "stage": "vision"
    }
   ],
-  "description": "Biểu trưng và tên thương hiệu Gemini trên nền xám nhạt.",
-  "empty_share": 0.88,
+  "description": "Biểu tượng ngôi sao đa sắc và chữ Gemini trên nền trơn.",
+  "empty_share": 0.85,
   "faces": 0,
   "h": 1500,
   "has_keywords": false,
@@ -434,6 +529,7 @@
   "w": 1200
  },
  "A14": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -446,7 +542,7 @@
     "stage": "vision"
    }
   ],
-  "description": "Logo Google nhiều màu trên nền trơn sáng.",
+  "description": "Logo nhiều màu của Google đặt trên nền trơn sáng.",
   "empty_share": 0.85,
   "faces": 0,
   "h": 1500,
@@ -481,6 +577,7 @@
   "w": 1200
  },
  "A14+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -493,7 +590,7 @@
     "stage": "vision"
    }
   ],
-  "description": "Logo Google nhiều màu trên nền trơn sáng.",
+  "description": "Logo nhiều màu của Google đặt trên nền trơn sáng.",
   "empty_share": 0.85,
   "faces": 0,
   "h": 1500,
@@ -528,6 +625,7 @@
   "w": 1200
  },
  "A16": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -540,14 +638,14 @@
     "stage": "vision"
    },
    {
-    "evidence": "Ảnh chụp từ phía sau và góc nghiêng hai người đàn ông dự sự kiện có phóng viên tác nghiệp.",
+    "evidence": "Ảnh chụp phía sau hai người đàn ông trong phòng họp báo.",
     "outcome": "drop",
     "rule": "vision_not_relevant",
     "stage": "relevance"
    }
   ],
-  "description": "Ảnh chụp từ phía sau và góc nghiêng hai người đàn ông dự sự kiện có phóng viên tác nghiệp.",
-  "empty_share": 0.15,
+  "description": "Ảnh chụp phía sau hai người đàn ông trong phòng họp báo.",
+  "empty_share": 0.2,
   "faces": 0,
   "h": 1080,
   "has_keywords": false,
@@ -569,10 +667,10 @@
   "short_side": 1080,
   "source": "brand",
   "subject_box": [
-   0.13,
-   0.09,
-   0.43,
-   0.81
+   0.12,
+   0.08,
+   0.44,
+   0.82
   ],
   "subject_kind": "person",
   "url": "https://example.test/A16.png",
@@ -580,6 +678,7 @@
   "w": 1920
  },
  "A16+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -592,14 +691,14 @@
     "stage": "vision"
    },
    {
-    "evidence": "Ảnh chụp từ phía sau và góc nghiêng hai người đàn ông dự sự kiện có phóng viên tác nghiệp.",
+    "evidence": "Ảnh chụp phía sau hai người đàn ông trong phòng họp báo.",
     "outcome": "drop",
     "rule": "capture_quality",
     "stage": "relevance"
    }
   ],
-  "description": "Ảnh chụp từ phía sau và góc nghiêng hai người đàn ông dự sự kiện có phóng viên tác nghiệp.",
-  "empty_share": 0.15,
+  "description": "Ảnh chụp phía sau hai người đàn ông trong phòng họp báo.",
+  "empty_share": 0.2,
   "faces": 0,
   "h": 1080,
   "has_keywords": false,
@@ -621,10 +720,10 @@
   "short_side": 1080,
   "source": "brand",
   "subject_box": [
-   0.13,
-   0.09,
-   0.43,
-   0.81
+   0.12,
+   0.08,
+   0.44,
+   0.82
   ],
   "subject_kind": "person",
   "url": "https://example.test/A16.png",
@@ -632,6 +731,7 @@
   "w": 1920
  },
  "A17": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -644,8 +744,8 @@
     "stage": "vision"
    }
   ],
-  "description": "Ảnh chụp chân dung Sergey Brin ngồi trong một sự kiện.",
-  "empty_share": 0.2,
+  "description": "Ảnh chụp chân dung Sergey Brin, nhà đồng sáng lập Google, đang ngồi phát biểu.",
+  "empty_share": 0.1,
   "faces": 0,
   "h": 1067,
   "has_keywords": false,
@@ -680,6 +780,7 @@
   "w": 1600
  },
  "A17+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -692,8 +793,8 @@
     "stage": "vision"
    }
   ],
-  "description": "Ảnh chụp chân dung Sergey Brin ngồi trong một sự kiện.",
-  "empty_share": 0.2,
+  "description": "Ảnh chụp chân dung Sergey Brin, nhà đồng sáng lập Google, đang ngồi phát biểu.",
+  "empty_share": 0.1,
   "faces": 0,
   "h": 1067,
   "has_keywords": false,
@@ -728,6 +829,7 @@
   "w": 1600
  },
  "A18": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -740,7 +842,7 @@
     "stage": "vision"
    }
   ],
-  "description": "Ảnh chụp chân dung Sergey Brin, nhà đồng sáng lập Google.",
+  "description": "Ảnh chụp chân dung Sergey Brin tại sự kiện hội thảo.",
   "empty_share": 0.25,
   "faces": 0,
   "h": 1067,
@@ -763,7 +865,7 @@
   "source": "brand",
   "subject_box": [
    0.33,
-   0.13,
+   0.12,
    0.61,
    0.68
   ],
@@ -776,6 +878,7 @@
   "w": 1600
  },
  "A18+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -788,7 +891,7 @@
     "stage": "vision"
    }
   ],
-  "description": "Ảnh chụp chân dung Sergey Brin, nhà đồng sáng lập Google.",
+  "description": "Ảnh chụp chân dung Sergey Brin tại sự kiện hội thảo.",
   "empty_share": 0.25,
   "faces": 0,
   "h": 1067,
@@ -811,7 +914,7 @@
   "source": "brand",
   "subject_box": [
    0.33,
-   0.13,
+   0.12,
    0.61,
    0.68
   ],
@@ -824,6 +927,7 @@
   "w": 1600
  },
  "A19": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 2 mau",
@@ -836,8 +940,8 @@
     "stage": "vision"
    }
   ],
-  "description": "Ảnh chân dung cận cảnh Sundar Pichai đeo kính mỉm cười mặc âu phục.",
-  "empty_share": 0.1,
+  "description": "Ảnh chụp chân dung cận cảnh CEO Google Sundar Pichai mỉm cười đeo kính.",
+  "empty_share": 0.05,
   "faces": 0,
   "h": 1439,
   "has_keywords": false,
@@ -861,8 +965,8 @@
   "source": "brand",
   "subject_box": [
    0.16,
-   0.05,
-   0.78,
+   0.08,
+   0.77,
    0.65
   ],
   "subject_kind": "person",
@@ -873,6 +977,7 @@
   "w": 959
  },
  "A19+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 2 mau",
@@ -885,8 +990,8 @@
     "stage": "vision"
    }
   ],
-  "description": "Ảnh chân dung cận cảnh Sundar Pichai đeo kính mỉm cười mặc âu phục.",
-  "empty_share": 0.1,
+  "description": "Ảnh chụp chân dung cận cảnh CEO Google Sundar Pichai mỉm cười đeo kính.",
+  "empty_share": 0.05,
   "faces": 0,
   "h": 1439,
   "has_keywords": false,
@@ -910,8 +1015,8 @@
   "source": "brand",
   "subject_box": [
    0.16,
-   0.05,
-   0.78,
+   0.08,
+   0.77,
    0.65
   ],
   "subject_kind": "person",
@@ -921,7 +1026,128 @@
   ],
   "w": 959
  },
+ "A2": {
+  "ai_slop": false,
+  "bottom_brightness": 136,
+  "bottom_left_brightness": 136,
+  "chart_stats": "phang 100%, chi 1 mau",
+  "cluttered": true,
+  "decisions": [
+   {
+    "evidence": "vision tra loi False",
+    "outcome": "drop",
+    "rule": "LIEN_QUAN",
+    "stage": "vision"
+   },
+   {
+    "evidence": "khong lam bia, xuong cuoi hang",
+    "outcome": "demote",
+    "rule": "CLUTTERED_without_keyword",
+    "stage": "cluttered"
+   },
+   {
+    "evidence": "Bảng đồ họa bento giới thiệu thông số và tính năng thiết bị Googlebook cùng Gemini Intelligence.",
+    "outcome": "drop",
+    "rule": "vision_not_relevant",
+    "stage": "relevance"
+   }
+  ],
+  "description": "Bảng đồ họa bento giới thiệu thông số và tính năng thiết bị Googlebook cùng Gemini Intelligence.",
+  "empty_share": 0.2,
+  "faces": 0,
+  "h": 1250,
+  "has_keywords": false,
+  "id": "A2",
+  "kind": "chart",
+  "landscape": true,
+  "landscape_crop_ok": null,
+  "logo_card": false,
+  "notes": [
+   "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG",
+   "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
+   "KHÔNG làm bìa"
+  ],
+  "original_path": "A2.png",
+  "printed_name": null,
+  "printed_version": null,
+  "ratio": 2.0,
+  "ready_path": "A2.png",
+  "relevant": false,
+  "short_side": 1250,
+  "source": "other_outlet",
+  "subject_box": [
+   0.36,
+   0.278,
+   0.647,
+   0.605
+  ],
+  "subject_kind": "product",
+  "url": "https://example.test/A2.png",
+  "uses": [],
+  "w": 2500
+ },
+ "A2+source": {
+  "ai_slop": false,
+  "bottom_brightness": 136,
+  "bottom_left_brightness": 136,
+  "chart_stats": "phang 100%, chi 1 mau",
+  "cluttered": true,
+  "decisions": [
+   {
+    "evidence": "vision tra loi False",
+    "outcome": "drop",
+    "rule": "LIEN_QUAN",
+    "stage": "vision"
+   },
+   {
+    "evidence": "khong lam bia, xuong cuoi hang",
+    "outcome": "demote",
+    "rule": "CLUTTERED_without_keyword",
+    "stage": "cluttered"
+   },
+   {
+    "evidence": "Bảng đồ họa bento giới thiệu thông số và tính năng thiết bị Googlebook cùng Gemini Intelligence.",
+    "outcome": "drop",
+    "rule": "capture_quality",
+    "stage": "relevance"
+   }
+  ],
+  "description": "Bảng đồ họa bento giới thiệu thông số và tính năng thiết bị Googlebook cùng Gemini Intelligence.",
+  "empty_share": 0.2,
+  "faces": 0,
+  "h": 1250,
+  "has_keywords": false,
+  "id": "A2",
+  "kind": "chart",
+  "landscape": true,
+  "landscape_crop_ok": null,
+  "logo_card": false,
+  "notes": [
+   "❌ ẢNH HERO TRANG NGUỒN NHƯNG KHÔNG ĐẠT CHẤT LƯỢNG (mờ/cắt lại từ màn hình khác — vision) → KHÔNG DÙNG",
+   "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
+   "KHÔNG làm bìa"
+  ],
+  "original_path": "A2.png",
+  "printed_name": null,
+  "printed_version": null,
+  "ratio": 2.0,
+  "ready_path": "A2.png",
+  "relevant": false,
+  "short_side": 1250,
+  "source": "other_outlet",
+  "subject_box": [
+   0.36,
+   0.278,
+   0.647,
+   0.605
+  ],
+  "subject_kind": "product",
+  "url": "https://example.test/A2.png",
+  "uses": [],
+  "w": 2500
+ },
  "A20": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -934,42 +1160,44 @@
     "stage": "vision"
    }
   ],
-  "description": "Ảnh chụp chân dung cận cảnh Sergey Brin.",
-  "empty_share": 0.35,
+  "description": "Do hoa quang ba mo hinh Gemini 3.1 Pro tren nen den.",
+  "empty_share": 0.5,
   "faces": 0,
-  "h": 2070,
+  "h": 675,
   "has_keywords": false,
   "id": "A20",
   "kind": "chart",
-  "landscape": false,
+  "landscape": true,
   "landscape_crop_ok": null,
   "logo_card": false,
   "notes": [
-   "chart cao, đã cắt bớt phần dưới về 4:5",
-   "KHÔNG làm bìa"
+   "KHÔNG làm bìa",
+   "cạnh ngắn 675px, phóng lên hơi mềm"
   ],
   "original_path": "A20.png",
   "printed_name": null,
-  "printed_version": null,
-  "ratio": 0.69,
+  "printed_version": "Gemini 3.1 Pro",
+  "ratio": 1.78,
   "ready_path": "A20.png",
   "relevant": true,
-  "short_side": 1423,
-  "source": "brand",
+  "short_side": 675,
+  "source": "press_entity",
   "subject_box": [
    0.15,
-   0.05,
-   0.83,
-   0.63
+   0.03,
+   0.88,
+   0.95
   ],
-  "subject_kind": "person",
+  "subject_kind": "logo",
   "url": "https://example.test/A20.png",
   "uses": [
-   "body_chart_full_width"
+   "body_chart_full_width",
+   "stack_vertical"
   ],
-  "w": 1423
+  "w": 1200
  },
  "A20+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -982,42 +1210,44 @@
     "stage": "vision"
    }
   ],
-  "description": "Ảnh chụp chân dung cận cảnh Sergey Brin.",
-  "empty_share": 0.35,
+  "description": "Do hoa quang ba mo hinh Gemini 3.1 Pro tren nen den.",
+  "empty_share": 0.5,
   "faces": 0,
-  "h": 2070,
+  "h": 675,
   "has_keywords": false,
   "id": "A20",
   "kind": "chart",
-  "landscape": false,
+  "landscape": true,
   "landscape_crop_ok": null,
   "logo_card": false,
   "notes": [
-   "chart cao, đã cắt bớt phần dưới về 4:5",
-   "KHÔNG làm bìa"
+   "KHÔNG làm bìa",
+   "cạnh ngắn 675px, phóng lên hơi mềm"
   ],
   "original_path": "A20.png",
   "printed_name": null,
-  "printed_version": null,
-  "ratio": 0.69,
+  "printed_version": "Gemini 3.1 Pro",
+  "ratio": 1.78,
   "ready_path": "A20.png",
   "relevant": true,
-  "short_side": 1423,
-  "source": "brand",
+  "short_side": 675,
+  "source": "press_entity",
   "subject_box": [
    0.15,
-   0.05,
-   0.83,
-   0.63
+   0.03,
+   0.88,
+   0.95
   ],
-  "subject_kind": "person",
+  "subject_kind": "logo",
   "url": "https://example.test/A20.png",
   "uses": [
-   "body_chart_full_width"
+   "body_chart_full_width",
+   "stack_vertical"
   ],
-  "w": 1423
+  "w": 1200
  },
  "A21": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -1030,110 +1260,12 @@
     "stage": "vision"
    }
   ],
-  "description": "Đồ họa chữ Gemini 3.1 Pro đặt trên nền số 3.1 bằng các chấm sáng li ti màu xanh và đen.",
-  "empty_share": 0.65,
-  "faces": 0,
-  "h": 675,
-  "has_keywords": false,
-  "id": "A21",
-  "kind": "chart",
-  "landscape": true,
-  "landscape_crop_ok": null,
-  "logo_card": true,
-  "notes": [
-   "KHÔNG làm bìa",
-   "cạnh ngắn 675px, phóng lên hơi mềm"
-  ],
-  "original_path": "A21.png",
-  "printed_name": null,
-  "printed_version": "Gemini 3.1 Pro",
-  "ratio": 1.78,
-  "ready_path": "A21.png",
-  "relevant": true,
-  "short_side": 675,
-  "source": "press_entity",
-  "subject_box": [
-   0.15,
-   0.03,
-   0.92,
-   0.95
-  ],
-  "subject_kind": "logo",
-  "url": "https://example.test/A21.png",
-  "uses": [
-   "body_chart_full_width",
-   "stack_vertical"
-  ],
-  "w": 1200
- },
- "A21+source": {
-  "bottom_brightness": 136,
-  "bottom_left_brightness": 136,
-  "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": false,
-  "decisions": [
-   {
-    "evidence": "vision tra loi True",
-    "outcome": "keep",
-    "rule": "LIEN_QUAN",
-    "stage": "vision"
-   }
-  ],
-  "description": "Đồ họa chữ Gemini 3.1 Pro đặt trên nền số 3.1 bằng các chấm sáng li ti màu xanh và đen.",
-  "empty_share": 0.65,
-  "faces": 0,
-  "h": 675,
-  "has_keywords": false,
-  "id": "A21",
-  "kind": "chart",
-  "landscape": true,
-  "landscape_crop_ok": null,
-  "logo_card": true,
-  "notes": [
-   "KHÔNG làm bìa",
-   "cạnh ngắn 675px, phóng lên hơi mềm"
-  ],
-  "original_path": "A21.png",
-  "printed_name": null,
-  "printed_version": "Gemini 3.1 Pro",
-  "ratio": 1.78,
-  "ready_path": "A21.png",
-  "relevant": true,
-  "short_side": 675,
-  "source": "press_entity",
-  "subject_box": [
-   0.15,
-   0.03,
-   0.92,
-   0.95
-  ],
-  "subject_kind": "logo",
-  "url": "https://example.test/A21.png",
-  "uses": [
-   "body_chart_full_width",
-   "stack_vertical"
-  ],
-  "w": 1200
- },
- "A22": {
-  "bottom_brightness": 136,
-  "bottom_left_brightness": 136,
-  "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": false,
-  "decisions": [
-   {
-    "evidence": "vision tra loi True",
-    "outcome": "keep",
-    "rule": "LIEN_QUAN",
-    "stage": "vision"
-   }
-  ],
-  "description": "Màn hình điện thoại hiển thị logo Gemini developed by Google đặt trước logo Google mờ.",
-  "empty_share": 0.4,
+  "description": "Điện thoại hiển thị logo Gemini đặt trước logo Google bị làm mờ.",
+  "empty_share": 0.25,
   "faces": 0,
   "h": 900,
   "has_keywords": false,
-  "id": "A22",
+  "id": "A21",
   "kind": "chart",
   "landscape": true,
   "landscape_crop_ok": null,
@@ -1142,21 +1274,121 @@
    "KHÔNG làm bìa",
    "cạnh ngắn 900px, phóng lên hơi mềm"
   ],
-  "original_path": "A22.png",
+  "original_path": "A21.png",
   "printed_name": null,
   "printed_version": null,
   "ratio": 1.78,
-  "ready_path": "A22.png",
+  "ready_path": "A21.png",
   "relevant": true,
   "short_side": 900,
   "source": "press_entity",
   "subject_box": [
-   0.327,
+   0.328,
    0.187,
    1.0,
    0.859
   ],
   "subject_kind": "product",
+  "url": "https://example.test/A21.png",
+  "uses": [
+   "body_chart_full_width",
+   "stack_vertical"
+  ],
+  "w": 1600
+ },
+ "A21+source": {
+  "ai_slop": false,
+  "bottom_brightness": 136,
+  "bottom_left_brightness": 136,
+  "chart_stats": "phang 100%, chi 1 mau",
+  "cluttered": false,
+  "decisions": [
+   {
+    "evidence": "vision tra loi True",
+    "outcome": "keep",
+    "rule": "LIEN_QUAN",
+    "stage": "vision"
+   }
+  ],
+  "description": "Điện thoại hiển thị logo Gemini đặt trước logo Google bị làm mờ.",
+  "empty_share": 0.25,
+  "faces": 0,
+  "h": 900,
+  "has_keywords": false,
+  "id": "A21",
+  "kind": "chart",
+  "landscape": true,
+  "landscape_crop_ok": null,
+  "logo_card": false,
+  "notes": [
+   "KHÔNG làm bìa",
+   "cạnh ngắn 900px, phóng lên hơi mềm"
+  ],
+  "original_path": "A21.png",
+  "printed_name": null,
+  "printed_version": null,
+  "ratio": 1.78,
+  "ready_path": "A21.png",
+  "relevant": true,
+  "short_side": 900,
+  "source": "press_entity",
+  "subject_box": [
+   0.328,
+   0.187,
+   1.0,
+   0.859
+  ],
+  "subject_kind": "product",
+  "url": "https://example.test/A21.png",
+  "uses": [
+   "body_chart_full_width",
+   "stack_vertical"
+  ],
+  "w": 1600
+ },
+ "A22": {
+  "ai_slop": false,
+  "bottom_brightness": 136,
+  "bottom_left_brightness": 136,
+  "chart_stats": "phang 100%, chi 1 mau",
+  "cluttered": false,
+  "decisions": [
+   {
+    "evidence": "vision tra loi True",
+    "outcome": "keep",
+    "rule": "LIEN_QUAN",
+    "stage": "vision"
+   }
+  ],
+  "description": "Hình đồ họa giới thiệu phiên bản Gemini 3.8 Flash kèm biểu tượng ngôi sao Google trên nền sáng.",
+  "empty_share": 0.7,
+  "faces": 0,
+  "h": 887,
+  "has_keywords": false,
+  "id": "A22",
+  "kind": "chart",
+  "landscape": true,
+  "landscape_crop_ok": null,
+  "logo_card": true,
+  "notes": [
+   "KHÔNG làm bìa",
+   "cạnh ngắn 887px, phóng lên hơi mềm"
+  ],
+  "original_path": "A22.png",
+  "printed_name": null,
+  "printed_version": "Gemini 3.8 Flash",
+  "ratio": 1.8,
+  "ready_path": "A22.png",
+  "relevant": true,
+  "short_side": 887,
+  "source": "press_entity",
+  "subject_box": [
+   0.3,
+   0.14,
+   0.69,
+   0.92
+  ],
+  "subject_kind": "logo",
   "url": "https://example.test/A22.png",
   "uses": [
    "body_chart_full_width",
@@ -1165,6 +1397,7 @@
   "w": 1600
  },
  "A22+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -1177,35 +1410,35 @@
     "stage": "vision"
    }
   ],
-  "description": "Màn hình điện thoại hiển thị logo Gemini developed by Google đặt trước logo Google mờ.",
-  "empty_share": 0.4,
+  "description": "Hình đồ họa giới thiệu phiên bản Gemini 3.8 Flash kèm biểu tượng ngôi sao Google trên nền sáng.",
+  "empty_share": 0.7,
   "faces": 0,
-  "h": 900,
+  "h": 887,
   "has_keywords": false,
   "id": "A22",
   "kind": "chart",
   "landscape": true,
   "landscape_crop_ok": null,
-  "logo_card": false,
+  "logo_card": true,
   "notes": [
    "KHÔNG làm bìa",
-   "cạnh ngắn 900px, phóng lên hơi mềm"
+   "cạnh ngắn 887px, phóng lên hơi mềm"
   ],
   "original_path": "A22.png",
   "printed_name": null,
-  "printed_version": null,
-  "ratio": 1.78,
+  "printed_version": "Gemini 3.8 Flash",
+  "ratio": 1.8,
   "ready_path": "A22.png",
   "relevant": true,
-  "short_side": 900,
+  "short_side": 887,
   "source": "press_entity",
   "subject_box": [
-   0.327,
-   0.187,
-   1.0,
-   0.859
+   0.3,
+   0.14,
+   0.69,
+   0.92
   ],
-  "subject_kind": "product",
+  "subject_kind": "logo",
   "url": "https://example.test/A22.png",
   "uses": [
    "body_chart_full_width",
@@ -1214,6 +1447,7 @@
   "w": 1600
  },
  "A23": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -1226,43 +1460,42 @@
     "stage": "vision"
    }
   ],
-  "description": "Đồ họa chữ New Gemini 3.8 Flash kèm biểu tượng bốn cánh nhiều màu trên nền xanh trắng.",
-  "empty_share": 0.65,
+  "description": "Biểu tượng cùng dòng chữ Gemini 3.5 Pro trên nền gradient xanh trắng mờ.",
+  "empty_share": 0.85,
   "faces": 0,
-  "h": 887,
+  "h": 1086,
   "has_keywords": false,
   "id": "A23",
   "kind": "chart",
-  "landscape": true,
+  "landscape": false,
   "landscape_crop_ok": null,
-  "logo_card": false,
+  "logo_card": true,
   "notes": [
-   "KHÔNG làm bìa",
-   "cạnh ngắn 887px, phóng lên hơi mềm"
+   "KHÔNG làm bìa"
   ],
   "original_path": "A23.png",
   "printed_name": null,
-  "printed_version": "Gemini 3.8 Flash",
-  "ratio": 1.8,
+  "printed_version": "Gemini 3.5 Pro",
+  "ratio": 1.33,
   "ready_path": "A23.png",
   "relevant": true,
-  "short_side": 887,
+  "short_side": 1086,
   "source": "press_entity",
   "subject_box": [
-   0.3,
-   0.14,
-   0.69,
-   0.91
+   0.27,
+   0.42,
+   0.74,
+   0.52
   ],
-  "subject_kind": "product",
+  "subject_kind": "logo",
   "url": "https://example.test/A23.png",
   "uses": [
-   "body_chart_full_width",
-   "stack_vertical"
+   "body_chart_full_width"
   ],
-  "w": 1600
+  "w": 1448
  },
  "A23+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -1275,349 +1508,42 @@
     "stage": "vision"
    }
   ],
-  "description": "Đồ họa chữ New Gemini 3.8 Flash kèm biểu tượng bốn cánh nhiều màu trên nền xanh trắng.",
-  "empty_share": 0.65,
+  "description": "Biểu tượng cùng dòng chữ Gemini 3.5 Pro trên nền gradient xanh trắng mờ.",
+  "empty_share": 0.85,
   "faces": 0,
-  "h": 887,
+  "h": 1086,
   "has_keywords": false,
   "id": "A23",
   "kind": "chart",
-  "landscape": true,
+  "landscape": false,
   "landscape_crop_ok": null,
-  "logo_card": false,
+  "logo_card": true,
   "notes": [
-   "KHÔNG làm bìa",
-   "cạnh ngắn 887px, phóng lên hơi mềm"
+   "KHÔNG làm bìa"
   ],
   "original_path": "A23.png",
   "printed_name": null,
-  "printed_version": "Gemini 3.8 Flash",
-  "ratio": 1.8,
+  "printed_version": "Gemini 3.5 Pro",
+  "ratio": 1.33,
   "ready_path": "A23.png",
   "relevant": true,
-  "short_side": 887,
+  "short_side": 1086,
   "source": "press_entity",
   "subject_box": [
-   0.3,
-   0.14,
-   0.69,
-   0.91
+   0.27,
+   0.42,
+   0.74,
+   0.52
   ],
-  "subject_kind": "product",
+  "subject_kind": "logo",
   "url": "https://example.test/A23.png",
   "uses": [
-   "body_chart_full_width",
-   "stack_vertical"
-  ],
-  "w": 1600
- },
- "A24": {
-  "bottom_brightness": 136,
-  "bottom_left_brightness": 136,
-  "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": false,
-  "decisions": [
-   {
-    "evidence": "vision tra loi True",
-    "outcome": "keep",
-    "rule": "LIEN_QUAN",
-    "stage": "vision"
-   }
-  ],
-  "description": "Logo Google Gemini kèm dòng chữ Gemini 3.5 Pro trên nền dải màu xanh lam.",
-  "empty_share": 0.85,
-  "faces": 0,
-  "h": 1086,
-  "has_keywords": false,
-  "id": "A24",
-  "kind": "chart",
-  "landscape": false,
-  "landscape_crop_ok": null,
-  "logo_card": true,
-  "notes": [
-   "KHÔNG làm bìa"
-  ],
-  "original_path": "A24.png",
-  "printed_name": null,
-  "printed_version": "Gemini 3.5 Pro",
-  "ratio": 1.33,
-  "ready_path": "A24.png",
-  "relevant": true,
-  "short_side": 1086,
-  "source": "press_entity",
-  "subject_box": [
-   0.267,
-   0.427,
-   0.733,
-   0.513
-  ],
-  "subject_kind": "logo",
-  "url": "https://example.test/A24.png",
-  "uses": [
    "body_chart_full_width"
   ],
   "w": 1448
- },
- "A24+source": {
-  "bottom_brightness": 136,
-  "bottom_left_brightness": 136,
-  "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": false,
-  "decisions": [
-   {
-    "evidence": "vision tra loi True",
-    "outcome": "keep",
-    "rule": "LIEN_QUAN",
-    "stage": "vision"
-   }
-  ],
-  "description": "Logo Google Gemini kèm dòng chữ Gemini 3.5 Pro trên nền dải màu xanh lam.",
-  "empty_share": 0.85,
-  "faces": 0,
-  "h": 1086,
-  "has_keywords": false,
-  "id": "A24",
-  "kind": "chart",
-  "landscape": false,
-  "landscape_crop_ok": null,
-  "logo_card": true,
-  "notes": [
-   "KHÔNG làm bìa"
-  ],
-  "original_path": "A24.png",
-  "printed_name": null,
-  "printed_version": "Gemini 3.5 Pro",
-  "ratio": 1.33,
-  "ready_path": "A24.png",
-  "relevant": true,
-  "short_side": 1086,
-  "source": "press_entity",
-  "subject_box": [
-   0.267,
-   0.427,
-   0.733,
-   0.513
-  ],
-  "subject_kind": "logo",
-  "url": "https://example.test/A24.png",
-  "uses": [
-   "body_chart_full_width"
-  ],
-  "w": 1448
- },
- "A25": {
-  "bottom_brightness": 136,
-  "bottom_left_brightness": 136,
-  "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": true,
-  "decisions": [
-   {
-    "evidence": "vision tra loi False",
-    "outcome": "drop",
-    "rule": "LIEN_QUAN",
-    "stage": "vision"
-   },
-   {
-    "evidence": "khong lam bia, xuong cuoi hang",
-    "outcome": "demote",
-    "rule": "CLUTTERED_without_keyword",
-    "stage": "cluttered"
-   },
-   {
-    "evidence": "Bảng so sánh thông số kỹ thuật, giá và điểm benchmark của các mô hình AI Gemini, Claude, GPT và Grok.",
-    "outcome": "drop",
-    "rule": "vision_not_relevant",
-    "stage": "relevance"
-   }
-  ],
-  "description": "Bảng so sánh thông số kỹ thuật, giá và điểm benchmark của các mô hình AI Gemini, Claude, GPT và Grok.",
-  "empty_share": 0.2,
-  "faces": 0,
-  "h": 1700,
-  "has_keywords": false,
-  "id": "A25",
-  "kind": "chart",
-  "landscape": false,
-  "landscape_crop_ok": null,
-  "logo_card": false,
-  "notes": [
-   "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG",
-   "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
-   "KHÔNG làm bìa"
-  ],
-  "original_path": "A25.png",
-  "printed_name": null,
-  "printed_version": "Gemini 3 Flash Thinking, Gemini 3 Pro Thinking, Gemini 2.5 Flash Thinking, Gemini 2.5 Pro Thinking, Claude Sonnet 4.5 Th",
-  "ratio": 0.9,
-  "ready_path": "A25.png",
-  "relevant": false,
-  "short_side": 1530,
-  "source": "web_yandex",
-  "subject_box": [
-   0.03,
-   0.02,
-   0.97,
-   0.98
-  ],
-  "subject_kind": "chart",
-  "url": "https://example.test/A25.png",
-  "uses": [],
-  "w": 1530
- },
- "A25+source": {
-  "bottom_brightness": 136,
-  "bottom_left_brightness": 136,
-  "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": true,
-  "decisions": [
-   {
-    "evidence": "vision tra loi False",
-    "outcome": "drop",
-    "rule": "LIEN_QUAN",
-    "stage": "vision"
-   },
-   {
-    "evidence": "khong lam bia, xuong cuoi hang",
-    "outcome": "demote",
-    "rule": "CLUTTERED_without_keyword",
-    "stage": "cluttered"
-   },
-   {
-    "evidence": "Bảng so sánh thông số kỹ thuật, giá và điểm benchmark của các mô hình AI Gemini, Claude, GPT và Grok.",
-    "outcome": "drop",
-    "rule": "capture_quality",
-    "stage": "relevance"
-   }
-  ],
-  "description": "Bảng so sánh thông số kỹ thuật, giá và điểm benchmark của các mô hình AI Gemini, Claude, GPT và Grok.",
-  "empty_share": 0.2,
-  "faces": 0,
-  "h": 1700,
-  "has_keywords": false,
-  "id": "A25",
-  "kind": "chart",
-  "landscape": false,
-  "landscape_crop_ok": null,
-  "logo_card": false,
-  "notes": [
-   "❌ ẢNH HERO TRANG NGUỒN NHƯNG KHÔNG ĐẠT CHẤT LƯỢNG (mờ/cắt lại từ màn hình khác — vision) → KHÔNG DÙNG",
-   "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
-   "KHÔNG làm bìa"
-  ],
-  "original_path": "A25.png",
-  "printed_name": null,
-  "printed_version": "Gemini 3 Flash Thinking, Gemini 3 Pro Thinking, Gemini 2.5 Flash Thinking, Gemini 2.5 Pro Thinking, Claude Sonnet 4.5 Th",
-  "ratio": 0.9,
-  "ready_path": "A25.png",
-  "relevant": false,
-  "short_side": 1530,
-  "source": "web_yandex",
-  "subject_box": [
-   0.03,
-   0.02,
-   0.97,
-   0.98
-  ],
-  "subject_kind": "chart",
-  "url": "https://example.test/A25.png",
-  "uses": [],
-  "w": 1530
- },
- "A26": {
-  "bottom_brightness": 136,
-  "bottom_left_brightness": 136,
-  "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": false,
-  "decisions": [
-   {
-    "evidence": "vision tra loi True",
-    "outcome": "keep",
-    "rule": "LIEN_QUAN",
-    "stage": "vision"
-   }
-  ],
-  "description": "Bảng so sánh điểm benchmark năng lực giữa Gemini Ultra và GPT-4.",
-  "empty_share": 0.4,
-  "faces": 0,
-  "h": 2390,
-  "has_keywords": false,
-  "id": "A26",
-  "kind": "chart",
-  "landscape": false,
-  "landscape_crop_ok": null,
-  "logo_card": false,
-  "notes": [
-   "KHÔNG làm bìa"
-  ],
-  "original_path": "A26.png",
-  "printed_name": null,
-  "printed_version": "Gemini Ultra, GPT-4",
-  "ratio": 0.82,
-  "ready_path": "A26.png",
-  "relevant": true,
-  "short_side": 1957,
-  "source": "web_yandex",
-  "subject_box": [
-   0.01,
-   0.04,
-   0.99,
-   0.98
-  ],
-  "subject_kind": "chart",
-  "url": "https://example.test/A26.png",
-  "uses": [
-   "body_chart_full_width"
-  ],
-  "w": 1957
- },
- "A26+source": {
-  "bottom_brightness": 136,
-  "bottom_left_brightness": 136,
-  "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": false,
-  "decisions": [
-   {
-    "evidence": "vision tra loi True",
-    "outcome": "keep",
-    "rule": "LIEN_QUAN",
-    "stage": "vision"
-   }
-  ],
-  "description": "Bảng so sánh điểm benchmark năng lực giữa Gemini Ultra và GPT-4.",
-  "empty_share": 0.4,
-  "faces": 0,
-  "h": 2390,
-  "has_keywords": false,
-  "id": "A26",
-  "kind": "chart",
-  "landscape": false,
-  "landscape_crop_ok": null,
-  "logo_card": false,
-  "notes": [
-   "KHÔNG làm bìa"
-  ],
-  "original_path": "A26.png",
-  "printed_name": null,
-  "printed_version": "Gemini Ultra, GPT-4",
-  "ratio": 0.82,
-  "ready_path": "A26.png",
-  "relevant": true,
-  "short_side": 1957,
-  "source": "web_yandex",
-  "subject_box": [
-   0.01,
-   0.04,
-   0.99,
-   0.98
-  ],
-  "subject_kind": "chart",
-  "url": "https://example.test/A26.png",
-  "uses": [
-   "body_chart_full_width"
-  ],
-  "w": 1957
  },
  "A3": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -1630,14 +1556,14 @@
     "stage": "vision"
    },
    {
-    "evidence": "Bàn làm việc trong phòng thí nghiệm chứa nhiều thiết bị đo lường và màn hình hiển thị.",
+    "evidence": "Phòng thí nghiệm với các thiết bị đo đạc điện tử và dụng cụ khoa học đặt trên bàn.",
     "outcome": "drop",
     "rule": "vision_not_relevant",
     "stage": "relevance"
    }
   ],
-  "description": "Bàn làm việc trong phòng thí nghiệm chứa nhiều thiết bị đo lường và màn hình hiển thị.",
-  "empty_share": 0.15,
+  "description": "Phòng thí nghiệm với các thiết bị đo đạc điện tử và dụng cụ khoa học đặt trên bàn.",
+  "empty_share": 0.1,
   "faces": 0,
   "h": 1080,
   "has_keywords": false,
@@ -1659,10 +1585,10 @@
   "short_side": 1080,
   "source": "other_outlet",
   "subject_box": [
-   0.672,
-   0.329,
-   0.887,
-   0.687
+   0.67,
+   0.33,
+   0.89,
+   0.68
   ],
   "subject_kind": "product",
   "url": "https://example.test/A3.png",
@@ -1670,6 +1596,7 @@
   "w": 1920
  },
  "A3+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -1682,14 +1609,14 @@
     "stage": "vision"
    },
    {
-    "evidence": "Bàn làm việc trong phòng thí nghiệm chứa nhiều thiết bị đo lường và màn hình hiển thị.",
+    "evidence": "Phòng thí nghiệm với các thiết bị đo đạc điện tử và dụng cụ khoa học đặt trên bàn.",
     "outcome": "drop",
     "rule": "capture_quality",
     "stage": "relevance"
    }
   ],
-  "description": "Bàn làm việc trong phòng thí nghiệm chứa nhiều thiết bị đo lường và màn hình hiển thị.",
-  "empty_share": 0.15,
+  "description": "Phòng thí nghiệm với các thiết bị đo đạc điện tử và dụng cụ khoa học đặt trên bàn.",
+  "empty_share": 0.1,
   "faces": 0,
   "h": 1080,
   "has_keywords": false,
@@ -1711,17 +1638,116 @@
   "short_side": 1080,
   "source": "other_outlet",
   "subject_box": [
-   0.672,
-   0.329,
-   0.887,
-   0.687
+   0.67,
+   0.33,
+   0.89,
+   0.68
   ],
   "subject_kind": "product",
   "url": "https://example.test/A3.png",
   "uses": [],
   "w": 1920
  },
+ "A4": {
+  "ai_slop": false,
+  "bottom_brightness": 136,
+  "bottom_left_brightness": 136,
+  "chart_stats": "phang 100%, chi 1 mau",
+  "cluttered": false,
+  "decisions": [
+   {
+    "evidence": "vision tra loi True",
+    "outcome": "keep",
+    "rule": "LIEN_QUAN",
+    "stage": "vision"
+   }
+  ],
+  "description": "Nguoi cam may tinh xach tay chay he dieu hanh ChromeOS tai su kien.",
+  "empty_share": 0.15,
+  "faces": 0,
+  "h": 1000,
+  "has_keywords": false,
+  "id": "A4",
+  "kind": "chart",
+  "landscape": true,
+  "landscape_crop_ok": null,
+  "logo_card": false,
+  "notes": [
+   "KHÔNG làm bìa"
+  ],
+  "original_path": "A4.png",
+  "printed_name": null,
+  "printed_version": null,
+  "ratio": 2.0,
+  "ready_path": "A4.png",
+  "relevant": true,
+  "short_side": 1000,
+  "source": "other_outlet",
+  "subject_box": [
+   0.21,
+   0.07,
+   0.69,
+   0.88
+  ],
+  "subject_kind": "product",
+  "url": "https://example.test/A4.png",
+  "uses": [
+   "body_chart_full_width",
+   "stack_vertical"
+  ],
+  "w": 2000
+ },
+ "A4+source": {
+  "ai_slop": false,
+  "bottom_brightness": 136,
+  "bottom_left_brightness": 136,
+  "chart_stats": "phang 100%, chi 1 mau",
+  "cluttered": false,
+  "decisions": [
+   {
+    "evidence": "vision tra loi True",
+    "outcome": "keep",
+    "rule": "LIEN_QUAN",
+    "stage": "vision"
+   }
+  ],
+  "description": "Nguoi cam may tinh xach tay chay he dieu hanh ChromeOS tai su kien.",
+  "empty_share": 0.15,
+  "faces": 0,
+  "h": 1000,
+  "has_keywords": false,
+  "id": "A4",
+  "kind": "chart",
+  "landscape": true,
+  "landscape_crop_ok": null,
+  "logo_card": false,
+  "notes": [
+   "KHÔNG làm bìa"
+  ],
+  "original_path": "A4.png",
+  "printed_name": null,
+  "printed_version": null,
+  "ratio": 2.0,
+  "ready_path": "A4.png",
+  "relevant": true,
+  "short_side": 1000,
+  "source": "other_outlet",
+  "subject_box": [
+   0.21,
+   0.07,
+   0.69,
+   0.88
+  ],
+  "subject_kind": "product",
+  "url": "https://example.test/A4.png",
+  "uses": [
+   "body_chart_full_width",
+   "stack_vertical"
+  ],
+  "w": 2000
+ },
  "A5": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -1734,13 +1760,13 @@
     "stage": "vision"
    },
    {
-    "evidence": "Người đàn ông cầm chiếc laptop HP màu đen trước mặt.",
+    "evidence": "Người đàn ông cầm laptop HP màu đen giơ trước mặt.",
     "outcome": "drop",
     "rule": "vision_not_relevant",
     "stage": "relevance"
    }
   ],
-  "description": "Người đàn ông cầm chiếc laptop HP màu đen trước mặt.",
+  "description": "Người đàn ông cầm laptop HP màu đen giơ trước mặt.",
   "empty_share": 0.1,
   "faces": 0,
   "h": 1000,
@@ -1774,6 +1800,7 @@
   "w": 2000
  },
  "A5+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -1786,13 +1813,13 @@
     "stage": "vision"
    },
    {
-    "evidence": "Người đàn ông cầm chiếc laptop HP màu đen trước mặt.",
+    "evidence": "Người đàn ông cầm laptop HP màu đen giơ trước mặt.",
     "outcome": "drop",
     "rule": "capture_quality",
     "stage": "relevance"
    }
   ],
-  "description": "Người đàn ông cầm chiếc laptop HP màu đen trước mặt.",
+  "description": "Người đàn ông cầm laptop HP màu đen giơ trước mặt.",
   "empty_share": 0.1,
   "faces": 0,
   "h": 1000,
@@ -1826,6 +1853,7 @@
   "w": 2000
  },
  "A6": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -1838,13 +1866,13 @@
     "stage": "vision"
    },
    {
-    "evidence": "Cận cảnh gọng kính thông minh màu đen có camera góc trên.",
+    "evidence": "Ảnh chụp cận cảnh gọng kính thông minh màu đen tích hợp camera trên nền ngoại cảnh mờ.",
     "outcome": "drop",
     "rule": "vision_not_relevant",
     "stage": "relevance"
    }
   ],
-  "description": "Cận cảnh gọng kính thông minh màu đen có camera góc trên.",
+  "description": "Ảnh chụp cận cảnh gọng kính thông minh màu đen tích hợp camera trên nền ngoại cảnh mờ.",
   "empty_share": 0.5,
   "faces": 0,
   "h": 1000,
@@ -1878,6 +1906,7 @@
   "w": 2000
  },
  "A6+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -1890,13 +1919,13 @@
     "stage": "vision"
    },
    {
-    "evidence": "Cận cảnh gọng kính thông minh màu đen có camera góc trên.",
+    "evidence": "Ảnh chụp cận cảnh gọng kính thông minh màu đen tích hợp camera trên nền ngoại cảnh mờ.",
     "outcome": "drop",
     "rule": "capture_quality",
     "stage": "relevance"
    }
   ],
-  "description": "Cận cảnh gọng kính thông minh màu đen có camera góc trên.",
+  "description": "Ảnh chụp cận cảnh gọng kính thông minh màu đen tích hợp camera trên nền ngoại cảnh mờ.",
   "empty_share": 0.5,
   "faces": 0,
   "h": 1000,
@@ -1930,6 +1959,7 @@
   "w": 2000
  },
  "A7": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -1948,8 +1978,8 @@
     "stage": "cluttered"
    }
   ],
-  "description": "Biển hiệu logo Google phát sáng trước lối vào trụ sở văn phòng vào ban đêm.",
-  "empty_share": 0.5,
+  "description": "Biển hiệu Google phát sáng tại lối vào tòa nhà văn phòng vào ban đêm.",
+  "empty_share": 0.4,
   "faces": 0,
   "h": 1000,
   "has_keywords": false,
@@ -1971,10 +2001,10 @@
   "short_side": 1000,
   "source": "other_outlet",
   "subject_box": [
-   0.396,
-   0.363,
-   0.626,
-   0.496
+   0.395,
+   0.364,
+   0.627,
+   0.493
   ],
   "subject_kind": "logo",
   "url": "https://example.test/A7.png",
@@ -1985,6 +2015,7 @@
   "w": 1778
  },
  "A7+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -2003,8 +2034,8 @@
     "stage": "cluttered"
    }
   ],
-  "description": "Biển hiệu logo Google phát sáng trước lối vào trụ sở văn phòng vào ban đêm.",
-  "empty_share": 0.5,
+  "description": "Biển hiệu Google phát sáng tại lối vào tòa nhà văn phòng vào ban đêm.",
+  "empty_share": 0.4,
   "faces": 0,
   "h": 1000,
   "has_keywords": false,
@@ -2026,10 +2057,10 @@
   "short_side": 1000,
   "source": "other_outlet",
   "subject_box": [
-   0.396,
-   0.363,
-   0.626,
-   0.496
+   0.395,
+   0.364,
+   0.627,
+   0.493
   ],
   "subject_kind": "logo",
   "url": "https://example.test/A7.png",
@@ -2040,6 +2071,7 @@
   "w": 1778
  },
  "A8": {
+  "ai_slop": true,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -2058,13 +2090,13 @@
     "stage": "cluttered"
    },
    {
-    "evidence": "Hình minh họa kỹ thuật số hacker đội mũ trùm đầu phát sáng giữa các dòng mã nhị phân.",
+    "evidence": "Hình minh họa kỹ thuật số vẽ hacker trùm đầu với khuôn mặt dạng lưới phát sáng giữa các dòng mã nhị phân.",
     "outcome": "drop",
-    "rule": "vision_not_relevant",
-    "stage": "relevance"
+    "rule": "vision_ai_slop",
+    "stage": "ai_slop"
    }
   ],
-  "description": "Hình minh họa kỹ thuật số hacker đội mũ trùm đầu phát sáng giữa các dòng mã nhị phân.",
+  "description": "Hình minh họa kỹ thuật số vẽ hacker trùm đầu với khuôn mặt dạng lưới phát sáng giữa các dòng mã nhị phân.",
   "empty_share": 0.05,
   "faces": 0,
   "h": 675,
@@ -2075,7 +2107,7 @@
   "landscape_crop_ok": null,
   "logo_card": false,
   "notes": [
-   "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG",
+   "❌ ẢNH AI SLOP (model sinh ảnh tạo, không phải tư liệu thật — vision) → KHÔNG DÙNG, và đừng lấy chữ vẽ trên ảnh làm dữ kiện",
    "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
    "KHÔNG làm bìa",
    "cạnh ngắn 675px, phóng lên hơi mềm"
@@ -2089,10 +2121,10 @@
   "short_side": 675,
   "source": "other_outlet",
   "subject_box": [
-   0.1,
+   0.06,
    0.0,
    0.62,
-   0.76
+   0.78
   ],
   "subject_kind": "person",
   "url": "https://example.test/A8.png",
@@ -2100,6 +2132,7 @@
   "w": 1200
  },
  "A8+source": {
+  "ai_slop": true,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -2118,13 +2151,13 @@
     "stage": "cluttered"
    },
    {
-    "evidence": "Hình minh họa kỹ thuật số hacker đội mũ trùm đầu phát sáng giữa các dòng mã nhị phân.",
+    "evidence": "Hình minh họa kỹ thuật số vẽ hacker trùm đầu với khuôn mặt dạng lưới phát sáng giữa các dòng mã nhị phân.",
     "outcome": "drop",
-    "rule": "capture_quality",
-    "stage": "relevance"
+    "rule": "vision_ai_slop",
+    "stage": "ai_slop"
    }
   ],
-  "description": "Hình minh họa kỹ thuật số hacker đội mũ trùm đầu phát sáng giữa các dòng mã nhị phân.",
+  "description": "Hình minh họa kỹ thuật số vẽ hacker trùm đầu với khuôn mặt dạng lưới phát sáng giữa các dòng mã nhị phân.",
   "empty_share": 0.05,
   "faces": 0,
   "h": 675,
@@ -2135,7 +2168,7 @@
   "landscape_crop_ok": null,
   "logo_card": false,
   "notes": [
-   "❌ ẢNH HERO TRANG NGUỒN NHƯNG KHÔNG ĐẠT CHẤT LƯỢNG (mờ/cắt lại từ màn hình khác — vision) → KHÔNG DÙNG",
+   "❌ ẢNH AI SLOP (model sinh ảnh tạo, không phải tư liệu thật — vision) → KHÔNG DÙNG, và đừng lấy chữ vẽ trên ảnh làm dữ kiện",
    "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
    "KHÔNG làm bìa",
    "cạnh ngắn 675px, phóng lên hơi mềm"
@@ -2149,10 +2182,10 @@
   "short_side": 675,
   "source": "other_outlet",
   "subject_box": [
-   0.1,
+   0.06,
    0.0,
    0.62,
-   0.76
+   0.78
   ],
   "subject_kind": "person",
   "url": "https://example.test/A8.png",
@@ -2160,6 +2193,7 @@
   "w": 1200
  },
  "A9": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -2172,8 +2206,8 @@
     "stage": "vision"
    }
   ],
-  "description": "Biểu tượng Google Gemini đa sắc phát sáng trên màn hình sân khấu tối bên cạnh rèm xanh.",
-  "empty_share": 0.75,
+  "description": "Biểu tượng ngôi sao Google Gemini phát sáng trên màn hình lớn tại sự kiện bên cạnh rèm sân khấu.",
+  "empty_share": 0.7,
   "faces": 0,
   "h": 561,
   "has_keywords": false,
@@ -2195,10 +2229,10 @@
   "short_side": 561,
   "source": "capture_source",
   "subject_box": [
+   0.298,
    0.474,
-   0.297,
-   0.583,
-   0.678
+   0.678,
+   0.584
   ],
   "subject_kind": "logo",
   "url": "https://example.test/A9.png",
@@ -2209,6 +2243,7 @@
   "w": 1122
  },
  "A9+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -2221,8 +2256,8 @@
     "stage": "vision"
    }
   ],
-  "description": "Biểu tượng Google Gemini đa sắc phát sáng trên màn hình sân khấu tối bên cạnh rèm xanh.",
-  "empty_share": 0.75,
+  "description": "Biểu tượng ngôi sao Google Gemini phát sáng trên màn hình lớn tại sự kiện bên cạnh rèm sân khấu.",
+  "empty_share": 0.7,
   "faces": 0,
   "h": 561,
   "has_keywords": false,
@@ -2244,10 +2279,10 @@
   "short_side": 561,
   "source": "capture_source",
   "subject_box": [
+   0.298,
    0.474,
-   0.297,
-   0.583,
-   0.678
+   0.678,
+   0.584
   ],
   "subject_kind": "logo",
   "url": "https://example.test/A9.png",
