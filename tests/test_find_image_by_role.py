@@ -125,13 +125,16 @@ def _fallback_rounds_already_run(anh_bai: list, vai_anh="ethan", khong_browser=F
     cb._article_material = lambda *a, **k: {"sentence_has_count": [], "lead_paragraph": "", "source_count": 1}
     cb.build_manifest = lambda *a, **k: {"images": anh_bai}
     cb.contact_sheet = lambda *a, **k: None
+    from tam import block_network
     try:
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp, block_network() as tried:
             cb.prepare_article("d1", {"brand": "donniechublog", "title": tieu_de},
                         Path(tmp), Path(tmp), khong_browser=khong_browser)
     finally:
         for k, v in cu.items():
             setattr(cb, k, v)
+    # Luoi cuoi cho moi pha lot stub (22/09/2026, xem tam.block_network).
+    assert not tried, f"prepare_article() goi mang THAT — co pha nang chua stub: {tried[:5]}"
     return goi
 
 

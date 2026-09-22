@@ -32,6 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                       # noqa: E402
 import image_brand as th                                    # noqa: E402
+from tam import block_network                               # noqa: E402
 
 
 # ------------------------------------------------------------------ do dac that
@@ -52,8 +53,8 @@ def _image(ma: str) -> dict:
 
 PHA_NANG = ("BrowserSession", "load_source", "_summary_from_img_json", "_supplement_source", "_extra_announcement_page",
             "_take_from_browser", "_capture_ranking", "_gather_and_download_image", "_seen_image",
-            "_round_widen_search", "_round_brand", "_round_concept", "_article_material",
-            "build_manifest", "contact_sheet")
+            "_round_capture_source", "_round_widen_search", "_round_brand", "_round_entity",
+            "_round_concept", "_article_material", "build_manifest", "contact_sheet")
 
 
 def _fallback_rounds_already_run(so_anh_cua_tin: int,
@@ -81,19 +82,27 @@ def _fallback_rounds_already_run(so_anh_cua_tin: int,
     cb._capture_ranking = lambda *a, **k: ([], False)
     cb._gather_and_download_image = lambda *a, **k: anh
     cb._seen_image = lambda a, nguon, tieu_de_, wd: (a, [x for x in a if x["uses"]], [])
+    # `_round_capture_source` va `_round_entity` bi bo quen o day toi 22/09/2026:
+    # nac thuc the goi Wikipedia/Commons + vision 9router THAT (may chu: qua 180s,
+    # keo chet ca `tests/run.sh`), va vi no that su them anh nen ket qua
+    # "khai_niem co chay khong" con tuy mang. Cung loi test_find_image_by_role da
+    # sua 13/09 — nay `block_network` bat moi pha lot luoi ve sau.
+    cb._round_capture_source = _vong("chup_nguon")
     cb._round_widen_search = _vong("tim_rong")
     cb._round_brand = _vong("thuong_hieu")
+    cb._round_entity = _vong("thuc_the")
     cb._round_concept = _vong("khai_niem")
     cb._article_material = lambda *a, **k: {"sentence_has_count": [], "lead_paragraph": "", "source_count": 1}
     cb.build_manifest = lambda *a, **k: {"images": anh}
     cb.contact_sheet = lambda *a, **k: None
     try:
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp, block_network() as tried:
             cb.prepare_article("d1", {"brand": "donniechublog", "title": tieu_de},
                         Path(tmp), Path(tmp), khong_browser=True)
     finally:
         for k, v in cu.items():
             setattr(cb, k, v)
+    assert not tried, f"prepare_article() goi mang THAT — co pha nang chua stub: {tried[:5]}"
     return goi
 
 
@@ -116,6 +125,19 @@ def test_image_concept_no_got_drag_by():
     assert "khai_niem" not in _fallback_rounds_already_run(9), \
         "anh khai niem chay ca khi du anh — bo se day rac vao moi bai"
     assert "khai_niem" in _fallback_rounds_already_run(2)
+
+
+def test_every_round_in_prepare_article_is_stubbed():
+    """Cong o muc ma nguon cho chinh harness tren: moi `_round_*` ma
+    prepare_article() goi phai nam trong PHA_NANG. `block_network` chi bat pha
+    CHAY toi trong kich ban nay; mot vong moi nam sau dieu kien chua gap thi chi
+    cong nay bat duoc truoc khi no thanh mot cu goi mang that o kich ban khac."""
+    goc = ast.parse(textwrap.dedent(inspect.getsource(cb.prepare_article)))
+    rounds = {n.func.id for n in ast.walk(goc)
+              if isinstance(n, ast.Call) and getattr(n.func, "id", "").startswith("_round_")}
+    assert rounds, "khong tim thay vong _round_* nao trong prepare_article()"
+    missing = sorted(rounds - set(PHA_NANG))
+    assert not missing, f"vong chua stub trong PHA_NANG (se goi mang that): {missing}"
 
 
 # ------------------------------------------------- cong o muc ma nguon (chong troi)

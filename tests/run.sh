@@ -35,19 +35,34 @@ export CT_STATE_DIR="${CT_STATE_DIR:-$(mktemp -d)}"
 # qua ma tep bao hong. -X utf8 vo hai tren Linux.
 PYFLAGS="-X utf8"
 
+# Tran thoi gian MOI tep (22/09/2026): test_round_brand_always_run lot mot pha
+# goi mang that, treo qua 180s tren may chu, va mot `tests/run.sh` chay nen chet o
+# tep 119/187 khong kip in dong ket — tuc khong ai biet tep nao hong. Co tran thi
+# tep treo bao HONG va run chay tiep toi dong "N/M". Tat: TEST_TIMEOUT=0. May
+# khong co `timeout` (macOS tron) thi chay khong tran, nhu truoc.
+TEST_TIMEOUT="${TEST_TIMEOUT:-300}"
+TRAN=()
+if [ "$TEST_TIMEOUT" != 0 ] && command -v timeout >/dev/null 2>&1; then
+  TRAN=(timeout "$TEST_TIMEOUT")
+fi
+
 hong=0
 tong=0
 for f in tests/test_*.py; do
   case "$f" in *"$LOC"*) ;; *) continue ;; esac
   tong=$((tong + 1))
-  ra=$("$PY" $PYFLAGS "$f" 2>&1)
+  ra=$(${TRAN[@]+"${TRAN[@]}"} "$PY" $PYFLAGS "$f" 2>&1)
   ma=$?
   cuoi=$(printf '%s\n' "$ra" | grep -E '[0-9]+/[0-9]+ test qua' | tail -1)
   if [ $ma -eq 0 ]; then
     printf '%-34s %s\n' "$(basename "$f")" "${cuoi:-OK}"
   else
     hong=$((hong + 1))
-    printf '%-34s HONG (ma %d)\n' "$(basename "$f")" "$ma"
+    if [ ${#TRAN[@]} -gt 0 ] && [ $ma -eq 124 ]; then
+      printf '%-34s HONG (qua %ss, bi dung — treo/goi mang that?)\n' "$(basename "$f")" "$TEST_TIMEOUT"
+    else
+      printf '%-34s HONG (ma %d)\n' "$(basename "$f")" "$ma"
+    fi
     printf '%s\n' "$ra" | grep -E '^FAIL|Error|Traceback|  File ' | head -8 | sed 's/^/    /'
   fi
 done
