@@ -178,7 +178,7 @@ def test_vision_asks_printed_name_and_returns_it():
         Image.new("RGB", (1920, 1080), (40, 40, 40)).save(p)
         ra = vision.description_image(str(p), "Lovable Acquires Sutro", ket_qua=kq)
     assert ra == ("Anton Osika phát biểu.", True)
-    assert "TEN_IN:" in gui["hoi"] and "DUNG 7 dong" in gui["hoi"], gui["hoi"]
+    assert "TEN_IN:" in gui["hoi"] and "DUNG 8 dong" in gui["hoi"], gui["hoi"]
     assert kq["printed_name"] == "Anton Osika", kq
 
 

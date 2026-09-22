@@ -86,6 +86,28 @@ SENTENCE_PRINTED_NAME = ("TEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chin
                          "anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc "
                          "duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>")
 _NO_PRINTED_NAME = {"khong", "không", "none", "no", "-", "khong co", "không có"}
+# LOW-337 (Ong Chu 22/09/2026, "sao mọc đâu ra cái hình AI slop vô duyên vậy?"): minh hoa
+# "xAI 4.7 vs DeepSeek R1" do wccftech dung model sinh anh qua het cong (co anh la co Gemini
+# moi, cau LIEN_QUAN chi hoi "dung chu de") roi len slide Kite, keo theo tit bia "R1" khong
+# co trong tu lieu. Cong co moi tu truoc chi bat CO anh (HAS_AI_GENERATE) — co bi resize la lot.
+# Nhan dong English theo yeu cau Ong Chu. Van cho minh hoa bien tap do nguoi ve (LOW-201).
+SENTENCE_AI_SLOP = ("AI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat "
+                    "sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster "
+                    "'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, "
+                    "chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh "
+                    "hoa bien tap do nguoi ve)")
+
+
+def parse_ai_slop(txt: str):
+    """Dong `AI slop:` vision tra -> True/False, None khi khong co / khong doc ra."""
+    m = re.search(r"^\s*AI[_\s-]*SLOP\s*:\s*(yes|no|co|có|khong|không)", txt or "", re.I | re.M)
+    return None if not m else m.group(1).lower() in ("yes", "co", "có")
+
+
+def _ai_slop_exempt(a: dict) -> bool:
+    """Anh ta CO Y lay tu nguon chinh chu thi khong de mot cau vision lat: do hoa @arena
+    (LOW-337, Ong Chu duyet giu nguyen), the logo hang dung tu Commons/Wikidata."""
+    return bool(a.get("ranking") or a.get("graphic_allowed") or a.get("source") in ("ranking", "brand"))
 
 
 def parse_printed_name(txt: str):
@@ -228,10 +250,11 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             hoi = image_brand.sentence_ask_vision(tieu_de, thuong_hieu)
         # Moi nhanh deu hoi them dong CLUTTERED (LOW-47): anh roi khong bi cam, chi
         # xuong cuoi hang uu tien — xem submit_common.check_image_fall.
-        hoi = (hoi.replace("DUNG 2 dong", "DUNG 7 dong") + "\n" + SENTENCE_CLUTTERED + "\n" + SENTENCE_KEYWORD
-               + "\n" + SENTENCE_SUBJECT + "\n" + SENTENCE_EMPTY + "\n" + SENTENCE_PRINTED_NAME)
+        hoi = (hoi.replace("DUNG 2 dong", "DUNG 8 dong") + "\n" + SENTENCE_CLUTTERED + "\n" + SENTENCE_KEYWORD
+               + "\n" + SENTENCE_SUBJECT + "\n" + SENTENCE_EMPTY + "\n" + SENTENCE_PRINTED_NAME
+               + "\n" + SENTENCE_AI_SLOP)
         if hoi_them and nhan_them:
-            hoi = hoi.replace("DUNG 7 dong", "DUNG 8 dong") + f"\n{nhan_them}: {hoi_them}"
+            hoi = hoi.replace("DUNG 8 dong", "DUNG 9 dong") + f"\n{nhan_them}: {hoi_them}"
         def _ask(model):
             body = {"model": model, "thinking": {"type": "disabled"}, "max_tokens": 400,
                     "stream": False, "temperature": 0,
@@ -323,6 +346,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             them = t.group(1).strip()[:120] if t else ""
         return mt, lqv, them, {"cluttered": cluttered, "has_keywords": du_tk,
                                **subject_fit.parse_subject(txt), "printed_name": parse_printed_name(txt),
+                               "ai_slop": parse_ai_slop(txt),
                                "vision_said": lqv_vision, "override": override,
                                "vision_raw": {"model": model, "question": hoi, "answer": txt[:2000]}}
 
@@ -542,6 +566,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     a["subject_kind"] = kq.get("subject_kind")
     a["empty_share"] = kq.get("empty_share")
     a["printed_name"] = kq.get("printed_name")          # LOW-279: ten in tren anh (lower-third/bang ten)
+    a["ai_slop"] = kq.get("ai_slop")                    # LOW-337: anh model sinh (None = khong doc ra)
     # LOW-295 (Ong Chu 20/09/2026): logo tren nen tron KHONG bi chan nua — renderer dung
     # lai thanh slide logo (90% be ngang tren chinh mau nen cua no), xem logo_card.py.
     import logo_card
@@ -655,7 +680,16 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
                               f"chu the co ten, tin nhac toi — {(a.get('description') or '')[:150]}")
             a["notes"].insert(0, "✅ CHỦ THỂ CÓ TÊN và tin nhắc tới → vẫn dùng được "
                                    "(vision chấm 'không liên quan' vì không nhận ra mặt người)")
-    if a.get("relevant") is False:
+    if a.get("ai_slop") is True and not _ai_slop_exempt(a):
+        # LOW-337: dung chu de van KHONG DUNG — nguoi doc tuong minh hoa AI la tu lieu that,
+        # va vai viet tit theo chu ve tren do (bia Kite "R1"). Dat SAU nhanh LOW-219 de chu
+        # the co ten khong hoi sinh duoc no.
+        a["relevant"] = False
+        a["uses"] = []
+        decision_log.note(a, "ai_slop", "drop", "vision_ai_slop", (a.get("description") or "")[:200])
+        a["notes"].insert(0, "❌ ẢNH AI SLOP (model sinh ảnh tạo, không phải tư liệu thật — vision) "
+                               "→ KHÔNG DÙNG, và đừng lấy chữ vẽ trên ảnh làm dữ kiện")
+    elif a.get("relevant") is False:
         a["uses"] = []
         decision_log.note(a, "relevance", "drop", "capture_quality" if chup_nguon else "vision_not_relevant",
                           (a.get("description") or "")[:200])
