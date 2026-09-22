@@ -83,6 +83,21 @@ def check_keyword(tu_khoa: list) -> list:
     return loi
 
 
+def model_parent_query_errors(tu_khoa: list, tieu_de: str) -> list:
+    """LOW-354: tin nhac model co logo rieng (Gemini) thi KHONG tim anh theo hang me
+    ("Google headquarters", "Google logo") — Dre tung tu tim 12 luot tru so Google cho tin
+    Gemini. Truy van co ca ten model ("Google Gemini app") hoac ten nguoi thi van duoc."""
+    import image_brand
+    cha = image_brand.model_parents(tieu_de)
+    loi = []
+    for tk in tu_khoa:
+        thay = image_brand.parent_only_query(tk, cha)
+        if thay:
+            loi.append(f"'{tk}': tin nhac model {thay} — chi dung hinh CUA MODEL (logo, giao dien, "
+                       f"su kien ra mat {thay}), khong dung tru so/logo hang me; tim lai voi ten '{thay}'")
+    return loi
+
+
 def candidate_commons(tu_khoa: str, so: int = COUNT_COMMONS_NEW_TURN) -> list:
     """Commons theo tu khoa cua VAI: loc long hon `anh_commons` (khong doi nguyen
     cum trong ten tep) vi vai da chon tu khoa co chu y — dung bo loc cua anh
@@ -291,6 +306,9 @@ def main() -> int:
         if m is None:
             sys.exit(f"[LOI] khong doc duoc {xong}")
         tieu_de = m.get("title_en") or m.get("title") or a.draft_id
+        loi = model_parent_query_errors(a.tu_khoa, tieu_de)
+        if loi:
+            sys.exit("[LOI] " + "; ".join(loi))
         tu_lieu = m.get("material") or {}
         set_story_text("\n".join([m.get("article_text") or "", tu_lieu.get("lead_paragraph") or ""]   # LOW-222
                                    + list(tu_lieu.get("number_sentences") or [])))

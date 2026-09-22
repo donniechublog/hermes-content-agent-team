@@ -254,7 +254,8 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
     if len(anh) < 5:
         # Tin mong anh: them anh that tu Wikimedia Commons theo ten rieng dau
         # tieu de (tru so, san pham, su kien). Chi bu phan thieu.
-        tk = _leading_proper_noun(nguon.get("title_en") or title)
+        tk = _model_over_parent(_leading_proper_noun(nguon.get("title_en") or title),
+                                nguon.get("title_en") or title)
         if tk:
             them = commons_images(tk, so=6)
             if them is None:
@@ -274,6 +275,16 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
                     a["commons"] = True
                     anh.append(a)
     return anh
+
+
+def _model_over_parent(tk: str, tieu_de: str) -> str:
+    """Ten rieng dau tieu de la HANG ME cua model trong tin ("Google confirms Gemini...")
+    -> tim theo ten MODEL ("Gemini"), khong tim tru so/logo hang me (LOW-354)."""
+    import image_brand as th
+    thay = th.parent_only_query(tk, th.model_parents(tieu_de)) if tk else ""
+    if thay:
+        print(f"[tim rong] '{tk}' la hang me cua model {thay} -> tim '{thay}' (LOW-354)", file=sys.stderr)
+    return thay or tk
 
 
 def web_query(name: str, title: str, press_count: int) -> str:
@@ -321,7 +332,7 @@ def _round_widen_search(anh: list, source_pages: list, tieu_de_nhin: str, toi_th
         # "+0 tai them", khong mot dong nao cho biet 0 la do trang khong co anh,
         # anh trung, hay tai hong — phai doan.
         print(f"[tim rong] browser boc {len(bp2['cands'])} ung vien tu {len(them_bao)} bao", file=sys.stderr)
-    tk = _leading_proper_noun(tieu_de_nhin)
+    tk = _model_over_parent(_leading_proper_noun(tieu_de_nhin), tieu_de_nhin)
     # TIM NHU NGUOI (Ong Chu 12/09/2026, 7 link TSMC tim tay): anh web (Bing/
     # Yandex qua Chromium) + og:image bao chi VE thuc the — khong doi "cung tin".
     # Truy van = ten rieng dau tieu de (hang/san pham), khong co thi ca tieu de.
@@ -512,7 +523,23 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     import story_type
     # LOW-337: tin MODEL/BENCHMARK — logo CUA MODEL (Qwen, khong phai Alibaba).
     tin_model = story_type.is_model_story(category)
-    logo_model = th.model_logo_images(tieu_de_nhin, wd4) if tin_model else []
+    # LOW-354: tin nhac model co logo rieng (Gemini) — bat ke loai tin — la tin ve model:
+    # logo model + bao that tim theo TEN MODEL; KHONG tru so/campus/bao theo hang me (bai
+    # cu ra toan toa nha Google). Tieu de TU GOI ten hang me ("Google confirms Gemini...")
+    # thi dung CA HAI logo (Ong Chu 22/09/2026); chi suy ra tu ten model thi bo logo hang me.
+    cha_model = th.model_parents(tieu_de_nhin)
+    chi_qua_model = set(cha_model)
+    cha_co_ten = {k for k, v in cha_model.items() if v["named"]}
+    if chi_qua_model:
+        print("[thuong hieu] tin nhac model, bo tru so/bao hang me: " + ", ".join(sorted(chi_qua_model))
+              + (f"; giu logo (co ten trong tieu de): {', '.join(sorted(cha_co_ten))}" if cha_co_ten else ""),
+              file=sys.stderr)
+    if tin_model:
+        logo_model = th.model_logo_images(tieu_de_nhin, wd4)
+    elif chi_qua_model:
+        logo_model = th.model_logo_images(tieu_de_nhin, wd4, only_table=True)
+    else:
+        logo_model = []
     if logo_model:
         print("[thuong hieu] logo model: " + ", ".join(c["brand_match"]["company"] for c in logo_model),
               file=sys.stderr)
@@ -520,11 +547,23 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         return anh, [a for a in anh if a["uses"] and a.get("relevant") is not False], \
             [a["id"] for a in anh if a.get("relevant") is None]
     cands = []
+    if chi_qua_model and not khong_browser:
+        for ho in th.model_families_in_story(tieu_de_nhin):
+            if not ho["file"] or th.deadline_passed(th.BROWSER_STEP_MIN_LEFT):
+                continue
+            k = "model_" + ho["key"]
+            cands += _report_brand_empty({"key": k, "company": ho["name"]}, wd4 / k, phien=phien)
     for h in hangs:
         if th.deadline_passed():
             th.note_deadline(f"hang {h['key']} (chua bat dau)")
             break
         cands_h = th.vendor_images(h, wd=wd4 / h["key"])
+        if h["key"] in chi_qua_model:
+            # Giu NGUOI (founder/CEO — "dung Claude" van la chan dung Dario, LOW-267) va,
+            # neu tieu de goi ten hang me, LOGO hang me; tru so/campus va bao theo hang me bo.
+            giu = {"person", "logo"} if h["key"] in cha_co_ten else {"person"}
+            cands += [c for c in cands_h if (c.get("brand_match") or {}).get("kind") in giu]
+            continue
         if not khong_browser and not th.deadline_passed(th.BROWSER_STEP_MIN_LEFT):
             # LUON tim them bao THAT theo ten hang, SONG SONG voi Commons/
             # Wikidata — khong con doi Commons rong moi chay (Ong Chu
@@ -538,9 +577,14 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         if (story_type.late(category, "stock") and not khong_browser
                 and not th.deadline_passed(th.BROWSER_STEP_MIN_LEFT)):
             cands += th.image_has_ballot(h, wd4 / h["key"], phien=phien)
-    if tin_model:
-        # Logo hang me KHONG duoc dung cho tin model (Ong Chu 21/09/2026) — chi logo model.
-        cands = [c for c in cands if (c.get("brand_match") or {}).get("kind") != "logo"] + logo_model
+    if tin_model or chi_qua_model:
+        # Logo hang me KHONG duoc dung cho tin model (Ong Chu 21/09/2026) — chi logo model,
+        # tru hang me co ten trong tieu de thi dung ca hai logo (LOW-354).
+        cands = [c for c in cands if (c.get("brand_match") or {}).get("kind") != "logo"
+                 or (c.get("brand_match") or {}).get("key") in cha_co_ten] + logo_model
+        for c in cands:                      # hai logo: logo MODEL dung truoc (len bia truoc)
+            if (c.get("brand_match") or {}).get("kind") == "logo" and c["brand_match"].get("key") in cha_co_ten:
+                c["score"] = c.get("score", 0) - 1
     # Diem theo LOAI TIN cong vao diem goc truoc khi sort: cung bo ung vien,
     # tin M&A day logo len truoc chan dung, tin LAB day tru so/founder len
     # truoc logo (story_type.BOARD_IMAGE_BY_TYPE, Ong Chu 12/09/2026).
