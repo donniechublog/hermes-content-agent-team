@@ -19,6 +19,7 @@ from prepare import decision_log
 from prepare.browser import browser_pass
 from prepare.common import MAX_IMAGE, _brand_of, _write_json, _domain
 from prepare.source import _leading_proper_noun, _title_page, commons_images, candidate_social, candidate_static
+from prepare.source import candidate_embedded_tweets
 from prepare.vision import classify
 from prepare.download_filter import download_and_filter
 
@@ -220,6 +221,9 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
     print(f"[anh] tim tinh qua {len(source_pages)} nguon...", file=sys.stderr)
     cands = candidate_social(link, wd) + candidate_static(title, link, nguon_path,
                                                      nguon.get("title_en", ""))
+    # LOW-355: tweet ma bao nguon nhung lai -> anh GOC tu chinh tweet, dung truoc anh bao
+    # chup lai tweet do (moi designer: engine chung cho Dre/Ethan/Kite).
+    cands = candidate_embedded_tweets(source_pages, link, wd) + cands
     co = {c["image_url"] for c in cands}
     for c in bp["cands"]:
         if c["image_url"] not in co:

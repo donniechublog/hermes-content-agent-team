@@ -1169,3 +1169,20 @@ hạng); có ảnh thì bài có mã `XH` và bìa bắt buộc là `XH` (`needs
 
 Ông Chủ duyệt 22/09/2026 ba thẻ @arena dựng thật (Grok 4.7 ×2, MiMo-V2.6-Pro): *"3 hình này đạt chuẩn.
 và đây cũng nên là tiêu chuẩn cho mọi role designer"* — đồ hoạ chính chủ @arena giữ nguyên, chữ ≤20% khung.
+
+## LOW-355 (22/09/2026): ảnh GỐC từ chính tweet, không dùng ảnh báo chụp lại tweet (mọi designer)
+
+Ông Chủ, bài Dre Grok 4.7: *"thay vì dùng hình cap từ tweet, sao bạn ko vào chính cái tweet được
+retweet có hình gốc chất lượng cao mà phải đi lòng vòng vậy ?"* — rồi chốt: *"đây nên là tiêu chuẩn
+cho cả Kite"*. Slide đã dùng ảnh Futu tự chụp tweet Elon Musk (611×734, giao diện dịch tiếng Trung)
+trong khi decrypt.co trong cùng bộ nguồn nhúng link tweet, tải về được biểu đồ gốc 3062×1960.
+
+- Engine chung (`prepare/source.candidate_embedded_tweets`) đọc HTML các báo nguồn, gom link
+  `x.com|twitter.com/<handle>/status/<id>` (≤ 14 ngày theo id, mới nhất trước, tối đa 4), tải ảnh
+  gốc qua `social_post.x_photos` (get_source, bản `name=orig`). Ảnh mang `source: embedded_tweet`,
+  điểm 90 — trên ảnh báo, dưới ảnh của chính post nguồn. Vision vẫn chốt có liên quan hay không.
+- Ảnh mà vision mô tả là **chụp màn hình tweet/bài đăng X** (`prepare/vision.TWEET_SCREENSHOT_RE`):
+  đã có ảnh gốc từ tweet dùng được → **KHÔNG DÙNG** (`tweet_screenshot_has_original`); chưa có →
+  giữ, nhưng log `[x_goc] … KHONG tim duoc tweet goc` để biết mà tìm.
+- Nhìn ở đâu: `prepare.log` dòng `[x_goc]`, manifest ảnh `source: embedded_tweet`, bản ghi bỏ ảnh
+  `tweet_screenshot`. Test: `tests/test_low355_tweet_original_image.py`.
