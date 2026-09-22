@@ -125,6 +125,28 @@ def pin_manifest(mid_tep: Path, manifest: Path) -> None:
         print(f"[canh bao] khong ghim duoc manifest vao {mid_tep}: {e}")
 
 
+REPORT_HISTORY_KEEP = 200          # so bao cao cu con reply duoc (moi vai ~3 bao cao/ngay)
+
+
+def record_report_history(mid_tep: Path, history: Path) -> None:
+    """Noi {message_ids, manifest, ts} cua bao cao VUA GUI vao lich su (LOW-362).
+
+    Ong Chu 22/09/2026: "duoc phep reply 1 so nhieu lan vao researcher" — ke ca bao cao
+    CU. Tep mid (`report_message_id.<vai>.json`) bi ghi de moi lan gui nen chi nho bao
+    cao moi nhat; lich su nay cho approve_pick tra mid cua bao cao cu ve DUNG manifest
+    cua no. Best-effort nhu pin_manifest."""
+    try:
+        d = json.loads(mid_tep.read_text(encoding="utf-8"))
+        if not d.get("manifest") or not d.get("message_ids"):
+            return
+        dong = history.read_text(encoding="utf-8").splitlines() if history.exists() else []
+        dong.append(json.dumps({"message_ids": d["message_ids"], "manifest": d["manifest"],
+                                "ts": d.get("ts")}, ensure_ascii=False))
+        history.write_text("\n".join(dong[-REPORT_HISTORY_KEEP:]) + "\n", encoding="utf-8")
+    except (OSError, ValueError) as e:
+        print(f"[canh bao] khong ghi duoc lich su bao cao {history}: {e}")
+
+
 def filter_warning(stderr: str) -> list:
     """Cac dong stderr dang cho vai va Ong Chu doc (rc=0 KHONG co nghia la sach:
     script van ghi manifest khi da cat diem ngoai dai, doi category la, bo tin
@@ -191,6 +213,7 @@ def send(vai: str, tep: Path, thu: bool, manifest: Path = None, brand: str = Non
         return False
     if manifest:
         pin_manifest(mid_tep, manifest)
+        record_report_history(mid_tep, env_load.state_dir(brand) / state_paths.REPORT_HISTORY_FILE.format(vai))
     return True
 
 
