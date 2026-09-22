@@ -41,6 +41,20 @@ TELEGRAM_INCOMING = STATE_DIR / "telegram_incoming"   # anh tai ve tu tin nhan r
 
 API = "https://api.telegram.org/bot{token}/{method}"
 
+# Mot con so cho ca connect/read/write thi mot lan bat tay roi vao ho den ngon
+# TRON 90 giay, vuot TTL ~60s cua callback_query_id => nut bam bao "query is
+# too old" (11 lan ngay 21/09/2026). Mang may nay nuot ~1/30 goi SYN. Connect
+# ngan de loi mang lo som; read van dai vi Bot API tra cham khi tin co anh.
+TIMEOUT = httpx.Timeout(90.0, connect=5.0)
+
+# Telegram bop bang thi tra 429 kem `parameters.retry_after` — no noi san phai
+# cho bao lau. Truoc day call() chi ghi mot dong log roi thoi nen tin MAT HAN
+# (do 22/09/2026: 5 lan trong 16,5 gio, mat cac tin bao tien do cua vai).
+# Co tran vi moi lan cho chiem luon thread nen, ma nut bam con phai kip TTL 60s.
+RATE_LIMIT_RETRIES = 2            # so lan GUI LAI, ngoai lan dau
+RATE_LIMIT_MAX_WAIT = 30          # mot lan bao cho lau hon the thi bo cuoc ngay
+RATE_LIMIT_TOTAL_WAIT = 45        # TONG thoi gian cho, phai o duoi TTL 60s
+
 HERMES_PY = env_load.HERMES_PY
 
 # HERMES_HOME theo container: moi brand mot home rieng (~/.hermes-<brand>).
@@ -72,13 +86,35 @@ def call(token, method, **kw):
 
     Truoc day nem exception: trong thread nen thi thread chet im, trong vong
     poll thi ca lo update con lai bi bo. Gio moi loi deu thanh mot dong log +
-    mot ket qua doc duoc, nguoi goi tu quyet."""
-    try:
-        with httpx.Client(timeout=90) as c:
-            r = c.post(API.format(token=token, method=method), json=kw)
-        res = r.json()
-    except Exception as e:                                   # noqa: BLE001
-        res = {"ok": False, "description": f"{type(e).__name__}: {e}"}
+    mot ket qua doc duoc, nguoi goi tu quyet.
+
+    Bi bop bang (429) thi cho dung so giay Telegram bao roi GUI LAI, toi da
+    RATE_LIMIT_RETRIES lan — khong thi tin mat im."""
+    da_cho = 0
+    for lan in range(RATE_LIMIT_RETRIES + 1):
+        try:
+            with httpx.Client(timeout=TIMEOUT) as c:
+                r = c.post(API.format(token=token, method=method), json=kw)
+            res = r.json()
+        except Exception as e:                               # noqa: BLE001
+            res = {"ok": False, "description": f"{type(e).__name__}: {e}"}
+        if res.get("ok") or lan == RATE_LIMIT_RETRIES:
+            break
+        cho = (res.get("parameters") or {}).get("retry_after")
+        # Chi lui buoc cho 429 CO so giay va so do con cho duoc. Loi khac
+        # (400 sai tham so, 403 bi chan) gui lai bao nhieu lan cung the.
+        if not isinstance(cho, int) or isinstance(cho, bool) \
+                or not 0 < cho <= RATE_LIMIT_MAX_WAIT:
+            break
+        # +1: de het han o phia Telegram truoc da. Tran TONG chu khong chi
+        # tran tung lan: hai lan cho 30s lien la 62 giay, da vuot TTL 60s
+        # cua callback_query_id ma ca luat nay dat ra de bao ve.
+        if da_cho + cho + 1 > RATE_LIMIT_TOTAL_WAIT:
+            break
+        log("tele", f"{method} bi bop bang, cho {cho}s roi gui lai "
+                    f"(lan {lan + 1}/{RATE_LIMIT_RETRIES})")
+        time.sleep(cho + 1)
+        da_cho += cho + 1
     if not res.get("ok") and method != "getUpdates":
         # ERROR (LOW-305): Telegram tu choi la tin KHONG den noi — nhan `tele` dung
         # chung cho ca dong binh thuong nen phai khai muc ngay tai cho.

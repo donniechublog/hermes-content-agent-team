@@ -1042,8 +1042,11 @@ cho nghiêm chỉnh, đừng nham nhở"*.
   văn — trần **độ đặc** thì bìa và slide thân như nhau.
 - **Cổng chặn ảnh ghép bị che (LOW-215):** slide `"images"` mà ảnh **cuối** còn
   rõ dưới `STACK_BOTTOM_VISIBLE_MIN` (35%) chiều cao của nó sau khi nền chữ phủ
-  → `carousel.py` dừng (`_gate_stack_last_hidden`). Sửa: đặt ảnh rối lên TRÊN
-  trong `"images"`, hoặc dùng ảnh sạch thay cặp ghép.
+  → `carousel.py` dừng (`_gate_stack_last_hidden`). Sửa theo nguyên nhân lỗi báo:
+  - có ảnh **rối** trong cặp → đặt ảnh rối lên TRÊN trong `"stack"`, hoặc dùng ảnh sạch thay cặp ghép;
+  - **không** ảnh nào rối (đáy ảnh dưới quá sáng với nền dark / quá tối với nền light)
+    → đảo thứ tự **không** chữa được. Dùng MỘT ảnh `"image"`, rút ngắn quote/chữ, hoặc
+    đổi ảnh dưới sang ảnh có `bottom_brightness` hợp nền trong manifest.
 
 **Tự soi trước khi giao:** nhìn có thấy **một đường ranh ngang** nào không. Thấy
 là hỏng, dựng lại — đừng gửi đi.
