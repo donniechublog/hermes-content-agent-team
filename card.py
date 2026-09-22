@@ -32,6 +32,7 @@ import brand_names
 import image_provenance
 import image_rules_ethan
 import role_spec
+import safe_zone
 import text_bg
 
 ASSETS = Path(__file__).resolve().parent / "assets"
@@ -731,13 +732,26 @@ def _is_source_capture(src) -> bool:
 
 FLAT_BOTTOM_ROWS = 0.04     # dai day anh de xet (ti le chieu cao)
 FLAT_BOTTOM_STD = 6.0      # stddev moi kenh duoi muc nay = nen phang
+# LOW-364: dai DINH chi xet vai hang sat mep — mau do se duoc keo dai len tren, nen chi can
+# lien mach tai dung mep. Dai 4% nhu day thi an ca hang tieu de bang (chu "RANK MODEL ...").
+FLAT_TOP_ROWS = 6
 
 
 def _flat_bottom_color(img):
     """Mau (r, g, b) cua DAI DAY anh neu dai do la nen phang, nguoc lai None."""
     h = img.height
-    dai = img.convert("RGB").crop((0, max(0, h - max(4, int(h * FLAT_BOTTOM_ROWS))), img.width, h))
-    st = ImageStat.Stat(dai)
+    return _flat_strip_color(img.convert("RGB").crop(
+        (0, max(0, h - max(4, int(h * FLAT_BOTTOM_ROWS))), img.width, h)))
+
+
+def _flat_top_color(img):
+    """Mau (r, g, b) cua DAI DINH anh neu dai do la nen phang (thanh dieu huong, le trang
+    cua trang web), nguoc lai None."""
+    return _flat_strip_color(img.convert("RGB").crop((0, 0, img.width, FLAT_TOP_ROWS)))
+
+
+def _flat_strip_color(strip):
+    st = ImageStat.Stat(strip)
     if max(st.stddev) > FLAT_BOTTOM_STD:
         return None
     return tuple(int(round(v)) for v in st.mean)
@@ -879,9 +893,18 @@ def _layer_image(canvas, src_img, H, top_anchor=False, cover_focus=None) -> int:
             return H
     nat_h = round(src_img.height * W / src_img.width)
     sac = src_img.resize((W, nat_h), Image.Resampling.LANCZOS)
-    if nat_h > H:
+    # LOW-364: DINH anh chup trang (tieu de bang, ten trang) nam trong dai bi cat khi dang 1:1
+    # (the Grok 4.7 mat hang tieu de bang). Dinh trang la nen phang (thanh dieu huong, le
+    # trang) thi ha anh xuong vung an toan, dai tren la CHINH mau do keo dai — mot mat phang
+    # lien. Dinh khong phang thi giu nhu cu: mot dai mau khac se thanh vung thu hai (§7).
+    shift = 0
+    top_color = _flat_top_color(sac) if top_anchor else None
+    if top_color is not None:
+        shift = safe_zone.top(W, H)
+        canvas.paste(top_color + ((255,) if canvas.mode == "RGBA" else ()), (0, 0, W, shift))
+    if nat_h + shift > H:
         top = 0 if top_anchor else (nat_h - H) // 2
-        canvas.paste(sac.crop((0, top, W, top + H)), (0, 0))
+        canvas.paste(sac.crop((0, top, W, top + H - shift)), (0, shift))
         return nat_h
     # LOW-336 (Ong Chu 21/09/2026: *"mot buc anh tot la ko can phai dung nhung bien phap
     # phuc tap nhu blur"*, vi du logo Qwen tren nen tron): day anh la NEN PHANG (trang web,
@@ -889,11 +912,11 @@ def _layer_image(canvas, src_img, H, top_anchor=False, cover_focus=None) -> int:
     # khong phai vung thu hai. Day anh co chi tiet thi moi con duong nen mo ben duoi.
     nen_day = _flat_bottom_color(sac)
     if nen_day is not None:
-        canvas.paste(Image.new(canvas.mode, (W, H), nen_day + ((255,) if canvas.mode == "RGBA" else ())),
-                     (0, 0))
-        canvas.paste(sac, (0, 0))
+        canvas.paste(Image.new(canvas.mode, (W, H - shift), nen_day + ((255,) if canvas.mode == "RGBA" else ())),
+                     (0, shift))
+        canvas.paste(sac, (0, shift))
         return nat_h
-    canvas.paste(_fit_cover(src_img, W, H).filter(ImageFilter.GaussianBlur(40)), (0, 0))
+    canvas.paste(_fit_cover(src_img, W, H - shift).filter(ImageFilter.GaussianBlur(40)), (0, shift))
 
     # ANH THAP HON KHUNG (moi anh ngang: 3:2 ra nat_h=800, 4:3 ra 900 tren
     # khung 1500) — day la cho sinh ra DUONG RANH ma Ong Chu bat nhieu lan.
@@ -920,7 +943,7 @@ def _layer_image(canvas, src_img, H, top_anchor=False, cover_focus=None) -> int:
         muot = t * t * (3 - 2 * t)                  # smoothstep
         mat_na.paste(int(255 * (1 - muot)),
                      (0, nat_h - dai + y, W, nat_h - dai + y + 1))
-    canvas.paste(sac, (0, 0), mat_na)
+    canvas.paste(sac, (0, shift), mat_na)
     return nat_h
 
 
@@ -1203,6 +1226,10 @@ def _quote_geometry(d, quote, attrib, handle, H):
 
     src_top = H - BOT_MARGIN - at_h
     yb = src_top - GAP_BOT - CHIP_OFF - chip_h // 2      # net ngang duoi = tam chip duoi
+    # LOW-364: KHUNG quote (ca chip tagline cuoi len net duoi) nam trong o vuong giua; dong
+    # nguon theo ngay duoi, co the roi vao dai cat — cung luat voi slide quote carousel.
+    shift = max(0, yb + chip_h // 2 + CHIP_OFF - safe_zone.bottom(W, H))
+    src_top, yb = src_top - shift, yb - shift
     frame_bottom = yb + BR_LIFT
     last_line_bottom = frame_bottom - BOX_PAD_Y
     first_line_top = last_line_bottom - quote_h
@@ -1261,6 +1288,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", cluttered=
     f_hchip, f_tchip, ten, chip_h = g.f_hchip, g.f_tchip, g.ten, g.chip_h
     src_top, yb, frame_bottom = g.src_top, g.yb, g.frame_bottom
     first_line_top, frame_top = g.first_line_top, g.frame_top
+    safe_zone.gate("the quote", {"quote_frame": (frame_top - chip_h // 2, frame_bottom)}, W, H)
 
     # Tagline ngan cua kenh — chip nho o goc duoi-trai khung (xem ben duoi).
     tag = (tagline or "").strip()
@@ -1550,6 +1578,13 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
     bottom_y = H - g4 - via_h
     frame_top = max(CEILING_FRAME_PAD, cum_top - CEILING_FRAME_PAD)
     frame_bot = min(bottom_y - 16, cum_bot + CEILING_FRAME_PAD)
+    if ratio in RATIOS:
+        # LOW-364: khung chu (kicker + tieu de) nam TRONG o vuong giua — dang bi cat 1:1 van
+        # con nguyen. Ten kenh o lai dai duoi (thu phu: Instagram da hien ten tai khoan).
+        shift = max(0, frame_bot - safe_zone.bottom(W, H))
+        y, cum_top, cum_bot = y - shift, cum_top - shift, cum_bot - shift
+        frame_top, frame_bot = frame_top - shift, frame_bot - shift
+        safe_zone.gate("the Ethan", {"text_frame": (frame_top, frame_bot)}, W, H)
     # Nen chu (LOW-336; Ong Chu so A/B 21/09/2026 voi cach LOW-343 "mot mau tron tu khoang lang
     # xuong day" roi chot: *"Overlay trong khung la style dat chuan"*): anh phu kin the, chi lam
     # mo + phu overlay BEN TRONG khung chu. Dai DUOI khung (ten kenh) chi mo khi BAN (vd dong

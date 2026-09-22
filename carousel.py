@@ -63,6 +63,7 @@ import image_provenance
 import image_rules_dre
 import logo_card
 import role_spec
+import safe_zone
 import text_bg
 from card import (
     _f, _wrap, _fit_cover,
@@ -126,8 +127,11 @@ THRESHOLD_VARIANCE_NEEDS_LAYER = 26  # do lech mau (stddev xam) duoi chu vuot mu
 DARK_MAX = 140         # tran cua lop (0..255, ~55%) — "vua du", khong phu ca mang
 VEIL_SPAN = 70           # px duong cong chuyen tiep — bat dau NGAY tai dong chu dau
 VEIL_EASE = 1.3          # duong cong: nhat luc bat dau, dam dan trong VEIL_SPAN roi giu
-TEXT_BASE = 1230                 # day khoi chu; dai 1230..H chua chip ten kenh (goc duoi-trai)
-TEXT_MAX_H = 200                 # tran khoi chu: giu dinh chu >=1030 -> vung nen <=24% (<30%)
+# LOW-364: day khoi chu nam trong O VUONG GIUA (safe_zone) — dang bi cat 1:1 (Instagram/Threads)
+# van con dong chu cuoi. Truoc do 1230: dong cuoi lot 15px vao dai bi cat. Dai TEXT_BASE..H
+# chua chip ten kenh (goc duoi-trai) — thu phu, bi cat khong mat noi dung.
+TEXT_BASE = safe_zone.bottom(W, H)       # 1203
+TEXT_MAX_H = 200                 # tran khoi chu: giu dinh chu >=1003 -> vung nen <=26% (<30%)
 
 # Chu than: thu tu co lon nhat con vua ca chieu cao, giong tinh than _grow cua card.
 # BODY_LO ha xuong 28 de copy dai van vua vung nen 30% (ma khong tran); copy
@@ -179,7 +183,19 @@ def _fit_block(d, paragraphs, max_w, max_h, hi, lo, weight=None, lead=BODY_LEAD)
     f = _f(F_REG, lo, weight)
     wrapped = [_wrap(d, p, f, max_w) for p in paragraphs]
     lh = _line_h(f, [ln for w in wrapped for ln in w], lead)
-    return f, wrapped, lh, sum(len(w) for w in wrapped) * lh
+    # LOW-364: cong ca khoang giua doan nhu nhanh tren — thieu no thi khoi chu co lo ve dai
+    # hon `total` mot PARA_GAP moi doan, dong cuoi lot xuong duoi TEXT_BASE (do: 30px).
+    gap = int(lh * PARA_GAP) * max(0, len(paragraphs) - 1)
+    return f, wrapped, lh, sum(len(w) for w in wrapped) * lh + gap
+
+
+def _ink_over(font, wrapped, lh) -> int:
+    """So px NET CHU cua dong cuoi lan xuong duoi day khoi `total` ma `_fit_block` tinh
+    (`_draw_paragraphs` ve tu goc tren cua o chu, nen dau/chan chu dong cuoi thuong vuot qua
+    buoc dong). LOW-364: do tren chu that — dat day khoi o TEXT_BASE thi net chu van lot ~20px
+    vao dai bi cat 1:1."""
+    last_line = next((ln for lines in reversed(wrapped) for ln in reversed(lines) if ln), "")
+    return max(0, font.getbbox(last_line)[3] - lh) if last_line else 0
 
 
 def _draw_paragraphs(d, x, y, wrapped, font, lh, fill, brand_colors=False, brand_bg=None):
@@ -562,7 +578,9 @@ def _body_image(canvas, img):
 # phan TREN chu, chu/khung/dau ngoac doi mau tuong phan. Khong dai mo, khong lop phu, chu
 # khong bao gio de len anh.
 FLAT_WIDTH_SHARE = logo_card.LOGO_WIDTH_SHARE    # 90% be ngang (Ong Chu chot, chung slide logo)
-FLAT_TOP = 64                    # le tren toi thieu cua noi dung
+# LOW-364: dinh hinh/bang nen phang (tieu de bang, hang dau) nam trong o vuong giua — truoc
+# do 64, dang bi cat 1:1 mat hang tieu de.
+FLAT_TOP = safe_zone.top(W, H)   # le tren toi thieu cua noi dung (147)
 FLAT_GAP = 56                    # khoang ho giua day noi dung va dong chu/khung dau tien ben duoi
 # Anh cao hon phan tren chu (Ong Chu 21/09, bia SoL-Pi ghep 2 hinh): *"luon uu tien hien thi full
 # chieu rong, phan noi dung anh bi chen vao text, chung ta phu len mot layer cung mau voi mau nen
@@ -745,7 +763,7 @@ def build_body(img_path, text, handle, out, cluttered=False, report=None, logo_b
     paras = [p.strip() for p in text.split("\n\n") if p.strip()]
     font, wrapped, lh, total = _fit_block(
         d, paras, W - 2 * PAD, TEXT_MAX_H, BODY_HI, BODY_LO)
-    text_top = TEXT_BASE - total
+    text_top = TEXT_BASE - total - _ink_over(font, wrapped, lh)
 
     flat = hop = touched = None
     if logo_bg:
@@ -769,6 +787,8 @@ def build_body(img_path, text, handle, out, cluttered=False, report=None, logo_b
         report.update(_text_bg_report(truoc_nen, canvas))
         _note_flat(report, canvas, flat, hop)
 
+    safe_zone.gate("slide than", {"text_block": (text_top, text_top + total + _ink_over(font, wrapped, lh))},
+                   W, H)
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, fg)
     _watermark(canvas, handle)
     canvas.convert("RGB").save(out, "PNG")
@@ -840,9 +860,15 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, repo
     # goc; dong nguon canh giua sat day.
     src_top = H - (WM_BOTTOM - 20) - at_h
     frame_bottom = src_top - G_FRAME_SRC + BR_LIFT
+    # LOW-364: KHUNG quote nam trong o vuong giua (dang bi cat 1:1 van con nguyen cau); dong
+    # nguon theo ngay duoi khung, co the roi vao dai cat. Keo ca dong nguon vao thi khoi chu
+    # len cao them ~45px va nen chu cua quote dai vuot tran LOW-286 (0.42 khung) — do: 0.424.
+    shift = max(0, frame_bottom - safe_zone.bottom(W, H))
+    src_top, frame_bottom = src_top - shift, frame_bottom - shift
     last_line_bottom = frame_bottom - BOX_PAD_Y
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
+    safe_zone.gate("slide quote", {"quote_frame": (frame_top - Q_MARK_CLEAR, frame_bottom)}, W, H)
 
     # LOW-341: voi anh nen phang, "dinh vung chu" la dinh dau " va chip ten kenh — hai thu
     # cuoi len net ngang tren cua khung, cao ~Q_MARK_CLEAR px phia tren net.
@@ -923,16 +949,19 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
         lf = _f(F_UI_CH, LABEL_SIZE - 8)            # mono bold, vua chip
         ltb = d.textbbox((0, 0), label, font=lf)
         chip_h = (ltb[3] - ltb[1]) + 2 * 10         # + 2*pad_y
-        y_label = H - 84 - chip_h
+        # LOW-364: hang chip (chuyen muc + ten model) la noi dung — trong o vuong giua.
+        y_label = min(H - 84, safe_zone.bottom(W, H)) - chip_h
     category = (category or "MODEL UPDATE").strip().upper()
     # Khong co label: hook van phai nam TREN chip category o goc duoi-trai.
     wtb = d.textbbox((0, 0), category, font=_f(F_MONO_CH, WM_SIZE))
     wm_h = (wtb[3] - wtb[1]) + 2 * 10
-    hook_bottom = (y_label - 28) if label else (H - WM_BOTTOM - wm_h - 28)
+    hook_bottom = (y_label - 28) if label else min(H - WM_BOTTOM - wm_h - 28, safe_zone.bottom(W, H))
     hf, wrapped, lh, total = _fit_block(
         d, [hook], W - 2 * PAD, int(H * 0.5), HOOK_HI, HOOK_LO,
         weight=HOOK_WEIGHT, lead=HOOK_LEAD)
-    y = hook_bottom - total
+    y = hook_bottom - total - _ink_over(hf, wrapped, lh)
+    safe_zone.gate("bia", {"hook": (y, hook_bottom),
+                           **({"label_chip": (y_label, y_label + chip_h)} if label else {})}, W, H)
     # Anh NEN PHANG (LOW-341, Ong Chu 21/09: "bia cung ap dung"): anh 90% be ngang tren chinh
     # mau nen cua no, phan lan vao hook phu mau nen; anh ghep hai nen thi phu vung hook bang mau
     # nen cua tam duoi. Hook va chip label doi mau theo nen do, khong lop phu toi.

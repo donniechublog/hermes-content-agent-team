@@ -871,6 +871,34 @@ nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IM
   cổng tỉ lệ 4:5..1:1 và cổng chart (§1.2b2: ảnh chụp nguồn được làm bìa).
 - Test: `tests/test_low336_no_side_borders.py`.
 
+## 6d. Vùng an toàn khi bị cắt vuông 1:1 — luật CHUNG mọi vai (LOW-364, 22/09/2026)
+
+Ông Chủ, bài dcgr Grok 4.7 (thẻ Ethan 1200×1500, đúng 4:5) lên Instagram/Threads vẫn bị cắt:
+*"lý do đã làm hình ratio 4:5 nhưng đăng ig vẫn bị crop"*. Đo trên tệp thật: bài đăng khớp đúng
+phép **cắt vuông giữa** — mất 150px trên (hàng tiêu đề bảng + hạng 1–2) và 150px dưới (dòng tựa
+cuối + tên kênh). Chốt cùng ngày: *"đưa những thứ quan trọng nhất vào safezone, như vậy ko còn lệ
+thuộc vào hình lúc publish nữa"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`,
+`IMAGE_RULES_ETHAN.md`, `IMAGE_RULES_KITE.md` — sửa một thì sửa cả ba.
+
+- **Vùng an toàn** = ô vuông giữa khung: dải cắt mỗi đầu = (H − W) / 2 (4:5 → 10% chiều cao:
+  135px ở 1080×1350, 150px ở 1200×1500), cộng lề `safe_zone.SAFE_PAD` = 12px. Một chỗ tính:
+  `safe_zone.py`.
+- **Trong vùng an toàn:** khung chữ + kicker + tựa (thẻ Ethan), hook + hàng chip chuyên mục/tên
+  model (bìa Dre), khối chữ slide thân (`carousel.TEXT_BASE` = 1203), khung quote, đỉnh nội dung
+  ảnh nền phẳng (`carousel.FLAT_TOP` = 147 — hàng tiêu đề bảng/hình paper).
+- **Được nằm ở dải cắt:** nền, phần ảnh kéo dài, tên kênh (Instagram đã hiện tên tài khoản), chip
+  tên kênh góc dưới-trái slide thân, **dòng nguồn quote** ngay dưới khung. Dòng nguồn không kéo
+  vào: kéo vào thì khối chữ quote dài lên cao thêm ~45px và nền chữ vượt trần LOW-286 (§7.0, 42%
+  khung) — đo 0.424. Luật §7.0 đứng trên.
+- **Ảnh chụp trang** (`source_capture`) thẻ Ethan: đỉnh trang có viền phẳng (6 hàng sát mép cùng
+  một màu) thì hạ ảnh xuống vùng an toàn, dải trên là chính màu đó kéo dài — một mặt phẳng liền
+  (§7). Đỉnh không phẳng thì giữ như cũ, không đặt một dải màu lạ lên trên.
+- **Cổng hình học** `safe_zone.gate` trong từng hàm vẽ (`card._render_ceiling`, `card._render_quote`,
+  `carousel.build_cover` / `build_body` / `build_body_quote`): nội dung trên ra ngoài vùng an toàn
+  thì dừng — lỗi CODE bố cục, không phải spec. Test đo trên pixel: `tests/test_instagram_safe_zone.py`.
+- **Chưa áp:** slide Kite (`render_edu.py`, bố cục HTML) — ticket con của LOW-364; chủ thể ảnh
+  chụp thường (`cover_focus`) nằm trong ô vuông — chưa đo.
+
 ## 7. Không bao giờ để ra hai vùng riêng biệt
 
 ### 7.0 Chữ ~20% khung, nền chữ CHỈ là overlay (LOW-286 — luật trên hết của mục này)
