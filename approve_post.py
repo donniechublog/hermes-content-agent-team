@@ -208,24 +208,20 @@ def draft_push(token, group, draft_id, thread_id=None):
         payload["message_thread_id"] = int(thread_id)
 
     images = d.get("images")
-    if images:
-        # Album truoc (khong nut), roi tin nhan chu rieng kem nut duyet --
-        # nut bam luon nam tren tin nhan NAY, khong phai anh.
-        ra = _send_media_group(token, group, images, thread_id)
-        album_ids = ([m.get("message_id") for m in (ra.get("result") or []) if isinstance(m, dict)]
-                     if ra.get("ok") else [])
-        if not ra.get("ok"):
-            # KHONG nuot loi: Ong Chu phai biet minh dang duyet thieu anh.
-            caption += ("\n\n\u26a0\ufe0f Album xem truoc gui loi: "
-                        + html_escape(str(ra.get("description"))))
-        text_payload = {"chat_id": group, "text": caption, "parse_mode": "HTML",
-                        "reply_markup": keyboard(draft_id)}
-        if thread_id:
-            text_payload["message_thread_id"] = int(thread_id)
-        res = call(token, "sendMessage", **text_payload)
-        return {**res, "extra_ids": album_ids} if isinstance(res, dict) else res
-
     img = d.get("image")
+    if images:
+        # Ong Chu 22/09/2026: bo anh da duyet o buoc anh roi — gui lai ca album
+        # vao topic nguoi viet chi lam roi. The duyet chi kem ANH BIA (anh dau);
+        # luc dang, publish() van doc du d["images"] nen channel len du album.
+        hero = next((str(p) for p in images if Path(str(p)).exists()), None)
+        if hero is None:
+            # KHONG nuot loi: Ong Chu phai biet minh dang duyet thieu anh.
+            caption += "\n\n\u26a0\ufe0f Không thấy tệp ảnh nào của bộ ảnh trên máy"
+        elif len(images) > 1:
+            caption += f"\n\n🖼 Ảnh bìa — khi đăng sẽ lên đủ {len(images)} ảnh"
+        img = hero
+        payload["caption"] = caption
+
     if img and Path(img).exists():
         # LOW-170: tien to "BẢN NHÁP" o tren cong vao caption cua writer SAU khi
         # caption_check da cho qua (gate do len(caption) GOC, khong biet tien
