@@ -324,6 +324,8 @@ def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict
     tri dan xuat (dung_duoc, not_yet_seen, domains, cover_suggestions) tinh o day tu `images`."""
     import story_type            # import tinh de cong cu doi ten nhin thay (LOW-50), nhu dong 78
     xhs = xhs or []            # nhan ca None (quy uoc cu, con trong vai noi goi truc tiep/test)
+    phien_ban = version_gate(anh, nguon.get("title_en") or title, tom.get("summary", ""),
+                             (bp or {}).get("article_text") or "")          # LOW-363, truoc khi dem
     label_people(anh, (bp or {}).get("article_text") or "")      # LOW-293, truoc khi dem
     dx = compute_derived(anh, vai_anh, so_xh=len(xhs))
     chua_nhin, so_mien = dx["not_yet_seen"], dx["domains"]
@@ -354,5 +356,27 @@ def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict
          "article_text": (bp.get("article_text") or "")[:20000],
          "source_path": str(nguon_path), "title_en": nguon.get("title_en", ""),
          # LOW-225: ung vien bi bo TRUOC khi thanh anh (pha tai) — truoc day chi co o stderr.
-         "dropped": dropped or []}
+         "dropped": dropped or [],
+         # LOW-363: phien ban model tham chieu cua tin — cong anh/tu khoa va brief doc lai.
+         "model_versions": phien_ban}
     return m
+
+
+def version_gate(anh: list, title: str, summary: str = "", article_text: str = "", ref=None) -> dict:
+    """Tinh phien ban model tham chieu cua tin (hoac dung `ref` da co) roi chan anh ghi
+    phien ban sai so chinh (`model_version.apply_image_gate`). Tra `ref`. MOT ban cho engine
+    (`build_manifest`) va `find_more_images.fresh_manifest` (LOW-363)."""
+    import model_version
+    if ref is None:
+        try:
+            ref = model_version.reference_versions(
+                title, f"{summary}\n{article_text}",
+                model_version.story_date(title, summary, fallback_ts=time.time()))
+        except Exception as e:                               # noqa: BLE001
+            print(f"[phien ban] khong tinh duoc phien ban tham chieu: {type(e).__name__}", file=sys.stderr)
+            ref = {}
+    n = model_version.apply_image_gate(anh, ref)
+    if ref:
+        print(f"[phien ban] tham chieu: {model_version.describe_reference(ref)}"
+              + (f"; chan {n} anh sai phien ban" if n else ""), file=sys.stderr)
+    return ref

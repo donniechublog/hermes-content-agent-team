@@ -76,7 +76,7 @@ def _ask_vision(tra_loi, **k):
 # ---------------------------------------------------------------- 1. vision
 def test_vision_ask_extra_line_fall_and_read_out():
     ra, kq, hoi = _ask_vision("MO_TA: đồ hoạ tin tức nhiều chữ.\nLIEN_QUAN: co\nCLUTTERED: co")
-    assert "DUNG 7 dong" in hoi and "CLUTTERED:" in hoi and "TU_KHOA:" in hoi and "CHU_THE:" in hoi, hoi
+    assert "DUNG 8 dong" in hoi and "PHIEN_BAN:" in hoi and "CLUTTERED:" in hoi and "TU_KHOA:" in hoi and "CHU_THE:" in hoi, hoi
     assert ra == ("đồ hoạ tin tức nhiều chữ.", True)       # tuple van 2 phan tu
     assert kq["cluttered"] is True
 
@@ -100,7 +100,7 @@ def test_vision_no_return_line_fall_then_none_no_guess():
 def test_vision_ask_extra_of_bob_still_three_part_from():
     ra, kq, hoi = _ask_vision("MO_TA: ảnh.\nLIEN_QUAN: co\nCLUTTERED: khong\nMOOD: vui",
                               hoi_them="tâm trạng ảnh", nhan_them="MOOD")
-    assert "DUNG 8 dong" in hoi, hoi
+    assert "DUNG 9 dong" in hoi, hoi
     assert ra == ("ảnh.", True, "vui")
     assert kq["cluttered"] is False
 
