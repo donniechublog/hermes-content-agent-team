@@ -154,6 +154,73 @@ def test_brand_round_drops_parent_logo_keeps_model_logo():
          th.confirm_unlisted_vendor) = saved
 
 
+def test_vendors_via_model_only():
+    """LOW-354: hang me chi suy ra tu ten model (Gemini -> Google) khac hang duoc goi ten."""
+    import image_brand as th
+    v = th.vendors_via_model_only
+    assert v("Gemini accidentally connected to the internet and hacked 3 companies") == {"google deepmind"}
+    assert v("ChatGPT adds memory") == {"openai"} and v("GPT-5.5 vào bảng") == {"openai"}
+    assert v("Claude Opus 5 hacks") == {"anthropic"}
+    for t in ("Google releases Gemini 3.5", "DeepMind Gemini robotics", "OpenAI GPT-6",
+              "Qwen-Image-2.1 từ Alibaba", "Nvidia buys Groq", "Kimi K3 ra mắt"):
+        assert v(t) == set(), t
+
+
+def test_research_story_on_gemini_uses_model_not_google():
+    """LOW-354: tin RESEARCH (khong phai MODEL) chi nhac Gemini: khong anh/logo Google tu
+    Commons, co logo Gemini va bao tim theo ten "Gemini". Tren code cu: toan anh Google."""
+    import image_brand as th
+    from prepare import fallback_rounds as fr
+    office = {"image_url": "googleplex.jpg", "score": 28, "brand_match": {"key": "google deepmind", "kind": "photo"}}
+    parent = {"image_url": "google_logo.png", "score": 18, "brand_match": {"key": "google deepmind", "kind": "logo"}}
+    model = {"image_url": "gemini_logo.png", "score": 18,
+             "brand_match": {"key": "model_gemini", "company": "Gemini", "kind": "logo", "model_logo": True}}
+    report = {"image_url": "gemini_app.jpg", "score": 20, "brand_match": {"key": "model_gemini", "kind": "photo"}}
+    seen = {"report": []}
+
+    class Stop(Exception):
+        pass
+
+    def fake_download(cands, wd):
+        seen["cands"] = [c["image_url"] for c in cands]
+        raise Stop
+
+    def fake_report(h, wd, phien=None):
+        seen["report"].append(h["company"])
+        return [dict(report)] if h["company"] == "Gemini" else [{"image_url": "google_news.jpg", "score": 20,
+                                                                 "brand_match": {"key": h["key"], "kind": "photo"}}]
+
+    saved = (th.vendor_images, th.model_logo_images, th.image_has_ballot, th.deadline_passed,
+             fr.download_and_filter, fr._report_brand_empty)
+    ceo = {"image_url": "pichai.jpg", "score": 24, "brand_match": {"key": "google deepmind", "kind": "person"}}
+    th.vendor_images = lambda h, wd=None: [dict(office), dict(parent), dict(ceo)]
+    th.model_logo_images = lambda t, wd, only_table=False: [dict(model)]
+    th.image_has_ballot = lambda *a, **k: []
+    th.deadline_passed = lambda *a, **k: False
+    fr.download_and_filter = fake_download
+    fr._report_brand_empty = fake_report
+    try:
+        try:
+            fr._round_brand_body([], "Gemini accidentally connected to the internet and hacked 3 companies",
+                                 "", Path(tempfile.gettempdir()), category="RESEARCH")
+        except Stop:
+            pass
+        assert seen["report"] == ["Gemini"], seen["report"]
+        # Nguoi (CEO) van giu nhu LOW-267; logo/tru so Google va bao theo "Google" thi bo.
+        assert set(seen["cands"]) == {"gemini_logo.png", "gemini_app.jpg", "pichai.jpg"}, seen["cands"]
+        # Tieu de tu goi ten Google -> anh Google van duoc (khong doi hanh vi cu).
+        seen["report"] = []
+        try:
+            fr._round_brand_body([], "Google releases Gemini 3.5 for enterprises", "",
+                                 Path(tempfile.gettempdir()), category="RESEARCH")
+        except Stop:
+            pass
+        assert "googleplex.jpg" in seen["cands"] and seen["report"] == ["Google"], (seen, )
+    finally:
+        (th.vendor_images, th.model_logo_images, th.image_has_ballot, th.deadline_passed,
+         fr.download_and_filter, fr._report_brand_empty) = saved
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca
     chay_tat_ca(globals())
