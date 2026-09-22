@@ -1,5 +1,6 @@
 {
  "A1": {
+  "ai_slop": true,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -10,10 +11,16 @@
     "outcome": "keep",
     "rule": "LIEN_QUAN",
     "stage": "vision"
+   },
+   {
+    "evidence": "Đồ họa chip AI phát sáng kết nối biểu tượng công nghệ và biểu đồ tăng trưởng cùng logo Gartner.",
+    "outcome": "drop",
+    "rule": "vision_ai_slop",
+    "stage": "ai_slop"
    }
   ],
-  "description": "Ảnh minh họa đồ họa kỹ thuật số với logo Gartner, chip AI trung tâm, biểu tượng công nghệ và biểu đồ tăng trưởng.",
-  "empty_share": 0.15,
+  "description": "Đồ họa chip AI phát sáng kết nối biểu tượng công nghệ và biểu đồ tăng trưởng cùng logo Gartner.",
+  "empty_share": 0.25,
   "faces": 0,
   "h": 941,
   "has_keywords": false,
@@ -23,6 +30,7 @@
   "landscape_crop_ok": null,
   "logo_card": false,
   "notes": [
+   "❌ ẢNH AI SLOP (model sinh ảnh tạo, không phải tư liệu thật — vision) → KHÔNG DÙNG, và đừng lấy chữ vẽ trên ảnh làm dữ kiện",
    "KHÔNG làm bìa",
    "cạnh ngắn 941px, phóng lên hơi mềm"
   ],
@@ -30,24 +38,22 @@
   "printed_name": null,
   "ratio": 1.78,
   "ready_path": "A1.png",
-  "relevant": true,
+  "relevant": false,
   "short_side": 941,
   "source": "other_outlet",
   "subject_box": [
-   0.4,
-   0.48,
-   0.6,
-   0.78
+   0.3,
+   0.49,
+   0.7,
+   0.86
   ],
   "subject_kind": "product",
   "url": "https://example.test/A1.png",
-  "uses": [
-   "body_chart_full_width",
-   "stack_vertical"
-  ],
+  "uses": [],
   "w": 1672
  },
  "A1+source": {
+  "ai_slop": true,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -58,10 +64,16 @@
     "outcome": "keep",
     "rule": "LIEN_QUAN",
     "stage": "vision"
+   },
+   {
+    "evidence": "Đồ họa chip AI phát sáng kết nối biểu tượng công nghệ và biểu đồ tăng trưởng cùng logo Gartner.",
+    "outcome": "drop",
+    "rule": "vision_ai_slop",
+    "stage": "ai_slop"
    }
   ],
-  "description": "Ảnh minh họa đồ họa kỹ thuật số với logo Gartner, chip AI trung tâm, biểu tượng công nghệ và biểu đồ tăng trưởng.",
-  "empty_share": 0.15,
+  "description": "Đồ họa chip AI phát sáng kết nối biểu tượng công nghệ và biểu đồ tăng trưởng cùng logo Gartner.",
+  "empty_share": 0.25,
   "faces": 0,
   "h": 941,
   "has_keywords": false,
@@ -71,6 +83,7 @@
   "landscape_crop_ok": null,
   "logo_card": false,
   "notes": [
+   "❌ ẢNH AI SLOP (model sinh ảnh tạo, không phải tư liệu thật — vision) → KHÔNG DÙNG, và đừng lấy chữ vẽ trên ảnh làm dữ kiện",
    "KHÔNG làm bìa",
    "cạnh ngắn 941px, phóng lên hơi mềm"
   ],
@@ -78,28 +91,26 @@
   "printed_name": null,
   "ratio": 1.78,
   "ready_path": "A1.png",
-  "relevant": true,
+  "relevant": false,
   "short_side": 941,
   "source": "other_outlet",
   "subject_box": [
-   0.4,
-   0.48,
-   0.6,
-   0.78
+   0.3,
+   0.49,
+   0.7,
+   0.86
   ],
   "subject_kind": "product",
   "url": "https://example.test/A1.png",
-  "uses": [
-   "body_chart_full_width",
-   "stack_vertical"
-  ],
+  "uses": [],
   "w": 1672
  },
  "A11": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": false,
+  "cluttered": true,
   "decisions": [
    {
     "evidence": "vision tra loi False",
@@ -108,14 +119,20 @@
     "stage": "vision"
    },
    {
-    "evidence": "Anh quang cao cua Appian ve viec duoc xep vao Magic Quadrant 2026 cua Gartner cho Business Orchestration and Automation Technologies.",
+    "evidence": "khong lam bia, xuong cuoi hang",
+    "outcome": "demote",
+    "rule": "CLUTTERED_without_keyword",
+    "stage": "cluttered"
+   },
+   {
+    "evidence": "Biểu đồ Gartner Magic Quadrant 2026 vinh danh Appian nhóm dẫn đầu BOAT.",
     "outcome": "drop",
     "rule": "vision_not_relevant",
     "stage": "relevance"
    }
   ],
-  "description": "Anh quang cao cua Appian ve viec duoc xep vao Magic Quadrant 2026 cua Gartner cho Business Orchestration and Automation Technologies.",
-  "empty_share": 0.35,
+  "description": "Biểu đồ Gartner Magic Quadrant 2026 vinh danh Appian nhóm dẫn đầu BOAT.",
+  "empty_share": 0.25,
   "faces": 0,
   "h": 628,
   "has_keywords": false,
@@ -126,6 +143,7 @@
   "logo_card": false,
   "notes": [
    "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG",
+   "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
    "KHÔNG làm bìa",
    "cạnh ngắn 628px, phóng lên hơi mềm"
   ],
@@ -137,10 +155,10 @@
   "short_side": 628,
   "source": "press_entity",
   "subject_box": [
-   0.57,
-   0.08,
-   0.98,
-   0.82
+   0.572,
+   0.081,
+   0.963,
+   0.828
   ],
   "subject_kind": "chart",
   "url": "https://example.test/A11.png",
@@ -148,10 +166,11 @@
   "w": 1200
  },
  "A11+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": false,
+  "cluttered": true,
   "decisions": [
    {
     "evidence": "vision tra loi False",
@@ -160,14 +179,20 @@
     "stage": "vision"
    },
    {
-    "evidence": "Anh quang cao cua Appian ve viec duoc xep vao Magic Quadrant 2026 cua Gartner cho Business Orchestration and Automation Technologies.",
+    "evidence": "khong lam bia, xuong cuoi hang",
+    "outcome": "demote",
+    "rule": "CLUTTERED_without_keyword",
+    "stage": "cluttered"
+   },
+   {
+    "evidence": "Biểu đồ Gartner Magic Quadrant 2026 vinh danh Appian nhóm dẫn đầu BOAT.",
     "outcome": "drop",
     "rule": "capture_quality",
     "stage": "relevance"
    }
   ],
-  "description": "Anh quang cao cua Appian ve viec duoc xep vao Magic Quadrant 2026 cua Gartner cho Business Orchestration and Automation Technologies.",
-  "empty_share": 0.35,
+  "description": "Biểu đồ Gartner Magic Quadrant 2026 vinh danh Appian nhóm dẫn đầu BOAT.",
+  "empty_share": 0.25,
   "faces": 0,
   "h": 628,
   "has_keywords": false,
@@ -178,6 +203,7 @@
   "logo_card": false,
   "notes": [
    "❌ ẢNH HERO TRANG NGUỒN NHƯNG KHÔNG ĐẠT CHẤT LƯỢNG (mờ/cắt lại từ màn hình khác — vision) → KHÔNG DÙNG",
+   "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
    "KHÔNG làm bìa",
    "cạnh ngắn 628px, phóng lên hơi mềm"
   ],
@@ -189,10 +215,10 @@
   "short_side": 628,
   "source": "press_entity",
   "subject_box": [
-   0.57,
-   0.08,
-   0.98,
-   0.82
+   0.572,
+   0.081,
+   0.963,
+   0.828
   ],
   "subject_kind": "chart",
   "url": "https://example.test/A11.png",
@@ -200,6 +226,7 @@
   "w": 1200
  },
  "A13": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -212,8 +239,8 @@
     "stage": "vision"
    }
   ],
-  "description": "Logo chữ \"Gartner\" màu xanh navy trên nền trắng, kèm ký hiệu ®.",
-  "empty_share": 0.85,
+  "description": "Logo chữ Gartner màu xanh đen in trên nền xám nhạt.",
+  "empty_share": 0.9,
   "faces": 0,
   "h": 1500,
   "has_keywords": false,
@@ -236,7 +263,7 @@
    0.06,
    0.22,
    0.94,
-   0.4
+   0.38
   ],
   "subject_kind": "logo",
   "url": "https://example.test/A13.png",
@@ -246,6 +273,7 @@
   "w": 1200
  },
  "A13+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -258,8 +286,8 @@
     "stage": "vision"
    }
   ],
-  "description": "Logo chữ \"Gartner\" màu xanh navy trên nền trắng, kèm ký hiệu ®.",
-  "empty_share": 0.85,
+  "description": "Logo chữ Gartner màu xanh đen in trên nền xám nhạt.",
+  "empty_share": 0.9,
   "faces": 0,
   "h": 1500,
   "has_keywords": false,
@@ -282,7 +310,7 @@
    0.06,
    0.22,
    0.94,
-   0.4
+   0.38
   ],
   "subject_kind": "logo",
   "url": "https://example.test/A13.png",
@@ -292,6 +320,7 @@
   "w": 1200
  },
  "A18": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -304,8 +333,8 @@
     "stage": "vision"
    }
   ],
-  "description": "Anh chup bien hieu Gartner truoc toa nha cong ty, co cay lon va bai co o tien canh.",
-  "empty_share": 0.15,
+  "description": "Biển tên công ty Gartner đặt trong khuôn viên trụ sở nhiều cây xanh và xe cộ.",
+  "empty_share": 0.05,
   "faces": 0,
   "h": 1131,
   "has_keywords": false,
@@ -325,10 +354,10 @@
   "short_side": 1131,
   "source": "web_yandex",
   "subject_box": [
-   0.53,
-   0.55,
-   0.93,
-   0.72
+   0.528,
+   0.531,
+   0.768,
+   0.941
   ],
   "subject_kind": "logo",
   "url": "https://example.test/A18.png",
@@ -339,6 +368,7 @@
   "w": 2048
  },
  "A18+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -351,8 +381,8 @@
     "stage": "vision"
    }
   ],
-  "description": "Anh chup bien hieu Gartner truoc toa nha cong ty, co cay lon va bai co o tien canh.",
-  "empty_share": 0.15,
+  "description": "Biển tên công ty Gartner đặt trong khuôn viên trụ sở nhiều cây xanh và xe cộ.",
+  "empty_share": 0.05,
   "faces": 0,
   "h": 1131,
   "has_keywords": false,
@@ -372,10 +402,10 @@
   "short_side": 1131,
   "source": "web_yandex",
   "subject_box": [
-   0.53,
-   0.55,
-   0.93,
-   0.72
+   0.528,
+   0.531,
+   0.768,
+   0.941
   ],
   "subject_kind": "logo",
   "url": "https://example.test/A18.png",
@@ -386,6 +416,7 @@
   "w": 2048
  },
  "A2": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -398,7 +429,7 @@
     "stage": "vision"
    }
   ],
-  "description": "Anh logo chu \"Gartner\" mau xanh dam tren nen sang.",
+  "description": "Logo Gartner màu xanh đậm trên nền sáng.",
   "empty_share": 0.85,
   "faces": 0,
   "h": 600,
@@ -423,7 +454,7 @@
    0.21,
    0.33,
    0.79,
-   0.6
+   0.59
   ],
   "subject_kind": "logo",
   "url": "https://example.test/A2.png",
@@ -434,6 +465,7 @@
   "w": 1200
  },
  "A2+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -446,7 +478,7 @@
     "stage": "vision"
    }
   ],
-  "description": "Anh logo chu \"Gartner\" mau xanh dam tren nen sang.",
+  "description": "Logo Gartner màu xanh đậm trên nền sáng.",
   "empty_share": 0.85,
   "faces": 0,
   "h": 600,
@@ -471,7 +503,7 @@
    0.21,
    0.33,
    0.79,
-   0.6
+   0.59
   ],
   "subject_kind": "logo",
   "url": "https://example.test/A2.png",
@@ -482,6 +514,7 @@
   "w": 1200
  },
  "A26": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -494,14 +527,14 @@
     "stage": "vision"
    },
    {
-    "evidence": "Anh logo chu \"TELECOM TV\" tren nen xanh duong, khong lien quan bai Gartner AI.",
+    "evidence": "Logo TelecomTV chu trang tren nen xanh duong.",
     "outcome": "drop",
     "rule": "vision_not_relevant",
     "stage": "relevance"
    }
   ],
-  "description": "Anh logo chu \"TELECOM TV\" tren nen xanh duong, khong lien quan bai Gartner AI.",
-  "empty_share": 0.55,
+  "description": "Logo TelecomTV chu trang tren nen xanh duong.",
+  "empty_share": 0.8,
   "faces": 0,
   "h": 675,
   "has_keywords": false,
@@ -509,7 +542,7 @@
   "kind": "chart",
   "landscape": true,
   "landscape_crop_ok": null,
-  "logo_card": false,
+  "logo_card": true,
   "notes": [
    "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG",
    "KHÔNG làm bìa",
@@ -524,9 +557,9 @@
   "source": "press_entity",
   "subject_box": [
    0.09,
-   0.3,
+   0.32,
    0.88,
-   0.55
+   0.66
   ],
   "subject_kind": "logo",
   "url": "https://example.test/A26.png",
@@ -534,6 +567,7 @@
   "w": 1200
  },
  "A26+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -546,14 +580,14 @@
     "stage": "vision"
    },
    {
-    "evidence": "Anh logo chu \"TELECOM TV\" tren nen xanh duong, khong lien quan bai Gartner AI.",
+    "evidence": "Logo TelecomTV chu trang tren nen xanh duong.",
     "outcome": "drop",
     "rule": "capture_quality",
     "stage": "relevance"
    }
   ],
-  "description": "Anh logo chu \"TELECOM TV\" tren nen xanh duong, khong lien quan bai Gartner AI.",
-  "empty_share": 0.55,
+  "description": "Logo TelecomTV chu trang tren nen xanh duong.",
+  "empty_share": 0.8,
   "faces": 0,
   "h": 675,
   "has_keywords": false,
@@ -561,7 +595,7 @@
   "kind": "chart",
   "landscape": true,
   "landscape_crop_ok": null,
-  "logo_card": false,
+  "logo_card": true,
   "notes": [
    "❌ ẢNH HERO TRANG NGUỒN NHƯNG KHÔNG ĐẠT CHẤT LƯỢNG (mờ/cắt lại từ màn hình khác — vision) → KHÔNG DÙNG",
    "KHÔNG làm bìa",
@@ -576,9 +610,9 @@
   "source": "press_entity",
   "subject_box": [
    0.09,
-   0.3,
+   0.32,
    0.88,
-   0.55
+   0.66
   ],
   "subject_kind": "logo",
   "url": "https://example.test/A26.png",
@@ -586,20 +620,33 @@
   "w": 1200
  },
  "A33": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": false,
+  "cluttered": true,
   "decisions": [
    {
-    "evidence": "vision tra loi True",
-    "outcome": "keep",
+    "evidence": "vision tra loi False",
+    "outcome": "drop",
     "rule": "LIEN_QUAN",
     "stage": "vision"
+   },
+   {
+    "evidence": "khong lam bia, xuong cuoi hang",
+    "outcome": "demote",
+    "rule": "CLUTTERED_without_keyword",
+    "stage": "cluttered"
+   },
+   {
+    "evidence": "Slide thuyết trình của Gartner trình bày mô hình công nghệ thông tin cho tăng trưởng bền vững.",
+    "outcome": "drop",
+    "rule": "vision_not_relevant",
+    "stage": "relevance"
    }
   ],
-  "description": "Slide thuyet trinh cua Gartner ve chu de \"IT for sustainable growth\" voi so do vong tron va cac dong chu ben phai.",
-  "empty_share": 0.15,
+  "description": "Slide thuyết trình của Gartner trình bày mô hình công nghệ thông tin cho tăng trưởng bền vững.",
+  "empty_share": 0.45,
   "faces": 0,
   "h": 672,
   "has_keywords": false,
@@ -609,6 +656,8 @@
   "landscape_crop_ok": null,
   "logo_card": false,
   "notes": [
+   "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG",
+   "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
    "KHÔNG làm bìa",
    "cạnh ngắn 672px, phóng lên hơi mềm"
   ],
@@ -616,38 +665,48 @@
   "printed_name": null,
   "ratio": 1.78,
   "ready_path": "A33.png",
-  "relevant": true,
+  "relevant": false,
   "short_side": 672,
   "source": "press_entity",
   "subject_box": [
-   0.06,
-   0.03,
-   0.94,
-   0.97
+   0.08,
+   0.16,
+   0.49,
+   0.89
   ],
-  "subject_kind": "other",
+  "subject_kind": "chart",
   "url": "https://example.test/A33.png",
-  "uses": [
-   "body_chart_full_width",
-   "stack_vertical"
-  ],
+  "uses": [],
   "w": 1199
  },
  "A33+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
-  "cluttered": false,
+  "cluttered": true,
   "decisions": [
    {
-    "evidence": "vision tra loi True",
-    "outcome": "keep",
+    "evidence": "vision tra loi False",
+    "outcome": "drop",
     "rule": "LIEN_QUAN",
     "stage": "vision"
+   },
+   {
+    "evidence": "khong lam bia, xuong cuoi hang",
+    "outcome": "demote",
+    "rule": "CLUTTERED_without_keyword",
+    "stage": "cluttered"
+   },
+   {
+    "evidence": "Slide thuyết trình của Gartner trình bày mô hình công nghệ thông tin cho tăng trưởng bền vững.",
+    "outcome": "drop",
+    "rule": "capture_quality",
+    "stage": "relevance"
    }
   ],
-  "description": "Slide thuyet trinh cua Gartner ve chu de \"IT for sustainable growth\" voi so do vong tron va cac dong chu ben phai.",
-  "empty_share": 0.15,
+  "description": "Slide thuyết trình của Gartner trình bày mô hình công nghệ thông tin cho tăng trưởng bền vững.",
+  "empty_share": 0.45,
   "faces": 0,
   "h": 672,
   "has_keywords": false,
@@ -657,6 +716,8 @@
   "landscape_crop_ok": null,
   "logo_card": false,
   "notes": [
+   "❌ ẢNH HERO TRANG NGUỒN NHƯNG KHÔNG ĐẠT CHẤT LƯỢNG (mờ/cắt lại từ màn hình khác — vision) → KHÔNG DÙNG",
+   "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc",
    "KHÔNG làm bìa",
    "cạnh ngắn 672px, phóng lên hơi mềm"
   ],
@@ -664,24 +725,22 @@
   "printed_name": null,
   "ratio": 1.78,
   "ready_path": "A33.png",
-  "relevant": true,
+  "relevant": false,
   "short_side": 672,
   "source": "press_entity",
   "subject_box": [
-   0.06,
-   0.03,
-   0.94,
-   0.97
+   0.08,
+   0.16,
+   0.49,
+   0.89
   ],
-  "subject_kind": "other",
+  "subject_kind": "chart",
   "url": "https://example.test/A33.png",
-  "uses": [
-   "body_chart_full_width",
-   "stack_vertical"
-  ],
+  "uses": [],
   "w": 1199
  },
  "A35": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -694,14 +753,14 @@
     "stage": "vision"
    },
    {
-    "evidence": "Biểu đồ Magic Quadrant của Gartner về lĩnh vực gia công quy trình kinh doanh tài chính và kế toán.",
+    "evidence": "Biểu đồ Magic Quadrant của Gartner năm 2024 về mảng gia công quy trình nghiệp vụ tài chính và kế toán.",
     "outcome": "drop",
     "rule": "vision_not_relevant",
     "stage": "relevance"
    }
   ],
-  "description": "Biểu đồ Magic Quadrant của Gartner về lĩnh vực gia công quy trình kinh doanh tài chính và kế toán.",
-  "empty_share": 0.4,
+  "description": "Biểu đồ Magic Quadrant của Gartner năm 2024 về mảng gia công quy trình nghiệp vụ tài chính và kế toán.",
+  "empty_share": 0.7,
   "faces": 0,
   "h": 3200,
   "has_keywords": false,
@@ -722,10 +781,10 @@
   "short_side": 2893,
   "source": "web_yandex",
   "subject_box": [
-   0.05,
-   0.1,
-   0.95,
-   0.9
+   0.02,
+   0.11,
+   0.9,
+   0.91
   ],
   "subject_kind": "chart",
   "url": "https://example.test/A35.png",
@@ -733,6 +792,7 @@
   "w": 2893
  },
  "A35+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
@@ -745,14 +805,14 @@
     "stage": "vision"
    },
    {
-    "evidence": "Biểu đồ Magic Quadrant của Gartner về lĩnh vực gia công quy trình kinh doanh tài chính và kế toán.",
+    "evidence": "Biểu đồ Magic Quadrant của Gartner năm 2024 về mảng gia công quy trình nghiệp vụ tài chính và kế toán.",
     "outcome": "drop",
     "rule": "capture_quality",
     "stage": "relevance"
    }
   ],
-  "description": "Biểu đồ Magic Quadrant của Gartner về lĩnh vực gia công quy trình kinh doanh tài chính và kế toán.",
-  "empty_share": 0.4,
+  "description": "Biểu đồ Magic Quadrant của Gartner năm 2024 về mảng gia công quy trình nghiệp vụ tài chính và kế toán.",
+  "empty_share": 0.7,
   "faces": 0,
   "h": 3200,
   "has_keywords": false,
@@ -773,10 +833,10 @@
   "short_side": 2893,
   "source": "web_yandex",
   "subject_box": [
-   0.05,
-   0.1,
-   0.95,
-   0.9
+   0.02,
+   0.11,
+   0.9,
+   0.91
   ],
   "subject_kind": "chart",
   "url": "https://example.test/A35.png",
@@ -784,25 +844,20 @@
   "w": 2893
  },
  "A4": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
   "cluttered": false,
   "decisions": [
    {
-    "evidence": "vision tra loi False",
-    "outcome": "drop",
+    "evidence": "vision tra loi True",
+    "outcome": "keep",
     "rule": "LIEN_QUAN",
     "stage": "vision"
-   },
-   {
-    "evidence": "Anh chup toa nha van phong hien dai nhieu tang voi bai do xe phia truoc.",
-    "outcome": "drop",
-    "rule": "vision_not_relevant",
-    "stage": "relevance"
    }
   ],
-  "description": "Anh chup toa nha van phong hien dai nhieu tang voi bai do xe phia truoc.",
+  "description": "Tòa nhà trụ sở chính của Gartner tại Stamford, bang Connecticut dưới trời nắng.",
   "empty_share": 0.35,
   "faces": 0,
   "h": 1440,
@@ -813,47 +868,43 @@
   "landscape_crop_ok": null,
   "logo_card": false,
   "notes": [
-   "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG",
    "KHÔNG làm bìa"
   ],
   "original_path": "A4.png",
   "printed_name": null,
   "ratio": 1.33,
   "ready_path": "A4.png",
-  "relevant": false,
+  "relevant": true,
   "short_side": 1440,
   "source": "commons",
   "subject_box": [
-   0.5,
-   0.35,
-   0.72,
-   0.68
+   0.05,
+   0.29,
+   0.99,
+   0.64
   ],
   "subject_kind": "building",
   "url": "https://example.test/A4.png",
-  "uses": [],
+  "uses": [
+   "body_chart_full_width"
+  ],
   "w": 1920
  },
  "A4+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 1 mau",
   "cluttered": false,
   "decisions": [
    {
-    "evidence": "vision tra loi False",
-    "outcome": "drop",
+    "evidence": "vision tra loi True",
+    "outcome": "keep",
     "rule": "LIEN_QUAN",
     "stage": "vision"
-   },
-   {
-    "evidence": "Anh chup toa nha van phong hien dai nhieu tang voi bai do xe phia truoc.",
-    "outcome": "drop",
-    "rule": "capture_quality",
-    "stage": "relevance"
    }
   ],
-  "description": "Anh chup toa nha van phong hien dai nhieu tang voi bai do xe phia truoc.",
+  "description": "Tòa nhà trụ sở chính của Gartner tại Stamford, bang Connecticut dưới trời nắng.",
   "empty_share": 0.35,
   "faces": 0,
   "h": 1440,
@@ -864,28 +915,30 @@
   "landscape_crop_ok": null,
   "logo_card": false,
   "notes": [
-   "❌ ẢNH HERO TRANG NGUỒN NHƯNG KHÔNG ĐẠT CHẤT LƯỢNG (mờ/cắt lại từ màn hình khác — vision) → KHÔNG DÙNG",
    "KHÔNG làm bìa"
   ],
   "original_path": "A4.png",
   "printed_name": null,
   "ratio": 1.33,
   "ready_path": "A4.png",
-  "relevant": false,
+  "relevant": true,
   "short_side": 1440,
   "source": "commons",
   "subject_box": [
-   0.5,
-   0.35,
-   0.72,
-   0.68
+   0.05,
+   0.29,
+   0.99,
+   0.64
   ],
   "subject_kind": "building",
   "url": "https://example.test/A4.png",
-  "uses": [],
+  "uses": [
+   "body_chart_full_width"
+  ],
   "w": 1920
  },
  "A7": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 2 mau",
@@ -898,14 +951,14 @@
     "stage": "vision"
    },
    {
-    "evidence": "Anh chan dung den trang nguoi dan ong co ria mep dam, toc xoan, mac ao the thao.",
+    "evidence": "Ảnh chụp chân dung đen trắng một người đàn ông có ria mép dày.",
     "outcome": "drop",
     "rule": "vision_not_relevant",
     "stage": "relevance"
    }
   ],
-  "description": "Anh chan dung den trang nguoi dan ong co ria mep dam, toc xoan, mac ao the thao.",
-  "empty_share": 0.05,
+  "description": "Ảnh chụp chân dung đen trắng một người đàn ông có ria mép dày.",
+  "empty_share": 0.2,
   "faces": 0,
   "h": 1245,
   "has_keywords": false,
@@ -928,10 +981,10 @@
   "short_side": 885,
   "source": "commons",
   "subject_box": [
-   0.13,
-   0.03,
-   0.87,
-   0.98
+   0.02,
+   0.02,
+   0.95,
+   0.76
   ],
   "subject_kind": "person",
   "url": "https://example.test/A7.png",
@@ -939,6 +992,7 @@
   "w": 885
  },
  "A7+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 2 mau",
@@ -951,14 +1005,14 @@
     "stage": "vision"
    },
    {
-    "evidence": "Anh chan dung den trang nguoi dan ong co ria mep dam, toc xoan, mac ao the thao.",
+    "evidence": "Ảnh chụp chân dung đen trắng một người đàn ông có ria mép dày.",
     "outcome": "drop",
     "rule": "capture_quality",
     "stage": "relevance"
    }
   ],
-  "description": "Anh chan dung den trang nguoi dan ong co ria mep dam, toc xoan, mac ao the thao.",
-  "empty_share": 0.05,
+  "description": "Ảnh chụp chân dung đen trắng một người đàn ông có ria mép dày.",
+  "empty_share": 0.2,
   "faces": 0,
   "h": 1245,
   "has_keywords": false,
@@ -981,10 +1035,10 @@
   "short_side": 885,
   "source": "commons",
   "subject_box": [
-   0.13,
-   0.03,
-   0.87,
-   0.98
+   0.02,
+   0.02,
+   0.95,
+   0.76
   ],
   "subject_kind": "person",
   "url": "https://example.test/A7.png",
@@ -992,6 +1046,7 @@
   "w": 885
  },
  "A8": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 2 mau",
@@ -1004,14 +1059,14 @@
     "stage": "vision"
    },
    {
-    "evidence": "Anh la bieu do Magic Quadrant cua Gartner ve cac hang bao mat, truc hoanh la \"COMPLETENESS OF VISION\", truc tung la \"ABILITY TO EXECUTE\", chia 4 goc phan tu voi cac ten nhu Microsoft, Symantec, IBM, T",
+    "evidence": "Biểu đồ Magic Quadrant năm 2016 phân loại các công ty công nghệ bảo mật.",
     "outcome": "drop",
     "rule": "vision_not_relevant",
     "stage": "relevance"
    }
   ],
-  "description": "Anh la bieu do Magic Quadrant cua Gartner ve cac hang bao mat, truc hoanh la \"COMPLETENESS OF VISION\", truc tung la \"ABILITY TO EXECUTE\", chia 4 goc phan tu voi cac ten nhu Microsoft, Symantec, IBM, T",
-  "empty_share": 0.05,
+  "description": "Biểu đồ Magic Quadrant năm 2016 phân loại các công ty công nghệ bảo mật.",
+  "empty_share": 0.65,
   "faces": 0,
   "h": 683,
   "has_keywords": false,
@@ -1044,6 +1099,7 @@
   "w": 683
  },
  "A8+source": {
+  "ai_slop": false,
   "bottom_brightness": 136,
   "bottom_left_brightness": 136,
   "chart_stats": "phang 100%, chi 2 mau",
@@ -1056,14 +1112,14 @@
     "stage": "vision"
    },
    {
-    "evidence": "Anh la bieu do Magic Quadrant cua Gartner ve cac hang bao mat, truc hoanh la \"COMPLETENESS OF VISION\", truc tung la \"ABILITY TO EXECUTE\", chia 4 goc phan tu voi cac ten nhu Microsoft, Symantec, IBM, T",
+    "evidence": "Biểu đồ Magic Quadrant năm 2016 phân loại các công ty công nghệ bảo mật.",
     "outcome": "drop",
     "rule": "capture_quality",
     "stage": "relevance"
    }
   ],
-  "description": "Anh la bieu do Magic Quadrant cua Gartner ve cac hang bao mat, truc hoanh la \"COMPLETENESS OF VISION\", truc tung la \"ABILITY TO EXECUTE\", chia 4 goc phan tu voi cac ten nhu Microsoft, Symantec, IBM, T",
-  "empty_share": 0.05,
+  "description": "Biểu đồ Magic Quadrant năm 2016 phân loại các công ty công nghệ bảo mật.",
+  "empty_share": 0.65,
   "faces": 0,
   "h": 683,
   "has_keywords": false,
