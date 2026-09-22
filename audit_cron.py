@@ -27,13 +27,17 @@ Dung:
 import argparse
 import html
 import json
+import os
+import re
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import env_load
+import hermes_adapter
 import publish
+import role
 import state_paths
 
 # Nhip ticker cua hermes la 60s (cron/jobs.py TICKER_INTERVAL_SECONDS). Nguong
@@ -178,6 +182,62 @@ def audit_format(cron_dir: Path, bay_gio: float) -> tuple:
     return van_de, len(jobs)
 
 
+# --- vai quet co task hom nay chua (LOW-353) ---------------------------------
+# Cac phep so o tren chi nhin TINH TRANG job. Sang 22/09/2026 moi job deu "ok",
+# dung hen, khong loi — ma khong vai quet nao chay: lich trot sang 22:00 VN
+# (doi may chu, cron viet theo UTC) va luot 22:00 trung khoa chong trung nen
+# khong tao task. Nen o day hoi thang KET QUA: moi vai co job quet dang bat
+# phai co task tao trong ngay VN hom nay, va task do da xong.
+#
+# KHONG suy tu cron expr: lich sai gio thi suy tu lich cung sai theo (22/09 lich
+# noi "chua toi gio"). Moc la hang so: quet 06:00 VN, task tran 20 phut, audit
+# chay 07:00 — tu SCAN_DEADLINE_HOUR tro di ma chua co task hom nay la hong.
+# Doi gio quet sang sau 07:00 thi phai doi so nay.
+VN = timezone(timedelta(hours=7))
+SCAN_DEADLINE_HOUR = 7
+_SCAN_SCRIPT = re.compile(r"^([a-z]+)_(?:daily_)?scan\.sh$")
+
+
+def scan_roles(jobs) -> list:
+    """Slug vai quet co job cron DANG BAT, lay tu ten script (`finn_daily_scan.sh`, `qinn_scan.sh`)."""
+    ra = []
+    for job in jobs:
+        m = _SCAN_SCRIPT.match(os.path.basename(str(job.get("script") or "")))
+        if (m and m.group(1) in role.ROLE and job.get("enabled", True)
+                and (job.get("state") or "") != "paused"):
+            ra.append(m.group(1))
+    return sorted(set(ra))
+
+
+def audit_scan_tasks(home: Path, jobs, bay_gio: float) -> list:
+    """Van de cua cac vai quet trong MOT home: chua co task hom nay / task chua xong."""
+    now_vn = datetime.fromtimestamp(bay_gio, VN)
+    roles = scan_roles(jobs)
+    if not roles or now_vn.hour < SCAN_DEADLINE_HOUR:
+        return []
+    start_of_day = now_vn.replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+    van_de = []
+    for vai in roles:
+        tasks = hermes_adapter.job(tu_ts=start_of_day, vai=vai, moi_truoc=True,
+                                   db=home / "kanban.db")
+        if tasks is not None:
+            # Chi task tao TRUOC luc soat — soat lai mot moc cu thi task tao sau
+            # moc do (chay tay, ngay sau) khong duoc tinh.
+            tasks = [t for t in tasks if (t.get("created_at") or 0) <= bay_gio]
+        if tasks is None:
+            van_de.append({"severity": "BROKEN", "name": f"quét {vai}",
+                           "reasons": ["không đọc được kanban.db — không biết hôm nay đã quét chưa"]})
+        elif not tasks:
+            van_de.append({"severity": "BROKEN", "name": f"quét {vai}",
+                           "reasons": [f"chưa có task quét nào hôm nay {now_vn:%d/%m} "
+                                       f"(đã {now_vn:%H:%M} VN) — cron có thể vẫn báo ok"]})
+        elif not any(t.get("status") == "done" for t in tasks):
+            t = tasks[0]
+            van_de.append({"severity": "STUCK", "name": f"quét {vai}",
+                           "reasons": [f"task {t.get('id')} hôm nay đang {t.get('status')}, chưa xong"]})
+    return van_de
+
+
 def audit(homes=None, bay_gio=None) -> tuple:
     """Soat moi kho cron cua moi home. Tra ve (van_de, tong_job, thieu_home).
 
@@ -196,7 +256,18 @@ def audit(homes=None, bay_gio=None) -> tuple:
             for m in v:
                 m["brand"] = f"{brand}/{profile}" if profile else brand
                 van_de.append(m)
+        for m in audit_scan_tasks(home, _root_jobs(home), bay_gio):
+            m["brand"] = brand
+            van_de.append(m)
     return van_de, tong, thieu
+
+
+def _root_jobs(home: Path) -> list:
+    """Job trong kho cron goc cua home; [] neu thieu/hong (audit_format da bao roi)."""
+    try:
+        return json.loads((home / "cron" / "jobs.json").read_text(encoding="utf-8")).get("jobs") or []
+    except (OSError, ValueError):
+        return []
 
 
 def lock_still_for(van_de) -> list:
