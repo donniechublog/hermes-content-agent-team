@@ -113,8 +113,11 @@ def figure_hero(m: dict) -> dict | None:
     from_arena = lambda a: (a.get("ranking") or {}).get("kind") == arena_x.KIND   # noqa: E731
     # Anh X @arena duoc khop CHAT ten model tu chinh tweet chinh chu, khong can doi vision
     # gat "lien quan"; vision noi KHONG thi figure_real da loai roi.
+    # Anh bi cong ANH TRONG chan (LOW-273/LOW-288) khong len bia duoc — ban va nong tren
+    # may chu 22/09/2026 11:47, dua vao repo truoc khi deploy LOW-337.
     ut = [a for a in figure_real(m)
-          if a.get("relevant") is True or a.get("paper_figure") or from_arena(a)]
+          if (a.get("relevant") is True or a.get("paper_figure") or from_arena(a))
+          and not vai_mod.blocked_empty(a, "kite")]
     if not ut:
         return None
     # LOW-254 (18/09/2026): "khoi tit chup trang nguon" (`capture_kind ==
