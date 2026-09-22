@@ -86,6 +86,19 @@ SENTENCE_PRINTED_NAME = ("TEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chin
                          "anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc "
                          "duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>")
 _NO_PRINTED_NAME = {"khong", "không", "none", "no", "-", "khong co", "không có"}
+# LOW-363: ten + so PHIEN BAN model in tren anh (bang benchmark "Gemini 1.5 Pro", giao dien
+# "Gemini 3.1") — MO_TA thuong chi ghi "cac phien ban Gemini" nen cong phien ban mu.
+SENTENCE_PRINTED_VERSION = ("PHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, "
+                            "Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>")
+
+
+def parse_printed_version(txt: str):
+    """Dong `PHIEN_BAN:` vision tra -> chuoi phien ban model in tren anh, hoac None."""
+    m = re.search(r"^\s*PHI[EÊ]N_?\s*B[AẢ]N\s*:\s*(.+)$", txt or "", re.I | re.M)
+    if not m:
+        return None
+    v = m.group(1).strip().strip("\"'“”<>.").strip()
+    return None if not v or v.lower() in _NO_PRINTED_NAME else v[:120]
 # LOW-337 (Ong Chu 22/09/2026, "sao mọc đâu ra cái hình AI slop vô duyên vậy?"): minh hoa
 # "xAI 4.7 vs DeepSeek R1" do wccftech dung model sinh anh qua het cong (co anh la co Gemini
 # moi, cau LIEN_QUAN chi hoi "dung chu de") roi len slide Kite, keo theo tit bia "R1" khong
@@ -250,11 +263,11 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             hoi = image_brand.sentence_ask_vision(tieu_de, thuong_hieu)
         # Moi nhanh deu hoi them dong CLUTTERED (LOW-47): anh roi khong bi cam, chi
         # xuong cuoi hang uu tien — xem submit_common.check_image_fall.
-        hoi = (hoi.replace("DUNG 2 dong", "DUNG 8 dong") + "\n" + SENTENCE_CLUTTERED + "\n" + SENTENCE_KEYWORD
+        hoi = (hoi.replace("DUNG 2 dong", "DUNG 9 dong") + "\n" + SENTENCE_CLUTTERED + "\n" + SENTENCE_KEYWORD
                + "\n" + SENTENCE_SUBJECT + "\n" + SENTENCE_EMPTY + "\n" + SENTENCE_PRINTED_NAME
-               + "\n" + SENTENCE_AI_SLOP)
+               + "\n" + SENTENCE_PRINTED_VERSION + "\n" + SENTENCE_AI_SLOP)
         if hoi_them and nhan_them:
-            hoi = hoi.replace("DUNG 8 dong", "DUNG 9 dong") + f"\n{nhan_them}: {hoi_them}"
+            hoi = hoi.replace("DUNG 9 dong", "DUNG 10 dong") + f"\n{nhan_them}: {hoi_them}"
         def _ask(model):
             body = {"model": model, "thinking": {"type": "disabled"}, "max_tokens": 400,
                     "stream": False, "temperature": 0,
@@ -346,6 +359,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             them = t.group(1).strip()[:120] if t else ""
         return mt, lqv, them, {"cluttered": cluttered, "has_keywords": du_tk,
                                **subject_fit.parse_subject(txt), "printed_name": parse_printed_name(txt),
+                               "printed_version": parse_printed_version(txt),
                                "ai_slop": parse_ai_slop(txt),
                                "vision_said": lqv_vision, "override": override,
                                "vision_raw": {"model": model, "question": hoi, "answer": txt[:2000]}}
@@ -566,6 +580,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     a["subject_kind"] = kq.get("subject_kind")
     a["empty_share"] = kq.get("empty_share")
     a["printed_name"] = kq.get("printed_name")          # LOW-279: ten in tren anh (lower-third/bang ten)
+    a["printed_version"] = kq.get("printed_version")    # LOW-363: phien ban model in tren anh
     a["ai_slop"] = kq.get("ai_slop")                    # LOW-337: anh model sinh (None = khong doc ra)
     # LOW-295 (Ong Chu 20/09/2026): logo tren nen tron KHONG bi chan nua — renderer dung
     # lai thanh slide logo (90% be ngang tren chinh mau nen cua no), xem logo_card.py.

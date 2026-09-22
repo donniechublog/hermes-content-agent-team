@@ -98,6 +98,19 @@ def model_parent_query_errors(tu_khoa: list, tieu_de: str) -> list:
     return loi
 
 
+def version_query_errors(tu_khoa: list, ref: dict) -> list:
+    """LOW-363: tu khoa ghi phien ban model khac phien ban tham chieu cua tin thi tu choi.
+    Dre (LLM) tung tu go "Gemini 1.5 Pro benchmark" theo tri nho huan luyen cho tin 9/2026."""
+    import model_version
+    loi = []
+    for tk in tu_khoa:
+        sai = model_version.mismatches(tk, ref or {})
+        if sai:
+            loi.append(f"'{tk}': {', '.join(sai)} khong phai phien ban cua tin — phien ban tham chieu: "
+                       f"{model_version.describe_reference(ref)}. Tim dung phien ban do, hoac bo so phien ban")
+    return loi
+
+
 def candidate_commons(tu_khoa: str, so: int = COUNT_COMMONS_NEW_TURN) -> list:
     """Commons theo tu khoa cua VAI: loc long hon `anh_commons` (khong doi nguyen
     cum trong ten tep) vi vai da chon tu khoa co chu y — dung bo loc cua anh
@@ -245,7 +258,11 @@ def say_image_new(m: dict, bo_sung: list, wd: Path, tieu_de: str) -> list:
 
 def fresh_manifest(m: dict) -> dict:
     """Tinh lai cac gia tri dan xuat sau khi bo anh doi (cung cong thuc voi engine)."""
-    from prepare.manifest import label_people
+    from prepare.manifest import label_people, version_gate
+    # LOW-363: anh moi tim them cung qua cong phien ban (dung tham chieu engine da ghi).
+    m["model_versions"] = version_gate(m["images"], m.get("title_en") or m.get("title") or "",
+                                       m.get("summary") or "", m.get("article_text") or "",
+                                       ref=m.get("model_versions"))
     label_people(m["images"], m.get("article_text") or "")       # LOW-293
     dx = compute_derived(m["images"], m.get("image_role", ""), so_xh=int(m.get("ranking_count") or 0))
     for k in ("domains", "stackable_pairs", "cover_suggestions", "usable_count", "not_yet_seen"):
@@ -306,7 +323,8 @@ def main() -> int:
         if m is None:
             sys.exit(f"[LOI] khong doc duoc {xong}")
         tieu_de = m.get("title_en") or m.get("title") or a.draft_id
-        loi = model_parent_query_errors(a.tu_khoa, tieu_de)
+        loi = model_parent_query_errors(a.tu_khoa, tieu_de) + version_query_errors(
+            a.tu_khoa, m.get("model_versions") or {})
         if loi:
             sys.exit("[LOI] " + "; ".join(loi))
         tu_lieu = m.get("material") or {}

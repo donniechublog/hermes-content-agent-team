@@ -81,7 +81,7 @@ def _ask_vision(tra_loi, **k):
 
 def test_vision_asks_ai_slop_line_in_english():
     _ra, kq, hoi = _ask_vision("MO_TA: đồ hoạ xAI 4.7 vs DeepSeek R1.\nLIEN_QUAN: co\nAI slop: yes")
-    assert "AI slop: yes | no" in hoi and "DUNG 8 dong" in hoi, hoi
+    assert "AI slop: yes | no" in hoi and "DUNG 9 dong" in hoi, hoi
     assert kq["ai_slop"] is True, kq
 
 
