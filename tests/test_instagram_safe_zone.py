@@ -214,7 +214,13 @@ def test_dre_overlay_hugs_text():
             assert touched is not None, f"{name}: anh sang ma khong co nen chu"
             a = np.asarray(Image.open(out).convert("L"), dtype=np.float32)
             below = carousel.TEXT_BASE + carousel.OVERLAY_HOLD_AFTER + carousel.OVERLAY_TAIL + 2
-            diff = np.abs(a[below:] - ref[below:]).mean(axis=1)
+            x0, x1 = 0, 1080
+            if name == "slide quote":
+                # Vong 4: nen chu quote tan tu dong quote CUOI, khong keo toi net khung duoi —
+                # do be ngang ben trai (net khung duoi va dau dong ngoac nam ben phai).
+                below = safe_zone.bottom(1080, 1350) - 62 + carousel.OVERLAY_TAIL + 2
+                x0, x1 = 100, 300
+            diff = np.abs(a[below:, x0:x1] - ref[below:, x0:x1]).mean(axis=1)
             assert diff.max() < 3, f"{name}: nen chu con phu duoi y={below} (lech {diff.max():.0f})"
 
 

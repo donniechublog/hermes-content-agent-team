@@ -863,10 +863,12 @@ thuộc vào hình lúc publish nữa"*. Cùng một nội dung ở cả ba tệ
 - **Nền chữ ôm khối chữ** (Ông Chủ cùng ngày, ba vòng xem hình thật: *"làm phần nền text hẹp
   lại sát vào phần quote / text hơn là ok"*, rồi khoanh các dải nền thừa trên/dưới chữ: *"giữ
   nguyên vị trí, chỉ có hai phần đó lược đi"*, *"phần nền ở đây cũng lược đi phần được khoanh"*):
-  overlay tối (`_overlay_text`) VÀ lớp màu nền ảnh ghép hai nền (`_cover_below`, bìa/slide) chuyển
-  80px trên dòng chữ đầu (`OVERLAY_LEAD`, trước 120) và bắt đầu tan NGAY tại nét chữ dòng cuối
-  (`OVERLAY_HOLD_AFTER` = 0), tan hết trong 40px (`OVERLAY_TAIL`). Dòng cuối của bìa là hàng chip.
-  Dưới đó ảnh hiện lại — không giữ nền tới đáy khung.
+  overlay tối (`_overlay_text`) VÀ lớp màu nền ảnh ghép hai nền (`_cover_below`, bìa/slide) phủ
+  ĐÚNG các dòng chữ: chuyển 24px ngay trên dòng chữ đầu (`OVERLAY_LEAD`, trước 120), đạt mức tối
+  tại đỉnh dòng đầu (`OVERLAY_FULL_BEFORE` = 0), bắt đầu tan NGAY tại nét chữ dòng cuối
+  (`OVERLAY_HOLD_AFTER` = 0), tan hết trong 40px (`OVERLAY_TAIL`). Dòng cuối của bìa là hàng chip;
+  của slide quote là dòng quote cuối — nét khung dưới và dấu đóng ngoặc nằm trên ảnh (vòng 4:
+  *"chỉ cần lược đi phần nền được khoanh như vậy là được"*). Ngoài vùng đó ảnh hiện lại.
 - **Ảnh xếp hạng** (dấu `ranking_*`: arena X, bảng benchmark) tính là chart cho ngưỡng nền phẳng
   dù spec không khai `"chart"`: bìa Xiaomi (arena vuông) trước bị cover-crop mất hai cạnh, nay đi
   §7.0b — 90% bề ngang, đặt từ đỉnh vùng an toàn (Ông Chủ: *"thu nhỏ lại khoảng 10% và đẩy lên

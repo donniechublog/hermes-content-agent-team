@@ -374,10 +374,13 @@ def _measure_region_text(canvas, y0, y1):
 # sát vào phần quote / text hơn là ok"*): nen chu OM khoi chu — dai chuyen tren ngan lai
 # (120 -> 80), va tan dan NGAY DUOI dong chu cuoi (OVERLAY_HOLD_AFTER + OVERLAY_TAIL) thay vi
 # giu dam toi day khung. Chu da dung trong o vuong giua nen dai day khung chi con ten kenh.
-OVERLAY_LEAD = 80                # px chuyen tu trong suot toi muc toi, ngay tren dong chu dau
+# Vong 4 (Ong Chu khoanh dai chuyen tren dong dau slide TSMC va dai duoi dong cuoi trong khung
+# quote: *"chỉ cần lược đi phần nền được khoanh như vậy là được"*): nen chi phu DUNG cac dong
+# chu — dai chuyen 24px, dat muc toi ngay tai dinh dong dau, tan tu net chu dong cuoi.
+OVERLAY_LEAD = 24                # px chuyen tu trong suot toi muc toi, ngay tren dong chu dau
 OVERLAY_BLUR = 30                # mo chi tiet NGAY duoi chu (chu in san ~20-30px tan ra), chi trong vung overlay
 OVERLAY_MIN, OVERLAY_MAX = 150, 205  # do toi overlay (0..255, ~59%..80%) tai vung chu
-OVERLAY_FULL_BEFORE = 24         # overlay dat muc toi TRUOC dong chu dau bay nhieu px (dong dau khong nam tren dai chuyen)
+OVERLAY_FULL_BEFORE = 0          # overlay dat muc toi TRUOC dong chu dau bay nhieu px
 # Ong Chu 22/09 (vong 3, khoanh dai toi ngay duoi dong chu cuoi slide TSMC): *"phần nền ở đây
 # cũng lược đi phần được khoanh"* — khong giu dam them duoi chu, tan ngay tu net chu dong cuoi.
 OVERLAY_HOLD_AFTER = 0           # LOW-364: giu muc toi them bay nhieu px DUOI dong chu cuoi
@@ -928,7 +931,7 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, repo
     # LOW-341: voi anh nen phang, "dinh vung chu" la dinh dau " va chip ten kenh — hai thu
     # cuoi len net ngang tren cua khung, cao ~Q_MARK_CLEAR px phia tren net.
     base, flat, hop, touched = _place_image(canvas, _open(img_path), plan, frame_top - Q_MARK_CLEAR,
-                                            src_top + at_h if at_lines else frame_bottom)
+                                            src_top + at_h if at_lines else last_line_bottom)
     truoc_nen = canvas.copy() if report is not None else None
 
     if flat:
@@ -937,7 +940,7 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, repo
     else:
         # Chi them lop khi do THAT can (xem _layer_if_can). Overlay neo o DONG CHU DAU
         # (LOW-286), khong phai dinh khung: truoc day tu frame_top nen nen chu phu ~47% khung.
-        touched = _layer_if_can(canvas, base, max(0, first_line_top), src_top + at_h if at_lines else frame_bottom,
+        touched = _layer_if_can(canvas, base, max(0, first_line_top), src_top + at_h if at_lines else last_line_bottom,
                                 image_cluttered=cluttered,
                                 overlay_only=True)
         fg, muted, net = FG, MUTED, _net()
