@@ -592,6 +592,46 @@ def _write_forbid_image_redo(draft_id: str, so_slide: list) -> None:
     _write_json(ip, im)
 
 
+REDO_PREPARE_TIMEOUT = 1200      # giay; mot lan tim anh that do 2-12 phut (22/09/2026)
+
+
+def _refresh_images_for_redo(draft_id) -> str:
+    """Chay lai KHAU TIM ANH (`image_prepare --lam-moi`) bang code hien hanh truoc khi
+    giao task lam lai. Tra "" khi xong, hoac mot dong canh bao (task van duoc giao).
+
+    LOW-361 (Ong Chu 22/09/2026: "moi khi bao lam lai thi phai chay lai khau tim
+    hinh"): truoc day Lam lai chi tao lai task; vai goi `dre_prepare.py <id>` khong
+    `--lam-moi` nen `image_prepare.run` tra luon manifest cu — ban Gemini lam lai sau
+    deploy LOW-354 van nhan kho 67 anh toan Google cua code cu. Chay DONG BO (ham nay
+    chi duoc goi tu thread nen) de task chi sinh ra khi manifest moi da ghi xong: vai
+    khong bao gio doc kho cu, khong co hai engine tren mot draft. `--skip-route`: khong
+    de hook thieu-anh tu chuyen Kite/hoi Ong Chu song song voi task lam lai."""
+    import subprocess
+    wd = state_paths.workdir(STATE_DIR, draft_id)
+    khoa = wd / state_paths.RUNNING_PID_FILE
+    try:
+        pid = int(khoa.read_text().strip() or 0) if khoa.exists() else 0
+        if pid:
+            os.kill(pid, 0)
+            return f"⚠️ Engine khác đang chuẩn bị ảnh bài này (pid {pid}) — không tìm lại, dùng kho hiện có"
+    except (ValueError, ProcessLookupError, PermissionError, OSError):
+        pass                                   # khoa mo coi: engine tu don khi chay
+    cmd = [str(ROOT / "venv/bin/python"), str(ROOT / "image_prepare.py"), draft_id,
+           "--lam-moi", "--im", "--skip-route"]
+    log("lamlai", f"{draft_id}: chay lai khau tim anh ({' '.join(cmd[2:])})")
+    try:
+        wd.mkdir(parents=True, exist_ok=True)
+        with open(wd / state_paths.PREPARE_LOG, "ab") as out:
+            r = subprocess.run(cmd, cwd=str(ROOT), stdout=out, stderr=subprocess.STDOUT,
+                               timeout=REDO_PREPARE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return f"⚠️ Tìm lại ảnh quá {REDO_PREPARE_TIMEOUT // 60} phút — vai dùng kho hiện có"
+    except OSError as e:
+        return f"⚠️ Không chạy được khâu tìm ảnh: {type(e).__name__}"
+    log("lamlai", f"{draft_id}: khau tim anh xong, ma {r.returncode}")
+    return "" if r.returncode == 0 else f"⚠️ Tìm lại ảnh lỗi (mã {r.returncode}, xem prepare.log)"
+
+
 def _hand_redo(draft_id, slide=None, ly_do=None):
     """Tao task lam lai cho draft. Tra ve (note, rid). `slide`/`ly_do` None = giao
     theo kieu cu (khong chi ro). Ca ba duong (co ly do / het han / kieu cu) deu
@@ -640,6 +680,10 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
         w = json.loads(wp.read_text(encoding="utf-8")) if wp.exists() else {}
     except Exception:                                        # noqa: BLE001
         w = {}
+    # LOW-361: tim lai anh SAU khi da ghi hash anh cam (can anh goc cu) va TRUOC khi giao.
+    canh_bao = _refresh_images_for_redo(draft_id)
+    if canh_bao:
+        log("lamlai", f"{draft_id}: {canh_bao}")
     rid, err = kanban_create(tieu, im["image_role"], im["body"] + chi_ro,
                              parent=w.get("root_task"))
     if err:
@@ -658,11 +702,12 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
         im.setdefault("redo_reasons", []).append({"attempt": n, "slide": slide, "reason": ly_do})
     _write_json(ip, im)
     ten = NAME_ROLE_IMAGE.get(im["image_role"], "Ethan")
+    them = f"\n{canh_bao}" if canh_bao else " — đã tìm lại ảnh bằng code mới"
     if ly_do:
         cho = f"slide {slide}" if slide and slide != "CA BO" else ("cả bộ" if slide == "CA BO" else "ảnh")
         return (f"🔄 Đã giao làm lại {cho} (lần {n}) — {ten} — lý do: {ly_do[:120]} "
-                f"(task {rid})"), rid
-    return f"🔄 Đã giao làm lại (lần {n}) — {ten} sẽ dựng ảnh khác (task {rid})", rid
+                f"(task {rid}){them}"), rid
+    return f"🔄 Đã giao làm lại (lần {n}) — {ten} sẽ dựng ảnh khác (task {rid}){them}", rid
 
 # Doc-sua-ghi redo_waiting.json dien ra o HAI thread: nut Lam lai chay nen
 # (_run_background) con han 10 phut quet o thread poll. Khoa nay chi om cac doan doc-

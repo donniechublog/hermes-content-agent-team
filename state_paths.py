@@ -64,6 +64,7 @@ PUBLISH_SLOT_LOCK = "publish_slot.lock"                # flock: chia slot (giu v
 PUBLISH_DUE_LOCK = "publish_due.lock"                  # flock: dang mot bai (giu toi vai phut, chan hai tick cron chong nhau)
 BOSS_IDS_FILE = "boss_ids.json"                      # approve allowlist [user_id…], LOW-241 (was ong_chu.json)
 DISPATCH_SHADOW_FILE = "dispatch_shadow.jsonl"         # goi y chay bong tu chon tin (dispatch_shadow.py), LOW-349
+MODEL_VERSIONS_FILE = "model_versions.json"            # cache lich su phien ban model tu Wikipedia (model_version.py), LOW-363
 REPORT_MESSAGE_ID_FILE = "report_message_id.{}.json"   # .format(role)
 REQUIRED_FILE = "required_{}.json"                      # .format(role)
 SCAN_DIR = "scan"                                       # state/<brand>/scan/<role>_<n>/

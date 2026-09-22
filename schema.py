@@ -74,6 +74,7 @@ class Manifest(TypedDict, total=False):
     material: dict                 # {number_sentences, lead_paragraph, source_count, source}
     article_text: str              # CAT con 20000 ky tu luc ghi
     dropped: list                  # LOW-225: ung vien bi bo o pha tai (stage/rule/evidence/thumb)
+    model_versions: dict           # LOW-363: {ho: {versions, source, date}} phien ban tham chieu cua tin
     domains: list
     stackable_pairs: list
     two_company_pairs: list    # M&A: cap [id_A, id_B] anh cua HAI hang (story_type.py, 12/09/2026)
@@ -158,6 +159,8 @@ class Image(TypedDict, total=False):
                                     # render_edu.py (Kite) phai dung tep nay thay vi original_path
                                     # (LOW-262), carousel.py (Dre) van dung original_path nhu cu
     paper_figure: str
+    version_mismatch: str          # LOW-363: "gemini 1.5" — anh ghi phien ban model khac tin, bi chan
+    printed_version: str           # LOW-363: phien ban model vision doc duoc IN tren anh (dong PHIEN_BAN)
     fallback: bool
     html_tag: str
 

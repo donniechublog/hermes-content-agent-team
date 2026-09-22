@@ -139,6 +139,7 @@ def test_constants_match_approved_table():
                    - set(_rows_publish_schedule())
                    - set(_rows_scan_overflow())
                    - set(_rows_dispatch_shadow())
+                   - set(_rows_model_versions())
                    - {ten for _, ten in _rows_242().values()}
                    - {ten for _, ten in _rows_241().values()}
                    - {ten for _, ten in _rows_246().values()})
@@ -325,6 +326,18 @@ def _rows_dispatch_shadow() -> dict:
     """LOW-349 (21/09/2026): log goi y chay bong tu chon tin — sinh ra da English
     san, cung kieu `_rows_publish_schedule`."""
     return {"DISPATCH_SHADOW_FILE": ("dispatch_shadow.jsonl", "state/<brand>/dispatch_shadow.jsonl")}
+
+
+def _rows_model_versions() -> dict:
+    """LOW-363 (22/09/2026): cache lich su phien ban model tu Wikipedia — sinh ra da
+    English san, cung kieu `_rows_publish_schedule`."""
+    return {"MODEL_VERSIONS_FILE": ("model_versions.json", "state/<brand>/model_versions.json")}
+
+
+def test_model_versions_constants_are_declared():
+    for const, (name, kept) in _rows_model_versions().items():
+        assert getattr(state_paths, const) == name, (const, getattr(state_paths, const))
+        assert kept in TABLE_231["_kept"], f"{kept} khong co trong _kept cua state_files_v2.json"
 
 
 def test_dispatch_shadow_constants_are_declared():

@@ -499,6 +499,10 @@ def main() -> int:
     ap.add_argument("--im", action="store_true", help="Chay nen: chi in mot dong tom tat")
     ap.add_argument("--khong-browser", action="store_true")
     ap.add_argument("--cho", type=int, default=300)
+    # LOW-361: nut Lam lai chay lai khau tim anh roi TU giao task lam lai; hook
+    # thieu-anh (chuyen Kite / hoi Ong Chu) o day se sinh viec song song voi task do.
+    ap.add_argument("--skip-route", action="store_true",
+                    help="khong goi route_missing_images sau khi chuan bi (duong Lam lai)")
     a = ap.parse_args()
     # Import o DAY chu khong o dau tep: `main()` la diem vao CLI, tuc cho ghep
     # noi — con than module `image_prepare` phai sach bong tang dieu phoi (audit
@@ -506,7 +510,7 @@ def main() -> int:
     # dung cai vua go ra.
     import route_missing_images
     m, wd, _ = run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
-                    sau_chuan_bi=route_missing_images.after_prepare)
+                    sau_chuan_bi=None if a.skip_route else route_missing_images.after_prepare)
     print(f"[xong] {len(m['images'])} anh, {len(m.get('material', {}).get('number_sentences', []))} cau so lieu -> {wd}",
           file=sys.stderr)
     return 0
