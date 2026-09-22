@@ -10,7 +10,9 @@ tests/trace_harness.py — khong mang, khong thread, khong state that.
 Chay:  python tests/test_trace_approve_post.py
 """
 import json
+import os
 import sys
+import tempfile
 import threading
 import types
 from pathlib import Path
@@ -116,6 +118,8 @@ def _harness(run_background=True):
     h.patch(publish_schedule, "_finish_card", h.spy("_finish_card"))
     h.patch(moat_publish, "intake", h.spy("intake", returns=(True, "wf_1")))
     h.patch(moat_publish, "report_card", h.spy("report_card"))
+    # LOW-361: Lam lai chay lai khau tim anh (subprocess image_prepare) — vet thay vi chay that.
+    h.patch(post, "_refresh_images_for_redo", h.spy("refresh_images", returns=""))
     h.http = FakeHttp(h.trace)
     h.patch(post, "httpx", h.http)
 
@@ -1074,6 +1078,67 @@ def test_redo_task_creation_error_is_told_and_counter_not_bumped():
         assert "remakes" not in _side(h, "img")
     finally:
         h.__exit__()
+
+
+# =========================================================================
+# LOW-361 — Lam lai phai chay lai khau tim anh, TRUOC khi giao task
+# =========================================================================
+def test_low361_redo_refreshes_images_before_creating_task():
+    h = _harness()
+    try:
+        _sidecars(h)
+        note, rid = post._hand_redo(DRAFT, "4", "bang benchmark cu")
+        names = h.trace.names("fn")
+        assert "refresh_images" in names and "create_task" in names, names
+        assert names.index("refresh_images") < names.index("create_task"), names
+        assert rid and "đã tìm lại ảnh bằng code mới" in note, note
+        # het han 10 phut / khong ly do: cung di qua tim lai anh
+        post._hand_redo(DRAFT)
+        assert h.trace.names("fn").count("refresh_images") == 2
+    finally:
+        h.__exit__()
+
+
+def test_low361_refresh_warning_still_hands_task_and_is_told():
+    h = _harness()
+    try:
+        _sidecars(h)
+        h.patch(post, "_refresh_images_for_redo", h.spy("refresh_images", returns="⚠️ Tìm lại ảnh lỗi (mã 1, xem prepare.log)"))
+        note, rid = post._hand_redo(DRAFT)
+        assert rid and "⚠️ Tìm lại ảnh lỗi" in note and "đã tìm lại ảnh" not in note, note
+    finally:
+        h.__exit__()
+
+
+def test_low361_refresh_command_and_live_lock(tmp_path=None):
+    import subprocess
+    tmp = Path(tempfile.mkdtemp())
+    saved = (post.STATE_DIR, subprocess.run)
+    seen = {}
+
+    def fake_run(cmd, **kw):
+        seen["cmd"] = cmd
+        return subprocess.CompletedProcess(cmd, 0)
+    try:
+        post.STATE_DIR = tmp
+        subprocess.run = fake_run
+        assert post._refresh_images_for_redo(DRAFT) == ""
+        assert seen["cmd"][2:] == [DRAFT, "--lam-moi", "--im", "--skip-route"], seen["cmd"]
+        # engine khac dang giu draft (pid song) -> khong chay, bao lai
+        seen.clear()
+        wd = post.state_paths.workdir(tmp, DRAFT)
+        (wd / post.state_paths.RUNNING_PID_FILE).write_text(str(os.getpid()))
+        msg = post._refresh_images_for_redo(DRAFT)
+        assert "Engine khác đang chuẩn bị" in msg and "cmd" not in seen, msg
+    finally:
+        post.STATE_DIR, subprocess.run = saved
+
+
+def test_low361_image_prepare_skip_route_flag():
+    import image_prepare
+    src = Path(image_prepare.__file__).read_text(encoding="utf-8")
+    assert '"--skip-route"' in src
+    assert "sau_chuan_bi=None if a.skip_route else route_missing_images.after_prepare" in src
 
 
 # =========================================================================
