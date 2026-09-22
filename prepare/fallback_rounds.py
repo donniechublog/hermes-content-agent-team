@@ -276,18 +276,21 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
     return anh
 
 
-def web_query(name: str, title: str, press_count: int, commons_count: int | None) -> str:
+def web_query(name: str, title: str, press_count: int) -> str:
     """Truy van Yandex cua vong tim rong (LOW-356). Thuan.
 
-    Mac dinh la ten rieng dau tieu de. Nhung khi bao chi VA Commons deu tra 0 cho
-    ten do, ten chua ton tai tren web — thuong la ten phuong phap mot paper vua dat
-    (IntBMoE, RRSI). Yandex khong bao gio tra rong: do tren may chu 22/09/2026,
+    Mac dinh la ten rieng dau tieu de. Nhung khi bao chi tra 0 bai ve ten do, ten
+    chua ton tai tren web — thuong la ten phuong phap mot paper vua dat (IntBMoE,
+    RRSI) hay ten repo HF. Yandex khong bao gio tra rong: do tren may chu 22/09/2026,
     'IntBMoE' ra 16/16 anh bieu tinh BLM, 'RRSI' ra hoa chat/dua xe/slide tieng Ba
     Lan; con CA tieu de ra so do MoE, bai ve agent harness. Luc do hoi bang ca tieu
-    de — dung nhanh san co khi khong co ten rieng. Commons khong chay duoc (None)
-    thi khong ket luan gi, giu ten rieng."""
-    if name and press_count == 0 and commons_count == 0 and title:
-        print(f"[tim rong] '{name}': bao chi 0 + Commons 0 -> ten chua co tren web, "
+    de — dung nhanh san co khi khong co ten rieng.
+
+    KHONG dung Commons lam tin hieu: full-text Commons khop ca ten tep la ('RRSI' ra
+    "Tree Rrsi", mot cay o Iran). Do 99 truy van bao chi that tren may chu: moi ten
+    bao chi tra 0 deu la ten moi dat / ten repo, khong ten hang that nao."""
+    if name and press_count == 0 and title:
+        print(f"[tim rong] '{name}': bao chi 0 bai -> ten chua co tren web, "
               "hoi Yandex bang ca tieu de", file=sys.stderr)
         return title
     return name or title
@@ -322,8 +325,8 @@ def _round_widen_search(anh: list, source_pages: list, tieu_de_nhin: str, toi_th
     # TIM NHU NGUOI (Ong Chu 12/09/2026, 7 link TSMC tim tay): anh web (Bing/
     # Yandex qua Chromium) + og:image bao chi VE thuc the — khong doi "cung tin".
     # Truy van = ten rieng dau tieu de (hang/san pham), khong co thi ca tieu de.
-    # Bao chi + Commons hoi TRUOC Yandex: ket qua cua chung cho biet ten rieng co
-    # ton tai tren web khong (LOW-356, xem `web_query`).
+    # Bao chi hoi TRUOC Yandex: so bai cho biet ten rieng co ton tai tren web
+    # khong (LOW-356, xem `web_query`).
     press_cands, them_commons = [], None
     if tk or tieu_de_nhin:
         import press_entity_images
@@ -337,7 +340,7 @@ def _round_widen_search(anh: list, source_pages: list, tieu_de_nhin: str, toi_th
             print(f"[tim rong] Commons '{tk}': {len(them_commons)} ung vien", file=sys.stderr)
     else:
         print("[tim rong] khong co ten rieng dau tieu de -> khong hoi Commons", file=sys.stderr)
-    q_web = web_query(tk, tieu_de_nhin, len(press_cands), None if them_commons is None else len(them_commons))
+    q_web = web_query(tk, tieu_de_nhin, len(press_cands))
     if q_web:
         import find_image_web
         cands2 += find_image_web.find_image_web(q_web, so=16, phien=phien)
