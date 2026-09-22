@@ -29,6 +29,12 @@ Vẽ ra là **bịa đặt**. Ảnh phải phản ánh đúng cái có thật tr
 Bỏ thẳng, không cần cân nhắc:
 
 - **Ảnh AI tạo có người** (stock persona) và **ảnh người lạ lấy từ báo**.
+- **Ảnh AI slop** kể cả không có người (LOW-337, 22/09/2026): minh hoạ do model sinh ảnh
+  tạo mà báo khác dùng làm ảnh đầu bài — render 3D phát sáng, huy hiệu tự chế, poster
+  "A vs B", logo/tên model vẽ lại. Engine hỏi vision `AI slop: yes | no` và bỏ tấm "yes"
+  (brief ghi ❌ ẢNH AI SLOP). Chữ vẽ trên ảnh loại này KHÔNG phải dữ kiện: bìa Kite
+  Grok 4.7 từng lấy chữ "DeepSeek R1" trên ảnh wccftech làm tít, trong khi tư liệu
+  chỉ có DeepSeek V4.1 Flash. Minh hoạ biên tập do người vẽ vẫn dùng được (LOW-201).
 - **Ảnh rò rỉ** (leak, chưa được xác nhận chính thức): rủi ro cả về độ chính xác
   lẫn bản quyền. Tìm ảnh chính thức khác thay vào.
 

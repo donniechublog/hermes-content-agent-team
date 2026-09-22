@@ -137,6 +137,38 @@ def test_name_chart_adjacent_frame_still_ok_take():
     assert hop[1] <= 83, f"cut mat ten bieu do: {hop}"
 
 
+def test_extracted_figure_has_no_side_bars():
+    """Hinh ve san mot NEN TRANG rong hon noi dung (matplotlib savefig co padding),
+    chu thich lai ngan: vung cat = hop cua nen do, ra le trang dac hai ben. Cong
+    `check_side_bars` (LOW-336) cua ca ba vai CHAN anh do. Do 22/09/2026 tren 23
+    paper that o may chu: 19/60 hinh bi chan khi khong got; got bang
+    `trim_flat_sides` thi 0/60. PDF dung that bang pymupdf."""
+    import tempfile
+    import pymupdf
+    import arxiv_figures as ah
+    import image_rules_common
+    from PIL import Image
+    doc = pymupdf.open()
+    page = doc.new_page(width=612, height=792)
+    page.insert_textbox(pymupdf.Rect(72, 80, 540, 300), DOAN * 3, fontsize=9)
+    shape = page.new_shape()                       # nen trang cua hinh, rong gan het cot
+    shape.draw_rect(pymupdf.Rect(90, 360, 522, 525))
+    shape.finish(color=None, fill=(1, 1, 1))
+    for i, h in enumerate((60, 110, 80, 140)):     # bieu do HEP o giua nen
+        shape.draw_rect(pymupdf.Rect(250 + i * 28, 520 - h, 270 + i * 28, 520))
+    shape.draw_rect(pymupdf.Rect(240, 370, 370, 522))
+    shape.finish(color=(0, 0, 0), fill=(0.2, 0.4, 0.8))
+    shape.commit()
+    page.insert_textbox(pymupdf.Rect(245, 530, 380, 560), "Figure 1: Main results.",
+                        fontsize=9)
+    with tempfile.TemporaryDirectory() as d:
+        ra = ah.extract(doc.tobytes(), Path(d))
+        assert ra, "phai boc duoc Figure 1"
+        with Image.open(ra[0]["file_path"]) as im:
+            co, mo_ta = image_rules_common.has_side_bars(im.convert("RGB"))
+    assert not co, f"hinh boc ra con vien hai ben: {mo_ta}"
+
+
 def test_no_has_graphic_then_no_extract():
     """Chu thich ma tren no khong co net ve nao — khong doan mo, tra None."""
     import arxiv_figures as ah

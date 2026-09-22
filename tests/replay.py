@@ -166,7 +166,7 @@ def harvest_vision(manifest_path, ids=None) -> dict:
                     "question": raw["question"], "answer": raw["answer"],
                     "expected": {k: im.get(k) for k in (
                         "relevant", "description", "cluttered", "has_keywords", "subject_box",
-                        "subject_kind", "empty_share", "printed_name", "printed_version")}})
+                        "subject_kind", "empty_share", "printed_name", "printed_version", "ai_slop")}})
     return {"source": f"{m.get('brand')}/{m.get('draft_id')} ({m.get('created_at')})",
             "title": m.get("title"), "recordings": out}
 

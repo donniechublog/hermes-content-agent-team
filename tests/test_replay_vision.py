@@ -42,7 +42,7 @@ SNAPSHOT = replay.GOLDEN / "replay" / "classify_snapshot.json"
 GOLD = json.loads(RECORDINGS.read_text(encoding="utf-8"))
 TITLE = GOLD["title"]
 PARSED_FIELDS = ("cluttered", "has_keywords", "subject_box", "subject_kind", "empty_share",
-                 "printed_name", "printed_version")
+                 "printed_name", "printed_version", "ai_slop")
 
 
 class _Replayed:
