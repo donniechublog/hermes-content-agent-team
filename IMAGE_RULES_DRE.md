@@ -1042,8 +1042,11 @@ cho nghiêm chỉnh, đừng nham nhở"*.
   văn — trần **độ đặc** thì bìa và slide thân như nhau.
 - **Cổng chặn ảnh ghép bị che (LOW-215):** slide `"images"` mà ảnh **cuối** còn
   rõ dưới `STACK_BOTTOM_VISIBLE_MIN` (35%) chiều cao của nó sau khi nền chữ phủ
-  → `carousel.py` dừng (`_gate_stack_last_hidden`). Sửa: đặt ảnh rối lên TRÊN
-  trong `"images"`, hoặc dùng ảnh sạch thay cặp ghép.
+  → `carousel.py` dừng (`_gate_stack_last_hidden`). Sửa theo nguyên nhân lỗi báo:
+  - có ảnh **rối** trong cặp → đặt ảnh rối lên TRÊN trong `"stack"`, hoặc dùng ảnh sạch thay cặp ghép;
+  - **không** ảnh nào rối (đáy ảnh dưới quá sáng với nền dark / quá tối với nền light)
+    → đảo thứ tự **không** chữa được. Dùng MỘT ảnh `"image"`, rút ngắn quote/chữ, hoặc
+    đổi ảnh dưới sang ảnh có `bottom_brightness` hợp nền trong manifest.
 
 **Tự soi trước khi giao:** nhìn có thấy **một đường ranh ngang** nào không. Thấy
 là hỏng, dựng lại — đừng gửi đi.
@@ -1169,6 +1172,22 @@ hạng); có ảnh thì bài có mã `XH` và bìa bắt buộc là `XH` (`needs
 
 Ông Chủ duyệt 22/09/2026 ba thẻ @arena dựng thật (Grok 4.7 ×2, MiMo-V2.6-Pro): *"3 hình này đạt chuẩn.
 và đây cũng nên là tiêu chuẩn cho mọi role designer"* — đồ hoạ chính chủ @arena giữ nguyên, chữ ≤20% khung.
+
+## LOW-354 (22/09/2026): nhắc MODEL thì chỉ hình của MODEL, mọi loại tin
+
+Ông Chủ: *"gemini có logo riêng và rất nhiều hình ảnh dùng được, tại sao cứ dùng logo của cty mẹ ?"* — tin
+"Google confirms Gemini models hacked three companies" (BUSINESS) ra 8 slide toà nhà/logo Google.
+
+- Tiêu đề nhắc họ model có logo riêng (Gemini, Gemma, ChatGPT/GPT, Claude, Qwen, Llama, Mistral…) thì
+  **bất kể loại tin**: dùng logo model, giao diện/app của model, sự kiện ra mắt model, người (CEO/nhà
+  nghiên cứu). **Không** dùng trụ sở, campus, biển hiệu của hãng mẹ.
+- Logo hãng mẹ: tiêu đề **có gọi tên** hãng mẹ ("Google confirms Gemini…") thì dùng **cả hai logo** — Ông Chủ
+  22/09: *"trong headline có cả google và gemini thì dùng cả 2 logo, ko vấn đề, đừng dùng toàn bộ google như
+  bài cũ là ổn"*. Hãng mẹ chỉ suy ra từ tên model ("Gemini hacked…") thì không dùng logo hãng mẹ.
+- Engine tự làm: vòng tìm rộng hỏi theo tên model thay cho tên hãng mẹ đứng đầu tiêu đề; vòng thương hiệu
+  bỏ trụ sở/báo/cổ phiếu hãng mẹ (giữ logo nếu tiêu đề gọi tên), thêm thẻ logo model và báo tìm theo tên model.
+- `find_more_images.py` **từ chối** từ khoá chỉ theo hãng mẹ ("Google headquarters", "Alphabet logo") —
+  thêm tên model vào ("Google Gemini app interface") hoặc tìm theo tên model.
 
 ## LOW-355 (22/09/2026): ảnh GỐC từ chính tweet, không dùng ảnh báo chụp lại tweet (mọi designer)
 

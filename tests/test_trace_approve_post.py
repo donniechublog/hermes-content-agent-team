@@ -1130,48 +1130,46 @@ def test_low134_reply_that_is_not_an_approval_falls_through_untouched():
 # =========================================================================
 # Day ban nhap vao hang duyet
 # =========================================================================
-def test_preview_album_failure_is_shown_on_the_card_not_swallowed():
-    """Truoc day album xem truoc loi im lang: Ong Chu duyet mu moi bai nhieu anh."""
+def test_preview_multi_image_draft_sends_only_the_hero():
+    """Ong Chu 22/09/2026: bo anh da duyet o buoc anh — the duyet caption chi kem
+    ANH BIA (anh dau ton tai), khong gui lai ca album; draft van giu du anh de dang."""
     h = _harness()
     try:
-        a = _png(h.drafts / f"{DRAFT}.png")
-        h.write_draft(DRAFT, caption="cap", images=[a])
-        h.patch(post, "call_upload",
-                h.spy("call_upload", returns={"ok": False, "description": "WriteTimeout: <x>"}))
+        hero = _png(h.drafts / f"{DRAFT}.png")
+        second = _png(h.drafts / f"{DRAFT}_2.png")
+        h.write_draft(DRAFT, caption="cap", images=[str(h.drafts / "mat.png"), hero, second])
+        seen = []
+
+        def _upload(token, method, data, open_files, timeout=None):
+            handles = open_files()
+            seen.append((method, data, [v[0] for v in handles.values()]))
+            for v in handles.values():
+                v[1].close()
+            return {"ok": True, "result": {"message_id": 11}}
+        h.patch(post, "call_upload", _upload)
         res = post.draft_push(h.token, h.group, DRAFT, thread_id=MILES)
-        assert res["ok"] and res["extra_ids"] == []
-        card = h.tg.sent("sendMessage")[0]
-        assert "Album xem truoc gui loi: WriteTimeout: &lt;x&gt;" in card["text"]
-        assert card["message_thread_id"] == MILES
-        assert card["reply_markup"]["inline_keyboard"][0][0]["callback_data"] == "ok:" + DRAFT
-        assert h.trace.kinds() == ["fn:call_upload", "tg:sendMessage"]
+        assert res["ok"]
+        (method, data, names), = seen
+        assert method == "sendPhoto" and [Path(n).stem for n in names] == [DRAFT]
+        assert data["message_thread_id"] == MILES
+        assert "khi đăng sẽ lên đủ 3 ảnh" in data["caption"]
+        assert json.loads(data["reply_markup"])["inline_keyboard"][0][0]["callback_data"] == "ok:" + DRAFT
+        assert h.tg.sent("sendMessage") == []
     finally:
         h.__exit__()
 
 
-def test_preview_album_upload_shape_and_extra_ids():
+def test_preview_multi_image_draft_with_no_file_says_so_on_the_card():
+    """Khong con tep anh nao tren may: KHONG nuot loi, the chu van co nut duyet."""
     h = _harness()
     try:
-        a = _png(h.drafts / f"{DRAFT}.png")
-        h.write_draft(DRAFT, caption="cap", images=[
-            "https://img.example/x.jpg", str(h.drafts / "mat.png"), a])
-        seen = {}
-
-        def _upload(token, method, data, open_files, timeout=None):
-            handles = open_files()
-            seen.update(method=method, data=data, keys=sorted(handles))
-            for fh in handles.values():
-                fh.close()
-            return {"ok": True, "result": [{"message_id": 11}, {"message_id": 12}]}
-        h.patch(post, "call_upload", _upload)
-        res = post.draft_push(h.token, h.group, DRAFT, thread_id=MILES)
-        assert res["extra_ids"] == [11, 12]
-        assert seen["method"] == "sendMediaGroup" and seen["keys"] == ["file2"]
-        assert seen["data"]["message_thread_id"] == str(MILES)
-        assert json.loads(seen["data"]["media"]) == [
-            {"type": "photo", "media": "https://img.example/x.jpg"},
-            {"type": "photo", "media": "attach://file2"}]
-        assert "Album xem truoc gui loi" not in h.tg.sent("sendMessage")[0]["text"]
+        h.write_draft(DRAFT, caption="cap", images=[str(h.drafts / "mat.png"), "https://img.example/x.jpg"])
+        h.patch(post, "call_upload", h.spy("call_upload", returns={"ok": True}))
+        post.draft_push(h.token, h.group, DRAFT, thread_id=MILES)
+        card = h.tg.sent("sendMessage")[0]
+        assert "Không thấy tệp ảnh nào" in card["text"]
+        assert card["reply_markup"]["inline_keyboard"][0][0]["callback_data"] == "ok:" + DRAFT
+        assert h.trace.kinds() == ["tg:sendMessage"]
     finally:
         h.__exit__()
 

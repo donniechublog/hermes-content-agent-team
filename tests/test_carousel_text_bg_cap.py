@@ -181,6 +181,19 @@ def test_gate_blocks_stack_last_image_hidden():
     assert "0/608" in loi, loi
 
 
+def test_gate_stack_hint_matches_cause():
+    """22/09/2026 (Dre dcgr t_b7a7ebb1): khong anh nao roi ma loi van bao "dat anh
+    ROI len TREN" — Dre dao thu tu 27 lan toi het 90 vong. Loi phai noi dung nguyen
+    nhan (day anh qua sang) va cach sua chua duoc."""
+    geo = {"_stack_last": (607, 608), "quote": "q"}
+    loi = carousel._gate_stack_last_hidden("slide 4", geo, 700)
+    assert "RỐI lên TRÊN" not in loi, loi
+    assert "KHÔNG chữa được" in loi and "MỘT ảnh" in loi and "bottom_brightness" in loi, loi
+    assert "câu quote" in loi, loi
+    roi = carousel._gate_stack_last_hidden("slide 4", {**geo, "cluttered": True}, 700)
+    assert "RỐI lên TRÊN" in roi, roi
+
+
 def test_gate_allows_stack_last_image_mostly_visible():
     assert carousel._gate_stack_last_hidden("slide 2", {"_stack_last": (607, 608)}, 900) == ""
     assert carousel._gate_stack_last_hidden("slide 2", {"_stack_last": (607, 608)}, None) == ""

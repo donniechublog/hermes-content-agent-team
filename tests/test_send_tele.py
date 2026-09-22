@@ -174,6 +174,127 @@ def test_split_message_text_empty_return_it_most_one_part_from():
     assert ket_qua == [""], f"text rong phai tra ve mot phan tu la chuoi rong: {ket_qua}"
 
 
+# ==================================== approve_base.call — 429 va ngan sach connect
+def _call_ghi_lai(handler, token, method, **kw):
+    """Nhu `_call_with_mock_transport` nhung ghi lai THEM hai thu de khang dinh:
+    `timeout` ma call() dua cho httpx.Client, va cac lan `time.sleep` no goi.
+
+    Tra ve (ket_qua, timeouts, cac_lan_ngu)."""
+    cu_client, cu_sleep = httpx.Client, approve_base.time.sleep
+    timeouts, cac_lan_ngu = [], []
+
+    def _client_gia(*a, **k):
+        k.pop("transport", None)
+        timeouts.append(k.get("timeout"))
+        return cu_client(*a, transport=httpx.MockTransport(handler), **k)
+
+    httpx.Client = _client_gia
+    approve_base.time.sleep = cac_lan_ngu.append
+    try:
+        return approve_base.call(token, method, **kw), timeouts, cac_lan_ngu
+    finally:
+        httpx.Client, approve_base.time.sleep = cu_client, cu_sleep
+
+
+def _tra_loi_429(giay):
+    """Dung nguyen van Telegram tra ve khi bop bang: HTTP 429 + parameters.retry_after."""
+    return httpx.Response(429, json={
+        "ok": False, "error_code": 429,
+        "description": "Too Many Requests: retry after %d" % giay,
+        "parameters": {"retry_after": giay}})
+
+
+def test_call_429_doi_dung_so_giay_telegram_bao_roi_gui_lai():
+    """Telegram bop bang -> tin KHONG den noi. Truoc day call() chi ghi mot dong
+    log roi thoi, nen cac tin bao tien do bi mat im (do tren dc-group: 5 lan
+    trong 16,5 gio, mat han cac tin "Miles bat dau", "Kite xong task"). Telegram
+    da noi san phai cho bao lau o `parameters.retry_after` — cho dung chung do
+    roi gui lai."""
+    tra_loi = [_tra_loi_429(5), httpx.Response(200, json={"ok": True, "result": {"message_id": 7}})]
+    goi = []
+
+    def handler(request):
+        goi.append(request)
+        return tra_loi.pop(0)
+
+    res, _, cac_lan_ngu = _call_ghi_lai(handler, "tok", "sendMessage", chat_id=1, text="x")
+
+    assert res.get("ok") is True, "phai gui lai va thanh cong, duoc: %r" % (res,)
+    assert len(goi) == 2, "phai goi Bot API 2 lan (lan dau 429, lan sau lai), duoc %d" % len(goi)
+    assert cac_lan_ngu and cac_lan_ngu[0] >= 5, \
+        "phai ngu it nhat 5s dung nhu Telegram bao, duoc: %r" % (cac_lan_ngu,)
+
+
+def test_call_429_mai_thi_bo_cuoc_va_tra_ve_loi_chu_khong_treo():
+    """Bop bang khong dut thi khong duoc thu mai: moi lan thu deu chiem luon
+    thread nen, ma nut bam con phai kip TTL 60s cua callback_query_id."""
+    goi = []
+
+    def handler(request):
+        goi.append(request)
+        return _tra_loi_429(1)
+
+    res, _, cac_lan_ngu = _call_ghi_lai(handler, "tok", "sendMessage", chat_id=1, text="x")
+
+    assert isinstance(res, dict) and not res.get("ok"), \
+        "bo cuoc thi van phai tra dict doc duoc: %r" % (res,)
+    assert "Too Many Requests" in str(res.get("description")), \
+        "phai giu nguyen loi cua Telegram de log noi duoc ly do: %r" % (res,)
+    assert 2 <= len(goi) <= 4, "so lan thu phai co tran, duoc %d" % len(goi)
+    assert sum(cac_lan_ngu) <= 60, \
+        "tong thoi gian cho phai duoi TTL 60s cua callback_query: %r" % (cac_lan_ngu,)
+
+
+def test_call_429_tong_thoi_gian_cho_luon_duoi_ttl_60s():
+    """Tran TUNG LAN thoi thi chua du: hai lan cho 30s lien la 62 giay, da
+    vuot TTL ~60s cua callback_query_id ma chinh luat nay dat ra de bao ve.
+    Phai co tran cho TONG thoi gian cho."""
+    goi = []
+
+    def handler(request):
+        goi.append(request)
+        return _tra_loi_429(approve_base.RATE_LIMIT_MAX_WAIT)
+
+    _, _, cac_lan_ngu = _call_ghi_lai(handler, "tok", "sendMessage", chat_id=1, text="x")
+
+    assert sum(cac_lan_ngu) < 60, \
+        "tong thoi gian cho %r vuot TTL 60s cua callback_query" % (cac_lan_ngu,)
+
+
+def test_call_429_bao_cho_qua_lau_thi_khong_cho():
+    """Telegram thinh thoang bao retry_after hang tram giay. Ngu chung do la
+    treo thread nen ca vai phut — thua bo cuoc ngay."""
+    goi = []
+
+    def handler(request):
+        goi.append(request)
+        return _tra_loi_429(600)
+
+    res, _, cac_lan_ngu = _call_ghi_lai(handler, "tok", "sendMessage", chat_id=1, text="x")
+
+    assert not res.get("ok") and len(goi) == 1, \
+        "cho 600s thi phai bo cuoc ngay, khong thu lai: %d lan goi" % len(goi)
+    assert not cac_lan_ngu, "khong duoc ngu chut nao: %r" % (cac_lan_ngu,)
+
+
+def test_call_ngan_sach_connect_ngan_du_read_van_dai():
+    """`httpx.Client(timeout=90)` ap MOT con so cho ca connect/read/write. Mang
+    cua may nay nuot ~1/30 goi SYN, nen mot lan bat tay ho den ngon tron 90 giay
+    — vuot TTL ~60s cua callback_query_id va nut bam bao "query is too old"
+    (11 lan ngay 21/09/2026). Connect ngan de loi mang lo som; read van dai vi
+    Bot API tra cham khi tin co anh."""
+    def handler(request):
+        return httpx.Response(200, json={"ok": True, "result": {}})
+
+    _, timeouts, _ = _call_ghi_lai(handler, "tok", "sendMessage", chat_id=1, text="x")
+
+    assert timeouts and isinstance(timeouts[0], httpx.Timeout), \
+        "timeout phai la httpx.Timeout de tach rieng connect, duoc: %r" % (timeouts[0],)
+    assert timeouts[0].connect is not None and timeouts[0].connect <= 5.0, \
+        "connect=%r — mot bat tay ho den van ngon qua lau" % (timeouts[0].connect,)
+    assert timeouts[0].read is not None and timeouts[0].read >= 90.0, \
+        "read=%r — cat ngan read se lam hong cac tin co anh" % (timeouts[0].read,)
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())

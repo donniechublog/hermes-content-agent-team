@@ -72,6 +72,7 @@ def test_round_brand_anh_da_loai_khong_chiem_tran():
                     return_value=[{"company": "Anthropic", "key": "anthropic"}]), \
          mock.patch("image_brand.confirm_unlisted_vendor", return_value=True), \
          mock.patch("image_brand.vendor_images", return_value=dario), \
+         mock.patch("image_brand.model_logo_images", return_value=[]), \
          mock.patch.object(fallback_rounds, "download_and_filter", side_effect=tai_va_loc_gia), \
          mock.patch.object(fallback_rounds, "classify", side_effect=phan_loai_gia):
         (Path(d) / state_paths.ORIGINAL_DIR).mkdir(parents=True)
