@@ -158,6 +158,8 @@ class Image(TypedDict, total=False):
                                     # render_edu.py (Kite) phai dung tep nay thay vi original_path
                                     # (LOW-262), carousel.py (Dre) van dung original_path nhu cu
     paper_figure: str
+    tweet_handle: str              # LOW-355: @handle cua tweet nhung trong bao nguon (source embedded_tweet)
+    official_tweet: bool           # LOW-355: tweet do CHINH hang/ben do benchmark dang -> chart tinh la bang
     fallback: bool
     html_tag: str
 

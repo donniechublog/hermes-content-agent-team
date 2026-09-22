@@ -118,7 +118,7 @@ def test_gather_puts_embedded_tweets_into_candidates():
     def fake_download(cands, wd):
         seen["cands"] = cands
         return [{"id": "A1"}, {"id": "A2"}, {"id": "A3"}, {"id": "A4"}, {"id": "A5"}]
-    with mock.patch.object(fallback_rounds, "candidate_embedded_tweets", lambda sp, link, wd: [tweet]), \
+    with mock.patch.object(fallback_rounds, "candidate_embedded_tweets", lambda sp, link, wd, story="": [tweet]), \
          mock.patch.object(fallback_rounds, "candidate_social", lambda link, wd: []), \
          mock.patch.object(fallback_rounds, "candidate_static", lambda *a, **k: [bao]), \
          mock.patch.object(arxiv_figures, "candidate", lambda link, out: []), \
@@ -206,6 +206,73 @@ def test_seen_image_runs_the_gate():
 def test_source_label():
     import manifest_values
     assert manifest_values.source_label("embedded_tweet") == "tweet trong bài"
+
+
+# ---- Ong Chu 22/09/2026: "chart goc tu tweet chinh chu duoc tinh la bang hop le" ----------
+GROK_TITLE = "SpaceX phát hành Grok 4.7 SpaceX launches Grok 4.7 with long-horizon processing"
+
+
+def test_official_handle_vendor_or_benchmark():
+    ok = source.is_official_handle
+    assert ok("SpaceXAI", GROK_TITLE) and ok("artificialanlys", GROK_TITLE)
+    assert not ok("elonmusk", GROK_TITLE) and not ok("ericbalchunas", GROK_TITLE)
+    assert ok("XiaomiMiMo", "XiaomiMiMo MiMo-V2.6-Pro-RL thả trọng số")
+    assert ok("AIatMeta", "Meta ra mắt Llama 5")
+    assert not ok("themetaverse", "Meta ra mắt Llama 5"), "ten ngan chi khop dau/cuoi handle"
+
+
+def test_official_flag_reaches_manifest_and_provenance():
+    """Co `official_tweet` di qua download_and_filter -> manifest + dau PNG `official_tweet`
+    (is_ranking_image True -> mien cong chart y nhu anh xep hang, o MOI vai)."""
+    import article_images
+    import image_provenance
+    import role
+    from PIL import Image
+    from prepare import download_filter
+    role.set_active_role("ethan")
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / "x_01.png"
+        p.write_bytes(CHART.read_bytes())
+        for handle, official in (("SpaceXAI", True), ("elonmusk", False)):
+            url = f"https://x.com/{handle}/status/{ELON_QUOTE}"
+            with mock.patch.object(source, "embedded_tweet_urls", lambda h, now, skip_urls=(): [url]),                  mock.patch.object(article_images, "_download", lambda u, t=15: None),                  mock.patch("social_post.x_photos", lambda u, out, log: [{"type": "image", "url": u, "file_path": str(p)}]):
+                cands = source.candidate_embedded_tweets([{"url": "https://decrypt.co/a"}], "https://s.com/a",
+                                                         Path(d), story=GROK_TITLE)
+            kept = download_filter.download_and_filter(cands, Path(d) / f"wd_{handle}")
+            assert kept[0]["official_tweet"] is official and kept[0]["tweet_handle"] == handle, kept
+            assert image_provenance.is_ranking_image(Image.open(kept[0]["original_path"])) is official
+
+
+def _official_chart(**k):
+    return dict({"id": "A4", "source": "embedded_tweet", "official_tweet": True, "tweet_handle": "artificialanlys",
+                 "subject_kind": "chart", "relevant": True, "kind": "chart", "cluttered": True,
+                 "has_keywords": False, "empty_share": 0.7, "ratio": 1.1, "original_path": "/x"}, **k)
+
+
+def test_ethan_model_story_accepts_official_chart_only():
+    import image_rules_ethan
+    assert image_rules_ethan.model_story_image_ok(_official_chart())
+    assert not image_rules_ethan.model_story_image_ok(_official_chart(official_tweet=False))
+    assert not image_rules_ethan.model_story_image_ok(_official_chart(relevant=False))
+    assert not image_rules_ethan.model_story_image_ok(_official_chart(subject_kind="person"))
+
+
+def test_official_chart_exempt_from_clutter_and_empty_gates():
+    import submit_common
+    assert submit_common.check_empty_image(_official_chart(), "image", 0.5) == []
+    assert submit_common.check_empty_image(_official_chart(official_tweet=False), "image", 0.5),         "anh tweet nguoi ngoai van chiu cong anh trong"
+    anh = {"A4": _official_chart()}
+    assert submit_common.check_image_fall(anh, {"A4": "image"}, {"image_role": "ethan"}) == []
+
+
+def test_needs_ranking_image_keeps_arena_first():
+    import arena_x
+    import submit_common
+    tbench = {"is_ranking_story": True, "ranking": {"kind": "table"}}
+    arena = {"is_ranking_story": True, "ranking": {"kind": arena_x.KIND}}
+    assert not submit_common.needs_ranking_image(tbench, _official_chart()), "bang chinh chu ngang bang engine chup"
+    assert submit_common.needs_ranking_image(arena, _official_chart()), "@arena van dung dau"
+    assert submit_common.needs_ranking_image(tbench, _official_chart(official_tweet=False))
 
 
 if __name__ == "__main__":

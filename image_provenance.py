@@ -163,8 +163,11 @@ def allows_landscape_crop(img):
 def is_ranking_image(img):
     """Anh do ranking.py dung: bang xep hang chup tu nguon (co khoanh model) hoac
     the du phong. Voi tin xep hang thi DAY LA CHU THE cua tin (Ong Chu 06/09/2026),
-    nen no duoc mien hai cong von cam chart len bia/hero."""
-    return provenance(img) in ("ranking_capture", "ranking_card")
+    nen no duoc mien hai cong von cam chart len bia/hero.
+
+    LOW-355 (Ong Chu 22/09/2026): *"chart goc tu tweet chinh chu duoc tinh la bang hop le"* —
+    anh goc tai tu tweet cua chinh hang/ben do benchmark (`official_tweet`) duoc mien y nhu vay."""
+    return provenance(img) in ("ranking_capture", "ranking_card", "official_tweet")
 
 
 def is_logo_card(img):

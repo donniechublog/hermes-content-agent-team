@@ -1123,3 +1123,11 @@ trong khi decrypt.co trong cùng bộ nguồn nhúng link tweet, tải về đư
   giữ, nhưng log `[x_goc] … KHONG tim duoc tweet goc` để biết mà tìm.
 - Nhìn ở đâu: `prepare.log` dòng `[x_goc]`, manifest ảnh `source: embedded_tweet`, bản ghi bỏ ảnh
   `tweet_screenshot`. Test: `tests/test_low355_tweet_original_image.py`.
+- **Chart gốc từ tweet CHÍNH CHỦ là bảng hợp lệ** (Ông Chủ 22/09/2026: *"chart gốc từ tweet chính chủ
+  được tính là bảng hợp lệ"*). Chính chủ = handle chứa tên hãng trong tin (`image_brand.vendors_in_story`;
+  tên < 6 ký tự chỉ khớp đầu/cuối handle) hoặc bên đo benchmark (`prepare/source.BENCHMARK_HANDLES`).
+  Ảnh mang `official_tweet: true` + dấu PNG `official_tweet` → `is_ranking_image` đúng: miễn cổng
+  chart-đi-một-mình / tỉ lệ; `image_rules_common.is_official_tweet_chart` miễn ảnh-rối, ảnh-trống;
+  Ethan tin model nhận nó như bảng; `needs_ranking_image` coi nó ngang bảng engine chụp — **@arena
+  vẫn đứng đầu**. Tweet người ngoài (nhà phân tích, CEO cá nhân như @elonmusk) vẫn là ảnh gốc dùng
+  được nhưng KHÔNG được miễn như bảng. Test: `tests/test_low355_tweet_original_image.py`.

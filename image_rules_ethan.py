@@ -327,10 +327,13 @@ def model_story_only(category) -> bool:
 
 def model_story_image_ok(a: dict) -> bool:
     """Anh dung duoc cho the Ethan cua tin model: bang xep hang, hoac the logo CUA MODEL
-    (khong phai logo hang me — Qwen chu khong Alibaba)."""
+    (khong phai logo hang me — Qwen chu khong Alibaba), hoac CHART GOC tu tweet chinh chu
+    (LOW-355, Ong Chu 22/09/2026: *"chart goc tu tweet chinh chu duoc tinh la bang hop le"*)."""
     import role
-    return bool(a.get("ranking")) or (role.is_brand_logo_card(a)
-                                      and bool((a.get("brand_match") or {}).get("model_logo")))
+    from image_rules_common import is_official_tweet_chart
+    return bool(a.get("ranking")) or is_official_tweet_chart(a) or (
+        role.is_brand_logo_card(a) and bool((a.get("brand_match") or {}).get("model_logo")))
+
 
 
 def face_boxes(path):

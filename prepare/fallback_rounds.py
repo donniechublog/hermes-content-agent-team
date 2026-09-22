@@ -223,7 +223,8 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
                                                      nguon.get("title_en", ""))
     # LOW-355: tweet ma bao nguon nhung lai -> anh GOC tu chinh tweet, dung truoc anh bao
     # chup lai tweet do (moi designer: engine chung cho Dre/Ethan/Kite).
-    cands = candidate_embedded_tweets(source_pages, link, wd) + cands
+    cands = candidate_embedded_tweets(source_pages, link, wd,
+                                      story=f"{title} {nguon.get('title_en') or ''}") + cands
     co = {c["image_url"] for c in cands}
     for c in bp["cands"]:
         if c["image_url"] not in co:

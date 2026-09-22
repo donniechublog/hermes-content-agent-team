@@ -144,9 +144,41 @@ def embedded_tweet_urls(pages_html: list, now: float, skip_urls: tuple = ()) -> 
     return [theo_id[t] for t in sorted(theo_id, key=int, reverse=True)][:EMBEDDED_TWEET_MAX]
 
 
-def candidate_embedded_tweets(source_pages: list, link: str, wd: Path) -> list:
+# LOW-355, Ong Chu 22/09/2026: *"chart goc tu tweet chinh chu duoc tinh la bang hop le"*. Chinh
+# chu = tai khoan cua HANG trong tin (handle chua ten hang, vd @SpaceXAI cho tin SpaceX/Grok), hoac
+# ben DO benchmark. Bao nhung ca tweet nguoi ngoai (nha phan tich, nguoi dung) — nhung tweet do
+# van la anh goc dung duoc, chi khong duoc mien cong nhu bang.
+BENCHMARK_HANDLES = frozenset({"arena", "lmarena_ai", "artificialanlys", "epochairesearch", "scale_ai",
+                               "openrouterai"})
+
+
+def _handle_key(t: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", (t or "").lower())
+
+
+def is_official_handle(handle: str, story: str) -> bool:
+    """@handle co phai tai khoan chinh chu cua tin khong: ben do benchmark, hoac chua ten mot hang
+    ma `image_brand.vendors_in_story` tach tu tin (ham thuan, khong mang). Ten ngan (<6 ky tu)
+    chi khop o dau/cuoi handle: @AIatMeta la Meta, @themetaverse thi khong (do 22/09/2026)."""
+    h = _handle_key(handle)
+    if not h:
+        return False
+    if h in {_handle_key(b) for b in BENCHMARK_HANDLES}:
+        return True
+    import image_brand
+    for v in image_brand.vendors_in_story(story or ""):
+        for k in {_handle_key(v.get("key")), _handle_key(v.get("company"))}:
+            if len(k) >= 6 and k in h:
+                return True
+            if 3 <= len(k) < 6 and (h.startswith(k) or h.endswith(k)):
+                return True
+    return False
+
+
+def candidate_embedded_tweets(source_pages: list, link: str, wd: Path, story: str = "") -> list:
     """Anh GOC cua cac tweet ma bao nguon nhung lai — qua `social_post.x_photos` (get_source,
-    ban `name=orig`), khong phai anh bao tu chup lai tweet. Vision van chot co lien quan."""
+    ban `name=orig`), khong phai anh bao tu chup lai tweet. Vision van chot co lien quan.
+    `story` (tieu de + tieu de tieng Anh) de biet tweet nao la CHINH CHU (`official_tweet`)."""
     import concurrent.futures as cf
     import time
     import article_images
@@ -176,11 +208,15 @@ def candidate_embedded_tweets(source_pages: list, link: str, wd: Path) -> list:
         ket_qua = list(ex.map(_photo, tweets))
     cands = []
     for u, media in ket_qua:
+        handle = _X_STATUS_IN_HTML.search(u).group(1)
+        official = is_official_handle(handle, story)
+        if media:
+            log(f"@{handle}: {'CHINH CHU' if official else 'khong phai chinh chu'}")
         for m in media:
-            handle = _X_STATUS_IN_HTML.search(u).group(1)
             cands.append({"image_url": m["file_path"], "file_path": m["file_path"],
-                          "alt": f"ảnh gốc trong tweet của @{handle}",
+                          "alt": f"ảnh gốc trong tweet {'chính chủ ' if official else ''}của @{handle}",
                           "source": "embedded_tweet", "page_url": u, "score": EMBEDDED_TWEET_SCORE,
+                          "tweet_handle": handle, "official_tweet": official,
                           # Do hoa CO CHU Y (bieu do/bang chinh chu dang), khong phai logo lot tu
                           # <img> bao: chay that 22/09 bieu do CursorBench 3062x1960 nen trang 69%
                           # bi cong `graphic_logo` loai ("the thuong hieu").
