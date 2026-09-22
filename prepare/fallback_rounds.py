@@ -327,24 +327,25 @@ def _round_widen_search(anh: list, source_pages: list, tieu_de_nhin: str, toi_th
     # Truy van = ten rieng dau tieu de (hang/san pham), khong co thi ca tieu de.
     # Bao chi hoi TRUOC Yandex: so bai cho biet ten rieng co ton tai tren web
     # khong (LOW-356, xem `web_query`).
-    press_cands, them_commons = [], None
+    press_cands = []
     if tk or tieu_de_nhin:
         import press_entity_images
         press_cands = press_entity_images.press_entity_images(
             [tk or tieu_de_nhin], bo_mien=tuple(x for x in mien_co if x))
-    if tk:
-        them_commons = commons_images(tk, so=6)
-        if them_commons is None:
-            print(f"[anh] anh_commons('{tk}') khong chay duoc -- bo qua nguon nay", file=sys.stderr)
-        else:
-            print(f"[tim rong] Commons '{tk}': {len(them_commons)} ung vien", file=sys.stderr)
-    else:
-        print("[tim rong] khong co ten rieng dau tieu de -> khong hoi Commons", file=sys.stderr)
     q_web = web_query(tk, tieu_de_nhin, len(press_cands))
     if q_web:
         import find_image_web
         cands2 += find_image_web.find_image_web(q_web, so=16, phien=phien)
-    cands2 += press_cands + (them_commons or [])
+    cands2 += press_cands
+    if tk:
+        them_commons = commons_images(tk, so=6)
+        if them_commons is None:
+            print(f"[anh] anh_commons('{tk}') khong chay duoc -- bo qua nguon nay", file=sys.stderr)
+            them_commons = []
+        print(f"[tim rong] Commons '{tk}': {len(them_commons)} ung vien", file=sys.stderr)
+        cands2 += them_commons
+    else:
+        print("[tim rong] khong co ten rieng dau tieu de -> khong hoi Commons", file=sys.stderr)
     da = {a["url"] for a in anh}
     n_truoc = len(cands2)
     cands2 = [c for c in cands2 if c["image_url"] not in da]
