@@ -329,6 +329,8 @@ def extract(pdf_bytes: bytes, ra_dir, so_trang=COUNT_PAGE, toi_da=MAX) -> list:
                 continue
             from PIL import Image
             anh = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+            import image_rules_common
+            anh = image_rules_common.trim_flat_sides(anh)
             if not _no_page_full(anh):
                 continue
             import image_provenance

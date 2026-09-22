@@ -162,7 +162,8 @@ venv/bin/python sync_hermes.py --kiem-upstream
 
 ## Model
 
-Cả 20 profile chạy chính bằng combo `DS-v4Flash` của 9router. `agent.reasoning_effort`
+Cả 23 profile chạy chính bằng `ag/gemini-3.8-flash` qua 9router, dự phòng
+xai/grok-4.6 rồi gcli/grok-4.6 (trước 22/09/2026 là combo DS-v4Flash). `agent.reasoning_effort`
 là `none` cho mọi vai nội dung (tắt suy luận để tránh trả về rỗng); Bob đặt `medium`,
 Ada dùng mặc định. Đừng tin bảng model chép trong tài liệu, hãy hỏi máy chủ.
 
