@@ -308,8 +308,14 @@ def clean_capture_edges(img):
     """Anh chup trang nguon -> bo mep: day cat ngang dong chu lui ve hang trong, roi
     got le dac hai ben. Got DAY TRUOC: mot khoi noi dung chi nam o day ben phai
     (nhu notebookcheck) giu cot phai khong phang; bo day di thi le phai moi lo ra."""
-    img = trim_busy_bottom(img)
-    for _ in range(3):
+    return trim_flat_sides_until_clean(trim_busy_bottom(img))
+
+
+def trim_flat_sides_until_clean(img, rounds: int = 3):
+    """Got le dac hai ben cho toi khi het. Mot luot `trim_flat_sides` chua SIDE_KEEP
+    theo be ngang CU; le cang rong, dai chua lai cang lon so voi anh da hep di, nen
+    got lai toi khi kich thuoc dung yen."""
+    for _ in range(rounds):
         moi = trim_flat_sides(img)
         if moi.size == img.size:
             break
