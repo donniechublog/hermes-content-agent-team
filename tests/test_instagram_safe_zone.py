@@ -189,6 +189,35 @@ def test_dre_flat_table_top_inside_safe_zone():
         assert ink_rows[0] >= safe_zone.top(1080, 1350), f"dinh bang o y={ink_rows[0]}"
 
 
+def _bright_stripes(w, h):
+    """Nen SANG va roi (chu trang KHONG doc duoc) -> bat buoc co nen chu overlay."""
+    im = Image.new("RGB", (w, h), (235, 225, 200))
+    d = ImageDraw.Draw(im)
+    for x in range(0, w, 14):
+        d.rectangle([x, 0, x + 6, h], fill=(250, 250, 250))
+    return im
+
+
+def test_dre_overlay_hugs_text():
+    """Ong Chu 22/09/2026: *"làm phần nền text hẹp lại sát vào phần quote / text hơn là ok"*.
+    Duoi dong chu cuoi + OVERLAY_HOLD_AFTER + OVERLAY_TAIL, anh hien lai NGUYEN (code truoc do:
+    overlay giu dam toi day khung)."""
+    _dre()
+    src = _bright_stripes(1080, 1350)
+    ref = np.asarray(src.convert("L"), dtype=np.float32)
+    with tempfile.TemporaryDirectory() as t:
+        for name, build in (
+                ("slide than", lambda p, o: carousel.build_body(p, TEXT, None, o)),
+                ("slide quote", lambda p, o: carousel.build_body_quote(p, QUOTE, "", None, o))):
+            out = str(Path(t) / "o.png")
+            touched = build(_save(src, t, "bg.png"), out)
+            assert touched is not None, f"{name}: anh sang ma khong co nen chu"
+            a = np.asarray(Image.open(out).convert("L"), dtype=np.float32)
+            below = carousel.TEXT_BASE + carousel.OVERLAY_HOLD_AFTER + carousel.OVERLAY_TAIL + 2
+            diff = np.abs(a[below:] - ref[below:]).mean(axis=1)
+            assert diff.max() < 3, f"{name}: nen chu con phu duoi y={below} (lech {diff.max():.0f})"
+
+
 def test_gate_stops_layout_outside_safe_zone():
     try:
         safe_zone.gate("thu", {"text_frame": (1000, 1410)}, 1200, 1500)

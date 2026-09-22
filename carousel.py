@@ -329,14 +329,20 @@ def _stack_if_can(muc, nhan, stem):
     muc["_stack_last"] = (total_h - last_h - crop_top, last_h)
 
 
-def _ramp_mask(top_y, full_y, hi=255, ease=1.4):
+def _ramp_mask(top_y, full_y, hi=255, ease=1.4, hold_to=None, end_y=None):
     """Mat na chieu doc: 0 tren `top_y`, tang dan (ease t^) len `hi` tai
     `full_y`, giu `hi` ben duoi. Dung chung cho ca lop mo lan lop toi nen
-    hai lop chay cung mot nhip, khong lech."""
+    hai lop chay cung mot nhip, khong lech.
+
+    `hold_to`/`end_y` (LOW-364): giu `hi` toi `hold_to` roi tan (smoothstep) ve 0 tai `end_y`
+    — nen chu OM khoi chu thay vi giu dam toi day khung."""
     m = Image.new("L", (1, H), 0)
     for y in range(H):
         if y <= top_y:
             a = 0
+        elif hold_to is not None and y >= hold_to:
+            t = min(1.0, (y - hold_to) / max(1, (end_y or H) - hold_to))
+            a = hi * (1 - t * t * (3 - 2 * t))
         elif y >= full_y:
             a = hi
         else:
@@ -364,10 +370,16 @@ def _measure_region_text(canvas, y0, y1):
 # Tu nay slide than/quote CHI co mot OVERLAY gradient: bat dau OVERLAY_LEAD px tren
 # dong chu dau, dam dan toi muc VUA DU tai dong chu dau roi giu, mo nhe
 # OVERLAY_BLUR chi trong chinh vung do. Khong nen dac, khong dai mo phia tren.
-OVERLAY_LEAD = 120               # px chuyen tu trong suot toi muc toi, ngay tren dong chu dau
+# LOW-364 (Ong Chu 22/09/2026, xem slide dat trong o vuong giua: *"làm phần nền text hẹp lại
+# sát vào phần quote / text hơn là ok"*): nen chu OM khoi chu — dai chuyen tren ngan lai
+# (120 -> 80), va tan dan NGAY DUOI dong chu cuoi (OVERLAY_HOLD_AFTER + OVERLAY_TAIL) thay vi
+# giu dam toi day khung. Chu da dung trong o vuong giua nen dai day khung chi con ten kenh.
+OVERLAY_LEAD = 80                # px chuyen tu trong suot toi muc toi, ngay tren dong chu dau
 OVERLAY_BLUR = 30                # mo chi tiet NGAY duoi chu (chu in san ~20-30px tan ra), chi trong vung overlay
 OVERLAY_MIN, OVERLAY_MAX = 150, 205  # do toi overlay (0..255, ~59%..80%) tai vung chu
-OVERLAY_FULL_BEFORE = 36         # overlay dat muc toi TRUOC dong chu dau bay nhieu px (dong dau khong nam tren dai chuyen)
+OVERLAY_FULL_BEFORE = 24         # overlay dat muc toi TRUOC dong chu dau bay nhieu px (dong dau khong nam tren dai chuyen)
+OVERLAY_HOLD_AFTER = 24          # LOW-364: giu muc toi them bay nhieu px DUOI dong chu cuoi
+OVERLAY_TAIL = 80                # LOW-364: roi tan ve trong suot trong bay nhieu px
 OVERLAY_CLUTTERED = 205          # anh roi (LOW-47): overlay dam nhat, van la overlay
 OVERLAY_BLUR_ALPHA = 220         # do dam cua lop MO trong cung mat na (0..255)
 # Vong lui cua `_overlay_text` (LOW-330): nhan vao ca do mo lan do tinh. Buoc dau la
@@ -438,7 +450,7 @@ def _gate_text_background(nhan, report, max_share=TEXT_BG_MAX_SHARE) -> str:
 STACK_BOTTOM_VISIBLE_MIN = 0.35
 
 
-def _overlay_text(canvas, text_top, thieu, variance_excess, image_cluttered=False):
+def _overlay_text(canvas, text_top, thieu, variance_excess, image_cluttered=False, text_bottom=H):
     """Nen chu slide than/quote (LOW-286): MOT overlay gradient tren anh, khong nen dac.
 
     Mat na bat dau `OVERLAY_LEAD` px tren dong chu dau, dam dan (ease) toi muc toi
@@ -459,6 +471,8 @@ def _overlay_text(canvas, text_top, thieu, variance_excess, image_cluttered=Fals
     mang mau."""
     top_y = max(0, int(text_top) - OVERLAY_LEAD)
     full_y = max(top_y + 1, int(text_top) - OVERLAY_FULL_BEFORE)
+    hold_to = min(H, int(text_bottom) + OVERLAY_HOLD_AFTER)
+    end_y = min(H, hold_to + OVERLAY_TAIL)
     if image_cluttered:
         do = OVERLAY_CLUTTERED
     else:
@@ -472,8 +486,10 @@ def _overlay_text(canvas, text_top, thieu, variance_excess, image_cluttered=Fals
     for lui in OVERLAY_BACKOFF:
         if lui != OVERLAY_BACKOFF[0]:
             canvas.paste(truoc, (0, 0))                  # ve lai tu anh goc, khong chong lop
-        canvas.paste(blurred, (0, 0), _ramp_mask(top_y, full_y, hi=int(OVERLAY_BLUR_ALPHA * lui), ease=VEIL_EASE))
-        canvas.paste(mau_nen, (0, 0), _ramp_mask(top_y, full_y, hi=int(do * lui), ease=VEIL_EASE))
+        canvas.paste(blurred, (0, 0), _ramp_mask(top_y, full_y, hi=int(OVERLAY_BLUR_ALPHA * lui), ease=VEIL_EASE,
+                                                 hold_to=hold_to, end_y=end_y))
+        canvas.paste(mau_nen, (0, 0), _ramp_mask(top_y, full_y, hi=int(do * lui), ease=VEIL_EASE,
+                                                 hold_to=hold_to, end_y=end_y))
         if _text_bg_report(truoc, canvas)["bg_opacity"] <= TEXT_BG_SAFE_OPACITY:
             break
     return top_y
@@ -504,18 +520,20 @@ def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False, ov
         # Anh CLUTTERED o BIA truoc day di nen dac han (LOW-47) -> LOW-330 dua ve cung day.
         if thieu <= 0 and variance_excess <= 0 and not image_cluttered:
             return                   # da du tuong phan tren pixel that — khong phu gi
-        return _overlay_text(canvas, text_top, thieu, variance_excess, image_cluttered)
+        return _overlay_text(canvas, text_top, thieu, variance_excess, image_cluttered, text_bottom)
     if thieu <= 0 and variance_excess <= 0:
         return                       # da du tuong phan tren pixel that — khong phu gi
     do = min(DARK_MAX, max(40.0, thieu * 1.8, variance_excess * 2.2))
     top_y = max(0, int(text_top))
     full_y = min(H, top_y + VEIL_SPAN)
+    hold_to = min(H, int(text_bottom) + OVERLAY_HOLD_AFTER)      # LOW-364: om khoi chu
+    end_y = min(H, hold_to + OVERLAY_TAIL)
     blurred = base.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
     # 1) mo NHE ban sac ngay tai vung chu — xoa chi tiet gay roi
-    canvas.paste(blurred, (0, 0), _ramp_mask(top_y, full_y, hi=200, ease=VEIL_EASE))
+    canvas.paste(blurred, (0, 0), _ramp_mask(top_y, full_y, hi=200, ease=VEIL_EASE, hold_to=hold_to, end_y=end_y))
     # 2) tinh VUA DU (tran DARK_MAX, khong phai mac dinh phu cao roi moi tinh)
     lop = Image.new("RGB", (W, H), BG)
-    canvas.paste(lop, (0, 0), _ramp_mask(top_y, full_y, hi=int(do), ease=VEIL_EASE))
+    canvas.paste(lop, (0, 0), _ramp_mask(top_y, full_y, hi=int(do), ease=VEIL_EASE, hold_to=hold_to, end_y=end_y))
 
 
 def _is_source_capture(path) -> bool:
@@ -889,7 +907,8 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, repo
     else:
         # Chi them lop khi do THAT can (xem _layer_if_can). Overlay neo o DONG CHU DAU
         # (LOW-286), khong phai dinh khung: truoc day tu frame_top nen nen chu phu ~47% khung.
-        touched = _layer_if_can(canvas, base, max(0, first_line_top), H, image_cluttered=cluttered,
+        touched = _layer_if_can(canvas, base, max(0, first_line_top), src_top + at_h if at_lines else frame_bottom,
+                                image_cluttered=cluttered,
                                 overlay_only=True)
         fg, muted, net = FG, MUTED, _net()
     if report is not None:                      # LOW-286: do nen chu tren pixel that
@@ -985,7 +1004,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
     # khong can lop bao ve.
     truoc_nen = canvas.copy() if report is not None else None
     if not nen:
-        _layer_if_can(canvas, cover, y, H, image_cluttered=cluttered)
+        _layer_if_can(canvas, cover, y, (y_label + chip_h) if label else hook_bottom, image_cluttered=cluttered)
     if report is not None:                      # LOW-330: bia cung bi do nhu slide than
         report.update(_text_bg_report(truoc_nen, canvas))
         _note_flat(report, canvas, nen, hop)

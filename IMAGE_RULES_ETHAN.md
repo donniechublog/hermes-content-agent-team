@@ -815,6 +815,11 @@ thuộc vào hình lúc publish nữa"*. Cùng một nội dung ở cả ba tệ
   xuống vùng an toàn, dải trên là chính màu đó kéo dài — một mặt phẳng liền (§7). Đỉnh không phẳng
   thì giữ như cũ, không đặt một dải màu lạ lên trên. Slide thân Dre không hạ (ảnh ghép dưới sẽ bị
   chữ che thêm — cổng LOW-215).
+- **Nền chữ ôm khối chữ** (Ông Chủ cùng ngày, xem slide Dre đặt trong ô vuông: *"làm phần nền
+  text hẹp lại sát vào phần quote / text hơn là ok"*): overlay slide thân/quote/bìa Dre chuyển
+  80px trên dòng chữ đầu (`OVERLAY_LEAD`, trước 120), giữ đậm tới 24px dưới dòng chữ cuối
+  (`OVERLAY_HOLD_AFTER`) rồi tan hết trong 80px (`OVERLAY_TAIL`) — dải đáy khung hiện lại ảnh,
+  không còn giữ tối tới đáy.
 - **Cổng hình học** `safe_zone.gate` trong từng hàm vẽ (`card._render_ceiling`, `card._render_quote`,
   `carousel.build_cover` / `build_body` / `build_body_quote`): nội dung trên ra ngoài vùng an toàn
   thì dừng — lỗi CODE bố cục, không phải spec. Test đo trên pixel: `tests/test_instagram_safe_zone.py`.
