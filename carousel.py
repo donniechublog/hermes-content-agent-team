@@ -378,8 +378,10 @@ OVERLAY_LEAD = 80                # px chuyen tu trong suot toi muc toi, ngay tre
 OVERLAY_BLUR = 30                # mo chi tiet NGAY duoi chu (chu in san ~20-30px tan ra), chi trong vung overlay
 OVERLAY_MIN, OVERLAY_MAX = 150, 205  # do toi overlay (0..255, ~59%..80%) tai vung chu
 OVERLAY_FULL_BEFORE = 24         # overlay dat muc toi TRUOC dong chu dau bay nhieu px (dong dau khong nam tren dai chuyen)
-OVERLAY_HOLD_AFTER = 24          # LOW-364: giu muc toi them bay nhieu px DUOI dong chu cuoi
-OVERLAY_TAIL = 80                # LOW-364: roi tan ve trong suot trong bay nhieu px
+# Ong Chu 22/09 (vong 3, khoanh dai toi ngay duoi dong chu cuoi slide TSMC): *"phần nền ở đây
+# cũng lược đi phần được khoanh"* — khong giu dam them duoi chu, tan ngay tu net chu dong cuoi.
+OVERLAY_HOLD_AFTER = 0           # LOW-364: giu muc toi them bay nhieu px DUOI dong chu cuoi
+OVERLAY_TAIL = 40                # LOW-364: roi tan ve trong suot trong bay nhieu px
 OVERLAY_CLUTTERED = 205          # anh roi (LOW-47): overlay dam nhat, van la overlay
 OVERLAY_BLUR_ALPHA = 220         # do dam cua lop MO trong cung mat na (0..255)
 # Vong lui cua `_overlay_text` (LOW-330): nhan vao ca do mo lan do tinh. Buoc dau la
@@ -656,19 +658,36 @@ def _flat_layout(canvas, img, bg, bottom) -> tuple:
     return (x, y, x + nw, y + part.height), dac
 
 
-def _cover_below(canvas, mau, bottom, min_top=0) -> int:
-    """Phu MAU NEN `mau` len vung chu: trong suot o `dac - FLAT_FADE`, dac tu
+def _cover_below(canvas, mau, bottom, min_top=0, text_bottom=None, fade=FLAT_FADE) -> int:
+    """Phu MAU NEN `mau` len vung chu: trong suot o `dac - fade`, dac tu
     `dac = bottom - FLAT_COVER_BEFORE` toi day khung (smoothstep — khong sinh mep). Khong bat
-    dau cao hon `min_top`. Tra ve `dac`: tu do tro xuong la mot mat phang mau `mau`."""
+    dau cao hon `min_top`. Tra ve `dac`: tu do tro xuong la mot mat phang mau `mau`.
+
+    `text_bottom` (LOW-364, Ong Chu 22/09: bo hai dai trong tren hook va duoi chip, *"giữ nguyên
+    vị trí, chỉ có hai phần đó lược đi"*): lop mau OM khoi chu nhu overlay — dac toi
+    `text_bottom + OVERLAY_HOLD_AFTER` roi tan het trong OVERLAY_TAIL, duoi do anh hien lai."""
     mau = tuple(mau[:3])
     dac = max(min_top + 1, int(bottom) - FLAT_COVER_BEFORE)
-    tren = max(min_top, dac - FLAT_FADE)
+    tren = max(min_top, dac - fade)
+    hold_to = H if text_bottom is None else min(H, int(text_bottom) + OVERLAY_HOLD_AFTER)
     lop = Image.new("L", (1, H), 0)
     for yy in range(tren, H):
+        if yy >= hold_to:
+            t = min(1.0, (yy - hold_to) / max(1, OVERLAY_TAIL))
+            lop.putpixel((0, yy), int(255 * (1 - t * t * (3 - 2 * t))))
+            continue
         t = min(1.0, (yy - tren + 1) / max(1, dac - tren))
         lop.putpixel((0, yy), int(255 * t * t * (3 - 2 * t)))
     canvas.paste((*mau, 255) if canvas.mode == "RGBA" else mau, (0, 0, W, H), lop.resize((W, H)))
     return dac
+
+
+def _is_ranking(path) -> bool:
+    try:
+        with Image.open(path) as im:
+            return image_provenance.is_ranking_image(im)
+    except OSError:
+        return False
 
 
 def _flat_plan(muc) -> tuple:
@@ -684,7 +703,10 @@ def _flat_plan(muc) -> tuple:
 
     Nguong noi (`relaxed`) chi cho thanh phan ma vai/manifest xep la chart: `"chart": true`
     (anh don) hoac `"image_kinds"` (anh ghep, dre_submit ghi)."""
-    parts = muc.get("_parts") or [(muc["image"], bool(muc.get("chart")))]
+    # LOW-364: anh xep hang (arena X, bang benchmark) la chart du spec khong khai `"chart"` — bia
+    # Xiaomi: anh arena vuong bi cover-crop mat hai canh; di nen phang thi 90% be ngang, dat
+    # tu dinh vung an toan (Ong Chu: "thu nho lai khoang 10% va day len phia tren").
+    parts = muc.get("_parts") or [(muc["image"], bool(muc.get("chart")) or _is_ranking(muc["image"]))]
     try:
         bgs = [logo_card.flat_background(_open(p), relaxed=chart) for p, chart in parts]
     except OSError:
@@ -722,11 +744,13 @@ def _flat_report(canvas, bg, layout) -> float:
     """Do tren canvas TRUOC khi ve chu: phan diem lech khoi mau nen `bg` trong vung PHAI la mat
     phang — ngoai hop anh, va tu y `plane_top` (day anh / cho lop mau nen dac) tro xuong."""
     import numpy as np
-    (x0, y0, x1, y1), plane_top = layout
+    (x0, y0, x1, y1), plane_top, *rest = layout
+    plane_end = rest[0] if rest else H          # LOW-364: lop mau nen om chu, duoi do la anh
     a = np.asarray(canvas.convert("RGB"), dtype=np.int16)
     lech = np.abs(a - np.array(bg[:3])).max(axis=2) > logo_card.FLAT_TOLERANCE
     phai = np.ones(lech.shape, dtype=bool)
     phai[y0:min(y1, plane_top), x0:x1] = False
+    phai[max(y0, plane_end):y1, x0:x1] = False
     return round(float(lech[phai].sum()) / max(1, int(phai.sum())), 4)
 
 
@@ -754,7 +778,7 @@ def _gate_flat(nhan, report) -> str:
 
 
 # ---- Dung tung slide ------------------------------------------------------
-def _place_image(canvas, img, plan, bottom):
+def _place_image(canvas, img, plan, bottom, text_bottom=None):
     """Dan anh theo ke hoach nen phang (LOW-341) -> (base, mau nen, layout).
 
     `plan` = (flat_bg, zone_bg) tu `_flat_plan` (qua `_build_slide`); None thi tu do anh (goi
@@ -769,8 +793,9 @@ def _place_image(canvas, img, plan, bottom):
         return None, flat, _flat_layout(canvas, img, flat, bottom), None
     base = _body_image(canvas, img)
     if zone:
-        dac = _cover_below(canvas, zone, bottom)
-        return base, zone, ((0, 0, W, H), dac), dac - FLAT_FADE
+        dac = _cover_below(canvas, zone, bottom, text_bottom=text_bottom, fade=OVERLAY_LEAD)
+        end = H if text_bottom is None else min(H, int(text_bottom) + OVERLAY_HOLD_AFTER)
+        return base, zone, ((0, 0, W, H), dac, end), dac - OVERLAY_LEAD
     return base, None, None, None
 
 
@@ -796,7 +821,8 @@ def build_body(img_path, text, handle, out, cluttered=False, report=None, logo_b
         canvas.paste(_open(img_path).convert("RGB").resize((W, H)), (0, 0))
         base = None
     else:
-        base, flat, hop, touched = _place_image(canvas, _open(img_path), plan, text_top)
+        base, flat, hop, touched = _place_image(canvas, _open(img_path), plan, text_top,
+                                                text_top + total + _ink_over(font, wrapped, lh))
     truoc_nen = canvas.copy() if report is not None else None
 
     # Chi them lop khi do THAT tren pixel thay vung duoi chu khong du tuong
@@ -866,13 +892,16 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, repo
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     d = ImageDraw.Draw(canvas)
 
-    FRAME_X, TEXT_X, avail = Q_FRAME_X, Q_TEXT_X, Q_AVAIL
+    FRAME_X, TEXT_X = Q_FRAME_X, Q_TEXT_X
 
     f_q, q_lines, buoc, tren, _vua = _fit_quote(d, quote)
     quote_h = buoc * len(q_lines)
 
     f_at = _f(F_QUOTE_REG, 26)
-    at_lines = _wrap(d, attrib, f_at, avail) if attrib else []
+    # LOW-364 (Ong Chu 22/09/2026, khoanh dong "Lei Jun" / "via Financial Times" duoi khung quote:
+    # *"phần được khoanh có thể bỏ luôn"*): slide quote KHONG ve dong nguon nua — nguon da ghi o
+    # chu thich bai dang. `attrib` van qua cong chu (tieng Viet co dau) va mau dau ngoac theo hang.
+    at_lines = []
     at_lh = _line_h(f_at, at_lines, 1.3)
     at_h = at_lh * len(at_lines)
 
@@ -898,7 +927,8 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, repo
 
     # LOW-341: voi anh nen phang, "dinh vung chu" la dinh dau " va chip ten kenh — hai thu
     # cuoi len net ngang tren cua khung, cao ~Q_MARK_CLEAR px phia tren net.
-    base, flat, hop, touched = _place_image(canvas, _open(img_path), plan, frame_top - Q_MARK_CLEAR)
+    base, flat, hop, touched = _place_image(canvas, _open(img_path), plan, frame_top - Q_MARK_CLEAR,
+                                            src_top + at_h if at_lines else frame_bottom)
     truoc_nen = canvas.copy() if report is not None else None
 
     if flat:
@@ -996,7 +1026,9 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
     if flat:
         hop = _flat_layout(canvas, img, flat, y)
     elif zone:
-        hop = ((0, 0, W, H), _cover_below(canvas, zone, y))
+        cover_end = (y_label + chip_h) if label else hook_bottom
+        hop = ((0, 0, W, H), _cover_below(canvas, zone, y, text_bottom=cover_end, fade=OVERLAY_LEAD),
+               min(H, cover_end + OVERLAY_HOLD_AFTER))
     nen = flat or zone
     fg, bg_chu = (_flat_palette(nen)["fg"], tuple(nen[:3])) if nen else (FG, BG)
     # Do vi tri hook TRUOC roi moi quyet dinh co can lop khong (xem

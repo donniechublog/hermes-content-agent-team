@@ -807,19 +807,26 @@ thuộc vào hình lúc publish nữa"*. Cùng một nội dung ở cả ba tệ
   model (bìa Dre), khối chữ slide thân (`carousel.TEXT_BASE` = 1203), khung quote, đỉnh nội dung
   ảnh nền phẳng (`carousel.FLAT_TOP` = 147 — hàng tiêu đề bảng/hình paper).
 - **Được nằm ở dải cắt:** nền, phần ảnh kéo dài, tên kênh (Instagram đã hiện tên tài khoản), chip
-  tên kênh góc dưới-trái slide thân, **dòng nguồn quote** ngay dưới khung. Dòng nguồn không kéo
-  vào: kéo vào thì khối chữ quote dài lên cao thêm ~45px và nền chữ vượt trần LOW-286 (§7.0, 42%
-  khung) — đo 0.424. Luật §7.0 đứng trên.
+  tên kênh góc dưới-trái slide thân, dòng nguồn thẻ quote Ethan (`card._render_quote`).
+- **Slide quote Dre không còn dòng nguồn** dưới khung (Ông Chủ khoanh "Lei Jun" / "via Financial
+  Times": *"phần được khoanh có thể bỏ luôn"*) — nguồn ghi ở chú thích bài. `attrib` vẫn qua cổng
+  chữ và quyết định màu dấu ngoặc theo hãng.
 - **Ảnh đặt từ mép trên** — thẻ Ethan (ảnh chụp trang, bảng xếp hạng, mọi ảnh thấp hơn thẻ) và
   bìa Dre đi đường full bề ngang: đỉnh ảnh có viền phẳng (6 hàng sát mép cùng một màu) thì hạ ảnh
   xuống vùng an toàn, dải trên là chính màu đó kéo dài — một mặt phẳng liền (§7). Đỉnh không phẳng
   thì giữ như cũ, không đặt một dải màu lạ lên trên. Slide thân Dre không hạ (ảnh ghép dưới sẽ bị
   chữ che thêm — cổng LOW-215).
-- **Nền chữ ôm khối chữ** (Ông Chủ cùng ngày, xem slide Dre đặt trong ô vuông: *"làm phần nền
-  text hẹp lại sát vào phần quote / text hơn là ok"*): overlay slide thân/quote/bìa Dre chuyển
-  80px trên dòng chữ đầu (`OVERLAY_LEAD`, trước 120), giữ đậm tới 24px dưới dòng chữ cuối
-  (`OVERLAY_HOLD_AFTER`) rồi tan hết trong 80px (`OVERLAY_TAIL`) — dải đáy khung hiện lại ảnh,
-  không còn giữ tối tới đáy.
+- **Nền chữ ôm khối chữ** (Ông Chủ cùng ngày, ba vòng xem hình thật: *"làm phần nền text hẹp
+  lại sát vào phần quote / text hơn là ok"*, rồi khoanh các dải nền thừa trên/dưới chữ: *"giữ
+  nguyên vị trí, chỉ có hai phần đó lược đi"*, *"phần nền ở đây cũng lược đi phần được khoanh"*):
+  overlay tối (`_overlay_text`) VÀ lớp màu nền ảnh ghép hai nền (`_cover_below`, bìa/slide) chuyển
+  80px trên dòng chữ đầu (`OVERLAY_LEAD`, trước 120) và bắt đầu tan NGAY tại nét chữ dòng cuối
+  (`OVERLAY_HOLD_AFTER` = 0), tan hết trong 40px (`OVERLAY_TAIL`). Dòng cuối của bìa là hàng chip.
+  Dưới đó ảnh hiện lại — không giữ nền tới đáy khung.
+- **Ảnh xếp hạng** (dấu `ranking_*`: arena X, bảng benchmark) tính là chart cho ngưỡng nền phẳng
+  dù spec không khai `"chart"`: bìa Xiaomi (arena vuông) trước bị cover-crop mất hai cạnh, nay đi
+  §7.0b — 90% bề ngang, đặt từ đỉnh vùng an toàn (Ông Chủ: *"thu nhỏ lại khoảng 10% và đẩy lên
+  phía trên, ko cần phải hiển thị full width"*).
 - **Cổng hình học** `safe_zone.gate` trong từng hàm vẽ (`card._render_ceiling`, `card._render_quote`,
   `carousel.build_cover` / `build_body` / `build_body_quote`): nội dung trên ra ngoài vùng an toàn
   thì dừng — lỗi CODE bố cục, không phải spec. Test đo trên pixel: `tests/test_instagram_safe_zone.py`.

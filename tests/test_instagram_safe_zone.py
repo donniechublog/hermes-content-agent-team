@@ -161,8 +161,8 @@ def test_dre_quote_inside_safe_zone():
         out = str(Path(t) / "q.png")
         carousel.build_body_quote(_save(_stripes(1080, 1350), t, "bg.png"), QUOTE,
                                   "Elon Musk, SpaceXAI", None, out)
-        _assert_bands_clean(out, "slide quote (trai)", 0, 340)
-        _assert_bands_clean(out, "slide quote (phai)", 740, 1080)
+        # Ong Chu 22/09: dong nguon duoi khung "co the bo luon" -> ca be ngang dai cat phai sach.
+        _assert_bands_clean(out, "slide quote", 0, 1080)
 
 
 def test_dre_cover_inside_safe_zone():
@@ -216,6 +216,22 @@ def test_dre_overlay_hugs_text():
             below = carousel.TEXT_BASE + carousel.OVERLAY_HOLD_AFTER + carousel.OVERLAY_TAIL + 2
             diff = np.abs(a[below:] - ref[below:]).mean(axis=1)
             assert diff.max() < 3, f"{name}: nen chu con phu duoi y={below} (lech {diff.max():.0f})"
+
+
+def test_ranking_image_uses_relaxed_flat_threshold():
+    """Anh xep hang (arena X) la chart du spec khong khai "chart": nguong nen phang noi, de bia
+    di duong 90% be ngang thay vi cover-crop mat hai canh (bia Xiaomi 22/09)."""
+    import logo_card
+    seen = []
+    goc = logo_card.flat_background
+    logo_card.flat_background = lambda im, relaxed=False: seen.append(relaxed) or (250, 250, 246)
+    try:
+        with tempfile.TemporaryDirectory() as t:
+            p = _save(Image.new("RGB", (800, 800), (250, 250, 246)), t, "r.png", "ranking_capture")
+            assert carousel._flat_plan({"image": p})[0] == (250, 250, 246)
+    finally:
+        logo_card.flat_background = goc
+    assert seen == [True], seen
 
 
 def test_gate_stops_layout_outside_safe_zone():
