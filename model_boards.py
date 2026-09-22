@@ -125,6 +125,7 @@ BOARD = (
 LOCK_BOARD = tuple(b.khoa for b in BOARD)
 LABEL_BOARD = {b.khoa: b.nhan for b in BOARD}
 LABEL_BOARD["hf"] = "HuggingFace"          # khong phai bang, nhung co muc BAT BUOC
+LABEL_BOARD["arena_x"] = "X @arena"        # tweet @arena, cung co muc BAT BUOC (LOW-360)
 COUNT_BOARD = len(BOARD)
 LINK_BOARD = {b.khoa: b.link for b in BOARD}
 ARENA_BOARDS = tuple((b.khoa, b.duong_dan, b.tieu_de.replace(" (arena.ai)", ""))
