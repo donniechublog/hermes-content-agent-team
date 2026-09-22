@@ -41,6 +41,7 @@ _TIER = r"(?:pro|ultra|flash|nano|lite|opus|sonnet|haiku|fable|mythos|max|plus|t
 _NUM = r"(\d{1,2}(?:\.\d{1,2})?)(?!\d)"
 WIKI_API = "https://en.wikipedia.org/w/api.php"
 CACHE_SECONDS = 3 * 86400
+MAX_MAJOR = 15                  # so chinh lon hon la mo ho (slug URL mat dau cham), khong chan
 MONTHS = {m: i for i, m in enumerate(
     ["january", "february", "march", "april", "may", "june", "july", "august",
      "september", "october", "november", "december"], 1)}
@@ -198,7 +199,9 @@ def mismatches(text: str, ref: dict) -> list:
         if not r:
             continue
         cho = {major(x) for x in r["versions"]}
-        ra += [f"{fam} {v}" for v in sorted(vs) if major(v) not in cho]
+        # So chinh > MAX_MAJOR la mo ho, khong chan: slug URL bo dau cham ("gemini-35-pro"
+        # = Gemini 3.5 Pro, do that A37 22/09/2026) — chua ho model nao toi so do.
+        ra += [f"{fam} {v}" for v in sorted(vs) if major(v) not in cho and int(major(v)) <= MAX_MAJOR]
     return ra
 
 
@@ -211,8 +214,7 @@ def describe_reference(ref: dict) -> str:
     return "; ".join(out)
 
 
-def _image_text(a: dict) -> str:
-    return " ".join(str(a.get(k) or "") for k in ("description", "alt", "url", "page_url", "printed_version"))
+IMAGE_TEXT_KEYS = ("description", "alt", "url", "page_url", "printed_version")
 
 
 def apply_image_gate(images: list, ref: dict) -> int:
@@ -222,7 +224,9 @@ def apply_image_gate(images: list, ref: dict) -> int:
     if not ref:
         return 0
     for a in images:
-        sai = mismatches(_image_text(a), ref)
+        # Tung truong rieng: noi chuoi lai thi "…Gemini" cuoi truong nay + "35%…" dau truong
+        # sau thanh mot phien ban gia.
+        sai = sorted({x for k in IMAGE_TEXT_KEYS for x in mismatches(str(a.get(k) or ""), ref)})
         if sai:
             a["version_mismatch"] = ", ".join(sai)
             a["relevant"], a["uses"] = False, []

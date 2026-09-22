@@ -87,12 +87,19 @@ def test_image_gate_blocks_draft_a40_a43_keeps_current_and_plain():
         {"id": "A13", "uses": ["cover"], "relevant": True, "description": "Logo ngôi sao và chữ Gemini trên nền sáng"},
         {"id": "A39", "uses": ["body"], "relevant": True, "description": "Biểu trưng mô hình AI Gemini 3.1 Pro trên nền đen"},
         {"id": "A17", "uses": ["body"], "relevant": True, "description": "Chân dung Sergey Brin", "url": "https://x/2014/brin.jpg"},
+        # slug URL mat dau cham: "gemini-35-p" = Gemini 3.5 Pro (dung phien ban) -> KHONG chan
+        {"id": "A37", "uses": ["body"], "relevant": True, "description": "Điện thoại hiển thị chữ Google Gemini",
+         "url": "https://etimg.etb2bimg.com/thumb/msid-132549333/internet/google-delays-launch-of-gemini-35-p"},
+        # anh ro ri "Gemini 4 Pro" (9/2026) khong phai phien ban cua tin 5/2026 -> chan
+        {"id": "A24", "uses": ["body"], "relevant": True, "description": "Giao diện Gemini 4 Pro trên màn hình",
+         "url": "https://nokiapoweruser.com/wp-content/uploads/2026/09/gemini-4-pro.jpeg"},
     ]
-    assert mv.apply_image_gate(imgs, ref) == 4
+    assert mv.apply_image_gate(imgs, ref) == 5
     by = {a["id"]: a for a in imgs}
     for k in ("A40", "A41", "A42", "A43"):
         assert by[k]["relevant"] is False and by[k]["uses"] == [] and "gemini 1" in by[k]["version_mismatch"], by[k]
-    for k in ("A13", "A39", "A17"):            # logo tron, cung the he (3.1 ~ 3.5), anh cu khong ghi phien ban
+    assert by["A24"]["relevant"] is False and by["A24"]["version_mismatch"] == "gemini 4", by["A24"]
+    for k in ("A13", "A39", "A17", "A37"):     # logo tron, cung the he (3.1 ~ 3.5), anh cu, slug mo ho
         assert by[k]["relevant"] is True and "version_mismatch" not in by[k], by[k]
 
 
