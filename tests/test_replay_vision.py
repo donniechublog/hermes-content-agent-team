@@ -3,12 +3,12 @@
 
 Ban ghi: 22 cap (cau hoi, cau tra loi) cua tin "Google confirms Gemini models hacked
 three companies in May 2026" (blog, 22/09/2026), thu tu `vision_raw` bang
-`tests/replay.py harvest-vision`. LOW-363 (dong PHIEN_BAN) va LOW-337 (dong AI slop) doi cau hoi vision nen
-ban ghi Gartner cu (LOW-312, dcgr 20/09) het khop; thu dap lai tren may chu bang code
-LOW-363 (/tmp, khong dung production), `call` dung lai tu cau hoi va tu kiem bang cach
-sinh lai cau hoi (26/26 khop tuyet doi). Co 4 bang benchmark (A25-A28) de khoa ca dong
-PHIEN_BAN. Anh la THE CHO dung kich thuoc (khong giu anh ben thu ba trong repo) — xem
-docstring tests/replay.py.
+`tests/replay.py harvest-vision`. LOW-363 (dong PHIEN_BAN) va LOW-337 (dong AI slop)
+doi cau hoi vision nen ban ghi Gartner cu (LOW-312, dcgr 20/09) het khop; thu dap lai
+tren may chu bang code da gop (/tmp, khong dung production), `call` dung lai tu cau hoi
+va tu kiem bang cach sinh lai cau hoi (khop tuyet doi); bo ban ghi bi vong sau lat
+`relevant`. Dong PHIEN_BAN khoa qua A20/A22/A23 (Gemini 3.1/3.8/3.5). Anh la THE CHO
+dung kich thuoc (khong giu anh ben thu ba trong repo) — xem docstring tests/replay.py.
 
 Hai luoi:
   1. `description_image`: cau tra loi that -> DUNG cac truong ma production da
