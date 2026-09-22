@@ -1106,3 +1106,28 @@ của Ethan. đó là lý do vì sao chúng ta cần tách một số phần tro
   thì vùng chữ lấy `CEILING_TEXTBOX` (30%), tiêu đề nở tới `TEXT_MAX_SHARE` (20%).
 - `card.py` vẫn giữ `_render_quote` (chưa gỡ): không vai nào của `card.py` còn dùng nó,
   gỡ hay giữ phải hỏi Ông Chủ trước.
+
+## LOW-355 (22/09/2026): ảnh GỐC từ chính tweet, không dùng ảnh báo chụp lại tweet (mọi designer)
+
+Ông Chủ, bài Dre Grok 4.7: *"thay vì dùng hình cap từ tweet, sao bạn ko vào chính cái tweet được
+retweet có hình gốc chất lượng cao mà phải đi lòng vòng vậy ?"* — rồi chốt: *"đây nên là tiêu chuẩn
+cho cả Kite"*. Slide đã dùng ảnh Futu tự chụp tweet Elon Musk (611×734, giao diện dịch tiếng Trung)
+trong khi decrypt.co trong cùng bộ nguồn nhúng link tweet, tải về được biểu đồ gốc 3062×1960.
+
+- Engine chung (`prepare/source.candidate_embedded_tweets`) đọc HTML các báo nguồn, gom link
+  `x.com|twitter.com/<handle>/status/<id>` (≤ 14 ngày theo id, mới nhất trước, tối đa 4), tải ảnh
+  gốc qua `social_post.x_photos` (get_source, bản `name=orig`). Ảnh mang `source: embedded_tweet`,
+  điểm 90 — trên ảnh báo, dưới ảnh của chính post nguồn. Vision vẫn chốt có liên quan hay không.
+- Ảnh mà vision mô tả là **chụp màn hình tweet/bài đăng X** (`prepare/vision.TWEET_SCREENSHOT_RE`):
+  đã có ảnh gốc từ tweet dùng được → **KHÔNG DÙNG** (`tweet_screenshot_has_original`); chưa có →
+  giữ, nhưng log `[x_goc] … KHONG tim duoc tweet goc` để biết mà tìm.
+- Nhìn ở đâu: `prepare.log` dòng `[x_goc]`, manifest ảnh `source: embedded_tweet`, bản ghi bỏ ảnh
+  `tweet_screenshot`. Test: `tests/test_low355_tweet_original_image.py`.
+- **Chart gốc từ tweet CHÍNH CHỦ là bảng hợp lệ** (Ông Chủ 22/09/2026: *"chart gốc từ tweet chính chủ
+  được tính là bảng hợp lệ"*). Chính chủ = handle chứa tên hãng trong tin (`image_brand.vendors_in_story`;
+  tên < 6 ký tự chỉ khớp đầu/cuối handle) hoặc bên đo benchmark (`prepare/source.BENCHMARK_HANDLES`).
+  Ảnh mang `official_tweet: true` + dấu PNG `official_tweet` → `is_ranking_image` đúng: miễn cổng
+  chart-đi-một-mình / tỉ lệ; `image_rules_common.is_official_tweet_chart` miễn ảnh-rối, ảnh-trống;
+  Ethan tin model nhận nó như bảng; `needs_ranking_image` coi nó ngang bảng engine chụp — **@arena
+  vẫn đứng đầu**. Tweet người ngoài (nhà phân tích, CEO cá nhân như @elonmusk) vẫn là ảnh gốc dùng
+  được nhưng KHÔNG được miễn như bảng. Test: `tests/test_low355_tweet_original_image.py`.

@@ -315,3 +315,13 @@ def clean_capture_edges(img):
             break
         img = moi
     return img
+
+
+def is_official_tweet_chart(a: dict | None) -> bool:
+    """LOW-355 (Ong Chu 22/09/2026): *"chart goc tu tweet chinh chu duoc tinh la bang hop le"*.
+    Anh goc tai tu tweet cua chinh hang/ben do benchmark (`official_tweet`, prepare/source.py),
+    vision thay la chart/bang, khong bi cham "khong lien quan". Duoc doi xu nhu anh xep hang:
+    mien cong chart-di-mot-minh, anh-roi, anh-trong (bang benchmark von day chu, nen trang)."""
+    a = a or {}
+    return (a.get("source") == "embedded_tweet" and bool(a.get("official_tweet"))
+            and a.get("subject_kind") in ("chart", "table") and a.get("relevant") is not False)

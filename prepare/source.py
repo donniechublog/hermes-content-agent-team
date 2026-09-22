@@ -109,6 +109,122 @@ def candidate_social(link: str, wd: Path) -> list:
     return cands
 
 
+# LOW-355 (Ong Chu 22/09/2026, tin Grok 4.7): *"thay vi dung hinh cap tu tweet, sao ban ko vao
+# chinh cai tweet duoc retweet co hinh goc chat luong cao"*. Slide dung anh Futu tu chup tweet
+# (611x734, giao dien dich tieng Trung) trong khi decrypt.co — cung nam trong nguon cua draft —
+# nhung link x.com/elonmusk/status/2102071804495872374, tu do get_source tai ve bieu do goc
+# 3062x1960. Bao nhung tweet bang <blockquote class="twitter-tweet"><a href=".../status/<id>">
+# nen link status nam san trong HTML tinh.
+EMBEDDED_TWEET_MAX = 4
+EMBEDDED_TWEET_MAX_AGE_DAYS = 14
+EMBEDDED_TWEET_MAX_PAGES = 12
+EMBEDDED_TWEET_SCORE = 90            # duoi anh cua CHINH post nguon (95), tren anh bao
+_X_STATUS_IN_HTML = re.compile(
+    r"(?:x|twitter)\.com/(\w{1,15})/status(?:es)?/(\d{15,20})", re.I)
+_TWITTER_EPOCH_MS = 1288834974657
+
+
+def tweet_time(tweet_id: str) -> float:
+    """Gio dang (epoch giay) doc tu chinh id tweet (snowflake) — khong can goi X."""
+    return (((int(tweet_id) >> 22) + _TWITTER_EPOCH_MS) / 1000.0)
+
+
+def embedded_tweet_urls(pages_html: list, now: float, skip_urls: tuple = ()) -> list:
+    """Link post X nhung trong cac trang bao, MOI NHAT truoc, bo tweet cu hon
+    `EMBEDDED_TWEET_MAX_AGE_DAYS` (bao hay nhung lai tweet cu lam boi canh). Ham thuan."""
+    bo = {m.group(2) for u in skip_urls for m in [_X_STATUS_IN_HTML.search(u or "")] if m}
+    theo_id: dict = {}
+    for html in pages_html:
+        for handle, tid in _X_STATUS_IN_HTML.findall(html or ""):
+            if tid in bo or tid in theo_id:
+                continue
+            if now - tweet_time(tid) > EMBEDDED_TWEET_MAX_AGE_DAYS * 86400:
+                continue
+            theo_id[tid] = f"https://x.com/{handle}/status/{tid}"
+    return [theo_id[t] for t in sorted(theo_id, key=int, reverse=True)][:EMBEDDED_TWEET_MAX]
+
+
+# LOW-355, Ong Chu 22/09/2026: *"chart goc tu tweet chinh chu duoc tinh la bang hop le"*. Chinh
+# chu = tai khoan cua HANG trong tin (handle chua ten hang, vd @SpaceXAI cho tin SpaceX/Grok), hoac
+# ben DO benchmark. Bao nhung ca tweet nguoi ngoai (nha phan tich, nguoi dung) — nhung tweet do
+# van la anh goc dung duoc, chi khong duoc mien cong nhu bang.
+BENCHMARK_HANDLES = frozenset({"arena", "lmarena_ai", "artificialanlys", "epochairesearch", "scale_ai",
+                               "openrouterai"})
+
+
+def _handle_key(t: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", (t or "").lower())
+
+
+def is_official_handle(handle: str, story: str) -> bool:
+    """@handle co phai tai khoan chinh chu cua tin khong: ben do benchmark, hoac chua ten mot hang
+    ma `image_brand.vendors_in_story` tach tu tin (ham thuan, khong mang). Ten ngan (<6 ky tu)
+    chi khop o dau/cuoi handle: @AIatMeta la Meta, @themetaverse thi khong (do 22/09/2026)."""
+    h = _handle_key(handle)
+    if not h:
+        return False
+    if h in {_handle_key(b) for b in BENCHMARK_HANDLES}:
+        return True
+    import image_brand
+    for v in image_brand.vendors_in_story(story or ""):
+        for k in {_handle_key(v.get("key")), _handle_key(v.get("company"))}:
+            if len(k) >= 6 and k in h:
+                return True
+            if 3 <= len(k) < 6 and (h.startswith(k) or h.endswith(k)):
+                return True
+    return False
+
+
+def candidate_embedded_tweets(source_pages: list, link: str, wd: Path, story: str = "") -> list:
+    """Anh GOC cua cac tweet ma bao nguon nhung lai — qua `social_post.x_photos` (get_source,
+    ban `name=orig`), khong phai anh bao tu chup lai tweet. Vision van chot co lien quan.
+    `story` (tieu de + tieu de tieng Anh) de biet tweet nao la CHINH CHU (`official_tweet`)."""
+    import concurrent.futures as cf
+    import time
+    import article_images
+    import social_post
+    log = lambda t: print(f"[x_goc] {t}", file=sys.stderr)   # noqa: E731
+    urls = [u for u in dict.fromkeys([link] + [t.get("url") for t in source_pages])
+            if u and not social_post.is_social(u)][:EMBEDDED_TWEET_MAX_PAGES]
+
+    def _html(u):
+        try:
+            r = article_images._download(u, 20)
+            return r.text[:800_000] if r.status_code == 200 else ""
+        except Exception:                                    # noqa: BLE001
+            return ""
+    with cf.ThreadPoolExecutor(max_workers=6) as ex:
+        pages_html = list(ex.map(_html, urls))
+    tweets = embedded_tweet_urls(pages_html, time.time(), skip_urls=(link,))
+    if not tweets:
+        log(f"khong bao nguon nao nhung tweet ({len(urls)} trang)")
+        return []
+    log(f"{len(tweets)} tweet nhung trong bao nguon: {', '.join(tweets)}")
+
+    def _photo(u):
+        tid = _X_STATUS_IN_HTML.search(u).group(2)
+        return u, social_post.x_photos(u, wd / "social" / f"x_{tid}", log)
+    with cf.ThreadPoolExecutor(max_workers=4) as ex:
+        ket_qua = list(ex.map(_photo, tweets))
+    cands = []
+    for u, media in ket_qua:
+        handle = _X_STATUS_IN_HTML.search(u).group(1)
+        official = is_official_handle(handle, story)
+        if media:
+            log(f"@{handle}: {'CHINH CHU' if official else 'khong phai chinh chu'}")
+        for m in media:
+            cands.append({"image_url": m["file_path"], "file_path": m["file_path"],
+                          "alt": f"ảnh gốc trong tweet {'chính chủ ' if official else ''}của @{handle}",
+                          "source": "embedded_tweet", "page_url": u, "score": EMBEDDED_TWEET_SCORE,
+                          "tweet_handle": handle, "official_tweet": official,
+                          # Do hoa CO CHU Y (bieu do/bang chinh chu dang), khong phai logo lot tu
+                          # <img> bao: chay that 22/09 bieu do CursorBench 3062x1960 nen trang 69%
+                          # bi cong `graphic_logo` loai ("the thuong hieu").
+                          "graphic_allowed": True})
+    log(f"{len(cands)} anh goc tu tweet nhung")
+    return cands
+
+
 def candidate_static(title: str, link: str, nguon_path: Path, title_en: str = "") -> list:
     """article_images.find tren bo nguon cua Finn; it qua thi tim rong them (bao khac,
     bang tieu de tieng Anh cua bai that)."""

@@ -70,6 +70,7 @@ SOURCE_LABELS = {                       # image.source
     "arxiv_figure": "arxiv_hinh",
     "arxiv_cover": "arxiv_bia",
     "role_supplied": "vai",
+    "embedded_tweet": "tweet trong bài",   # LOW-355: anh goc cua tweet ma bao nguon nhung lai
 }
 # LOW-285: nguon tim anh web (find_image_web) truoc 19/09/2026 ghi CAU TRUY VAN vao
 # `alt` — alt cua cac nguon nay KHONG phai chu thich that, khong duoc lay ten nguoi tu do

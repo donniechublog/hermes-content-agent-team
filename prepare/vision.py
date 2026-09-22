@@ -291,7 +291,9 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                               r"chip|s[uự] ki[eệ]n|v[aă]n ph[oò]ng|nh[aà] m[aá]y|bi[eể]n hi[eệ]u|"
                               r"headquarters|office|building|product|device|event", re.I)
         KHONG = re.compile(r"m[aà]n h[iì]nh|giao di[eệ]n|c[uử]a s[oổ]|driver|ph[aầ]n m[eề]m|screenshot|"
-                           r"ubuntu|windows|terminal|c[aà]i \w*|website|trang web", re.I)
+                           r"ubuntu|windows|terminal(?![\s-]*bench)|c[aà]i \w*|website|trang web", re.I)
+        # LOW-355: "Terminal-Bench 4.0" la TEN benchmark, khong phai cua so terminal — chart
+        # chinh chu Artificial Analysis bi lat "khong lien quan" vi chu nay (chay that 22/09/2026).
         lqv_vision, override = lqv, ""          # LOW-225: ghi lai vision noi gi TRUOC khi regex lat
         if khai_niem or thuong_hieu or chup_nguon:
             pass                                   # tin cau tra loi, khong override theo ten hang
@@ -698,6 +700,51 @@ def _note_use_change(a: dict, truoc: list, stage: str, rule: str) -> None:
                           f"dung {manifest_values.use_labels(truoc)} -> {manifest_values.use_labels(sau)}")
 
 
+# LOW-355: mo ta vision cua anh bao CHUP LAI mot post X. Do 22/09/2026 tren 6.577 anh production:
+# 198 mo ta "chup man hinh", 6 trong do la post X/tweet — "bai dang" mot minh KHONG du (co ca
+# "anh chup man hinh bai dang blog"), phai co tweet/twitter hoac chu X dung rieng (viet hoa).
+# Vision noi CUNG mot anh luc "chup man hinh bai dang X", luc "chup bai dang X" (A3 Futu, hai
+# lan chay 22/09) — nen nhan ca hai, nhung "anh chup" tran (chan dung, san pham) thi khong.
+_X_WORD = r"(?:(?i:\btweet|\btwitter)|(?<![\w-])X(?![\w-]))"
+TWEET_SCREENSHOT_RE = re.compile(
+    r"(?i:chụp)\s+(?i:lại\s+)?(?:"
+    r"(?i:màn hình).{0,80}?" + _X_WORD
+    + r"|(?i:(?:một\s+)?(?:tweet|twitter))"
+    + r"|(?i:(?:một\s+)?(?:bài đăng|bài viết|post))\s.{0,40}?" + _X_WORD + r")")
+ORIGINAL_TWEET_SOURCES = ("embedded_tweet", "social_post")
+
+
+def drop_tweet_screenshots(anh: list) -> list:
+    """Anh bao chup lai tweet -> KHONG DUNG khi da co anh GOC tai tu chinh tweet (LOW-355).
+    Chua co anh goc thi giu (con hon thieu anh) nhung ghi ro de lan sau biet ma tim.
+    Tra ma cac anh bi bo."""
+    goc = [a["id"] for a in anh if a.get("source") in ORIGINAL_TWEET_SOURCES
+           and a.get("relevant") is not False and a.get("uses")]
+    bo = []
+    for a in anh:
+        if a.get("source") in ORIGINAL_TWEET_SOURCES or a.get("relevant") is False or a.get("ranking"):
+            continue
+        mo_ta = a.get("description") or ""
+        if not TWEET_SCREENSHOT_RE.search(mo_ta):
+            continue
+        if goc:
+            a["relevant"] = False
+            a["uses"] = []
+            decision_log.note(a, "tweet_screenshot", "drop", "tweet_screenshot_has_original",
+                              f"da co anh goc tu tweet: {', '.join(goc)} — {mo_ta[:150]}")
+            a.setdefault("notes", []).insert(0, f"❌ ẢNH BÁO CHỤP LẠI TWEET — đã có ảnh GỐC tải từ chính "
+                                                  f"tweet ({', '.join(goc)}) → KHÔNG DÙNG")
+            bo.append(a["id"])
+        else:
+            decision_log.note(a, "tweet_screenshot", "flag", "tweet_screenshot_no_original", mo_ta[:200])
+            print(f"[x_goc] {a['id']} la anh chup lai tweet, KHONG tim duoc tweet goc trong bao nguon "
+                  f"({a.get('page_url', '')})", file=sys.stderr)
+    if bo:
+        print(f"[x_goc] bo {len(bo)} anh chup lai tweet ({', '.join(bo)}) — da co anh goc "
+              f"{', '.join(goc)}", file=sys.stderr)
+    return bo
+
+
 def _seen_image(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
     """Phan loai + vision tung anh; anh XH khong hoi vision. Tra
     (anh, dung_duoc, chua_nhin)."""
@@ -720,6 +767,7 @@ def _seen_image(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
             a["uses"] = ["cover_ranking", "body_chart"]
             a["notes"] = [g for g in a["notes"] if "KHÔNG DÙNG" not in g and "KHÔNG làm bìa" not in g]
             a["notes"].insert(0, "✅ ẢNH XẾP HẠNG do engine chụp từ nguồn — dùng làm ảnh chính")
+    drop_tweet_screenshots(anh)
     dung_duoc = [a for a in anh if a["uses"] and a.get("relevant") is not False]
     chua_nhin = [a["id"] for a in anh if a.get("relevant") is None]
     print(f"[anh] {len(dung_duoc)} anh DUNG DUOC / {len(anh)} tai ve"

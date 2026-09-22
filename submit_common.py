@@ -345,10 +345,15 @@ def needs_ranking_image(m: dict, a: dict) -> bool:
     rong (tin xep hang KHONG neu ten model), hoac find_and_capture nem. The DU PHONG
     (kind="card") cung khong ep: no la anh engine tu dung, chua he doc bang that.
     Dre va Ethan tung moi ben mot ban cua dieu kien nay (07/09/2026 gom lai)."""
+    import arena_x
     import ranking
-    return bool(m.get("is_ranking_story")
-                and ranking.is_capture((m.get("ranking") or {}).get("kind"))
-                and not a.get("ranking"))
+    from image_rules_common import is_official_tweet_chart
+    xh = (m.get("ranking") or {}).get("kind")
+    # LOW-355: chart goc tweet chinh chu la BANG hop le, ngang bang engine tu chup — nhung
+    # @arena van dung dau (Ong Chu 22/09/2026: "cu lay tu arena.ai dau tien").
+    if is_official_tweet_chart(a) and xh != arena_x.KIND:
+        return False
+    return bool(m.get("is_ranking_story") and ranking.is_capture(xh) and not a.get("ranking"))
 
 
 def only_ranking_choice(m: dict) -> str | None:
@@ -426,8 +431,11 @@ def check_image_fall(anh: dict, dung: dict, m: dict) -> list:
     va CHUA len bai khac (check_not_reused) — de vai doi duoc that, khong ket."""
     # Roi ma DU TU KHOA chinh cua tin (vision TU_KHOA) thi mien — Ong Chu 13/09
     # chon chinh mot do hoa roi nhu vay lam hero.
+    from image_rules_common import is_official_tweet_chart
+    # LOW-355: chart goc tweet chinh chu la bang hop le — bang benchmark von day chu, nhu XH.
     cluttered = [(nhan, ma) for ma, nhan in dung.items()
-           if ma and (anh.get(ma) or {}).get("cluttered") and not (anh.get(ma) or {}).get("has_keywords")]
+           if ma and (anh.get(ma) or {}).get("cluttered") and not (anh.get(ma) or {}).get("has_keywords")
+           and not is_official_tweet_chart(anh.get(ma))]
     if not cluttered:
         return []
     rules = _vai.rules_module(m.get("image_role", ""))
@@ -451,7 +459,8 @@ def check_empty_image(a: dict | None, nhan: str, limit: float) -> list:
     designer"). `limit` = nguong rieng cua vai (image_rules_<vai>.EMPTY_SHARE_MAX).
     Vision chua do (khoa `empty_share` thieu) thi khong chan."""
     import subject_fit
-    if not a or not subject_fit.too_empty(a.get("empty_share"), limit):
+    from image_rules_common import is_official_tweet_chart
+    if not a or is_official_tweet_chart(a) or not subject_fit.too_empty(a.get("empty_share"), limit):
         return []
     return [f"{nhan}: {a.get('id')} gần như TRỐNG ({float(a['empty_share']):.0%} khung là nền trơn, "
             "chủ thể quá nhỏ) — cần ảnh có chủ thể chính lấp khung 4:5, không dùng logo nhỏ trên nền trơn"]

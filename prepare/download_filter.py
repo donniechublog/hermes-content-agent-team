@@ -109,6 +109,8 @@ def _provenance_of(c: dict) -> str:
     cong "khong dung lai anh" khong tach duoc the logo khoi anh su kien."""
     if (c.get("brand_match") or {}).get("kind") == "logo" and c.get("graphic_allowed"):
         return "logo_card"
+    if c.get("source") == "embedded_tweet" and c.get("official_tweet"):
+        return "official_tweet"          # LOW-355: chart goc tweet chinh chu = bang hop le
     return {"browser_capture": "chart_capture",
             "arxiv_figure": "arxiv_figure"}.get(str(c.get("source") or ""), "engine_download")
 
@@ -249,7 +251,9 @@ def download_and_filter(cands: list, wd: Path) -> list:
                    **({"paper_figure": c["paper_figure"]} if c.get("paper_figure") else {}),
                    **({"concept": c["concept"]} if c.get("concept") else {}),
                    **({"brand_match": c["brand_match"]} if c.get("brand_match") else {}),
-                   **({"entity": c["entity"]} if c.get("entity") else {})})
+                   **({"entity": c["entity"]} if c.get("entity") else {}),
+                   **({"tweet_handle": c["tweet_handle"], "official_tweet": bool(c.get("official_tweet"))}
+                      if c.get("tweet_handle") else {})})
         decision_log.note(ra[-1], "download", "keep", "download_and_filter")
     return ra
 

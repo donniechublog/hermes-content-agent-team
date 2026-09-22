@@ -41,7 +41,10 @@ def _check_stack(a: dict, ma: str, ma2, anh: dict, m: dict, loi: list) -> None:
     vai. Chi con giu: chart la chu the (khong bi keo di ghep NEU la xep hang),
     va ghep doc chi hop khi CA HAI anh deu ngang (rang buoc cau truc cua chinh
     co che ghep, khong phai cam doan ve chat luong/nguon)."""
-    can_ghep = a["kind"] == "chart" and not a.get("ranking") and not role.is_brand_logo_card(a)
+    from image_rules_common import is_official_tweet_chart
+    # LOW-355: chart goc tweet chinh chu la BANG hop le — di mot minh nhu anh xep hang.
+    can_ghep = (a["kind"] == "chart" and not a.get("ranking") and not role.is_brand_logo_card(a)
+                and not is_official_tweet_chart(a))
     if can_ghep and not ma2:
         cap = eb.stackable_pairs_hero(m)
         loi.append(f"{ma} là CHART — card.py chặn một mình. Thêm \"image2\" (cặp gợi ý: "
