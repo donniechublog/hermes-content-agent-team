@@ -556,6 +556,9 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         # tru hang me co ten trong tieu de thi dung ca hai logo (LOW-354).
         cands = [c for c in cands if (c.get("brand_match") or {}).get("kind") != "logo"
                  or (c.get("brand_match") or {}).get("key") in cha_co_ten] + logo_model
+        for c in cands:                      # hai logo: logo MODEL dung truoc (len bia truoc)
+            if (c.get("brand_match") or {}).get("kind") == "logo" and c["brand_match"].get("key") in cha_co_ten:
+                c["score"] = c.get("score", 0) - 1
     # Diem theo LOAI TIN cong vao diem goc truoc khi sort: cung bo ung vien,
     # tin M&A day logo len truoc chan dung, tin LAB day tru so/founder len
     # truoc logo (story_type.BOARD_IMAGE_BY_TYPE, Ong Chu 12/09/2026).
