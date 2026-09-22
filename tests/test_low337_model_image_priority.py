@@ -246,6 +246,7 @@ def test_research_story_on_gemini_uses_model_not_google():
             pass
         assert seen["report"] == ["Gemini"], seen["report"]
         assert set(seen["cands"]) == {"gemini_logo.png", "google_logo.png", "gemini_app.jpg", "pichai.jpg"},             seen["cands"]
+        assert seen["cands"].index("gemini_logo.png") < seen["cands"].index("google_logo.png"), seen["cands"]
     finally:
         (th.vendor_images, th.model_logo_images, th.image_has_ballot, th.deadline_passed,
          fr.download_and_filter, fr._report_brand_empty) = saved
