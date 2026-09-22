@@ -129,6 +129,29 @@ def test_gather_puts_embedded_tweets_into_candidates():
     assert seen["cands"][0] is tweet, [c["source"] for c in seen["cands"]]
 
 
+# Bieu do CursorBench 4.0 THAT tai tu x.com/elonmusk/status/2102071804495872374 (thu nho 1000x640).
+CHART = ROOT / "tests" / "golden" / "low355_cursorbench_chart.png"
+
+
+def test_white_background_tweet_chart_survives_download_gate():
+    """Chay that 22/09: bieu do goc 3062x1960 tu tweet bi `graphic_logo` loai (nen trang 69%)."""
+    import article_images
+    import role
+    from PIL import Image
+    from prepare import download_filter
+    role.set_active_role("dre")
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / "x_01.png"
+        p.write_bytes(CHART.read_bytes())
+        assert article_images._graphic(Image.open(p)), "anh mau phai dinh cong do hoa nhu anh that"
+        with mock.patch.object(source, "embedded_tweet_urls", lambda h, now, skip_urls=(): [f"https://x.com/elonmusk/status/{ELON_QUOTE}"]), \
+             mock.patch.object(article_images, "_download", lambda u, t=15: None), \
+             mock.patch("social_post.x_photos", lambda u, out, log: [{"type": "image", "url": u, "file_path": str(p)}]):
+            cands = source.candidate_embedded_tweets([{"url": "https://decrypt.co/a"}], "https://s.com/a", Path(d))
+        kept = download_filter.download_and_filter(cands, Path(d) / "wd")
+    assert [a["source"] for a in kept] == ["embedded_tweet"], kept
+
+
 def _img(i, source, desc, relevant=True):
     return {"id": i, "source": source, "description": desc, "relevant": relevant,
             "uses": ["body"], "notes": [], "page_url": "https://news.futunn.com/p"}
@@ -158,12 +181,17 @@ def test_regex_only_x_posts():
     for yes in (FUTU_DESC,
                 "Ảnh chụp màn hình bài đăng trên X của Andrew Clark về các API sắp lỗi thời trong React.",
                 "Ảnh chụp màn hình một bài đăng X (Twitter) của tài khoản Artificial Analysis.",
-                "Ảnh chụp màn hình tweet của Sam Altman."):
+                "Ảnh chụp màn hình tweet của Sam Altman.",
+                # cung anh A3, lan chay that thu hai tren may chu (22/09): khong co chu "man hinh"
+                "Ảnh chụp bài đăng X của Elon Musk trích dẫn SpaceXAI kèm biểu đồ đánh giá Grok 4.7.",
+                "Ảnh chụp tweet của SpaceXAI."):
         assert r.search(yes), yes
     for no in ('Ảnh chụp màn hình bài đăng blog tiêu đề đỏ "What a time to be alive" về RubyGems.org.',
                "Ảnh chụp màn hình giao diện 1920 x 1080 của ứng dụng Grok.",
                "Ảnh chụp màn hình trang SpaceX-X1 launch.",
-               "Biểu đồ so sánh Grok 4.7 trên nền tảng X."):
+               "Biểu đồ so sánh Grok 4.7 trên nền tảng X.",
+               "Ảnh chụp chân dung Elon Musk mặc áo thun xám trước phông nền X.",
+               "Ảnh chụp bài đăng của CEO xAI trên blog SpaceX."):
         assert not r.search(no), no
 
 

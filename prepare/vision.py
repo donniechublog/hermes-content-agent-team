@@ -701,8 +701,14 @@ def _note_use_change(a: dict, truoc: list, stage: str, rule: str) -> None:
 # LOW-355: mo ta vision cua anh bao CHUP LAI mot post X. Do 22/09/2026 tren 6.577 anh production:
 # 198 mo ta "chup man hinh", 6 trong do la post X/tweet — "bai dang" mot minh KHONG du (co ca
 # "anh chup man hinh bai dang blog"), phai co tweet/twitter hoac chu X dung rieng (viet hoa).
+# Vision noi CUNG mot anh luc "chup man hinh bai dang X", luc "chup bai dang X" (A3 Futu, hai
+# lan chay 22/09) — nen nhan ca hai, nhung "anh chup" tran (chan dung, san pham) thi khong.
+_X_WORD = r"(?:(?i:\btweet|\btwitter)|(?<![\w-])X(?![\w-]))"
 TWEET_SCREENSHOT_RE = re.compile(
-    r"(?i:chụp màn hình).{0,80}?(?:(?i:\btweet|\btwitter)|(?<![\w-])X(?![\w-]))")
+    r"(?i:chụp)\s+(?i:lại\s+)?(?:"
+    r"(?i:màn hình).{0,80}?" + _X_WORD
+    + r"|(?i:(?:một\s+)?(?:tweet|twitter))"
+    + r"|(?i:(?:một\s+)?(?:bài đăng|bài viết|post))\s.{0,40}?" + _X_WORD + r")")
 ORIGINAL_TWEET_SOURCES = ("embedded_tweet", "social_post")
 
 

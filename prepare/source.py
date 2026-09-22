@@ -180,7 +180,11 @@ def candidate_embedded_tweets(source_pages: list, link: str, wd: Path) -> list:
             handle = _X_STATUS_IN_HTML.search(u).group(1)
             cands.append({"image_url": m["file_path"], "file_path": m["file_path"],
                           "alt": f"ảnh gốc trong tweet của @{handle}",
-                          "source": "embedded_tweet", "page_url": u, "score": EMBEDDED_TWEET_SCORE})
+                          "source": "embedded_tweet", "page_url": u, "score": EMBEDDED_TWEET_SCORE,
+                          # Do hoa CO CHU Y (bieu do/bang chinh chu dang), khong phai logo lot tu
+                          # <img> bao: chay that 22/09 bieu do CursorBench 3062x1960 nen trang 69%
+                          # bi cong `graphic_logo` loai ("the thuong hieu").
+                          "graphic_allowed": True})
     log(f"{len(cands)} anh goc tu tweet nhung")
     return cands
 
