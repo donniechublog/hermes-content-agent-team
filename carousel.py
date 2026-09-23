@@ -199,12 +199,19 @@ def _ink_over(font, wrapped, lh) -> int:
     return max(0, font.getbbox(last_line)[3] - lh) if last_line else 0
 
 
-def _draw_paragraphs(d, x, y, wrapped, font, lh, fill, brand_colors=False, brand_bg=None):
+def _draw_paragraphs(d, x, y, wrapped, font, lh, fill, brand_colors=False, brand_bg=None,
+                     canvas=None):
     """Ve lan luot cac doan tu (x, y) xuong. Tra ve y sau khi ve xong.
 
     `brand_colors` (LOW-344): to ten hang/ten model theo palette hang, cung ham
     ve voi tieu de the Ethan (`card.draw_brand_line`). `brand_bg`: mau nen THAT
-    duoi chu (nen phang LOW-341) — mau ten hang keo toi/sang cho du tuong phan voi no."""
+    duoi chu (nen phang LOW-341) — mau ten hang keo toi/sang cho du tuong phan voi no.
+
+    `canvas` (LOW-392, 23/09/2026): anh CHUP lam nen thi khong co `brand_bg`, va truoc day
+    hook bia khong do nen gi ca — mau hang giu nguyen palette. Do that tren bia nen sang:
+    "Claude Opus" cam tren nen 145-171 chi con CR 1.07-1.28, tuc gan nhu mat chu ben canh
+    dong chu trang. Truyen canvas thi moi cum do nen NGAY DUOI no roi keo mau cho du tuong
+    phan (`card.bg_under` + `card.brand_fill`)."""
     gap = int(lh * PARA_GAP)
     if brand_bg is not None:
         muc = text_bg._luminance(brand_bg)
@@ -215,7 +222,10 @@ def _draw_paragraphs(d, x, y, wrapped, font, lh, fill, brand_colors=False, brand
     for pi, lines in enumerate(wrapped):
         for ln in lines:
             if brand_colors:
-                card.draw_brand_line(d, x, y, ln, font, fill, nen_sang=nen_sang, bg_level=bg_level)
+                card.draw_brand_line(
+                    d, x, y, ln, font, fill, nen_sang=nen_sang, bg_level=bg_level,
+                    bg_for=(None if canvas is None or brand_bg is not None
+                            else lambda x0, y0, x1, y1: card.bg_under(canvas, x0, x1, y0, y1)))
             else:
                 d.text((x, y), ln, font=font, fill=fill)
             y += lh
@@ -1051,7 +1061,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
         _note_flat(report, canvas, nen, hop)
     # LOW-344: to ten hang/ten model tren hook; nen phang (LOW-341) thi keo mau theo chinh nen do.
     _draw_paragraphs(d, PAD, y, wrapped, hf, lh, fg, brand_colors=True,
-                     brand_bg=tuple(nen[:3]) if nen else None)
+                     brand_bg=tuple(nen[:3]) if nen else None, canvas=canvas)
     if label:
         # Hang duoi cung: chip CATEGORY (cyan) + chip label (trang), cung y.
         bb = _watermark(canvas, category, y=y_label)
