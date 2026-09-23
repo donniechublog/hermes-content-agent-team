@@ -94,6 +94,25 @@ def test_the_rung_is_skipped_when_the_source_is_not_a_board():
         ranking.capture_source_board = saved
 
 
+def test_a_loading_skeleton_is_not_a_board():
+    """Do that 23/09: arena.ai chup ra dung KHUNG XUONG luc dang tai — may o xam,
+    khong mot con so nao. Cong "anh rong" khong bat duoc vi no co hinh khoi."""
+    class FakePage:
+        def __init__(self, dem):
+            self.dem = dem
+
+        def evaluate(self, js, sel):
+            return self.dem
+
+    du, _ = ranking._board_has_content(FakePage({"rows": 1, "chars": 0}), "table")
+    assert not du, "khung xuong 1 hang van bi coi la bang"
+    du, _ = ranking._board_has_content(FakePage({"rows": 22, "chars": 4000}), "table")
+    assert du
+    du, _ = ranking._board_has_content(FakePage({"rows": 0, "chars": 12}), "figure")
+    assert not du, "figure chi co 12 ky tu thi chua phai chart co du lieu"
+    assert ranking.BOARD_ROWS_MIN == 5, "cung nguong voi capture_board (bang >=5 hang)"
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca
     chay_tat_ca(globals())

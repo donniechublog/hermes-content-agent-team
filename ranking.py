@@ -1001,6 +1001,34 @@ BOARD_PICK = ["table", "figure", "svg", "canvas"]
 
 # Boc phan tu can chup vao mot <div> cat san chieu cao. Tra ve de goi tu Python:
 # `max-height` tren chinh <table> khong co tac dung (xem chu thich noi goi).
+# Dem noi dung THAT trong phan tu sap chup: so hang co chu, va tong so ky tu.
+# Khung xuong luc dang tai (skeleton) co du kich thuoc nhung KHONG co chu nao.
+JS_CONTENT = """
+(sel) => {
+  const e = document.querySelector(sel);
+  if (!e) return {rows: 0, chars: 0};
+  const rows = Array.from(e.querySelectorAll('tr,[role=row]'))
+    .filter(r => (r.innerText || '').trim().length >= 3);
+  return {rows: rows.length, chars: (e.innerText || '').replace(/\s+/g, '').length};
+}
+"""
+
+# Bang phai co it nhat bay nhieu hang CO CHU — cung nguong voi `capture_board`
+# (bang >=5 hang) de hai duong khong noi hai chuyen khac nhau.
+BOARD_ROWS_MIN = 5
+BOARD_CHARS_MIN = 80
+
+
+def _board_has_content(pg, sel: str) -> tuple:
+    """(du noi dung chua, mo ta) cho phan tu `sel` tren trang dang mo."""
+    dem = pg.evaluate(JS_CONTENT, sel)
+    if sel == "table":
+        return dem["rows"] >= BOARD_ROWS_MIN, f"{dem['rows']} hàng có chữ"
+    if sel == "canvas":
+        return True, "canvas (không đọc được chữ)"
+    return dem["chars"] >= BOARD_CHARS_MIN, f"{dem['chars']} ký tự"
+
+
 def source_page_is_board(url: str) -> bool:
     """Hàm THUẦN: `link gốc` của bài có phải một trang BẢNG XẾP HẠNG không?
 
@@ -1068,6 +1096,20 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
             rong = rong_moi
         el = pg.query_selector(do["sel"])
         if not el:
+            return None
+        # DOI DU LIEU VE. Do that 23/09/2026: arena.ai/leaderboard/code/webdev chup
+        # ra dung KHUNG XUONG luc dang tai — may o xam tren nen trang, khong mot
+        # con so nao. Cong "anh rong" khong bat duoc (no co hinh khoi, khong phang),
+        # va tam do di tiep duoc toi tan slide (dung loi bo Broadcom 04/09).
+        for lan in range(6):
+            du, mo_ta_dem = _board_has_content(pg, do["sel"])
+            if du:
+                break
+            if lan == 0:
+                in_log(f"[xep_hang] trang nguồn: bảng chưa có dữ liệu ({mo_ta_dem}), đợi…")
+            pg.wait_for_timeout(2000)
+        else:
+            in_log(f"[xep_hang] trang nguồn {url}: bảng không bao giờ có dữ liệu ({mo_ta_dem}) — bỏ")
             return None
         try:
             el.scroll_into_view_if_needed(timeout=8000)
