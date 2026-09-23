@@ -448,6 +448,15 @@ def _contrast_fit(mau, nen_level, darker, target=BRAND_MIN_CONTRAST):
     return mau
 
 
+def bg_under(canvas, x0, x1, y0, y1):
+    """Do sang nen ngay duoi mot O CHU (LOW-392) — dung cho `draw_brand_line(bg_for=...)`.
+    Do TRUNG VI chu khong phai trung binh: mot vet sang/toi hep trong o keo trung binh di
+    nhung khong phai cai ma mat doc, con trung vi cho dung "phan lon o nay sang bao nhieu"."""
+    hop = _within_card(canvas, (int(x0), int(y0), int(x1), int(y1)))
+    px = sorted(canvas.crop(hop).convert("L").getdata())
+    return px[len(px) // 2] if px else 0.0
+
+
 def brand_fill(key, role, nen_sang=False, fallback=None, bg_level=None):
     """Mau ve mot khuc ten hang (`role` "name"/"org") tren the/slide PIL.
 
@@ -485,24 +494,36 @@ def _empty_line(d, dong, font, words=None):
 
 
 def draw_brand_line(d, x, y, dong, font, mau, colored=True, nen_sang=False, fallback=None,
-                    bg_level=None, words=None):
+                    bg_level=None, words=None, bg_for=None):
     """Ve mot dong chu, to ten hang/ten model theo palette hang (LOW-344).
 
     Dung chung cho Ethan (`_about_line`) va Dre (hook bia carousel). Ve tung
     KHUC (ten model, tien to to chuc, dau cau) noi lien nhau, dau cach giua
     cac tu — be ngang do bang `_empty_line`, cung cach ve. `colored=False`:
-    ca dong mot mau (the tin kieu dai)."""
+    ca dong mot mau (the tin kieu dai).
+
+    `bg_for(x0, y0, x1, y1)` (LOW-392, 23/09/2026): do sang nen trong dung HOP NET CHU cua
+    khuc sap ve (hop tinh tu `font.getbbox`, khong phai ca dai dong). Truyen no thi moi khuc
+    fit tuong phan theo chinh cho no dung. Do that tren main a5c09ab: ranh sang/toi cat qua
+    dai dong (lech chuan 23-59) thi so trung binh ca dai la 99 trong khi nen duoi cum `GPT-5`
+    la 111 -> mau ep dat 3.0 so voi 99 nhung that ra chi con CR 2.56. Ham ve khong co canvas
+    nen noi VE phai dua phep do vao."""
     khoang = d.textlength(" ", font=font)
     for word in (words if words is not None else brand_names.line_segments(dong)):
         for text, role, key in word:
-            f_mau = brand_fill(key, role, nen_sang, fallback, bg_level) if (colored and role) else mau
+            rong = d.textlength(text, font=font)
+            muc = bg_level
+            if colored and role and bg_for is not None:
+                bb = font.getbbox(text)
+                muc = bg_for(x + bb[0], y + bb[1], x + bb[2], y + bb[3])
+            f_mau = brand_fill(key, role, nen_sang, fallback, muc) if (colored and role) else mau
             d.text((x, y), text, font=font, fill=f_mau)
-            x += d.textlength(text, font=font)
+            x += rong
         x += khoang
 
 
 def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
-             nen_sang=False, bg_level=None, words=None):
+             nen_sang=False, bg_level=None, words=None, bg_for=None):
     """Ve mot dong tieu de the Ethan, to rieng ten hang/ten model.
 
     che_do: None — khong to gi, ca dong mot mau (the tin kieu dai); co gia tri
@@ -518,7 +539,7 @@ def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
     toi nen dai chu co the sang; kieu the tin luon co nen toi.
     """
     draw_brand_line(d, x, y, dong, font, mau, colored=bool(che_do), nen_sang=nen_sang,
-                    bg_level=bg_level, words=words)
+                    bg_level=bg_level, words=words, bg_for=bg_for)
 
 
 def _empty_tracked(d, text, font, track):
@@ -1335,9 +1356,13 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", cluttered=
     # kieu quote nen cung to ten hang/ten model (LOW-344), nhu `_about_line`.
     qy = first_line_top
     for ln, mau_ln, sg in zip(q_lines, mau_dong, sang_dong, strict=False):
+        # LOW-392: mau ten hang fit theo nen trong dung HOP NET CHU cua cum do, khong theo
+        # trung binh ca dai dong — ranh sang/toi cat ngang dai thi hai so lech nhau (99 vs 111,
+        # CR that chi 2.56).
         draw_brand_line(d, TEXT_X, qy - tren, ln, f_q, mau_ln,
                         colored=bool(CURRENT_BRAND.get("company_name_color")),
-                        nen_sang=(mau_ln == BG), bg_level=sg)
+                        nen_sang=(mau_ln == BG), bg_level=sg,
+                        bg_for=lambda x0, y0, x1, y1: bg_under(canvas, x0, x1, y0, y1))
         qy += buoc
 
     # MAU: net khung dung CYAN cua bo nhan dien (nhu ten kenh, dong tong voi the
@@ -1651,8 +1676,12 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False, 
         n = len(ln.split(" "))
         tu_dong = brand_names.restyle(cac_tu[dau:dau + n], ln)
         dau += n
+        # LOW-392: cung phep do nhu the quote — mau ten hang fit theo nen trong hop net chu.
+        # Trong khung chu the tran, nen la mot lop overlay deu nen hai con so gan bang nhau;
+        # van do theo cum de mot cho quyet dinh, khong de hai duong lech dan.
         _about_line(d, _x_chu(ln, f_title, tu_dong), y - tren, ln, f_title, mau_ln,
-                 che_do_to, mau_du_phong, nen_sang=(mau_ln == BG), bg_level=sg, words=tu_dong)
+                 che_do_to, mau_du_phong, nen_sang=(mau_ln == BG), bg_level=sg, words=tu_dong,
+                 bg_for=lambda x0, y0, x1, y1: bg_under(canvas, x0, x1, y0, y1))
         y += buoc
 
     # Chan the chi con TEN KENH, can giua. Nguon van phai ghi, nhung ghi o chu
