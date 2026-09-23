@@ -80,3 +80,18 @@ def display_name(ten: str) -> str:
     if slug:
         tokens = [_case(x) for x in _merge_version(tokens)]
     return " ".join(tokens)
+
+
+def key(ten: str) -> str:
+    """Khoa de so ten giua HAI nha cung cap: 'claude-opus-5-5-max' va
+    'Claude Opus 5.5 (max with fallback)' ra cung mot khoa.
+
+    `display_name` con giu gach noi trong ten co chu hoa (`GLM-5.3`) vi do la
+    cach hang viet; so ten thi phai bo het dau tach di. Cung phep chuan hoa voi
+    `norm` trong `ranking._JS_NORM`, co y: hai cho deu dang tra loi cau "hai ten
+    nay co phai mot model khong".
+
+    Chu so KHONG bi nuot: 'claude opus 5' -> 'claudeopus5' khac
+    'claude opus 5.5' -> 'claudeopus55'.
+    """
+    return re.sub(r"[\s\-_–—.]+", "", display_name(ten).lower())

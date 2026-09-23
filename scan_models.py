@@ -41,6 +41,7 @@ from pathlib import Path
 import httpx
 
 import model_boards                                            # noqa: E402
+import model_name                                             # noqa: E402
 import scan_common                                            # noqa: E402
 import env_load
 
@@ -1064,6 +1065,42 @@ def fetch_arena_tweets(ngay: int, now=None) -> list:
     return ra
 
 
+def prefer_arena(releases_aa: list, rank_climbs: list, in_log=None) -> tuple:
+    """Cung mot model quet duoc o CA arena.ai lan AA thi giu ban arena. Ham THUAN.
+
+    Ong Chu 23/09/2026 (LOW-383): *"giu no lam nguon bo sung cho Nova quet, neu
+    quet duoc o ca AA thi tin quet tu Arena.ai duoc uu tien"*. Ly do: do tren may
+    chu cung ngay, arena chup duoc 37/45 anh xep hang con aa-models 0/45 — tin di
+    duong arena thi gan nhu chac chan co anh that.
+
+    Hai trang dat ten KHAC HE (arena tra slug `claude-opus-5-max`, AA tra
+    `Claude Opus 5.5`) nen phai quy ve `model_name.display_name` truoc khi so:
+    khop tho chi thay 1/20 ten trung, qua phep quy ve la 16/20.
+
+    Tra (releases_aa con lai, rank_climbs con lai, releases_aa da bo). Muc bo di
+    VAN duoc danh dau "da bao" o `main` — arena da dua roi, de no quay lai lan
+    quet sau la de ra tin doi muon mot ngay.
+    """
+    key = model_name.key
+    on_arena = {key(c["name"]) for c in rank_climbs
+                if c["board"] in model_boards.ARENA_KEYS}
+    new_on_arena = {key(c["name"]) for c in rank_climbs
+                    if c["board"] in model_boards.ARENA_KEYS and c["previous_rank"] is None}
+    climbs = [c for c in rank_climbs
+              if not (c["board"] in model_boards.AA_KEYS and key(c["name"]) in on_arena)]
+    # Ban phat hanh theo bang cham diem chi nhuong khi arena cung thay model do
+    # LAN DAU: mot muc "leo 3 bac" ben arena la tin KHAC, khong thay duoc tin
+    # "model moi xuat hien".
+    releases = [r for r in releases_aa if key(r["original_name"]) not in new_on_arena]
+    dropped = [r for r in releases_aa if key(r["original_name"]) in new_on_arena]
+    if in_log and (len(climbs) < len(rank_climbs) or dropped):
+        bo = ([f"{c['board']}|{c['name']}" for c in rank_climbs if c not in climbs]
+              + [f"release|{r['original_name']}" for r in dropped])
+        in_log(f"[uu tien arena] bo {len(bo)} muc cua artificialanalysis vi arena.ai "
+               f"da co cung model: {', '.join(bo[:8])}")
+    return releases, climbs, dropped
+
+
 def _try(ten: str, fn, khi_hong):
     """Hang rao cuoi cho MOT nguon: loi bat ngo khong duoc keo do ca luot quet.
 
@@ -1214,6 +1251,11 @@ def main():
     # chi bao MOT lan dung ngay id xuat hien — hom do Nova hong la mat luon.
     da_bao = aa_already_report()
     ra_mat_aa = [r for r in aa.get("releases_by_name", []) if r["original_name"] not in da_bao]
+    # Cung model quet duoc o ca hai phia thi giu ban arena (LOW-383). Loc TRUOC
+    # khi dung `ket`: bao cao cua Nova va danh sach BAT BUOC phai thay cung mot
+    # danh sach, khong phai hai ban khac nhau cua cung mot lan quet.
+    ra_mat_aa, leo_hang, bo_cho_arena = prefer_arena(
+        ra_mat_aa, leo_hang, in_log=lambda s: print(s, file=sys.stderr))
 
     ket = {
         "scanned_at": datetime.now(timezone.utc).isoformat(),
@@ -1244,7 +1286,9 @@ def main():
     else:
         _in_report(ket)
 
-    da_bao.update({r["original_name"]: r["released"] for r in ra_mat_aa})
+    # Muc da nhuong cho arena cung tinh la DA BAO: de no quay lai lan quet sau
+    # chi la ra tin doi muon mot ngay.
+    da_bao.update({r["original_name"]: r["released"] for r in ra_mat_aa + bo_cho_arena})
     write_timestamp(tat_ca | cu, hang_moi, da_bao)
     write_required(ra_mat_aa, leo_hang, hf, arena_tweets)
     if not a.khong_bat_buoc:
