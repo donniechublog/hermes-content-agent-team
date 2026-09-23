@@ -29,6 +29,12 @@ Vẽ ra là **bịa đặt**. Ảnh phải phản ánh đúng cái có thật tr
 Bỏ thẳng, không cần cân nhắc:
 
 - **Ảnh AI tạo có người** (stock persona) và **ảnh người lạ lấy từ báo**.
+- **Ảnh AI slop** kể cả không có người (LOW-337, 22/09/2026): minh hoạ do model sinh ảnh
+  tạo mà báo khác dùng làm ảnh đầu bài — render 3D phát sáng, huy hiệu tự chế, poster
+  "A vs B", logo/tên model vẽ lại. Engine hỏi vision `AI slop: yes | no` và bỏ tấm "yes"
+  (brief ghi ❌ ẢNH AI SLOP). Chữ vẽ trên ảnh loại này KHÔNG phải dữ kiện: bìa Kite
+  Grok 4.7 từng lấy chữ "DeepSeek R1" trên ảnh wccftech làm tít, trong khi tư liệu
+  chỉ có DeepSeek V4.1 Flash. Minh hoạ biên tập do người vẽ vẫn dùng được (LOW-201).
 - **Ảnh rò rỉ** (leak, chưa được xác nhận chính thức): rủi ro cả về độ chính xác
   lẫn bản quyền. Tìm ảnh chính thức khác thay vào.
 
@@ -791,6 +797,50 @@ nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IM
   cổng tỉ lệ 4:5..1:1 và cổng chart (§1.2b2: ảnh chụp nguồn được làm bìa).
 - Test: `tests/test_low336_no_side_borders.py`.
 
+## 6d. Vùng an toàn khi bị cắt vuông 1:1 — luật CHUNG mọi vai (LOW-364, 22/09/2026)
+
+Ông Chủ, bài dcgr Grok 4.7 (thẻ Ethan 1200×1500, đúng 4:5) lên Instagram/Threads vẫn bị cắt:
+*"lý do đã làm hình ratio 4:5 nhưng đăng ig vẫn bị crop"*. Đo trên tệp thật: bài đăng khớp đúng
+phép **cắt vuông giữa** — mất 150px trên (hàng tiêu đề bảng + hạng 1–2) và 150px dưới (dòng tựa
+cuối + tên kênh). Chốt cùng ngày: *"đưa những thứ quan trọng nhất vào safezone, như vậy ko còn lệ
+thuộc vào hình lúc publish nữa"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`,
+`IMAGE_RULES_ETHAN.md`, `IMAGE_RULES_KITE.md` — sửa một thì sửa cả ba.
+
+- **Vùng an toàn** = ô vuông giữa khung: dải cắt mỗi đầu = (H − W) / 2 (4:5 → 10% chiều cao:
+  135px ở 1080×1350, 150px ở 1200×1500), cộng lề `safe_zone.SAFE_PAD` = 12px. Một chỗ tính:
+  `safe_zone.py`.
+- **Trong vùng an toàn:** khung chữ + kicker + tựa (thẻ Ethan), hook + hàng chip chuyên mục/tên
+  model (bìa Dre), khối chữ slide thân (`carousel.TEXT_BASE` = 1203), khung quote, đỉnh nội dung
+  ảnh nền phẳng (`carousel.FLAT_TOP` = 147 — hàng tiêu đề bảng/hình paper).
+- **Được nằm ở dải cắt:** nền, phần ảnh kéo dài, tên kênh (Instagram đã hiện tên tài khoản), chip
+  tên kênh góc dưới-trái slide thân, dòng nguồn thẻ quote Ethan (`card._render_quote`).
+- **Slide quote Dre không còn dòng nguồn** dưới khung (Ông Chủ khoanh "Lei Jun" / "via Financial
+  Times": *"phần được khoanh có thể bỏ luôn"*) — nguồn ghi ở chú thích bài. `attrib` vẫn qua cổng
+  chữ và quyết định màu dấu ngoặc theo hãng.
+- **Ảnh đặt từ mép trên** — thẻ Ethan (ảnh chụp trang, bảng xếp hạng, mọi ảnh thấp hơn thẻ) và
+  bìa Dre đi đường full bề ngang: đỉnh ảnh có viền phẳng (6 hàng sát mép cùng một màu) thì hạ ảnh
+  xuống vùng an toàn, dải trên là chính màu đó kéo dài — một mặt phẳng liền (§7). Đỉnh không phẳng
+  thì giữ như cũ, không đặt một dải màu lạ lên trên. Slide thân Dre không hạ (ảnh ghép dưới sẽ bị
+  chữ che thêm — cổng LOW-215).
+- **Nền chữ ôm khối chữ** (Ông Chủ cùng ngày, ba vòng xem hình thật: *"làm phần nền text hẹp
+  lại sát vào phần quote / text hơn là ok"*, rồi khoanh các dải nền thừa trên/dưới chữ: *"giữ
+  nguyên vị trí, chỉ có hai phần đó lược đi"*, *"phần nền ở đây cũng lược đi phần được khoanh"*):
+  overlay tối (`_overlay_text`) VÀ lớp màu nền ảnh ghép hai nền (`_cover_below`, bìa/slide) phủ
+  ĐÚNG các dòng chữ: chuyển 24px ngay trên dòng chữ đầu (`OVERLAY_LEAD`, trước 120), đạt mức tối
+  tại đỉnh dòng đầu (`OVERLAY_FULL_BEFORE` = 0), bắt đầu tan NGAY tại nét chữ dòng cuối
+  (`OVERLAY_HOLD_AFTER` = 0), tan hết trong 40px (`OVERLAY_TAIL`). Dòng cuối của bìa là hàng chip;
+  của slide quote là dòng quote cuối — nét khung dưới và dấu đóng ngoặc nằm trên ảnh (vòng 4:
+  *"chỉ cần lược đi phần nền được khoanh như vậy là được"*). Ngoài vùng đó ảnh hiện lại.
+- **Ảnh xếp hạng** (dấu `ranking_*`: arena X, bảng benchmark) tính là chart cho ngưỡng nền phẳng
+  dù spec không khai `"chart"`: bìa Xiaomi (arena vuông) trước bị cover-crop mất hai cạnh, nay đi
+  §7.0b — 90% bề ngang, đặt từ đỉnh vùng an toàn (Ông Chủ: *"thu nhỏ lại khoảng 10% và đẩy lên
+  phía trên, ko cần phải hiển thị full width"*).
+- **Cổng hình học** `safe_zone.gate` trong từng hàm vẽ (`card._render_ceiling`, `card._render_quote`,
+  `carousel.build_cover` / `build_body` / `build_body_quote`): nội dung trên ra ngoài vùng an toàn
+  thì dừng — lỗi CODE bố cục, không phải spec. Test đo trên pixel: `tests/test_instagram_safe_zone.py`.
+- **Chưa áp:** slide Kite (`render_edu.py`, bố cục HTML) — ticket con của LOW-364; chủ thể ảnh
+  chụp thường (`cover_focus`) nằm trong ô vuông — chưa đo.
+
 ## 7. Không bao giờ để ra hai vùng riêng biệt
 
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
@@ -1028,7 +1078,8 @@ một lớp overlay trên hình. Thẻ quote: cỡ chữ tự hạ tới khi kh�
 Ông Chủ, thẻ Qwen-Image-2.1: Ethan dùng ảnh toà nhà Alibaba thay vì logo. *"Với tất cả
 thông tin về benchmark model, chỉ dùng 2 thứ là logo và bảng benchmark từ các trang
 benchmark uy tín và twitter của arena.ai ... chính vì thế các designer mới cần bộ rule
-riêng biệt"*. Thứ tự: **logo > bảng benchmark** (rộng hơn cho vai khác: founder > office).
+riêng biệt"*. Thứ tự: **ảnh X @arena > logo > bảng benchmark khác** (rộng hơn cho vai khác:
+founder > office) — @arena đứng đầu từ 22/09/2026, xem mục cuối.
 
 - Luật RIÊNG của Ethan (`image_rules_ethan.MODEL_ONLY_TYPES`, `model_story_image_ok`):
   tin `MODEL`/`BENCHMARK` chỉ dùng **thẻ logo** (`image_brand.card_logo`) hoặc **ảnh xếp
@@ -1048,13 +1099,43 @@ riêng biệt"*. Thứ tự: **logo > bảng benchmark** (rộng hơn cho vai kh
   các model khác, ko sử dụng nền tối, trừ phi là logo âm bản"*). `image_brand.card_logo` chỉ ra nền
   tối khi quá nửa điểm ảnh logo chìm trên nền sáng (`NEGATIVE_LOGO_SHARE`).
 - **Bảng benchmark lấy từ X của arena.ai TRƯỚC** (*"cứ lấy hình từ tài khoản twitter của arena.ai là
-  chuẩn nhất … ko tìm được thì mới dùng bảng của bên khác"*): `arena_x.py`, gọi đầu
-  `ranking.find_and_capture(_many)`. Chỉ nhận tweet @arena có ảnh, ≤ 45 ngày, và tên model nằm ở
-  ĐOẠN ĐẦU tweet kèm đúng số phiên bản (tweet "Gemini Omni 1.1 Flash #1" nhắc "Gemini Omni Flash"
-  để so sánh — không được lấy cho tin bản cũ). Không có mới chụp trang bảng như trước.
-- CÒN THIẾU: ID tweet @arena chưa có nguồn ổn định (DuckDuckGo chặn bot sau vài lượt, crawler
-  social-publishing dừng từ 13/09/2026 và không theo dõi riêng @arena); model không có logo trên
-  Wikidata/bảng (Xingchen, lab nhỏ) thì Ethan báo thiếu ảnh.
+  chuẩn nhất … ko tìm được thì mới dùng bảng của bên khác"*): `arena_x.py`. Chỉ nhận tweet @arena có ảnh,
+  ≤ 45 ngày, và tên model nằm ở ĐOẠN ĐẦU tweet kèm đúng số phiên bản (tweet "Gemini Omni 1.1 Flash #1"
+  nhắc "Gemini Omni Flash" để so sánh — không được lấy cho tin bản cũ).
+- Model không có logo trên Wikidata/bảng (Xingchen, lab nhỏ) thì Ethan báo thiếu ảnh.
+
+### Bổ sung 22/09/2026: tin MODEL RELEASE lấy @arena ĐẦU TIÊN (mọi designer)
+
+Ông Chủ, lần nhắc thứ n (tweet Grok 4.7 `x.com/arena/status/2102080801462689999` không được dùng):
+*"miễn là tin về model release, cứ lấy từ arena.ai đầu tiên, ko có thì mới qua nguồn khác. trong
+repo của chúng ta có sẵn code để crawl hình từ tweet, check kỹ lại đi và sử dụng nó mỗi khi các
+designer tìm ảnh"*. Ảnh poll/xu hướng chưa có điểm cũng lấy.
+
+- **Khi nào hỏi:** MỌI tin tách được tên model (`ranking.extract_model`), ngay đầu
+  `fallback_rounds._capture_ranking`, không cần browser, không cần là "tin xếp hạng". Trước đây
+  @arena chỉ được hỏi bên trong `find_and_capture_many` (tin xếp hạng + có browser) nên "xAI ra mắt
+  Grok 4.7" không bao giờ tới. Có ảnh → bài thành tin có `XH` (`is_ranking_story`), cổng
+  `needs_ranking_image` ép ảnh chính/bìa là `XH` ở Dre và Ethan; Kite đặt ảnh @arena lên bìa
+  (`kite_prepare.figure_hero`).
+- **Ethan: @arena thắng cả thẻ logo** (`ethan_submit._must_use_ranking`); bảng chụp từ trang xếp
+  hạng khác thì logo vẫn đứng trước như LOW-337. Brief in dòng 🥇 và khung spec đặt sẵn `"image": "XH"`.
+- **Tìm tweet — chỉ code có sẵn** (`get_source.py` của skill url-mascot-frame), theo thứ tự, dừng ở
+  nguồn đầu tiên có tweet khớp: (1) link tweet @arena trong link gốc/thân bài; (2) trang `x.com/arena`
+  không đăng nhập (`get_source.x_page_posts`, ~6 tweet mới nhất kèm nguyên văn — đo trên máy chủ
+  22/09); (3) kho crawler X; (4) social-crawl. Tweet MỚI NHẤT trước. Không nguồn nào đọc được thì log
+  "⚠️ KHÔNG ĐỌC ĐƯỢC nguồn tweet @arena" — trước đây đường này chết im lặng từ 13/09.
+- **Tải ảnh:** `get_source.save_x_photo` — chỉ ảnh người đăng tải lên, bản `name=orig`; KHÔNG rơi về
+  thẻ og:image hay ảnh chụp tường đăng nhập.
+- **Mọi post X làm nguồn bài** (`social_post.read` → `prepare/source.candidate_social`): crawl-queue
+  trả `media[]` rỗng cho post ảnh trên X nên trước đây ra 0 ảnh; nay rơi về `get_source.save_x_photo`
+  (cả khi crawl-queue hỏng hẳn).
+- `get_source.SOCIAL_FETCH` trỏ skill anh em `social-crawl` (đường `~/.claude/skills` cũ không có trên
+  máy chủ nên nhánh media của Bob luôn rỗng).
+- **Ông Chủ duyệt 22/09/2026** ba thẻ dựng thật (Grok 4.7 chart xu hướng @arena, Grok 4.7 "is in Agent
+  Arena", MiMo-V2.6-Pro Code Arena WebDev): *"3 hình này đạt chuẩn. và đây cũng nên là tiêu chuẩn cho mọi
+  role designer"*. Chuẩn: đồ hoạ CHÍNH CHỦ của @arena giữ nguyên (không crop mất tiêu đề/logo Arena), khung
+  chữ đè phần dưới ≤20% khung, tên model tô màu. Áp cho Ethan, Dre, Kite.
+- Khoá bằng `tests/test_low337_arena_release_first.py` (17 test, 0/17 qua trên code cũ).
 
 
 ## LOW-343 (21/09/2026): Ethan chỉ dùng kiểu khung chữ nhật — quote là của Dre

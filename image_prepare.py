@@ -264,7 +264,8 @@ def load_meta(draft_id: str) -> dict:
 # 1 phien -1088MB kha dung, 2 phien -770MB, 4 phien -1152MB, 6 phien -1900MB (con
 # ~2.7GB + swap 3.3GB, 14 ngay khong co OOM nao). Dat bang so worker toi da de hang
 # khong bao gio dai hon so cho; hon nua thi tu doi nhu cu.
-COUNT_ENGINE_PARALLEL = max(1, int(os.environ.get("CT_PREPARE_PARALLEL", "6") or 6))
+# 6 -> 20 (21/09/2026): Ong Chu nang `max_in_progress` len 10 moi brand x 2 brand.
+COUNT_ENGINE_PARALLEL = max(1, int(os.environ.get("CT_PREPARE_PARALLEL", "20") or 20))
 
 # Doi khoa `running.pid` cua MOT draft toi da bay nhieu giay (LOW-26, 12/09/2026).
 # Truoc do la 300 — bang dung tran bash tool cua vai (~300s), nen lan chay dau
@@ -498,6 +499,10 @@ def main() -> int:
     ap.add_argument("--im", action="store_true", help="Chay nen: chi in mot dong tom tat")
     ap.add_argument("--khong-browser", action="store_true")
     ap.add_argument("--cho", type=int, default=300)
+    # LOW-361: nut Lam lai chay lai khau tim anh roi TU giao task lam lai; hook
+    # thieu-anh (chuyen Kite / hoi Ong Chu) o day se sinh viec song song voi task do.
+    ap.add_argument("--skip-route", action="store_true",
+                    help="khong goi route_missing_images sau khi chuan bi (duong Lam lai)")
     a = ap.parse_args()
     # Import o DAY chu khong o dau tep: `main()` la diem vao CLI, tuc cho ghep
     # noi — con than module `image_prepare` phai sach bong tang dieu phoi (audit
@@ -505,7 +510,7 @@ def main() -> int:
     # dung cai vua go ra.
     import route_missing_images
     m, wd, _ = run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
-                    sau_chuan_bi=route_missing_images.after_prepare)
+                    sau_chuan_bi=None if a.skip_route else route_missing_images.after_prepare)
     print(f"[xong] {len(m['images'])} anh, {len(m.get('material', {}).get('number_sentences', []))} cau so lieu -> {wd}",
           file=sys.stderr)
     return 0

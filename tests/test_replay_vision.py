@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 """LOW-312 — phat lai cau tra loi vision THAT qua code THAT.
 
-Ban ghi: 11 cap (cau hoi, cau tra loi) cua tin "Gartner du bao chi tieu AI tang
-49,5%" (dcgr, 20/09/2026), thu tu `vision_raw` trong manifest production bang
-`tests/replay.py harvest-vision`. Anh la THE CHO dung kich thuoc (khong giu anh
-ben thu ba trong repo) — xem docstring tests/replay.py.
+Ban ghi: 22 cap (cau hoi, cau tra loi) cua tin "Google confirms Gemini models hacked
+three companies in May 2026" (blog, 22/09/2026), thu tu `vision_raw` bang
+`tests/replay.py harvest-vision`. LOW-363 (dong PHIEN_BAN) va LOW-337 (dong AI slop)
+doi cau hoi vision nen ban ghi Gartner cu (LOW-312, dcgr 20/09) het khop; thu dap lai
+tren may chu bang code da gop (/tmp, khong dung production), `call` dung lai tu cau hoi
+va tu kiem bang cach sinh lai cau hoi (khop tuyet doi); bo ban ghi bi vong sau lat
+`relevant`. Dong PHIEN_BAN khoa qua A20/A22/A23 (Gemini 3.1/3.8/3.5). Anh la THE CHO
+dung kich thuoc (khong giu anh ben thu ba trong repo) — xem docstring tests/replay.py.
 
 Hai luoi:
   1. `description_image`: cau tra loi that -> DUNG cac truong ma production da
      ghi vao manifest (relevant, subject_box, subject_kind, empty_share...). Sua
      regex parse ma lam lech mot truong la do o day, khong doi toi luc chay that.
   2. `classify` (do phuc tap 69, ham dau tien LOW-312 muon tach): chup KET QUA
-     cho 11 anh x {chup_nguon co/khong} vao `classify_snapshot.json`. Tach ham
+     cho moi anh x {chup_nguon co/khong} vao `classify_snapshot.json`. Tach ham
      = chay lai, 0 lech moi duoc commit. Co y doi hanh vi thi:
          venv/bin/python tests/test_replay_vision.py --write-snapshot
      va giai thich phan lech trong PR.
@@ -33,12 +37,12 @@ import replay                          # noqa: E402
 import role                            # noqa: E402
 import vision                          # noqa: E402
 
-RECORDINGS = replay.GOLDEN / "replay" / "vision_gartner_spending.json"
+RECORDINGS = replay.GOLDEN / "replay" / "vision_gemini_hack.json"
 SNAPSHOT = replay.GOLDEN / "replay" / "classify_snapshot.json"
 GOLD = json.loads(RECORDINGS.read_text(encoding="utf-8"))
-TITLE = "Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026"
+TITLE = GOLD["title"]
 PARSED_FIELDS = ("cluttered", "has_keywords", "subject_box", "subject_kind", "empty_share",
-                 "printed_name")
+                 "printed_name", "printed_version", "ai_slop")
 
 
 class _Replayed:
@@ -89,7 +93,11 @@ def test_recordings_cover_both_verdicts_and_every_subject_kind_seen():
     verdicts = {r["expected"]["relevant"] for r in GOLD["recordings"]}
     kinds = {r["expected"]["subject_kind"] for r in GOLD["recordings"]}
     assert verdicts == {True, False}
-    assert {"logo", "person", "chart", "building"} <= kinds, kinds
+    # LOW-363: bo ban ghi Gemini khong con "building" (tin model co y khong lay tru so hang
+    # me, LOW-354) va "chart" (bang benchmark deu bi cong phien ban lat relevant nen khong
+    # so duoc o tang description_image); screen/product thay vao.
+    assert {"logo", "person", "screen", "product"} <= kinds, kinds
+    assert any(r["expected"].get("printed_version") for r in GOLD["recordings"])   # khoa dong PHIEN_BAN
 
 
 def test_missing_recording_is_loud_not_a_silent_unseen_image():

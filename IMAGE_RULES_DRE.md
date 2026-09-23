@@ -29,6 +29,12 @@ Vẽ ra là **bịa đặt**. Ảnh phải phản ánh đúng cái có thật tr
 Bỏ thẳng, không cần cân nhắc:
 
 - **Ảnh AI tạo có người** (stock persona) và **ảnh người lạ lấy từ báo**.
+- **Ảnh AI slop** kể cả không có người (LOW-337, 22/09/2026): minh hoạ do model sinh ảnh
+  tạo mà báo khác dùng làm ảnh đầu bài — render 3D phát sáng, huy hiệu tự chế, poster
+  "A vs B", logo/tên model vẽ lại. Engine hỏi vision `AI slop: yes | no` và bỏ tấm "yes"
+  (brief ghi ❌ ẢNH AI SLOP). Chữ vẽ trên ảnh loại này KHÔNG phải dữ kiện: bìa Kite
+  Grok 4.7 từng lấy chữ "DeepSeek R1" trên ảnh wccftech làm tít, trong khi tư liệu
+  chỉ có DeepSeek V4.1 Flash. Minh hoạ biên tập do người vẽ vẫn dùng được (LOW-201).
 - **Ảnh rò rỉ** (leak, chưa được xác nhận chính thức): rủi ro cả về độ chính xác
   lẫn bản quyền. Tìm ảnh chính thức khác thay vào.
 
@@ -871,6 +877,50 @@ nội dung"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`, `IM
   cổng tỉ lệ 4:5..1:1 và cổng chart (§1.2b2: ảnh chụp nguồn được làm bìa).
 - Test: `tests/test_low336_no_side_borders.py`.
 
+## 6d. Vùng an toàn khi bị cắt vuông 1:1 — luật CHUNG mọi vai (LOW-364, 22/09/2026)
+
+Ông Chủ, bài dcgr Grok 4.7 (thẻ Ethan 1200×1500, đúng 4:5) lên Instagram/Threads vẫn bị cắt:
+*"lý do đã làm hình ratio 4:5 nhưng đăng ig vẫn bị crop"*. Đo trên tệp thật: bài đăng khớp đúng
+phép **cắt vuông giữa** — mất 150px trên (hàng tiêu đề bảng + hạng 1–2) và 150px dưới (dòng tựa
+cuối + tên kênh). Chốt cùng ngày: *"đưa những thứ quan trọng nhất vào safezone, như vậy ko còn lệ
+thuộc vào hình lúc publish nữa"*. Cùng một nội dung ở cả ba tệp `IMAGE_RULES_DRE.md`,
+`IMAGE_RULES_ETHAN.md`, `IMAGE_RULES_KITE.md` — sửa một thì sửa cả ba.
+
+- **Vùng an toàn** = ô vuông giữa khung: dải cắt mỗi đầu = (H − W) / 2 (4:5 → 10% chiều cao:
+  135px ở 1080×1350, 150px ở 1200×1500), cộng lề `safe_zone.SAFE_PAD` = 12px. Một chỗ tính:
+  `safe_zone.py`.
+- **Trong vùng an toàn:** khung chữ + kicker + tựa (thẻ Ethan), hook + hàng chip chuyên mục/tên
+  model (bìa Dre), khối chữ slide thân (`carousel.TEXT_BASE` = 1203), khung quote, đỉnh nội dung
+  ảnh nền phẳng (`carousel.FLAT_TOP` = 147 — hàng tiêu đề bảng/hình paper).
+- **Được nằm ở dải cắt:** nền, phần ảnh kéo dài, tên kênh (Instagram đã hiện tên tài khoản), chip
+  tên kênh góc dưới-trái slide thân, dòng nguồn thẻ quote Ethan (`card._render_quote`).
+- **Slide quote Dre không còn dòng nguồn** dưới khung (Ông Chủ khoanh "Lei Jun" / "via Financial
+  Times": *"phần được khoanh có thể bỏ luôn"*) — nguồn ghi ở chú thích bài. `attrib` vẫn qua cổng
+  chữ và quyết định màu dấu ngoặc theo hãng.
+- **Ảnh đặt từ mép trên** — thẻ Ethan (ảnh chụp trang, bảng xếp hạng, mọi ảnh thấp hơn thẻ) và
+  bìa Dre đi đường full bề ngang: đỉnh ảnh có viền phẳng (6 hàng sát mép cùng một màu) thì hạ ảnh
+  xuống vùng an toàn, dải trên là chính màu đó kéo dài — một mặt phẳng liền (§7). Đỉnh không phẳng
+  thì giữ như cũ, không đặt một dải màu lạ lên trên. Slide thân Dre không hạ (ảnh ghép dưới sẽ bị
+  chữ che thêm — cổng LOW-215).
+- **Nền chữ ôm khối chữ** (Ông Chủ cùng ngày, ba vòng xem hình thật: *"làm phần nền text hẹp
+  lại sát vào phần quote / text hơn là ok"*, rồi khoanh các dải nền thừa trên/dưới chữ: *"giữ
+  nguyên vị trí, chỉ có hai phần đó lược đi"*, *"phần nền ở đây cũng lược đi phần được khoanh"*):
+  overlay tối (`_overlay_text`) VÀ lớp màu nền ảnh ghép hai nền (`_cover_below`, bìa/slide) phủ
+  ĐÚNG các dòng chữ: chuyển 24px ngay trên dòng chữ đầu (`OVERLAY_LEAD`, trước 120), đạt mức tối
+  tại đỉnh dòng đầu (`OVERLAY_FULL_BEFORE` = 0), bắt đầu tan NGAY tại nét chữ dòng cuối
+  (`OVERLAY_HOLD_AFTER` = 0), tan hết trong 40px (`OVERLAY_TAIL`). Dòng cuối của bìa là hàng chip;
+  của slide quote là dòng quote cuối — nét khung dưới và dấu đóng ngoặc nằm trên ảnh (vòng 4:
+  *"chỉ cần lược đi phần nền được khoanh như vậy là được"*). Ngoài vùng đó ảnh hiện lại.
+- **Ảnh xếp hạng** (dấu `ranking_*`: arena X, bảng benchmark) tính là chart cho ngưỡng nền phẳng
+  dù spec không khai `"chart"`: bìa Xiaomi (arena vuông) trước bị cover-crop mất hai cạnh, nay đi
+  §7.0b — 90% bề ngang, đặt từ đỉnh vùng an toàn (Ông Chủ: *"thu nhỏ lại khoảng 10% và đẩy lên
+  phía trên, ko cần phải hiển thị full width"*).
+- **Cổng hình học** `safe_zone.gate` trong từng hàm vẽ (`card._render_ceiling`, `card._render_quote`,
+  `carousel.build_cover` / `build_body` / `build_body_quote`): nội dung trên ra ngoài vùng an toàn
+  thì dừng — lỗi CODE bố cục, không phải spec. Test đo trên pixel: `tests/test_instagram_safe_zone.py`.
+- **Chưa áp:** slide Kite (`render_edu.py`, bố cục HTML) — ticket con của LOW-364; chủ thể ảnh
+  chụp thường (`cover_focus`) nằm trong ô vuông — chưa đo.
+
 ## 7. Không bao giờ để ra hai vùng riêng biệt
 
 ### 7.0 Chữ ~20% khung, nền chữ CHỈ là overlay (LOW-286 — luật trên hết của mục này)
@@ -1042,8 +1092,11 @@ cho nghiêm chỉnh, đừng nham nhở"*.
   văn — trần **độ đặc** thì bìa và slide thân như nhau.
 - **Cổng chặn ảnh ghép bị che (LOW-215):** slide `"images"` mà ảnh **cuối** còn
   rõ dưới `STACK_BOTTOM_VISIBLE_MIN` (35%) chiều cao của nó sau khi nền chữ phủ
-  → `carousel.py` dừng (`_gate_stack_last_hidden`). Sửa: đặt ảnh rối lên TRÊN
-  trong `"images"`, hoặc dùng ảnh sạch thay cặp ghép.
+  → `carousel.py` dừng (`_gate_stack_last_hidden`). Sửa theo nguyên nhân lỗi báo:
+  - có ảnh **rối** trong cặp → đặt ảnh rối lên TRÊN trong `"stack"`, hoặc dùng ảnh sạch thay cặp ghép;
+  - **không** ảnh nào rối (đáy ảnh dưới quá sáng với nền dark / quá tối với nền light)
+    → đảo thứ tự **không** chữa được. Dùng MỘT ảnh `"image"`, rút ngắn quote/chữ, hoặc
+    đổi ảnh dưới sang ảnh có `bottom_brightness` hợp nền trong manifest.
 
 **Tự soi trước khi giao:** nhìn có thấy **một đường ranh ngang** nào không. Thấy
 là hỏng, dựng lại — đừng gửi đi.
@@ -1158,3 +1211,30 @@ Bố cục là việc riêng của từng khung, và chúng **phải** khác nha
 
 Ông Chủ đã chốt riêng: **bố cục bìa/hero là thứ đã duyệt** — không áp luật ≤30%
 của carousel lên đó.
+
+## LOW-337 bổ sung (22/09/2026): tin MODEL RELEASE lấy ảnh X @arena ĐẦU TIÊN
+
+Ông Chủ: *"miễn là tin về model release, cứ lấy từ arena.ai đầu tiên, ko có thì mới qua nguồn khác"*.
+Engine chung hỏi `arena_x` cho MỌI tin tách được tên model (không cần browser, không cần là tin xếp
+hạng); có ảnh thì bài có mã `XH` và bìa bắt buộc là `XH` (`needs_ranking_image`). Tìm tweet và tải ảnh chỉ bằng code có sẵn
+(`get_source.x_page_posts` / `save_x_photo`); post X làm nguồn bài cũng lấy ảnh gốc qua
+`get_source` khi crawl-queue trả `media[]` rỗng. Chi tiết: `IMAGE_RULES_ETHAN.md` mục LOW-337.
+
+Ông Chủ duyệt 22/09/2026 ba thẻ @arena dựng thật (Grok 4.7 ×2, MiMo-V2.6-Pro): *"3 hình này đạt chuẩn.
+và đây cũng nên là tiêu chuẩn cho mọi role designer"* — đồ hoạ chính chủ @arena giữ nguyên, chữ ≤20% khung.
+
+## LOW-354 (22/09/2026): nhắc MODEL thì chỉ hình của MODEL, mọi loại tin
+
+Ông Chủ: *"gemini có logo riêng và rất nhiều hình ảnh dùng được, tại sao cứ dùng logo của cty mẹ ?"* — tin
+"Google confirms Gemini models hacked three companies" (BUSINESS) ra 8 slide toà nhà/logo Google.
+
+- Tiêu đề nhắc họ model có logo riêng (Gemini, Gemma, ChatGPT/GPT, Claude, Qwen, Llama, Mistral…) thì
+  **bất kể loại tin**: dùng logo model, giao diện/app của model, sự kiện ra mắt model, người (CEO/nhà
+  nghiên cứu). **Không** dùng trụ sở, campus, biển hiệu của hãng mẹ.
+- Logo hãng mẹ: tiêu đề **có gọi tên** hãng mẹ ("Google confirms Gemini…") thì dùng **cả hai logo** — Ông Chủ
+  22/09: *"trong headline có cả google và gemini thì dùng cả 2 logo, ko vấn đề, đừng dùng toàn bộ google như
+  bài cũ là ổn"*. Hãng mẹ chỉ suy ra từ tên model ("Gemini hacked…") thì không dùng logo hãng mẹ.
+- Engine tự làm: vòng tìm rộng hỏi theo tên model thay cho tên hãng mẹ đứng đầu tiêu đề; vòng thương hiệu
+  bỏ trụ sở/báo/cổ phiếu hãng mẹ (giữ logo nếu tiêu đề gọi tên), thêm thẻ logo model và báo tìm theo tên model.
+- `find_more_images.py` **từ chối** từ khoá chỉ theo hãng mẹ ("Google headquarters", "Alphabet logo") —
+  thêm tên model vào ("Google Gemini app interface") hoặc tìm theo tên model.

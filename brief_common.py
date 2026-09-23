@@ -25,6 +25,12 @@ def mark(m: dict, ten_vai: str, dong_2: str, nhan_link: str = "Link gốc") -> l
          f"{nhan_link}: {m['link']}" + (f" | via: {m['via']}" if m.get("via") else "")]
     if m.get("title_en"):
         L.append(f"Tiêu đề bài gốc: {m['title_en']}")
+    if m.get("model_versions"):
+        # LOW-363: vai LLM tung tu go "Gemini 1.5 Pro benchmark" theo tri nho huan luyen.
+        import model_version
+        L.append("Phiên bản model của tin: " + model_version.describe_reference(m["model_versions"])
+                 + " — chỉ tìm/dùng ảnh của ĐÚNG phiên bản này (cùng số chính); ảnh ghi phiên bản khác "
+                   "đã bị loại, find_more_images từ chối từ khoá phiên bản khác.")
     return L
 
 

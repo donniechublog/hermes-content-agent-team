@@ -47,6 +47,25 @@ def pick_by_k(k_tho, danh_sach: list, nhan: str) -> tuple:
     return None, f"{nhan}: k={k_tho} ngoai danh sach 1..{len(danh_sach)}"
 
 
+def score_part(value, name: str, high: int, problems: list, title: str) -> tuple:
+    """Doc mot thanh phan diem cua vai: (diem da cat ve dai 0..high, da_sua?).
+
+    Truoc 06/09/2026: `int(p.get(...))` no thang khi vai ghi "24 diem" hoac
+    null, va diem ngoai dai chi ghi mot dong stderr roi VAN vao manifest —
+    ma scan_submit nuot stderr khi rc=0 nen khong ai thay. Gio cat ve dai va ghi
+    chu vao `problems`, khong bao im lang, khong bat vai sua them mot vong.
+    Dung chung cho Finn va (tu LOW-352) Nova/Vera."""
+    try:
+        d = int(value)
+    except (TypeError, ValueError):
+        problems.append(f"{name} khong phai so: {value!r} -> 0 (bai: {title[:40]})")
+        return 0, True
+    if d < 0 or d > high:
+        problems.append(f"{name} phai 0-{high}, nhan {d} -> cat ve dai (bai: {title[:40]})")
+        return max(0, min(high, d)), True
+    return d, False
+
+
 def single_summary(tom, nhan: str) -> tuple:
     """Don `summary_vi` cua vai. Tra ve (tom_da_don, [canh bao]).
 

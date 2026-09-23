@@ -252,6 +252,95 @@ def test_severity_codes_follow_table_and_printed_words_stay():
     assert sc.MARK.name == "cron_audit.json" and sc.MARK.parent.name == "state", sc.MARK
 
 
+# ------------------------------------------------ vai quet co task hom nay (LOW-353)
+VN = timezone(timedelta(hours=7))
+
+
+def _vn(day_offset=0, hour=7, minute=5) -> float:
+    d = datetime.now(VN).replace(hour=hour, minute=minute, second=0, microsecond=0)
+    return (d + timedelta(days=day_offset)).timestamp()
+
+
+def _kanban(home: Path, tasks):
+    """kanban.db gia, chi cac cot hermes_adapter doc. tasks: (id, assignee, status, created_at)."""
+    import sqlite3
+    home.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(home / "kanban.db")
+    con.execute("CREATE TABLE tasks (id TEXT, assignee TEXT, status TEXT, title TEXT, created_at INT,"
+                " started_at INT, completed_at INT, result TEXT, last_failure_error TEXT)")
+    con.executemany("INSERT INTO tasks (id, assignee, status, title, created_at) VALUES (?,?,?,?,?)",
+                    [(i, a, s, "Quet", int(c)) for i, a, s, c in tasks])
+    con.commit()
+    con.close()
+
+
+SCAN_JOBS = [_job("finn-daily-scan", script="finn_daily_scan.sh"),
+             _job("qinn-scan", script="qinn_scan.sh"),
+             _job("daily-log", script="journal_daily.sh")]
+
+
+def test_scan_ran_ok_but_no_task_today_is_broken():
+    """Dung sang 22/09/2026: cron "ok", task quet moi nhat la HOM QUA -> phai bao hong."""
+    import audit_cron as sc
+    with tempfile.TemporaryDirectory() as t:
+        h = Path(t) / "blog"
+        _kanban(h, [("t_old", "finn", "done", _vn(-1, 5, 0)),
+                    ("t_q", "qinn", "done", _vn(0, 6, 0))])
+        v = sc.audit_scan_tasks(h, SCAN_JOBS, _vn(0, 7, 5))
+        assert [(m["name"], m["severity"]) for m in v] == [("quét finn", "BROKEN")], v
+        assert "chưa có task quét" in v[0]["reasons"][0], v
+        # Soat lai HOM QUA: task tao hom nay khong duoc tinh cho ngay hom qua.
+        _kanban(Path(t) / "b2", [("t_new", "finn", "done", _vn(0, 6, 0))])
+        v = sc.audit_scan_tasks(Path(t) / "b2", SCAN_JOBS[:1], _vn(-1, 7, 5))
+        assert [(m["name"], m["severity"]) for m in v] == [("quét finn", "BROKEN")], v
+        # Task chay tay SAU luc soat (22/09: 10:21) khong xoa duoc loi luc 07:05.
+        _kanban(Path(t) / "b3", [("t_late", "finn", "done", _vn(0, 10, 21))])
+        v = sc.audit_scan_tasks(Path(t) / "b3", SCAN_JOBS[:1], _vn(0, 7, 5))
+        assert [(m["name"], m["severity"]) for m in v] == [("quét finn", "BROKEN")], v
+
+
+def test_scan_task_today_done_is_quiet_and_running_is_stuck():
+    import audit_cron as sc
+    with tempfile.TemporaryDirectory() as t:
+        h = Path(t) / "blog"
+        _kanban(h, [("t_f", "finn", "done", _vn(0, 6, 0)),
+                    ("t_q", "qinn", "running", _vn(0, 6, 0))])
+        v = sc.audit_scan_tasks(h, SCAN_JOBS, _vn(0, 7, 5))
+        assert [(m["name"], m["severity"]) for m in v] == [("quét qinn", "STUCK")], v
+
+
+def test_scan_check_waits_until_deadline_and_skips_paused():
+    import audit_cron as sc
+    with tempfile.TemporaryDirectory() as t:
+        h = Path(t) / "blog"
+        _kanban(h, [])
+        assert sc.audit_scan_tasks(h, SCAN_JOBS, _vn(0, 6, 30)) == []
+        paused = [_job("finn-daily-scan", script="finn_daily_scan.sh", state="paused"),
+                  _job("qinn-scan", script="qinn_scan.sh", enabled=False)]
+        assert sc.audit_scan_tasks(h, paused, _vn(0, 7, 5)) == []
+
+
+def test_scan_check_without_kanban_is_broken():
+    import audit_cron as sc
+    with tempfile.TemporaryDirectory() as t:
+        v = sc.audit_scan_tasks(Path(t), SCAN_JOBS[:1], _vn(0, 7, 5))
+        assert [(m["name"], m["severity"]) for m in v] == [("quét finn", "BROKEN")], v
+        assert "kanban.db" in v[0]["reasons"][0], v
+
+
+def test_audit_includes_scan_tasks_with_brand():
+    """audit() goi phep so vai quet cho tung home va gan brand."""
+    import audit_cron as sc
+    now = _vn(0, 7, 5)
+    with tempfile.TemporaryDirectory() as t:
+        h = _home(Path(t), "dcgr", [_job("nova-daily-scan", script="nova_daily_scan.sh",
+                                         next_run_at=datetime.fromtimestamp(now + 3600, VN).isoformat())])
+        for f in ("ticker_heartbeat", "ticker_last_success"):
+            (h / "cron" / f).write_text(str(now), encoding="utf-8")
+        _kanban(h, [])
+        assert _ten(sc.audit({"dcgr": h}, now)[0]) == {"dcgr/quét nova": "BROKEN"}
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())

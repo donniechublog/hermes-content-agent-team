@@ -1,0 +1,730 @@
+{
+ "source": "blog/google-xac-nhan-cac-mo-hinh-gemini-da-dre-donniechublog (/tmp dung lai bang code LOW-363 + LOW-337 ai slop, 22/09/2026)",
+ "title": "Google confirms Gemini models hacked three companies in May 2026",
+ "ghi_chu_call": "`call` = tham so da dung khi hoi cau nay, dung lai tu cau hoi va TU KIEM bang cach sinh lai cau hoi (khop tuyet doi). Bo ban ghi ma vong sau (thuong hieu/nguoi, cong phien ban LOW-363) lat `relevant` sau vision: expected lay tu manifest nen khong so duoc o tang description_image.",
+ "recordings": [
+  {
+   "number": 1,
+   "id": "A1",
+   "w": 5865,
+   "h": 3672,
+   "source": "other_outlet",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 10 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)\nCAT_NGANG: Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong.",
+   "answer": "MO_TA: Biển đèn neon chữ Google phát sáng nhiều màu trên nền kim loại tối.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.29,0.0,0.81,0.99 | logo\nTRONG: 0.65\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no\nCAT_NGANG: khong",
+   "expected": {
+    "relevant": true,
+    "description": "Biển đèn neon chữ Google phát sáng nhiều màu trên nền kim loại tối.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.29,
+     0.0,
+     0.81,
+     0.99
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.65,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "hang": "Google, Gemini",
+    "nhan_them": "CAT_NGANG",
+    "hoi_them": "Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong."
+   }
+  },
+  {
+   "number": 2,
+   "id": "A2",
+   "w": 2500,
+   "h": 1250,
+   "source": "other_outlet",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 10 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)\nCAT_NGANG: Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong.",
+   "answer": "MO_TA: Bảng đồ họa bento giới thiệu thông số và tính năng thiết bị Googlebook cùng Gemini Intelligence.\nLIEN_QUAN: khong\nCLUTTERED: co\nTU_KHOA: khong\nCHU_THE: 0.360,0.278,0.647,0.605 | product\nTRONG: 0.2\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no\nCAT_NGANG: khong",
+   "expected": {
+    "relevant": false,
+    "description": "Bảng đồ họa bento giới thiệu thông số và tính năng thiết bị Googlebook cùng Gemini Intelligence.",
+    "cluttered": true,
+    "has_keywords": false,
+    "subject_box": [
+     0.36,
+     0.278,
+     0.647,
+     0.605
+    ],
+    "subject_kind": "product",
+    "empty_share": 0.2,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "hang": "Google, Gemini",
+    "nhan_them": "CAT_NGANG",
+    "hoi_them": "Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong."
+   }
+  },
+  {
+   "number": 3,
+   "id": "A3",
+   "w": 1920,
+   "h": 1080,
+   "source": "other_outlet",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 10 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)\nCAT_NGANG: Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong.",
+   "answer": "MO_TA: Phòng thí nghiệm với các thiết bị đo đạc điện tử và dụng cụ khoa học đặt trên bàn.\nLIEN_QUAN: khong\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.67,0.33,0.89,0.68 | product\nTRONG: 0.1\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no\nCAT_NGANG: co",
+   "expected": {
+    "relevant": false,
+    "description": "Phòng thí nghiệm với các thiết bị đo đạc điện tử và dụng cụ khoa học đặt trên bàn.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.67,
+     0.33,
+     0.89,
+     0.68
+    ],
+    "subject_kind": "product",
+    "empty_share": 0.1,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "hang": "Google, Gemini",
+    "nhan_them": "CAT_NGANG",
+    "hoi_them": "Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong."
+   }
+  },
+  {
+   "number": 4,
+   "id": "A4",
+   "w": 2000,
+   "h": 1000,
+   "source": "other_outlet",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 10 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)\nCAT_NGANG: Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong.",
+   "answer": "MO_TA: Nguoi cam may tinh xach tay chay he dieu hanh ChromeOS tai su kien.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.21,0.07,0.69,0.88 | product\nTRONG: 0.15\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no\nCAT_NGANG: co",
+   "expected": {
+    "relevant": true,
+    "description": "Nguoi cam may tinh xach tay chay he dieu hanh ChromeOS tai su kien.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.21,
+     0.07,
+     0.69,
+     0.88
+    ],
+    "subject_kind": "product",
+    "empty_share": 0.15,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "hang": "Google, Gemini",
+    "nhan_them": "CAT_NGANG",
+    "hoi_them": "Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong."
+   }
+  },
+  {
+   "number": 5,
+   "id": "A5",
+   "w": 2000,
+   "h": 1000,
+   "source": "other_outlet",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 10 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)\nCAT_NGANG: Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong.",
+   "answer": "MO_TA: Người đàn ông cầm laptop HP màu đen giơ trước mặt.\nLIEN_QUAN: khong\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.32,0.21,0.71,0.85 | product\nTRONG: 0.1\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no\nCAT_NGANG: co",
+   "expected": {
+    "relevant": false,
+    "description": "Người đàn ông cầm laptop HP màu đen giơ trước mặt.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.32,
+     0.21,
+     0.71,
+     0.85
+    ],
+    "subject_kind": "product",
+    "empty_share": 0.1,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "hang": "Google, Gemini",
+    "nhan_them": "CAT_NGANG",
+    "hoi_them": "Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong."
+   }
+  },
+  {
+   "number": 6,
+   "id": "A6",
+   "w": 2000,
+   "h": 1000,
+   "source": "other_outlet",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 10 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)\nCAT_NGANG: Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong.",
+   "answer": "MO_TA: Ảnh chụp cận cảnh gọng kính thông minh màu đen tích hợp camera trên nền ngoại cảnh mờ.\nLIEN_QUAN: khong\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.0,0.13,0.64,1.0 | product\nTRONG: 0.5\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no\nCAT_NGANG: khong",
+   "expected": {
+    "relevant": false,
+    "description": "Ảnh chụp cận cảnh gọng kính thông minh màu đen tích hợp camera trên nền ngoại cảnh mờ.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.0,
+     0.13,
+     0.64,
+     1.0
+    ],
+    "subject_kind": "product",
+    "empty_share": 0.5,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "hang": "Google, Gemini",
+    "nhan_them": "CAT_NGANG",
+    "hoi_them": "Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong."
+   }
+  },
+  {
+   "number": 7,
+   "id": "A7",
+   "w": 1778,
+   "h": 1000,
+   "source": "other_outlet",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 10 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)\nCAT_NGANG: Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong.",
+   "answer": "MO_TA: Biển hiệu Google phát sáng tại lối vào tòa nhà văn phòng vào ban đêm.\nLIEN_QUAN: co\nCLUTTERED: co\nTU_KHOA: khong\nCHU_THE: 0.395,0.364,0.627,0.493 | logo\nTRONG: 0.4\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no\nCAT_NGANG: khong",
+   "expected": {
+    "relevant": true,
+    "description": "Biển hiệu Google phát sáng tại lối vào tòa nhà văn phòng vào ban đêm.",
+    "cluttered": true,
+    "has_keywords": false,
+    "subject_box": [
+     0.395,
+     0.364,
+     0.627,
+     0.493
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.4,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "hang": "Google, Gemini",
+    "nhan_them": "CAT_NGANG",
+    "hoi_them": "Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong."
+   }
+  },
+  {
+   "number": 8,
+   "id": "A8",
+   "w": 1200,
+   "h": 675,
+   "source": "other_outlet",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 9 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)",
+   "answer": "MO_TA: Hình minh họa kỹ thuật số vẽ hacker trùm đầu với khuôn mặt dạng lưới phát sáng giữa các dòng mã nhị phân.\nLIEN_QUAN: khong\nCLUTTERED: co\nTU_KHOA: khong\nCHU_THE: 0.06,0.00,0.62,0.78 | person\nTRONG: 0.05\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: yes",
+   "expected": {
+    "relevant": false,
+    "description": "Hình minh họa kỹ thuật số vẽ hacker trùm đầu với khuôn mặt dạng lưới phát sáng giữa các dòng mã nhị phân.",
+    "cluttered": true,
+    "has_keywords": false,
+    "subject_box": [
+     0.06,
+     0.0,
+     0.62,
+     0.78
+    ],
+    "subject_kind": "person",
+    "empty_share": 0.05,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": true
+   },
+   "call": {
+    "hang": "Google, Gemini"
+   }
+  },
+  {
+   "number": 9,
+   "id": "A9",
+   "w": 1122,
+   "h": 561,
+   "source": "capture_source",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Day la ANH HERO cua chinh bai bao: \"Google confirms Gemini models hacked three companies in May 2026\" — CHAC CHAN la anh cua tin, khong hoi 'co lien quan khong'.\nTra loi DUNG 9 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh RO NET, xuat truc tiep tu web/thiet ke; khong = mo/nhoe)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)",
+   "answer": "MO_TA: Biểu tượng ngôi sao Google Gemini phát sáng trên màn hình lớn tại sự kiện bên cạnh rèm sân khấu.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.298,0.474,0.678,0.584 | logo\nTRONG: 0.70\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no",
+   "expected": {
+    "relevant": true,
+    "description": "Biểu tượng ngôi sao Google Gemini phát sáng trên màn hình lớn tại sự kiện bên cạnh rèm sân khấu.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.298,
+     0.474,
+     0.678,
+     0.584
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.7,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "chup_nguon": true
+   }
+  },
+  {
+   "number": 10,
+   "id": "A10",
+   "w": 1242,
+   "h": 696,
+   "source": "capture_source",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Day la ANH HERO cua chinh bai bao: \"Google confirms Gemini models hacked three companies in May 2026\" — CHAC CHAN la anh cua tin, khong hoi 'co lien quan khong'.\nTra loi DUNG 9 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh RO NET, xuat truc tiep tu web/thiet ke; khong = mo/nhoe)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)",
+   "answer": "MO_TA: Bàn tay cầm điện thoại hiển thị ứng dụng trợ lý Gemini trước màn hình có logo Gemini.\nLIEN_QUAN: co\nCLUTTERED: co\nTU_KHOA: khong\nCHU_THE: 0.47,0.00,0.92,1.00 | product\nTRONG: 0.2\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no",
+   "expected": {
+    "relevant": true,
+    "description": "Bàn tay cầm điện thoại hiển thị ứng dụng trợ lý Gemini trước màn hình có logo Gemini.",
+    "cluttered": true,
+    "has_keywords": false,
+    "subject_box": [
+     0.47,
+     0.0,
+     0.92,
+     1.0
+    ],
+    "subject_kind": "product",
+    "empty_share": 0.2,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "chup_nguon": true
+   }
+  },
+  {
+   "number": 11,
+   "id": "A11",
+   "w": 1201,
+   "h": 1057,
+   "source": "capture_source",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Day la ANH HERO cua chinh bai bao: \"Google confirms Gemini models hacked three companies in May 2026\" — CHAC CHAN la anh cua tin, khong hoi 'co lien quan khong'.\nTra loi DUNG 9 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh RO NET, xuat truc tiep tu web/thiet ke; khong = mo/nhoe)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)",
+   "answer": "MO_TA: Ảnh chụp màn hình đoạn văn bản tiếng Anh của bài báo điện tử.\nLIEN_QUAN: co\nCLUTTERED: co\nTU_KHOA: khong\nCHU_THE: 0.0,0.0,1.0,1.0 | screen\nTRONG: 0.1\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no",
+   "expected": {
+    "relevant": true,
+    "description": "Ảnh chụp màn hình đoạn văn bản tiếng Anh của bài báo điện tử.",
+    "cluttered": true,
+    "has_keywords": false,
+    "subject_box": [
+     0.0,
+     0.0,
+     1.0,
+     1.0
+    ],
+    "subject_kind": "screen",
+    "empty_share": 0.1,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "chup_nguon": true
+   }
+  },
+  {
+   "number": 12,
+   "id": "A12",
+   "w": 1200,
+   "h": 630,
+   "source": "press_entity",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 9 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)",
+   "answer": "MO_TA: Biểu tượng ứng dụng Google Gemini hình ngôi sao bốn cánh nhiều màu trên khung nền trắng bo góc.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.293,0.103,0.707,0.897 | logo\nTRONG: 0.4\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no",
+   "expected": {
+    "relevant": true,
+    "description": "Biểu tượng ứng dụng Google Gemini hình ngôi sao bốn cánh nhiều màu trên khung nền trắng bo góc.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.293,
+     0.103,
+     0.707,
+     0.897
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.4,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "hang": "Google, Gemini"
+   }
+  },
+  {
+   "number": 13,
+   "id": "A13",
+   "w": 1200,
+   "h": 1500,
+   "source": "brand",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Anh nay la THE LOGO: logo chinh thuc cua Gemini dat tren nen tron.\nTra loi DUNG 9 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = doc duoc ro logo/ten Gemini, khong be xiu, khong meo, khong lan mau nen; khong = logo hang KHAC, chu bi cat, qua nho, trong)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)",
+   "answer": "MO_TA: Biểu tượng ngôi sao đa sắc và chữ Gemini trên nền trơn.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.06,0.22,0.94,0.38 | logo\nTRONG: 0.85\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no",
+   "expected": {
+    "relevant": true,
+    "description": "Biểu tượng ngôi sao đa sắc và chữ Gemini trên nền trơn.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.06,
+     0.22,
+     0.94,
+     0.38
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.85,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "thuong_hieu": {
+     "company": "Gemini",
+     "key": "model_gemini",
+     "kind": "logo",
+     "keyword": "logo của model Gemini",
+     "model_logo": true,
+     "background_tone": "light",
+     "logo_fill": 0.1396
+    }
+   }
+  },
+  {
+   "number": 14,
+   "id": "A14",
+   "w": 1200,
+   "h": 1500,
+   "source": "brand",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Anh nay la THE LOGO: logo chinh thuc cua Google dat tren nen tron.\nTra loi DUNG 9 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = doc duoc ro logo/ten Google, khong be xiu, khong meo, khong lan mau nen; khong = logo hang KHAC, chu bi cat, qua nho, trong)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)",
+   "answer": "MO_TA: Logo nhiều màu của Google đặt trên nền trơn sáng.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.06,0.19,0.94,0.41 | logo\nTRONG: 0.85\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no",
+   "expected": {
+    "relevant": true,
+    "description": "Logo nhiều màu của Google đặt trên nền trơn sáng.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.06,
+     0.19,
+     0.94,
+     0.41
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.85,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "thuong_hieu": {
+     "company": "Google",
+     "key": "google deepmind",
+     "kind": "logo",
+     "keyword": "logo chính thức (Wikidata P154)",
+     "background_tone": "light",
+     "logo_fill": 0.1877
+    }
+   }
+  },
+  {
+   "number": 16,
+   "id": "A16",
+   "w": 1920,
+   "h": 1080,
+   "source": "brand",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Anh nay KHONG phai anh cua tin; no la anh CHAN DUNG cua Sundar Pichai (CEO Google) lay tu Wikidata/Commons.\nTra loi DUNG 10 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh chup that MOT NGUOI, ro mat, hop lam anh chan dung cho Google; khong = do hoa/tranh ve, anh nhom dong nguoi, qua mo, hoac ro rang khong phai anh chan dung)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)\nCAT_NGANG: Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong.",
+   "answer": "MO_TA: Ảnh chụp phía sau hai người đàn ông trong phòng họp báo.\nLIEN_QUAN: khong\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.12,0.08,0.44,0.82 | person\nTRONG: 0.2\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no\nCAT_NGANG: co",
+   "expected": {
+    "relevant": false,
+    "description": "Ảnh chụp phía sau hai người đàn ông trong phòng họp báo.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.12,
+     0.08,
+     0.44,
+     0.82
+    ],
+    "subject_kind": "person",
+    "empty_share": 0.2,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "thuong_hieu": {
+     "company": "Google",
+     "key": "google deepmind",
+     "kind": "person",
+     "keyword": "CEO Google, ảnh ngang (Commons)",
+     "person": "Sundar Pichai",
+     "person_role": "CEO"
+    },
+    "nhan_them": "CAT_NGANG",
+    "hoi_them": "Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong."
+   }
+  },
+  {
+   "number": 17,
+   "id": "A17",
+   "w": 1600,
+   "h": 1067,
+   "source": "brand",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Anh nay KHONG phai anh cua tin; no la anh CHAN DUNG cua Sergey Brin (nhà sáng lập Google) lay tu Wikidata/Commons.\nTra loi DUNG 10 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh chup that MOT NGUOI, ro mat, hop lam anh chan dung cho Google; khong = do hoa/tranh ve, anh nhom dong nguoi, qua mo, hoac ro rang khong phai anh chan dung)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)\nCAT_NGANG: Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong.",
+   "answer": "MO_TA: Ảnh chụp chân dung Sergey Brin, nhà đồng sáng lập Google, đang ngồi phát biểu.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.29,0.00,0.64,0.59 | person\nTRONG: 0.1\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no\nCAT_NGANG: co",
+   "expected": {
+    "relevant": true,
+    "description": "Ảnh chụp chân dung Sergey Brin, nhà đồng sáng lập Google, đang ngồi phát biểu.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.29,
+     0.0,
+     0.64,
+     0.59
+    ],
+    "subject_kind": "person",
+    "empty_share": 0.1,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "thuong_hieu": {
+     "company": "Google",
+     "key": "google deepmind",
+     "kind": "person",
+     "keyword": "nhà sáng lập Google, ảnh ngang (Commons)",
+     "person": "Sergey Brin",
+     "person_role": "nhà sáng lập"
+    },
+    "nhan_them": "CAT_NGANG",
+    "hoi_them": "Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong."
+   }
+  },
+  {
+   "number": 18,
+   "id": "A18",
+   "w": 1600,
+   "h": 1067,
+   "source": "brand",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Anh nay KHONG phai anh cua tin; no la anh CHAN DUNG cua Sergey Brin (nhà sáng lập Google) lay tu Wikidata/Commons.\nTra loi DUNG 10 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh chup that MOT NGUOI, ro mat, hop lam anh chan dung cho Google; khong = do hoa/tranh ve, anh nhom dong nguoi, qua mo, hoac ro rang khong phai anh chan dung)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)\nCAT_NGANG: Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong.",
+   "answer": "MO_TA: Ảnh chụp chân dung Sergey Brin tại sự kiện hội thảo.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.33,0.12,0.61,0.68 | person\nTRONG: 0.25\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no\nCAT_NGANG: co",
+   "expected": {
+    "relevant": true,
+    "description": "Ảnh chụp chân dung Sergey Brin tại sự kiện hội thảo.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.33,
+     0.12,
+     0.61,
+     0.68
+    ],
+    "subject_kind": "person",
+    "empty_share": 0.25,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "thuong_hieu": {
+     "company": "Google",
+     "key": "google deepmind",
+     "kind": "person",
+     "keyword": "nhà sáng lập Google, ảnh ngang (Commons)",
+     "person": "Sergey Brin",
+     "person_role": "nhà sáng lập"
+    },
+    "nhan_them": "CAT_NGANG",
+    "hoi_them": "Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong."
+   }
+  },
+  {
+   "number": 19,
+   "id": "A19",
+   "w": 959,
+   "h": 1439,
+   "source": "brand",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Anh nay KHONG phai anh cua tin; no la anh CHAN DUNG cua Sundar Pichai (CEO Google) lay tu Wikidata/Commons.\nTra loi DUNG 9 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh chup that MOT NGUOI, ro mat, hop lam anh chan dung cho Google; khong = do hoa/tranh ve, anh nhom dong nguoi, qua mo, hoac ro rang khong phai anh chan dung)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)",
+   "answer": "MO_TA: Ảnh chụp chân dung cận cảnh CEO Google Sundar Pichai mỉm cười đeo kính.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.16,0.08,0.77,0.65 | person\nTRONG: 0.05\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no",
+   "expected": {
+    "relevant": true,
+    "description": "Ảnh chụp chân dung cận cảnh CEO Google Sundar Pichai mỉm cười đeo kính.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.16,
+     0.08,
+     0.77,
+     0.65
+    ],
+    "subject_kind": "person",
+    "empty_share": 0.05,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "thuong_hieu": {
+     "company": "Google",
+     "key": "google deepmind",
+     "kind": "person",
+     "keyword": "CEO Google (Wikidata)",
+     "person": "Sundar Pichai",
+     "person_role": "CEO"
+    }
+   }
+  },
+  {
+   "number": 20,
+   "id": "A20",
+   "w": 1200,
+   "h": 675,
+   "source": "press_entity",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 9 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)",
+   "answer": "MO_TA: Do hoa quang ba mo hinh Gemini 3.1 Pro tren nen den.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.15,0.03,0.88,0.95 | logo\nTRONG: 0.5\nTEN_IN: khong\nPHIEN_BAN: Gemini 3.1 Pro\nAI slop: no",
+   "expected": {
+    "relevant": true,
+    "description": "Do hoa quang ba mo hinh Gemini 3.1 Pro tren nen den.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.15,
+     0.03,
+     0.88,
+     0.95
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.5,
+    "printed_name": null,
+    "printed_version": "Gemini 3.1 Pro",
+    "ai_slop": false
+   },
+   "call": {
+    "hang": "Google, Gemini"
+   }
+  },
+  {
+   "number": 21,
+   "id": "A21",
+   "w": 1600,
+   "h": 900,
+   "source": "press_entity",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 9 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)",
+   "answer": "MO_TA: Điện thoại hiển thị logo Gemini đặt trước logo Google bị làm mờ.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.328,0.187,1.0,0.859 | product\nTRONG: 0.25\nTEN_IN: khong\nPHIEN_BAN: khong\nAI slop: no",
+   "expected": {
+    "relevant": true,
+    "description": "Điện thoại hiển thị logo Gemini đặt trước logo Google bị làm mờ.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.328,
+     0.187,
+     1.0,
+     0.859
+    ],
+    "subject_kind": "product",
+    "empty_share": 0.25,
+    "printed_name": null,
+    "printed_version": null,
+    "ai_slop": false
+   },
+   "call": {
+    "hang": "Google, Gemini"
+   }
+  },
+  {
+   "number": 22,
+   "id": "A22",
+   "w": 1600,
+   "h": 887,
+   "source": "press_entity",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 9 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)",
+   "answer": "MO_TA: Hình đồ họa giới thiệu phiên bản Gemini 3.8 Flash kèm biểu tượng ngôi sao Google trên nền sáng.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.30,0.14,0.69,0.92 | logo\nTRONG: 0.70\nTEN_IN: khong\nPHIEN_BAN: Gemini 3.8 Flash\nAI slop: no",
+   "expected": {
+    "relevant": true,
+    "description": "Hình đồ họa giới thiệu phiên bản Gemini 3.8 Flash kèm biểu tượng ngôi sao Google trên nền sáng.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.3,
+     0.14,
+     0.69,
+     0.92
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.7,
+    "printed_name": null,
+    "printed_version": "Gemini 3.8 Flash",
+    "ai_slop": false
+   },
+   "call": {
+    "hang": "Google, Gemini"
+   }
+  },
+  {
+   "number": 23,
+   "id": "A23",
+   "w": 1448,
+   "h": 1086,
+   "source": "press_entity",
+   "model": "ag/gemini-3.8-flash",
+   "question": "Bai bao: \"Google confirms Gemini models hacked three companies in May 2026\". Cong ty/san pham chinh: Google, Gemini.\nTra loi DUNG 9 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nPHIEN_BAN: <ten + so phien ban model AI IN tren anh, vd \"Gemini 1.5 Pro, Gemini 1.0 Ultra\" — chep dung chu doc duoc; khong co thi ghi: khong>\nAI slop: yes | no  (yes = anh do MODEL SINH ANH tao ra: render 3D bong loang phat sang, huy hieu/emblem tu che, logo/ten san pham VE LAI sai hoac chu meo, poster 'A vs B' dung dung, nguoi/robot/nao bo phat sang gia lap; no = anh chup that, chup man hinh, bieu do/bang so lieu that, logo/do hoa CHINH CHU cua hang, minh hoa bien tap do nguoi ve)",
+   "answer": "MO_TA: Biểu tượng cùng dòng chữ Gemini 3.5 Pro trên nền gradient xanh trắng mờ.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.27,0.42,0.74,0.52 | logo\nTRONG: 0.85\nTEN_IN: khong\nPHIEN_BAN: Gemini 3.5 Pro\nAI slop: no",
+   "expected": {
+    "relevant": true,
+    "description": "Biểu tượng cùng dòng chữ Gemini 3.5 Pro trên nền gradient xanh trắng mờ.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.27,
+     0.42,
+     0.74,
+     0.52
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.85,
+    "printed_name": null,
+    "printed_version": "Gemini 3.5 Pro",
+    "ai_slop": false
+   },
+   "call": {
+    "hang": "Google, Gemini"
+   }
+  }
+ ]
+}

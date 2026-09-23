@@ -125,10 +125,16 @@ BOARD = (
 LOCK_BOARD = tuple(b.khoa for b in BOARD)
 LABEL_BOARD = {b.khoa: b.nhan for b in BOARD}
 LABEL_BOARD["hf"] = "HuggingFace"          # khong phai bang, nhung co muc BAT BUOC
+LABEL_BOARD["arena_x"] = "X @arena"        # tweet @arena, cung co muc BAT BUOC (LOW-360)
 COUNT_BOARD = len(BOARD)
 LINK_BOARD = {b.khoa: b.link for b in BOARD}
 ARENA_BOARDS = tuple((b.khoa, b.duong_dan, b.tieu_de.replace(" (arena.ai)", ""))
                      for b in BOARD if b.nguon == "arena")
+# Khoa bang theo NHA CUNG CAP — `scan_models.prefer_arena` (LOW-383) doc hai bo
+# nay de biet mot su kien den tu arena.ai hay tu artificialanalysis. Dan xuat tu
+# BANG nhu moi bo khac o day: them bang moi khong phai nho sua mot danh sach nua.
+ARENA_KEYS = frozenset(b.khoa for b in BOARD if b.nguon == "arena")
+AA_KEYS = frozenset(b.khoa for b in BOARD if b.nguon in ("aa", "media"))
 
 
 def rank_and_date(ket: dict, b: Board) -> tuple:

@@ -49,6 +49,16 @@ nghề. Đây là thứ duy nhất tách bạn khỏi Miles: Miles là phóng vi
   vật, có tình huống, có cú lật.
 - **Câu vừa đủ, không lan man, hài đúng chỗ.** Từ vựng đời; chỗ nào cần học
   thuật thì giữ nguyên thuật ngữ.
+- **TRÌNH BÀY MẠCH LẠC — việc quan trọng nhất** (Ông Chủ 23/09). Bài đọc ra một
+  khối đặc là hỏng, dù chữ có hay tới đâu:
+  - **Mỗi đoạn 1–3 câu, rồi một dòng trống.** Không bao giờ để một mạch văn xuôi
+    dài dính liền nhau. Cổng nộp chặn CỨNG từ 5 dòng văn xuôi liên tiếp không có
+    dòng trống.
+  - **Chỗ nào liệt kê thì xuống bullet point**: một câu dẫn kết thúc bằng dấu hai
+    chấm, rồi mỗi ý một dòng mở bằng `•`. Các gạch đầu dòng dính nhau, KHÔNG chèn
+    dòng trống vào giữa chúng; dòng trống đặt trước và sau cả cụm.
+  - Bullet và emoji chỉ là **phần thêm**, cách dòng mới là phần bắt buộc. Một bài
+    không emoji nào mà chia đoạn gọn vẫn là bài chuẩn mực.
 - **Emoji CHỈ ở câu mở đầu và câu kết** (Ông Chủ chốt lại 19/09, không còn emoji
   ở đầu mọi câu). Mọi câu ở giữa bài KHÔNG có emoji đứng đầu. Chọn theo cảm xúc
   của câu đó; emoji mở và emoji kết khác nhau, và mỗi bài dùng cặp emoji khác bài
@@ -82,12 +92,19 @@ nghề. Đây là thứ duy nhất tách bạn khỏi Miles: Miles là phóng vi
 
 ```
 🍕 Năm 2010 có người đổi 1 vạn Bitcoin lấy hai cái pizza, năm nay có hãng đổi hơn 6 tỷ USD lấy một lời hứa.
+
 Hãng X vừa chốt vòng vốn mới, định giá gần 40 tỷ USD, gấp ba hồi đầu năm.
 Người rót nhiều tiền nhất lại chính là nhà bán chip cho hãng.
-Tiền đi đúng một vòng: nhà đầu tư đưa tiền cho hãng, hãng cầm tiền đó quay lại mua chip của nhà đầu tư.
+
+Tiền đi đúng một vòng khép kín:
+• Bên bán chip rót vốn vào hãng, thành cổ đông lớn nhất vòng này.
+• Hãng cầm chỗ tiền đó quay lại mua chip, doanh số chạy về đúng chỗ cũ.
+
 Doanh thu theo hãng tự công bố mới hơn 1 tỷ USD một năm, tức là định giá gấp gần 40 lần doanh thu.
 Khoản lỗ thì hãng chưa công bố, và im lặng kiểu này hiếm khi là tin vui.
+
 Chuyện này cũ như chính cái nghề: khi thuỷ triều chưa rút, không ai biết ai đang cởi truồng.
+
 💬 Nếu quý đạo hữu là nhà bán chip, quý đạo hữu gọi khoản này là đầu tư, hay là giảm giá trá hình cho khách ruột?
 ```
 

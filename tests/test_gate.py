@@ -600,8 +600,16 @@ def test_image_landscape_no_leak_path_seam_landscape():
             im = Image.open(ra).convert("L")
             W_, H_ = im.size
             nat_h = round(h * W_ / w)
+            # LOW-364: khung quote nam trong o vuong giua nen co the phu toi nat_h — net khung
+            # khong phai duong ranh. Chi do phan cua so NAM TREN khung chu cua chinh the.
+            import card
+            top_text, _ = card.quote_text_top("Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench Verified",
+                                              "Đọc bài đầy đủ tại donniechublog - Hacker News",
+                                              "@donniechublog", "4:5")
             hang = [ImageStat.Stat(im.crop((0, y, W_, y + 1))).mean[0]
-                    for y in range(max(0, nat_h - 14), min(H_, nat_h + 15))]
+                    for y in range(max(0, nat_h - 14), min(H_, nat_h + 15, top_text - 2))]
+            if len(hang) < 2:
+                continue
             buoc = max(abs(hang[i] - hang[i - 1]) for i in range(1, len(hang)))
             assert buoc < 8, (f"anh {w}x{h}: van lo duong ranh tai nat_h={nat_h}, "
                               f"buoc nhay {buoc:.1f} do sang trong mot hang")

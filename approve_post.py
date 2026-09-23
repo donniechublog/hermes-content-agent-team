@@ -208,24 +208,20 @@ def draft_push(token, group, draft_id, thread_id=None):
         payload["message_thread_id"] = int(thread_id)
 
     images = d.get("images")
-    if images:
-        # Album truoc (khong nut), roi tin nhan chu rieng kem nut duyet --
-        # nut bam luon nam tren tin nhan NAY, khong phai anh.
-        ra = _send_media_group(token, group, images, thread_id)
-        album_ids = ([m.get("message_id") for m in (ra.get("result") or []) if isinstance(m, dict)]
-                     if ra.get("ok") else [])
-        if not ra.get("ok"):
-            # KHONG nuot loi: Ong Chu phai biet minh dang duyet thieu anh.
-            caption += ("\n\n\u26a0\ufe0f Album xem truoc gui loi: "
-                        + html_escape(str(ra.get("description"))))
-        text_payload = {"chat_id": group, "text": caption, "parse_mode": "HTML",
-                        "reply_markup": keyboard(draft_id)}
-        if thread_id:
-            text_payload["message_thread_id"] = int(thread_id)
-        res = call(token, "sendMessage", **text_payload)
-        return {**res, "extra_ids": album_ids} if isinstance(res, dict) else res
-
     img = d.get("image")
+    if images:
+        # Ong Chu 22/09/2026: bo anh da duyet o buoc anh roi — gui lai ca album
+        # vao topic nguoi viet chi lam roi. The duyet chi kem ANH BIA (anh dau);
+        # luc dang, publish() van doc du d["images"] nen channel len du album.
+        hero = next((str(p) for p in images if Path(str(p)).exists()), None)
+        if hero is None:
+            # KHONG nuot loi: Ong Chu phai biet minh dang duyet thieu anh.
+            caption += "\n\n\u26a0\ufe0f Không thấy tệp ảnh nào của bộ ảnh trên máy"
+        elif len(images) > 1:
+            caption += f"\n\n🖼 Ảnh bìa — khi đăng sẽ lên đủ {len(images)} ảnh"
+        img = hero
+        payload["caption"] = caption
+
     if img and Path(img).exists():
         # LOW-170: tien to "BẢN NHÁP" o tren cong vao caption cua writer SAU khi
         # caption_check da cho qua (gate do len(caption) GOC, khong biet tien
@@ -596,6 +592,46 @@ def _write_forbid_image_redo(draft_id: str, so_slide: list) -> None:
     _write_json(ip, im)
 
 
+REDO_PREPARE_TIMEOUT = 1200      # giay; mot lan tim anh that do 2-12 phut (22/09/2026)
+
+
+def _refresh_images_for_redo(draft_id) -> str:
+    """Chay lai KHAU TIM ANH (`image_prepare --lam-moi`) bang code hien hanh truoc khi
+    giao task lam lai. Tra "" khi xong, hoac mot dong canh bao (task van duoc giao).
+
+    LOW-361 (Ong Chu 22/09/2026: "moi khi bao lam lai thi phai chay lai khau tim
+    hinh"): truoc day Lam lai chi tao lai task; vai goi `dre_prepare.py <id>` khong
+    `--lam-moi` nen `image_prepare.run` tra luon manifest cu — ban Gemini lam lai sau
+    deploy LOW-354 van nhan kho 67 anh toan Google cua code cu. Chay DONG BO (ham nay
+    chi duoc goi tu thread nen) de task chi sinh ra khi manifest moi da ghi xong: vai
+    khong bao gio doc kho cu, khong co hai engine tren mot draft. `--skip-route`: khong
+    de hook thieu-anh tu chuyen Kite/hoi Ong Chu song song voi task lam lai."""
+    import subprocess
+    wd = state_paths.workdir(STATE_DIR, draft_id)
+    khoa = wd / state_paths.RUNNING_PID_FILE
+    try:
+        pid = int(khoa.read_text().strip() or 0) if khoa.exists() else 0
+        if pid:
+            os.kill(pid, 0)
+            return f"⚠️ Engine khác đang chuẩn bị ảnh bài này (pid {pid}) — không tìm lại, dùng kho hiện có"
+    except (ValueError, ProcessLookupError, PermissionError, OSError):
+        pass                                   # khoa mo coi: engine tu don khi chay
+    cmd = [str(ROOT / "venv/bin/python"), str(ROOT / "image_prepare.py"), draft_id,
+           "--lam-moi", "--im", "--skip-route"]
+    log("lamlai", f"{draft_id}: chay lai khau tim anh ({' '.join(cmd[2:])})")
+    try:
+        wd.mkdir(parents=True, exist_ok=True)
+        with open(wd / state_paths.PREPARE_LOG, "ab") as out:
+            r = subprocess.run(cmd, cwd=str(ROOT), stdout=out, stderr=subprocess.STDOUT,
+                               timeout=REDO_PREPARE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return f"⚠️ Tìm lại ảnh quá {REDO_PREPARE_TIMEOUT // 60} phút — vai dùng kho hiện có"
+    except OSError as e:
+        return f"⚠️ Không chạy được khâu tìm ảnh: {type(e).__name__}"
+    log("lamlai", f"{draft_id}: khau tim anh xong, ma {r.returncode}")
+    return "" if r.returncode == 0 else f"⚠️ Tìm lại ảnh lỗi (mã {r.returncode}, xem prepare.log)"
+
+
 def _hand_redo(draft_id, slide=None, ly_do=None):
     """Tao task lam lai cho draft. Tra ve (note, rid). `slide`/`ly_do` None = giao
     theo kieu cu (khong chi ro). Ca ba duong (co ly do / het han / kieu cu) deu
@@ -644,6 +680,10 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
         w = json.loads(wp.read_text(encoding="utf-8")) if wp.exists() else {}
     except Exception:                                        # noqa: BLE001
         w = {}
+    # LOW-361: tim lai anh SAU khi da ghi hash anh cam (can anh goc cu) va TRUOC khi giao.
+    canh_bao = _refresh_images_for_redo(draft_id)
+    if canh_bao:
+        log("lamlai", f"{draft_id}: {canh_bao}")
     rid, err = kanban_create(tieu, im["image_role"], im["body"] + chi_ro,
                              parent=w.get("root_task"))
     if err:
@@ -662,11 +702,12 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
         im.setdefault("redo_reasons", []).append({"attempt": n, "slide": slide, "reason": ly_do})
     _write_json(ip, im)
     ten = NAME_ROLE_IMAGE.get(im["image_role"], "Ethan")
+    them = f"\n{canh_bao}" if canh_bao else " — đã tìm lại ảnh bằng code mới"
     if ly_do:
         cho = f"slide {slide}" if slide and slide != "CA BO" else ("cả bộ" if slide == "CA BO" else "ảnh")
         return (f"🔄 Đã giao làm lại {cho} (lần {n}) — {ten} — lý do: {ly_do[:120]} "
-                f"(task {rid})"), rid
-    return f"🔄 Đã giao làm lại (lần {n}) — {ten} sẽ dựng ảnh khác (task {rid})", rid
+                f"(task {rid}){them}"), rid
+    return f"🔄 Đã giao làm lại (lần {n}) — {ten} sẽ dựng ảnh khác (task {rid}){them}", rid
 
 # Doc-sua-ghi redo_waiting.json dien ra o HAI thread: nut Lam lai chay nen
 # (_run_background) con han 10 phut quet o thread poll. Khoa nay chi om cac doan doc-
@@ -1362,6 +1403,13 @@ def handle_callback(token, channel, cq):
     # khoa (chuoi do client Telegram gui len, khong tin cay san).
     if action in ("skillok", "skillno"):
         skill_lesson_approve.handle_button(token, action, draft_id, cq)
+        return
+
+    # LOW-362: cau hoi "tin da giao, lam lai khong?" cua researcher — "draft_id" o day la
+    # "<khoa>-<vai>" (rpk) / "<khoa>" (rpkno), khong phai tep DRAFTS.
+    if action in ("rpk", "rpkno"):
+        import approve_pick
+        approve_pick.handle_repick_button(token, action, draft_id, cq)
         return
 
     p = DRAFTS / (draft_id + ".json")

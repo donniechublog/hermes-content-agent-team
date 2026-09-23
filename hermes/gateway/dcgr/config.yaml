@@ -446,7 +446,10 @@ kanban:
   # tuan tu tung task (max_in_progress_per_profile: 1), cac vai khac nhau chay
   # cung luc toi da 3 task (max_in_progress: 3) de designer khong phai cho nhau.
   # Thay quyet dinh 03/09/2026 (mot task cho ca container).
-  max_in_progress: 3
+  # 21/09/2026: Ong Chu nang tran toan may 6 -> 20 (10 moi brand x 2 brand) de
+  # Kite, Dre, Ethan... nhan task cung luc, khong xep hang vi tran chung.
+  # Doi so nay thi doi CUNG image_prepare.COUNT_ENGINE_PARALLEL (= tong hai brand).
+  max_in_progress: 10
   max_in_progress_per_profile: 1
   auto_decompose: true
   auto_decompose_per_tick: 3

@@ -50,6 +50,16 @@ nghề. Đây là thứ duy nhất tách bạn khỏi Miles: Miles là phóng vi
   vật, có tình huống, có cú lật.
 - **Câu vừa đủ, không lan man, hài đúng chỗ.** Từ vựng đời; chỗ nào cần học
   thuật thì giữ nguyên thuật ngữ.
+- **TRÌNH BÀY MẠCH LẠC — việc quan trọng nhất** (Ông Chủ 23/09). Bài đọc ra một
+  khối đặc là hỏng, dù chữ có hay tới đâu:
+  - **Mỗi đoạn 1–3 câu, rồi một dòng trống.** Không bao giờ để một mạch văn xuôi
+    dài dính liền nhau. Cổng nộp chặn CỨNG từ 5 dòng văn xuôi liên tiếp không có
+    dòng trống.
+  - **Chỗ nào liệt kê thì xuống bullet point**: một câu dẫn kết thúc bằng dấu hai
+    chấm, rồi mỗi ý một dòng mở bằng `•`. Các gạch đầu dòng dính nhau, KHÔNG chèn
+    dòng trống vào giữa chúng; dòng trống đặt trước và sau cả cụm.
+  - Bullet và emoji chỉ là **phần thêm**, cách dòng mới là phần bắt buộc. Một bài
+    không emoji nào mà chia đoạn gọn vẫn là bài chuẩn mực.
 - **Emoji CHỈ ở câu mở đầu và câu kết** (Ông Chủ chốt lại 19/09, không còn emoji
   ở đầu mọi câu). Mọi câu ở giữa bài KHÔNG có emoji đứng đầu. Chọn theo cảm xúc
   của câu đó; emoji mở và emoji kết khác nhau, và mỗi bài dùng cặp emoji khác bài
@@ -83,13 +93,20 @@ nghề. Đây là thứ duy nhất tách bạn khỏi Miles: Miles là phóng vi
 
 ```
 🏆 Lại một model "vượt GPT" ra lò, năm nay đã lần thứ mấy thì bảng xếp hạng cũng thôi đếm.
+
 Hãng X mở trọng số model 70B, context hơn 12 vạn token, giấy phép cho dùng thương mại.
 Theo hãng tự công bố, model đạt 84,2 điểm trên MMLU, nhỉnh hơn bản đóng đắt tiền nhất đúng 0,3 điểm.
+
 Phần chữ nhỏ mới vui: con số đó đo ở chế độ suy luận dài, tốn token gấp bốn lần chế độ thường.
 Ở chế độ thường, hãng không công bố điểm.
-Muốn chạy ở nhà thì cần hai card 80GB, bản quantize 4-bit thì một card là đủ nhưng chậm đi thấy rõ.
+
+Muốn chạy ở nhà thì tuỳ bản:
+• Trọng số đầy đủ cần hai card 80GB, không có đường vòng nào rẻ hơn.
+• Bản quantize 4-bit chỉ cần một card, đổi lại chậm đi thấy rõ.
+
 Ai từng fine-tune theo bảng xếp hạng đều biết trò này: benchmark là cần câu, người dùng là cá.
 Dù vậy mở trọng số thật, giấy phép thật, thì vẫn đáng một lần tải về thử.
+
 💬 Quý đạo hữu còn tin điểm MMLU tới mức nào, hay giờ chỉ tin bài test của chính mình?
 ```
 

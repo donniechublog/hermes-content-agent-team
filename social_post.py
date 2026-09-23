@@ -43,6 +43,33 @@ def title_from_text(text: str, gioi_han: int = 100) -> str:
     return cau
 
 
+GET_SOURCE = ROOT / "hermes" / "skills" / "url-mascot-frame" / "scripts" / "get_source.py"
+X_HOSTS = {"x.com", "twitter.com", "mobile.twitter.com"}
+
+
+def x_photos(url: str, out_dir: Path, in_log=lambda t: None) -> list:
+    """Anh nguoi dang tai len cua MOT post X, qua skill url-mascot-frame
+    (`get_source.save_x_photo`) — dang media giong `read()`. [] neu khong phai post X.
+
+    Vi sao: crawl-queue tra `media[]` RONG cho post anh tren X (gioi han da biet, xem
+    SKILL.md cua social-crawl), nen truoc 22/09/2026 moi post X lam nguon bai deu ra 0 anh
+    that o `candidate_social`, du skill cua Bob da biet lay anh goc tu HTML trang post."""
+    if urlsplit(url or "").netloc.lower().removeprefix("www.") not in X_HOSTS:
+        return []
+    if str(GET_SOURCE.parent) not in sys.path:
+        sys.path.insert(0, str(GET_SOURCE.parent))
+    try:
+        import get_source
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
+        p = Path(out_dir) / "x_01.jpg"
+        ok = get_source.save_x_photo(url, str(p))
+    except Exception as e:                                   # noqa: BLE001
+        in_log(f"get_source X hong ({type(e).__name__}) cho {url}")
+        return []
+    in_log(f"get_source X: {'1 anh goc' if ok else 'post khong co anh'} cho {url}")
+    return [{"type": "image", "url": url, "file_path": str(p)}] if ok else []
+
+
 def read(url: str, tai_ve: Path | None = None, tries: int = 3, cho: int = 300,
         in_log=lambda t: None) -> dict | None:
     """Doc mot post. Tra ve dict da don:
@@ -92,6 +119,8 @@ def read(url: str, tai_ve: Path | None = None, tries: int = 3, cho: int = 300,
             if p.exists() and p.stat().st_size > 0:
                 tep = str(p)
         media.append({"type": m.get("type") or "image", "url": m["url"], "file_path": tep})
+    if tai_ve is not None and not any(m["file_path"] and m["type"] == "image" for m in media):
+        media += x_photos(d.get("url") or tw.get("url") or url, Path(tai_ve), in_log)
 
     in_log(f"social_fetch OK: {len(text)}c, {len(media)} media, tac gia {tac_gia!r}")
     return {"title": title_from_text(text), "text": text, "author": tac_gia,

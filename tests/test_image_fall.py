@@ -76,7 +76,7 @@ def _ask_vision(tra_loi, **k):
 # ---------------------------------------------------------------- 1. vision
 def test_vision_ask_extra_line_fall_and_read_out():
     ra, kq, hoi = _ask_vision("MO_TA: đồ hoạ tin tức nhiều chữ.\nLIEN_QUAN: co\nCLUTTERED: co")
-    assert "DUNG 7 dong" in hoi and "CLUTTERED:" in hoi and "TU_KHOA:" in hoi and "CHU_THE:" in hoi, hoi
+    assert "DUNG 9 dong" in hoi and "PHIEN_BAN:" in hoi and "AI slop:" in hoi and "CLUTTERED:" in hoi and "TU_KHOA:" in hoi and "CHU_THE:" in hoi, hoi
     assert ra == ("đồ hoạ tin tức nhiều chữ.", True)       # tuple van 2 phan tu
     assert kq["cluttered"] is True
 
@@ -100,7 +100,7 @@ def test_vision_no_return_line_fall_then_none_no_guess():
 def test_vision_ask_extra_of_bob_still_three_part_from():
     ra, kq, hoi = _ask_vision("MO_TA: ảnh.\nLIEN_QUAN: co\nCLUTTERED: khong\nMOOD: vui",
                               hoi_them="tâm trạng ảnh", nhan_them="MOOD")
-    assert "DUNG 8 dong" in hoi, hoi
+    assert "DUNG 10 dong" in hoi, hoi
     assert ra == ("ảnh.", True, "vui")
     assert kq["cluttered"] is False
 
@@ -278,15 +278,18 @@ def test_carousel_image_fall_secondary_full_text_in_ready_keep_image_side_on():
     khoang lang xuong day. Nay cung chi la overlay: anh van lo qua o moi hang."""
     import carousel
     carousel.set_background("dark")
-    cv = _canvas_region(carousel.W, carousel.H, [(0, 600, "anh"), (700, 980, "chu")])
+    cv = _canvas_region(carousel.W, carousel.H, [(0, 600, "anh"), (700, 1200, "chu")])
     truoc = cv.copy()
     carousel._layer_if_can(cv, cv.convert("RGB"), 1030, carousel.H, image_cluttered=True)
     for y in (1035, 1100, carousel.H - 1):
         assert not _is_background(cv, y, carousel.BG), (y, cv.getpixel((0, y)))
         assert _row_far_from_background(cv, y, carousel.BG) >= 8, (y, cv.getpixel((301, y)))
     assert cv.getpixel((3, 300)) == truoc.getpixel((3, 300)), "anh phia tren khong duoc dong"
-    # Chu in san ngay tren dong chu cua ta phai diu han di, nhung khong bi xoa bang nen dac.
-    assert _row_energy(cv, 960) < _row_energy(truoc, 960) * 0.5, (_row_energy(cv, 960), _row_energy(truoc, 960))
+    # Chu in san DUOI dong chu cua ta phai diu han di, nhung khong bi xoa bang nen dac.
+    assert _row_energy(cv, 1100) < _row_energy(truoc, 1100) * 0.5, (_row_energy(cv, 1100), _row_energy(truoc, 1100))
+    # LOW-364 vong 4 (Ong Chu: "lược đi phần nền được khoanh" — dai chuyen tren dong chu dau):
+    # chu in san cach dong chu dau hon OVERLAY_LEAD giu nguyen, nen khong trum len phia tren.
+    assert _row_energy(cv, 960) == _row_energy(truoc, 960), "nen chu trum len tren dong chu dau"
 
 
 def test_carousel_image_clean_keep_raw_layer_open_old():

@@ -57,5 +57,6 @@
             "state/<brand>/publish_schedule.json", "state/<brand>/publish_slot.lock",
             "state/<brand>/publish_due.lock",
             "state/<brand>/scan/<run>/overflow_report.txt", "state/<brand>/scan/<run>/trial_overflow_manifest.json",
-            "state/<brand>/dispatch_shadow.jsonl"]
+            "state/<brand>/dispatch_shadow.jsonl", "state/<brand>/model_versions.json",
+            "state/<brand>/report_history.<role>.jsonl", "state/<brand>/repick_pending.json"]
 }

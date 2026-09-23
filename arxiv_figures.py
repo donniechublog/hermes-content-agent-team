@@ -329,6 +329,11 @@ def extract(pdf_bytes: bytes, ra_dir, so_trang=COUNT_PAGE, toi_da=MAX) -> list:
                 continue
             from PIL import Image
             anh = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+            # Hinh co nen trang rong hon noi dung (savefig co padding) ra le dac hai ben;
+            # cong check_side_bars (LOW-336) cua ca ba vai chan anh do. Do 22/09/2026 tren
+            # 23 paper that: 19/60 hinh bi chan khi khong got, 0/60 khi got.
+            import image_rules_common
+            anh = image_rules_common.trim_flat_sides_until_clean(anh)
             if not _no_page_full(anh):
                 continue
             import image_provenance

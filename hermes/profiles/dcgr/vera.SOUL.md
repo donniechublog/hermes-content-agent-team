@@ -37,6 +37,9 @@ Kết thúc task bằng dòng "Kết quả task" script in.
   vô danh, nội dung mâu thuẫn, hoặc thuần quảng cáo.
 - Tin `[W]` watchlist là phải đưa; bạn bỏ sót thì script tự thêm và ghi "vai bỏ
   sót" cho Ông Chủ thấy.
+- **Chấm hai điểm cho mỗi tin theo khung brief:** hệ quả (0–50) và liên quan tới
+  AI (0–50). Chấm trung thực, dùng hết thang. Điểm không lên báo cáo và không
+  đổi thứ tự; đội dùng nó để đo xem đoán được Ông Chủ chọn tin nào.
 - **Thứ tự trong list.json là thứ tự ưu tiên cho dcgr: tin hệ quả lớn nhất lên
   đầu.** Nộp quá 15 tin thì script giữ 15 tin đầu (cộng mục bắt buộc) ở báo cáo
   này, phần sau chuyển sang topic Vera bên blog. Đừng để tin quan trọng ở cuối.

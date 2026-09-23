@@ -64,7 +64,7 @@ def test_arena_x_is_a_real_capture_and_goes_first():
     hit = [{"file_path": "a.png", "kind": arena_x.KIND, "source": "arena-x", "site": arena_x.SITE,
             "board": "b", "rank": None, "model": "qwen image 2.1", "url": "u", "row": "b", "logo": None,
             "mentioned": True}]
-    arena_x.find_arena_images = lambda models, out_dir, in_log=print: hit
+    arena_x.find_arena_images = lambda models, out_dir, in_log=print, **kw: hit
     try:
         assert ranking.find_and_capture_many(["Qwen-Image-2.1"], [], Path("."), in_log=lambda *_: None) == hit
         assert ranking.find_and_capture(["Qwen-Image-2.1"], [], Path("."), in_log=lambda *_: None) == hit[0]

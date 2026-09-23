@@ -102,6 +102,46 @@ def billion_odd_mark(t: str) -> float:
 COUNT = re.compile(r"\d")
 PHRASE_COUNT = re.compile(r"\d+(?:[.,]\d+)?\s*(?:%|tỷ|triệu|nghìn|token|USD|\$|B\b|M\b|ms\b|GB\b|MiB\b|điểm)?")
 
+# --- TRINH BAY MACH LAC (LOW-379, Ong Chu 23/09/2026) -----------------------
+# Ong Chu: *"quan trong nhat la trinh bay mach lac, bullet hay emoji thi cung
+# chi la phan them"*. Cai lam bai kho doc KHONG phai "it dong trong" ma la MOT
+# KHOI VAN XUOI DAI DINH LIEN.
+#
+# Hai bai moc, Ong Chu chi ra cung ngay:
+#   KHEN  microchip-hoan-tat-thau-tom-cong-ty-c-dre-donniechublog (Miles 22/09)
+#         khoi van xuoi dai nhat 2 dong, 4 dong trong tren 11 dong, 3 bullet.
+#   CHE   grok-4-7-kite-donniechublog (Jika 22/09)
+#         khoi van xuoi dai nhat 8 dong, cung 2 dong trong.
+#
+# Hai bai gan bang nhau ve SO dong trong — nen do bang "ty le dong trong / so
+# dong" thi bai KHEN cham 0,4 va bi danh truot cung bai CHE. Do la thuoc sai, da
+# thu roi. Thu phan biet duoc chung la do dai KHOI.
+#
+# Dong BULLET khong tinh vao khoi: cum bullet dinh nhau la dung khuon (xem chinh
+# bai khen), chen dong trong giua cac gach moi la sai.
+BULLET_LINE = re.compile(r"^(?:<[^>]+>)*\s*(?:[•●▪‣*]|-(?!\S)|\d+[.)])\s+")
+# Nguong CONG CHAN de rong hon nguong SOUL day, co chu dich: SOUL/brief day
+# "1-3 cau mot doan", con cong chi chan tu 5 dong dinh lien tro len. Day chat va
+# chan long la de mot bai 4 dong hoi dai khong bi da ve (vai chi duoc sua 2 lan
+# roi task hong), trong khi khoi 8 dong nhu bai CHE thi khong loi nao lot.
+MAX_PROSE_BLOCK = 4
+
+
+def longest_prose_block(t: str) -> int:
+    """So dong VAN XUOI nhieu nhat dinh lien nhau ma khong co dong trong.
+
+    Dong rong cat khoi; dong bullet cung cat khoi va khong duoc dem (xem ghi chu
+    o `BULLET_LINE`)."""
+    dai = hien = 0
+    for dong in t.splitlines():
+        d = dong.strip()
+        if not d or BULLET_LINE.match(d):
+            hien = 0
+            continue
+        hien += 1
+        dai = max(dai, hien)
+    return dai
+
 
 def _drop_card(t: str) -> str:
     return re.sub(r"<[^>]+>", " ", t)
@@ -192,6 +232,20 @@ def _check_still_room(caption: str, tran: str) -> tuple:
     if dong_gop:
         canh.append("Mỗi câu nên xuống dòng riêng, mỗi đoạn cách một dòng trống "
                     f"(tiêu chuẩn biên tập). Dòng gộp nhiều câu: “{dong_gop[0][:50]}…”")
+
+    # TRINH BAY MACH LAC (LOW-379): khoi van xuoi dai dinh lien -> LOI, khong
+    # phai nhac. Truoc 23/09/2026 luat nay chi la mot menh de phu trong brief
+    # cua miles_prepare, khong cong nao giu — nen no song duoc bao lau la nho
+    # model cu tinh co nghe loi, va roi ngay hom doi sang model khac (21/09,
+    # LOW-326): ty le bai co khoi >= 5 dong di tu 0-10% len 20-24% o CA HAI vai.
+    # Nhac mem thi khong cuu duoc: miles_submit in thang cho vai doc rang dong
+    # [nhac] "KHONG phai loi: khong can sua hay nop lai vi chung".
+    khoi = longest_prose_block(caption)
+    if khoi > MAX_PROSE_BLOCK:
+        loi.append(f"Có {khoi} dòng văn xuôi dính liền không một dòng trống — bài đọc ra "
+                   "một khối đặc. Cắt thành các đoạn 1–3 câu, mỗi đoạn cách nhau một dòng "
+                   "trống. (Cụm bullet thì dính nhau là đúng, không chèn dòng trống vào "
+                   "giữa các gạch đầu dòng.)")
 
     the_la = {m.group(1).lower() for m in re.finditer(r"</?([a-zA-Z][\w-]*)", caption)}
     xau = the_la - CARD_ALLOW
@@ -293,6 +347,41 @@ _EMOJI_HEAD = re.compile("[\U0001F000-\U0001FAFF⌀-⏿☀-➿⬀-⯿]️?")
 _TAG_HEAD = re.compile(r"^(?:<[^>]+>)+")
 
 
+def _list_block(lines: list, head: list, cat: set) -> set:
+    """Chi so cac dong THUOC MOT DANH SACH, de cong emoji bo qua chung.
+
+    Hai kieu danh sach deu tinh, vi ca hai deu la khuon Ong Chu chap nhan:
+      - dong co gach dau dong that (`• `, `- `, `1. `) — khuon cua bai KHEN;
+      - dong mo dau bang EMOJI va dung LIEN KE mot dong emoji khac (emoji chinh
+        la gach dau dong) — khuon "moi y lon mo bang MOT emoji" trong SOUL Miles.
+
+    `cat` la chi so nhung dong CO DONG TRONG dung truoc: dong trong cat danh
+    sach. Khong co no thi "hook + dong trong + cum emoji" dinh thanh mot khoi, va
+    cai kieu emoji-o-dau-moi-cau ma Ong Chu da bo 19/09 se lot het.
+
+    Doi hoi run >= 2 o kieu thu hai cung la co y: mot dong emoji le loi giua van
+    xuoi khong phai danh sach, do dung la thu LOW-274 cam.
+
+    VA than bai phai CON VAN XUOI thi run emoji moi duoc goi la danh sach. Khong
+    co dieu kien nay thi kieu cu truoc 19/09 — emoji o dau MOI cau, ca than bai
+    khong mot dong tran — tu goi minh la "mot danh sach dai" va lot sach, dung
+    cai Ong Chu da bo. Dau bullet that (`•`) thi khong can dieu kien nay: no da
+    noi ro day la danh sach."""
+    trong = {i for i, l in enumerate(lines) if BULLET_LINE.match(l)}
+    if not any(not head[i] and i not in trong for i in range(1, len(lines) - 1)):
+        return trong
+    dau = None
+    for i in range(len(lines) + 1):
+        la_emoji = i < len(lines) and bool(head[i]) and i not in trong
+        if dau is not None and (not la_emoji or i in cat) and i - dau >= 2:
+            trong |= set(range(dau, i))          # khoi vua dong: >= 2 dong = danh sach
+        if not la_emoji:
+            dau = None
+        elif dau is None or i in cat:            # dong trong mo mot khoi moi
+            dau = i
+    return trong
+
+
 def check_jika_voice(caption: str) -> list:
     """Loi giong rieng cua Jika: tra ve danh sach loi (rong = dat)."""
     loi = []
@@ -307,14 +396,29 @@ def check_jika_voice(caption: str) -> list:
 
     # Emoji CHI o cau mo dau va cau ket (Ong Chu 19/09). Moi cau mot dong nen
     # dong ~ cau; dong dau/cuoi phai co emoji dung dau, dong giua thi khong.
-    lines = [l.strip() for l in caption.splitlines() if l.strip()]
+    #
+    # DONG DANH SACH duoc mien (LOW-380, Ong Chu 23/09): luat 19/09 noi ve CAU
+    # VAN THUONG giua bai, khong noi ve danh sach. Emoji dau gach dau dong la
+    # "phan them" Ong Chu cho phep, nen chan no la chan oan — va truoc 23/09
+    # cong nay chan that: Jika co viet dung khuon liet ke thi cung bi da ve.
+    lines, cat, rong = [], set(), False
+    for l in caption.splitlines():
+        if not l.strip():
+            rong = True
+            continue
+        if rong:
+            cat.add(len(lines))
+        lines.append(l.strip())
+        rong = False
     if lines:
         head = [_EMOJI_HEAD.match(_TAG_HEAD.sub("", l)) for l in lines]
+        danh_sach = _list_block(lines, head, cat)
         if not head[0]:
             loi.append("Câu mở đầu phải bắt đầu bằng một emoji.")
         if not head[-1]:
             loi.append("Câu kết phải bắt đầu bằng một emoji.")
-        mid = [l for l, h in zip(lines[1:-1], head[1:-1]) if h]
+        mid = [l for i, (l, h) in enumerate(zip(lines, head))
+               if h and 0 < i < len(lines) - 1 and i not in danh_sach]
         if mid:
             loi.append("Emoji chỉ đặt ở câu mở đầu và câu kết, bỏ emoji ở các câu giữa bài "
                        f"(gặp ở: “{mid[0][:40]}”).")

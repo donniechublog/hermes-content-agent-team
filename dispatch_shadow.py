@@ -141,7 +141,7 @@ def gather_stories(scans: list) -> list:
 
 
 def _local_date(t: datetime) -> str:
-    """Ngày theo giờ VN — lượt quét 05:00 VN là 22:00 UTC hôm trước."""
+    """Ngày theo giờ VN — lượt quét 06:00 VN là 23:00 UTC hôm trước."""
     return t.astimezone(scan_common.VN).date().isoformat()
 
 

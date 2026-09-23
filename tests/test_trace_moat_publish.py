@@ -304,7 +304,7 @@ def test_intake_single_image_field_is_used_when_images_is_empty():
 
 def test_intake_steps_quality_down_until_total_fits_under_ceiling():
     """Cloudflare 524: carousel PNG nang khong di het trong 100 giay. The vuot
-    nguong phai thanh WebP, va tong con vuot tran thi ha chat luong tung bac."""
+    nguong phai thanh JPEG, va tong con vuot tran thi ha chat luong tung bac."""
     from PIL import Image
     h = _harness()
     try:
@@ -320,9 +320,55 @@ def test_intake_steps_quality_down_until_total_fits_under_ceiling():
         _draft(h, "d9", images=[_image(h, "big.png", raw)])
         assert mp.intake("d9")[0] is True
         img, = h.trace.of("http")[0][1]["body"]["images"]
-        assert img["mime"] == "image/webp"
+        assert img["mime"] == "image/jpeg"
         assert len(base64.b64decode(img["base64"])) == q80
         assert [n for n in h.trace.names("print") if "ha them mot bac" in n] != []
+    finally:
+        h.__exit__()
+
+
+def test_background_nen_ra_jpeg_vi_instagram_khong_nhan_webp():
+    """Instagram tu choi WebP: 22/09/2026 bat Instagram len thi moi the deu dung
+    o dialog "Khong ho tro file nay -- Chua tai duoc file media-0.webp len", va
+    extension bao ve "Did not reach caption screen". Facebook thi nhan WebP binh
+    thuong, nen loi chi lo ra khi Instagram chay."""
+    from PIL import Image
+    h = _harness()
+    try:
+        im = Image.frombytes("RGB", (256, 256), os.urandom(256 * 256 * 3))
+        buf = io.BytesIO()
+        im.save(buf, "PNG")
+        raw = buf.getvalue()
+        h.patch(mp, "THRESHOLD_BACKGROUND", 1000)
+        out, mime = mp._background(raw, "image/png", "x", 90)
+        assert mime == "image/jpeg", mime
+        assert len(out) < len(raw)
+        assert Image.open(io.BytesIO(out)).format == "JPEG"
+    finally:
+        h.__exit__()
+
+
+def test_background_nen_trong_suot_thanh_TRANG_khong_thanh_den():
+    """JPEG khong co kenh alpha. `convert("RGB")` thang tay bien nen trong suot
+    thanh DEN -- the carousel chu den tren nen den la mat bai. Phai dan anh len
+    nen trang truoc."""
+    from PIL import Image
+    h = _harness()
+    try:
+        im = Image.new("RGBA", (256, 256), (0, 0, 0, 0))      # trong suot hoan toan
+        # Vai cham mau de anh du "nang" vuot nguong nen.
+        for x in range(0, 256, 2):
+            for y in range(0, 256, 2):
+                im.putpixel((x, y), (x, y, (x + y) % 256, 255))
+        buf = io.BytesIO()
+        im.save(buf, "PNG")
+        raw = buf.getvalue()
+        h.patch(mp, "THRESHOLD_BACKGROUND", 100)
+        out, mime = mp._background(raw, "image/png", "x", 90)
+        assert mime == "image/jpeg", mime
+        goc = Image.open(io.BytesIO(out)).convert("RGB")
+        r, g, b = goc.getpixel((1, 1))                        # o trong suot
+        assert r > 200 and g > 200 and b > 200, (r, g, b)
     finally:
         h.__exit__()
 
@@ -915,6 +961,46 @@ def test_notify_missing_bot_token_PIN_kills_the_process_and_loses_the_lines():
         assert _spool(h) is None
     finally:
         h.__exit__()
+
+# =========================================================================
+# poll — ngan sach ket noi (21/09/2026)
+# =========================================================================
+def test_poll_opens_one_http_client_for_the_whole_sweep():
+    """Moi draft mot httpx.Client = mot bat tay TCP moi. Do duoc tren dc-group
+    21/09/2026: ~1/30 lan bat tay roi vao ho den va ngon TRON connect timeout.
+    Voi 75 draft con theo doi, cron moi phut mo 75 ket noi => moi luot dinh vai
+    lan treo 60s, luot chay dai hon chu ky cron nen cac luot chong len nhau.
+    Mot luot poll chi duoc mo MOT client va dung lai ket noi cho ca luot."""
+    h = _harness()
+    try:
+        dem = []
+        goc = mp.httpx.Client
+
+        def dem_client(*a, **kw):
+            dem.append(1)
+            return goc(*a, **kw)
+
+        h.patch(mp.httpx, "Client", dem_client)
+        for i in range(3):
+            _pushed(h, "c%d" % i)
+        mp.poll()
+        assert len(dem) == 1, "mo %d client cho 3 draft (phai dung chung MOT)" % len(dem)
+        assert _http(h) == ["GET /publish-intake/wf-c%d" % i for i in range(3)], _http(h)
+    finally:
+        h.__exit__()
+
+
+def test_poll_connect_budget_is_short_even_though_read_budget_stays_long():
+    """TIMEOUT ap MOT con so cho ca connect/read/write: mot lan bat tay roi vao
+    ho den ngon tron 60 giay, du cac request ngay truoc va ngay sau do chi mat
+    0,25s (do duoc luc 22:01:30 ngay 21/09/2026). Tach ra: connect ngan de loi
+    mang lo som, read van dai vi moat tra cham khi hang doi day."""
+    assert isinstance(mp.TIMEOUT, httpx.Timeout), \
+        "TIMEOUT phai la httpx.Timeout de tach rieng ngan sach connect"
+    assert mp.TIMEOUT.connect is not None and mp.TIMEOUT.connect <= 5.0, \
+        "connect=%r — mot bat tay ho den van ngon qua lau" % (mp.TIMEOUT.connect,)
+    assert mp.TIMEOUT.read is not None and mp.TIMEOUT.read >= 60.0, \
+        "read=%r — cat ngan read se lam hong cac lan moat tra cham" % (mp.TIMEOUT.read,)
 
 
 if __name__ == "__main__":
