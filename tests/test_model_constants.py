@@ -18,18 +18,15 @@ import env_load                                                 # noqa: E402
 MODEL_CONSTANTS = ("VISION_MODEL", "VISION_FALLBACK_MODEL", "SAME_STORY_MODEL")
 
 
-# Phan lon route cua 9router la `provider/model` (`ds/...`, `ag/...`, `gemini/...`),
-# nhung KHONG phai tat ca: muc `openai-compatible-chat` phoi ra ten TRAN, khong co
-# tien to — `GET /v1/models` ngay 23/09/2026 tra ve dung chuoi `DS-v4Flash`. Cong
-# nay de bat LOI GO va chuoi bia, nen no nhan ca hai dang; cai no van chan la ten
-# co khoang trang, co scheme, hoac rong.
-ROUTE = re.compile(r"[a-z]+/[\w.\-]+|[\w.\-]+")
-
-
+# Moi route cua 9router deu la `provider/model` (`ds/...`, `ag/...`, `gemini/...`).
+# 23/09/2026 cong nay tung duoc noi ra de nhan ten TRAN `DS-v4Flash` — mot muc
+# "custom provider" openai-compatible. Muc do da bi xoa khoi 9router, nen cong
+# tro lai chat che: ten tran gio la dau hieu ai do chep nham tu `/v1/models` cua
+# mot tien trinh chua restart (xem comment SAME_STORY_MODEL trong env_load).
 def test_model_constants_exist_and_look_like_a_router_route():
     for name in MODEL_CONSTANTS:
         value = getattr(env_load, name)
-        assert value and ROUTE.fullmatch(value), (name, value)
+        assert re.fullmatch(r"[a-z]+/[\w.\-]+", value), (name, value)
 
 
 def test_same_story_model_is_declared_only_in_env_load():
