@@ -1035,15 +1035,15 @@ BOARD_MEASURE_TRIES = 5
 BOARD_CHARS_MIN = 80
 
 
-def _board_has_content(pg, sel: str, kieu: str = "table") -> tuple:
-    """(du noi dung chua, mo ta) cho phan tu `sel` tren trang dang mo. `kieu` la
+def _board_has_content(pg, sel: str, kind: str = "table") -> tuple:
+    """(du noi dung chua, mo ta) cho phan tu `sel` tren trang dang mo. `kind` la
     loai phan tu da do duoc (table/figure/svg/canvas)."""
-    dem = pg.evaluate(JS_CONTENT, sel)
-    if kieu == "table":
-        return dem["rows"] >= BOARD_ROWS_MIN, f"{dem['rows']} hàng có chữ"
-    if kieu == "canvas":
+    counts = pg.evaluate(JS_CONTENT, sel)
+    if kind == "table":
+        return counts["rows"] >= BOARD_ROWS_MIN, f"{counts['rows']} hàng có chữ"
+    if kind == "canvas":
         return True, "canvas (không đọc được chữ)"
-    return dem["chars"] >= BOARD_CHARS_MIN, f"{dem['chars']} ký tự"
+    return counts["chars"] >= BOARD_CHARS_MIN, f"{counts['chars']} ký tự"
 
 
 def source_page_is_board(url: str) -> bool:
@@ -1057,7 +1057,7 @@ def source_page_is_board(url: str) -> bool:
     là bảng KHÔNG có mục riêng trong registry, nên vòng đi nguồn không bao giờ
     chạm tới chúng dù bài lấy tin từ đúng trang ấy.
     """
-    return bool(url) and any(re.search(n["domain_pattern"], url, re.I) for n in SOURCE)
+    return bool(url) and any(re.search(src["domain_pattern"], url, re.I) for src in SOURCE)
 
 
 def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
@@ -1086,12 +1086,12 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
     import capture_chart
     ctx = None
     try:
-        rong, do = capture_chart.EMPTY_MARK, None
-        cao_khung = HEIGHT_MAX_CSS + 200          # khung nhìn phải chứa trọn vùng cắt
+        width, measured = capture_chart.EMPTY_MARK, None
+        frame_height = HEIGHT_MAX_CSS + 200          # khung nhìn phải chứa trọn vùng cắt
         for _ in range(2):          # lượt 1 đo, lượt 2 (nếu cần) nới khung rồi chụp lại
             if ctx:
                 ctx.close()
-            ctx = br.new_context(viewport={"width": rong, "height": cao_khung},
+            ctx = br.new_context(viewport={"width": width, "height": frame_height},
                                  device_scale_factor=DPR, user_agent=UA)
             pg = ctx.new_page()
             # `domcontentloaded` chứ không `networkidle`: networkidle không bao giờ
@@ -1102,22 +1102,22 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
             # dau co khi chua ve xong bang nao. Do 23/09: arena.ai/leaderboard/
             # code/webdev lan thi do ra bang, lan thi ra rong o dung lan do dau.
             for _ in range(BOARD_MEASURE_TRIES):
-                do_moi = pg.evaluate(JS_BOARD_FIND, BOARD_PICK)
-                if do_moi["sel"]:
+                found = pg.evaluate(JS_BOARD_FIND, BOARD_PICK)
+                if found["sel"]:
                     break
                 pg.wait_for_timeout(2000)
             # Lượt hai đo hụt thì GIỮ kết quả lượt đầu: `sel` chỉ là một kiểu phần tử
             # ("table"/"figure"/…), tải lại chậm một nhịp là đo ra rỗng — đo 23/09,
             # arena.ai/leaderboard/code/webdev mất trắng ở đúng chỗ này.
-            do = do_moi if do_moi["sel"] else do
-            if not do or not do["sel"]:
-                in_log(f"[xep_hang] trang nguồn {url}: không có bảng/đồ thị nào đủ lớn")
+            measured = found if found["sel"] else measured
+            if not measured or not measured["sel"]:
+                in_log(f"[ranking] trang nguồn {url}: không có bảng/đồ thị nào đủ lớn")
                 return None
-            rong_moi = capture_chart.frame_can(do["w"], rong)
-            if rong_moi <= rong:
+            width_needed = capture_chart.frame_can(measured["w"], width)
+            if width_needed <= width:
                 break
-            in_log(f"[xep_hang] trang nguồn: nới khung {rong} -> {rong_moi}px cho vừa bảng")
-            rong = rong_moi
+            in_log(f"[ranking] trang nguồn: nới khung {width} -> {width_needed}px cho vừa bảng")
+            width = width_needed
         el = pg.query_selector(BOARD_MARK)
         if not el:
             return None
@@ -1125,58 +1125,58 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
         # ra dung KHUNG XUONG luc dang tai — may o xam tren nen trang, khong mot
         # con so nao. Cong "anh rong" khong bat duoc (no co hinh khoi, khong phang),
         # va tam do di tiep duoc toi tan slide (dung loi bo Broadcom 04/09).
-        for lan in range(6):
-            du, mo_ta_dem = _board_has_content(pg, BOARD_MARK, do["sel"])
-            if du:
+        for attempt in range(6):
+            enough, how_many = _board_has_content(pg, BOARD_MARK, measured["sel"])
+            if enough:
                 break
-            if lan == 0:
-                in_log(f"[xep_hang] trang nguồn: bảng chưa có dữ liệu ({mo_ta_dem}), đợi…")
+            if attempt == 0:
+                in_log(f"[ranking] trang nguồn: bảng chưa có dữ liệu ({how_many}), đợi…")
             pg.wait_for_timeout(2000)
         else:
-            in_log(f"[xep_hang] trang nguồn {url}: bảng không bao giờ có dữ liệu ({mo_ta_dem}) — bỏ")
+            in_log(f"[ranking] trang nguồn {url}: bảng không bao giờ có dữ liệu ({how_many}) — bỏ")
             return None
         try:
             el.scroll_into_view_if_needed(timeout=8000)
         except Exception:                                    # noqa: BLE001
             # Bảng nằm trong khung cuộn riêng: `scroll_into_view_if_needed` đợi nó
             # "ổn định" và không bao giờ đạt (đo 23/09, /text-to-speech).
-            in_log("[xep_hang] trang nguồn: cuộn tới bảng hụt, thử scrollIntoView thẳng")
+            in_log("[ranking] trang nguồn: cuộn tới bảng hụt, thử scrollIntoView thẳng")
             el.evaluate("e => e.scrollIntoView({block: 'start'})")
         pg.wait_for_timeout(400)
-        hop = el.bounding_box()
-        if not hop:
-            in_log(f"[xep_hang] trang nguồn {url}: không đo được vị trí bảng")
+        box = el.bounding_box()
+        if not box:
+            in_log(f"[ranking] trang nguồn {url}: không đo được vị trí bảng")
             return None
-        x, y = max(0.0, hop["x"]), max(0.0, hop["y"])
-        cao = hop["height"]
-        khung_hang = pg.evaluate(JS_ROWS_BOX, [BOARD_MARK, BOARD_ROWS_SHOWN])
-        if khung_hang and khung_hang["bottom"] > khung_hang["top"]:
+        x, y = max(0.0, box["x"]), max(0.0, box["y"])
+        height = box["height"]
+        rows_box = pg.evaluate(JS_ROWS_BOX, [BOARD_MARK, BOARD_ROWS_SHOWN])
+        if rows_box and rows_box["bottom"] > rows_box["top"]:
             # Cat ngay duoi hang thu `BOARD_ROWS_SHOWN`.
-            cao = min(cao, khung_hang["bottom"] - y + 8)
+            height = min(height, rows_box["bottom"] - y + 8)
         clip = {"x": x, "y": y,
-                "width": min(hop["width"], rong - x),
-                "height": min(cao, float(HEIGHT_MAX_CSS), cao_khung - y)}
+                "width": min(box["width"], width - x),
+                "height": min(height, float(HEIGHT_MAX_CSS), frame_height - y)}
         if clip["width"] < 320 or clip["height"] < 200:
-            in_log(f"[xep_hang] trang nguồn {url}: vùng chụp quá nhỏ "
+            in_log(f"[ranking] trang nguồn {url}: vùng chụp quá nhỏ "
                    f"({clip['width']:.0f}x{clip['height']:.0f})")
             return None
         out.parent.mkdir(parents=True, exist_ok=True)
         pg.screenshot(path=str(out), animations="disabled", clip=clip)
-        rong_that, mo_ta = role.active_rules().is_blank_image(Image.open(out).convert("RGB"))
-        if rong_that:
-            in_log(f"[xep_hang] trang nguồn: ảnh ra RỖNG ({mo_ta}) — bỏ")
+        is_blank, why = role.active_rules().is_blank_image(Image.open(out).convert("RGB"))
+        if is_blank:
+            in_log(f"[ranking] trang nguồn: ảnh ra RỖNG ({why}) — bỏ")
             out.unlink(missing_ok=True)
             return None
-        bang = (pg.title() or "").strip()[:60] or "trang nguồn của bài"
+        board_name = (pg.title() or "").strip()[:60] or "trang nguồn của bài"
         image_provenance.stamp_file(out, "ranking_board_page", source="source-page",
-                                    board=bang, url=url)
+                                    board=board_name, url=url)
         im = Image.open(out)
-        in_log(f"[xep_hang] chụp bảng của CHÍNH trang nguồn ({do['sel']}, {im.width}x{im.height}) "
-               f"— chưa khoanh hàng: {bang}")
+        in_log(f"[ranking] chụp bảng của CHÍNH trang nguồn ({measured['sel']}, {im.width}x{im.height}) "
+               f"— chưa khoanh hàng: {board_name}")
         return {"file_path": str(out), "kind": "board-page", "source": "source-page",
-                "site": _domain_of(url), "board": bang, "rank": None, "url": url, "row": ""}
+                "site": _domain_of(url), "board": board_name, "rank": None, "url": url, "row": ""}
     except Exception as e:                                   # noqa: BLE001
-        in_log(f"[xep_hang] trang nguồn {url}: {type(e).__name__}: {str(e)[:80]}")
+        in_log(f"[ranking] trang nguồn {url}: {type(e).__name__}: {str(e)[:80]}")
         return None
     finally:
         if ctx:
@@ -1258,20 +1258,20 @@ def _board_named_in_title(title: str):
     """
     import model_boards
     from urllib.parse import urlparse
-    goi = re.sub(r"[^a-z0-9]", "", (title or "").lower())
-    if not goi:
+    title_key = re.sub(r"[^a-z0-9]", "", (title or "").lower())
+    if not title_key:
         return None
-    for b in model_boards.BOARD:
-        ten_bang = b.tieu_de.split(" (")[0].strip()
-        for ung in (b.khoa, ten_bang.split()[0] if ten_bang else ""):
-            k = re.sub(r"[^a-z0-9]", "", ung.lower())
-            if len(k) >= 5 and k in goi:
-                return {"id": f"named:{b.khoa}", "site": (urlparse(b.link).netloc or "").replace("www.", "").upper(),
-                        "board": ten_bang, "url": b.link}
+    for board in model_boards.BOARD:
+        board_name = board.tieu_de.split(" (")[0].strip()
+        for candidate in (board.khoa, board_name.split()[0] if board_name else ""):
+            k = re.sub(r"[^a-z0-9]", "", candidate.lower())
+            if len(k) >= 5 and k in title_key:
+                return {"id": f"named:{board.khoa}", "site": (urlparse(board.link).netloc or "").replace("www.", "").upper(),
+                        "board": board_name, "url": board.link}
     return None
 
 
-def _card_fields(models: list, nguon_ds: list, title: str = "") -> tuple:
+def _card_fields(models: list, sources: list, title: str = "") -> tuple:
     """(tên model để IN, nguồn ghi trên thẻ) cho THẺ DỰ PHÒNG. Hàm THUẦN.
 
     Hai chỗ lệch trên thẻ 23/09 (LOW-381), cùng một tấm:
@@ -1282,11 +1282,11 @@ def _card_fields(models: list, nguon_ds: list, title: str = "") -> tuple:
         TIÊU ĐỀ mới là bảng bài đang nói, nên `in_title` đi trước.
       - tên model in nguyên slug `claude-opus-5-5-max` thay vì `Claude Opus 5.5`.
     """
-    n = (next((x for x in nguon_ds if x.get("in_title")), None)
+    src = (next((s for s in sources if s.get("in_title")), None)
          or _board_named_in_title(title)
-         or next((x for x in nguon_ds if x.get("mentioned")), None)
-         or (nguon_ds[0] if nguon_ds else SOURCE[0]))
-    return model_name.display_name(models[0]) or models[0], n
+         or next((s for s in sources if s.get("mentioned")), None)
+         or (sources[0] if sources else SOURCE[0]))
+    return model_name.display_name(models[0]) or models[0], src
 
 
 # ---- Điều phối --------------------------------------------------------------------
@@ -1349,7 +1349,7 @@ def _try_source(phien: SessionCapture, n: dict, models: list, out: Path, in_log)
         # khoi lead cung hoi dung cau nay, chep doi thi mot ben vá mà bên kia không.
         ly = got_block(pg.title() or "", resp.status if resp else None)
         if ly:
-            in_log(f"[xep_hang] {n['id']}: nguồn chặn ({ly}), bỏ qua")
+            in_log(f"[ranking] {n['id']}: nguồn chặn ({ly}), bỏ qua")
             return None, None, pg
         # KHUNG MOBILE TRUOC cho MOI nguon (Ong Chu 06/09/2026: "vào trang
         # nào chụp thì cũng hãy duyệt theo kích thước mobile, vì hình luôn
@@ -1370,7 +1370,7 @@ def _try_source(phien: SessionCapture, n: dict, models: list, out: Path, in_log)
                 kq, ly_do2 = phien.attempt(pg, models, out, DPR, False, 14)
                 ly_do = f"mobile: {ly_do}; desktop: {ly_do2}"
     except Exception as e:                           # noqa: BLE001
-        in_log(f"[xep_hang] {n['id']}: {type(e).__name__}: {str(e)[:80]}")
+        in_log(f"[ranking] {n['id']}: {type(e).__name__}: {str(e)[:80]}")
         return None, None, pg
     return kq, ly_do, pg
 
@@ -1434,7 +1434,7 @@ def arena_first(models: list, out_dir: Path, in_log, extra_urls=()) -> list:
         import arena_x
         return arena_x.find_arena_images(models, out_dir, in_log, extra_urls=extra_urls)
     except Exception as e:                                   # noqa: BLE001
-        in_log(f"[xep_hang] arena X hong ({type(e).__name__}), di chup trang bang")
+        in_log(f"[ranking] arena X hong ({type(e).__name__}), di chup trang bang")
         return []
 
 
@@ -1473,7 +1473,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
         phien = SessionCapture(_ph.browser(ARGS_CAPTURE))
         for n in nguon_ds:
             if time.time() - t0 > TIME_LIMIT:
-                in_log(f"[xep_hang] hết giờ ({TIME_LIMIT}s), dừng ở {n['id']}")
+                in_log(f"[ranking] hết giờ ({TIME_LIMIT}s), dừng ở {n['id']}")
                 break
             out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}{n['id']}.png"
             kq, ly_do, pg = _try_source(phien, n, models, out, in_log)
@@ -1485,12 +1485,12 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
                 # tu chinh hang do cho THE DU PHONG (duong duy nhat the do chay toi).
                 if logo is None:
                     logo = capture_logo(pg, out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}logo.png")
-                in_log(f"[xep_hang] {n['id']}: bỏ — {ly_do}")
+                in_log(f"[ranking] {n['id']}: bỏ — {ly_do}")
                 continue
             image_provenance.stamp_file(out, "ranking_capture", model=kq["model"], source=n["id"],
                                   site=n["site"], board=n["board"], rank=kq.get("rank"), url=n["url"])
             im = Image.open(out)
-            in_log(f"[xep_hang] {n['id']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
+            in_log(f"[ranking] {n['id']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
                    f"({manifest_values.ranking_kind_label(kq['kind'])}, {im.width}x{im.height}) — {kq['row'][:70]}")
             kq_cuoi = {"file_path": str(out), "kind": kq["kind"], "source": n["id"], "site": n["site"],
                        "board": n["board"], "rank": kq.get("rank") or hang_goi_y, "model": kq["model"],
@@ -1504,7 +1504,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
     card_name, n = _card_fields(models, nguon_ds, title)
     out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}card.png"
     fallback_card(card_name, hang_goi_y, n["site"], n["board"], out, brand, logo)
-    in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {card_name} #{hang_goi_y or '?'}")
+    in_log(f"[ranking] không nguồn nào chụp được → thẻ dự phòng {card_name} #{hang_goi_y or '?'}")
     return {"file_path": str(out), "kind": "card", "source": n["id"], "site": n["site"], "board": n["board"],
             "rank": hang_goi_y, "model": card_name, "url": n["url"], "logo": str(logo) if logo else None}
 
@@ -1566,7 +1566,7 @@ def _sources_proving_story(nguon_ds: list, in_log) -> list:
     thì "vì sao bài xếp hạng này không có ảnh" lại phải đoán (INV-3)."""
     ok = [n for n in nguon_ds if source_proves_story(n)]
     if len(ok) < len(nguon_ds):
-        in_log(f"[xep_hang] bỏ {len(nguon_ds) - len(ok)}/{len(nguon_ds)} nguồn không chứng minh "
+        in_log(f"[ranking] bỏ {len(nguon_ds) - len(ok)}/{len(nguon_ds)} nguồn không chứng minh "
                f"được bài (bài không nhắc, không đúng chủ đề, không đo năng lực riêng) — "
                f"còn: {', '.join(n['id'] for n in ok) or 'không nguồn nào, sẽ dựng thẻ dự phòng'}")
     return ok
@@ -1620,10 +1620,10 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
         phien = SessionCapture(_ph.browser(ARGS_CAPTURE))
         for n in nguon_ds:
             if len(ket_qua) >= toi_da:
-                in_log(f"[xep_hang] đủ {toi_da} ảnh, dừng")
+                in_log(f"[ranking] đủ {toi_da} ảnh, dừng")
                 break
             if time.time() - t0 > TIME_LIMIT:
-                in_log(f"[xep_hang] hết giờ ({TIME_LIMIT}s), dừng ở {n['id']}")
+                in_log(f"[ranking] hết giờ ({TIME_LIMIT}s), dừng ở {n['id']}")
                 break
             if _skip_source(n, da_chup_thuong):
                 continue                              # da co MOT anh "thuong", nguon khac chi lap lai
@@ -1635,12 +1635,12 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
             if not kq:
                 if logo is None:
                     logo = capture_logo(pg, out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}logo.png")
-                in_log(f"[xep_hang] {n['id']}: bỏ — {ly_do}")
+                in_log(f"[ranking] {n['id']}: bỏ — {ly_do}")
                 continue
             image_provenance.stamp_file(out, "ranking_capture", model=kq["model"], source=n["id"],
                                   site=n["site"], board=n["board"], rank=kq.get("rank"), url=n["url"])
             im = Image.open(out)
-            in_log(f"[xep_hang] {n['id']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
+            in_log(f"[ranking] {n['id']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
                    f"({manifest_values.ranking_kind_label(kq['kind'])}, {im.width}x{im.height}) — {kq['row'][:70]}")
             ket_qua.append({"file_path": str(out), "kind": kq["kind"], "source": n["id"], "site": n["site"],
                             "board": n["board"], "rank": _rank_of(kq, n, hang_goi_y), "model": kq["model"],
@@ -1657,7 +1657,7 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
     card_name, n = _card_fields(models, nguon_ds, title)
     out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}card.png"
     fallback_card(card_name, hang_goi_y, n["site"], n["board"], out, brand, logo)
-    in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {card_name} #{hang_goi_y or '?'}")
+    in_log(f"[ranking] không nguồn nào chụp được → thẻ dự phòng {card_name} #{hang_goi_y or '?'}")
     return [{"file_path": str(out), "kind": "card", "source": n["id"], "site": n["site"], "board": n["board"],
             "rank": hang_goi_y, "model": card_name, "url": n["url"], "logo": str(logo) if logo else None}]
 

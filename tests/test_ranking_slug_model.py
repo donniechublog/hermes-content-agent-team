@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import model_name  # noqa: E402
 import ranking  # noqa: E402
 
-# Hang THAT doc tu bang AA tren may chu 23/09/2026 (`[xep_hang] aa-models: khop`).
+# Hang THAT doc tu bang AA tren may chu 23/09/2026 (`[ranking] aa-models: khop`).
 ROW_AA = "Claude Opus 5.5 (max with fallback) | 1M | Anthropic | 58 | $5.98 | -- | -- | -- | Model Providers"
 TITLE = "claude-opus-5-5-max-effort và xhigh-effort vào top LiveBench"
 
