@@ -34,9 +34,12 @@ khối "Đọc N trả lời" (ảnh đăng lên kênh mình thì không ai bấ
 tim kèm số, và đổi đơn vị "N"/"Tr" của X sang "K"/"M". `--clean` sạch hơn nữa:
 bỏ cả trái tim lẫn nút Theo dõi.
 
-Trong bản dịch, bọc cụm cần TÔ ĐỎ bằng `<hl>…</hl>`:
+Trong bản dịch, bọc cụm cần NHẤN MÀU bằng `<hl>…</hl>`:
 
     Qwen3.8 Flash <hl>miễn phí</hl> trong một tuần.
+
+Màu nhấn chọn theo id tweet từ bảng màu thương hiệu của X, để các ảnh không ra
+cùng một màu (Ông Chủ 23/09/2026); `--hl-color` ép một màu cụ thể.
 
 Ảnh ra đưa tiếp cho Bob đóng khung + mascot + handle:
 
@@ -58,9 +61,25 @@ from browser_session import (MOBILE_DPR, MOBILE_UA,          # noqa: E402
                             MOBILE_VIEWPORT, session_or_new)
 
 EMBED = "https://platform.twitter.com/embed/Tweet.html"
-# Đỏ của X (`#f4212e`) chứ không phải đỏ thuần: thẻ nhúng dùng đúng mã này, nên
-# cụm tô đỏ nhìn ra "một phần của thẻ" thay vì chữ dán lên.
-HL_COLOR = "#f4212e"
+# MÀU NHẤN — một bảng, không phải một màu (Ông Chủ 23/09/2026: *"đừng để các màu
+# giống nhau ở mọi hình"*). Lấy đúng bộ màu thương hiệu của X, nên cụm được nhấn
+# nhìn ra "một phần của thẻ" thay vì chữ dán lên.
+#
+# Chọn theo id tweet: TẤT ĐỊNH (chạy lại cùng một tweet ra đúng màu cũ, dựng lại
+# ảnh không bị đổi màu giữa chừng) mà vẫn rải đều giữa các bài. Ép màu cụ thể
+# bằng `--hl-color`.
+HL_DARK = {
+    "red": "#f4212e", "blue": "#1d9bf0", "green": "#00ba7c",
+    "yellow": "#ffd400", "pink": "#f91880", "purple": "#8c6bff",
+    "orange": "#ff7a00",
+}
+# Nền sáng cần tông đậm hơn: vàng #ffd400 trên nền trắng gần như không đọc được,
+# nên bảng này bỏ vàng và kéo mọi mã xuống tối hơn.
+HL_LIGHT = {
+    "red": "#d81b25", "blue": "#0f7cc0", "green": "#00875a",
+    "pink": "#c9146a", "purple": "#5b3fd1", "orange": "#c25b00",
+}
+_HEX = re.compile(r"#[0-9a-fA-F]{6}\Z")
 # Node chữ của thẻ nhúng. Tên do X đặt và X có thể đổi bất cứ lúc nào — không
 # thấy thì DỪNG, đừng chụp bừa: ảnh ra khi đó là tweet tiếng Anh nguyên vẹn,
 # nhìn vẫn "đẹp" nên rất dễ lọt tới bước đăng.
@@ -215,14 +234,28 @@ def embed_url(tid: str, theme: str, lang: str) -> str:
             f"&conversation=none&hideThread=true")
 
 
-def to_html(vi: str) -> str:
+def pick_hl(tid: str, theme: str, chon=None) -> tuple:
+    """(tên, mã màu) cho cụm được nhấn. `chon` = tên trong bảng hoặc mã `#rrggbb`."""
+    bang = HL_LIGHT if theme == "light" else HL_DARK
+    if chon:
+        if _HEX.match(chon):
+            return ("tự chọn", chon.lower())
+        if chon in bang:
+            return (chon, bang[chon])
+        sys.exit(f"--hl-color không nhận {chon!r}. Dùng mã #rrggbb hoặc một trong: "
+                 f"{', '.join(bang)}")
+    ten = list(bang)[int(tid) % len(bang)]
+    return (ten, bang[ten])
+
+
+def to_html(vi: str, hl_color: str) -> str:
     """Bản dịch (chữ thường + `<hl>…</hl>`) -> HTML an toàn để gán vào thẻ.
 
     Escape TRƯỚC rồi mới mở lại đúng hai thẻ `<hl>`: bản dịch là chữ người viết
     chứ không phải HTML — để lọt một dấu `<` của người dịch là vỡ cả bố cục thẻ.
     """
     s = html.escape(vi)
-    s = s.replace("&lt;hl&gt;", f'<span style="color:{HL_COLOR};font-weight:700">')
+    s = s.replace("&lt;hl&gt;", f'<span style="color:{hl_color};font-weight:700">')
     s = s.replace("&lt;/hl&gt;", "</span>")
     return s.replace("\n", "<br>")
 
@@ -241,7 +274,7 @@ def _card(page):
 
 
 def render(url: str, vi, out_path, theme="dark", lang="vi", clean=False,
-           quote_vi=None, hide_quote=False, phien=None) -> list:
+           quote_vi=None, hide_quote=False, hl_color=None, phien=None) -> list:
     """Mở thẻ nhúng của `url`, thay chữ bằng `vi` (None = giữ nguyên), chụp ra
     `out_path` (None = không chụp).
 
@@ -269,12 +302,17 @@ def render(url: str, vi, out_path, theme="dark", lang="vi", clean=False,
             nodes = page.query_selector_all(SEL_TEXT)
             source = [(n.inner_text() or "") for n in nodes]
             if vi is not None:
-                nodes[0].evaluate("(n, h) => { n.innerHTML = h; }", to_html(vi))
+                ten_mau, ma_mau = pick_hl(tid, theme, hl_color)
+                print(f"[tweet_translate] màu nhấn: {ten_mau} {ma_mau}"
+                      + ("" if hl_color else " (theo id tweet; đổi bằng --hl-color)"),
+                      file=sys.stderr)
+                nodes[0].evaluate("(n, h) => { n.innerHTML = h; }", to_html(vi, ma_mau))
                 if len(nodes) > 1:
                     if hide_quote:
                         nodes[1].evaluate(_JS_HIDE_QUOTE)
                     elif quote_vi is not None:
-                        nodes[1].evaluate("(n, h) => { n.innerHTML = h; }", to_html(quote_vi))
+                        nodes[1].evaluate("(n, h) => { n.innerHTML = h; }",
+                                          to_html(quote_vi, ma_mau))
             n = page.evaluate(_JS_CLEAN if clean else _JS_TRIM)
             print(f"[tweet_translate] ẩn {n} phần điều khiển"
                   + (" (--clean)" if clean else ""), file=sys.stderr)
@@ -338,6 +376,9 @@ def main():
     ap.add_argument("--quote-vi-file", help="Tệp chứa bản dịch của tweet được quote")
     ap.add_argument("--hide-quote", action="store_true",
                     help="Ẩn hẳn khối quote thay vì dịch nó")
+    ap.add_argument("--hl-color",
+                    help="Màu cụm <hl>: mã #rrggbb hoặc tên "
+                         f"({', '.join(HL_DARK)}). Không đặt thì chọn theo id tweet.")
     ap.add_argument("--bo-qua-dau", action="store_true",
                     help="Bỏ qua cổng chặn chữ Việt mất dấu (bản dịch là tiếng Anh)")
     a = ap.parse_args()
@@ -359,7 +400,7 @@ def main():
     quote_vi = (read_vi(a.quote_vi, a.quote_vi_file, a.bo_qua_dau, "quote")
                 if (a.quote_vi or a.quote_vi_file) else None)
     source = render(a.url, vi, a.out, theme=a.theme, lang=a.lang, clean=a.clean,
-                    quote_vi=quote_vi, hide_quote=a.hide_quote)
+                    quote_vi=quote_vi, hide_quote=a.hide_quote, hl_color=a.hl_color)
     # Tweet có QUOTE mà không dịch, không ẩn => ảnh ra lẫn nguyên một khối tiếng
     # Anh, nhìn vẫn "đẹp" nên rất dễ lọt tới bước đăng. Chặn ở đây, và xoá luôn
     # tấm vừa chụp để không ai nhặt nhầm.
