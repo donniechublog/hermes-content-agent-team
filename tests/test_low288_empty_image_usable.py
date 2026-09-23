@@ -47,23 +47,30 @@ def _limit(vai):
     return getattr(role.rules_module(vai), "EMPTY_SHARE_MAX", subject_fit.EMPTY_SHARE_MAX)
 
 
-def test_logo_card_not_blocked_by_submit_gate():
-    """LOW-295: logo tren nen tron duoc renderer dung lai thanh SLIDE LOGO, nen cong
-    nop khong duoc goi no la "anh trong".
+def test_logo_card_exempt_is_decided_by_the_caller():
+    """LOW-393 (23/09/2026): MIEN TRU la viec cua NGUOI GOI (`role.blocked_empty`), con
+    `check_empty_image` chi do nguong.
 
-    Fail tren ma cu: `check_empty_image` chan A77 du `logo_card` True — anh qua duoc
-    danh sach "dung duoc" (role.blocked_empty mien) roi chet o cong nop. Dung loi Ong
-    Chu va tay tren may chu 23/09/2026."""
+    Truoc do mien o CA HAI noi nen hai luat nuot nhau: LOW-295/LOW-288 mien moi tam co
+    `logo_card` ngay trong `check_empty_image`, con LOW-337 (Ong Chu chot 23/09) noi
+    Dre/Ethan chi mien THE LOGO HANG that — cong cua Dre/Ethan thanh ra khong ra loi nao
+    (do that: `test_low337_empty_gate_one_rule` fail 2/8 ngay tren main `9ce4a77`)."""
     the_logo = _img("A77", empty=0.75, logo_card=True)
-    assert nc.check_empty_image(the_logo, "bìa", _limit("dre")) == [], \
-        "cong nop van goi slide logo la anh trong"
-    # khong phai logo_card thi VAN chan — khong noi long ca cong
+    # Kite mien moi `logo_card` -> tam nay khong bao gio di toi cong nop.
+    assert role.blocked_empty(the_logo, "kite") is False
+    # Dre/Ethan chi mien THE LOGO HANG that; anh CHUP logo nho van bi chan.
+    assert role.blocked_empty(the_logo, "dre", only_brand_card=True) is True
+    the_hang = dict(_img("A77c", empty=0.75, logo_card=True), brand_match={"kind": "logo"})
+    assert role.blocked_empty(the_hang, "dre", only_brand_card=True) is False
+    # Cong nop chi do nguong: khong tu mien, cung khong tu noi long.
+    assert nc.check_empty_image(the_logo, "bìa", _limit("dre")) != []
     assert nc.check_empty_image(_img("A78", empty=0.75), "bìa", _limit("dre")) != []
+    assert nc.check_empty_image(_img("A26", empty=0.05), "bìa", _limit("dre")) == []
 
 
 def test_two_gates_agree_on_every_sample():
-    """Hai cong phai tra CUNG mot cau tra loi: `role.blocked_empty` la ban duy nhat
-    (docstring cua chinh no), `check_empty_image` chi la mat cua no o buoc nop.
+    """Hai cong phai khop khi da tinh MIEN TRU: `role.blocked_empty` = phep do cua
+    `check_empty_image` CONG lop mien tru cua vai (LOW-393).
 
     Day la test giu cho chung khoi lech lan nua — lan truoc lech lam Kite dung han
     (LOW-337) va Dre ket o slide 6 (LOW-288)."""
@@ -73,10 +80,12 @@ def test_two_gates_agree_on_every_sample():
            _img("A1", empty=None),                         # vision chua do
            _img("A2", empty=0.75, logo_card=False)]
     for vai in ("dre", "ethan", "kite"):
+        chi_the_hang = vai in ("dre", "ethan")     # LOW-337: hai vai nay chi mien the logo hang
         for a in mau:
             cong_nop = bool(nc.check_empty_image(a, "bìa", _limit(vai)))
-            ban_duy_nhat = role.blocked_empty(a, vai)
-            assert cong_nop == ban_duy_nhat, \
+            mien = role.is_brand_logo_card(a) if chi_the_hang else bool(a.get("logo_card"))
+            ban_duy_nhat = role.blocked_empty(a, vai, only_brand_card=chi_the_hang)
+            assert ban_duy_nhat == (cong_nop and not mien), \
                 f"{vai}/{a['id']}: cong nop noi {cong_nop}, role.blocked_empty noi {ban_duy_nhat}"
 
 
