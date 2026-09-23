@@ -145,6 +145,7 @@ HOOK_HI, HOOK_LO = 76, 46
 HOOK_LEAD = 1.12
 HOOK_WEIGHT = 700
 
+CHIP_DROP = 8                    # bong + vien cua chip neobrutalism tran xuong duoi than chip
 WM_SIZE = 30                     # watermark
 LABEL_SIZE = 34                  # nhan duoi hook o bia
 
@@ -873,6 +874,9 @@ Q_TEXT_MAX_H = round(H * 0.20)
 # Dau " (card._quote_frame, font MARK_SIZE) va chip ten kenh CAN GIUA tren net ngang tren
 # cua khung, nen nho len tren net chung nay px. Anh nen phang (LOW-341) dung duoi muc do.
 Q_MARK_CLEAR = 40
+# Net khung day 5px VA dau dong ngoac o goc duoi-phai deu tran xuong duoi `frame_bottom`
+# (do that: 7px). Tinh ca vao vung an toan, khong thi dang 1:1 cat cut dau ngoac.
+Q_FRAME_DROP = 12
 
 
 def _fit_quote(d, quote):
@@ -921,12 +925,13 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, repo
     # LOW-364: KHUNG quote nam trong o vuong giua (dang bi cat 1:1 van con nguyen cau); dong
     # nguon theo ngay duoi khung, co the roi vao dai cat. Keo ca dong nguon vao thi khoi chu
     # len cao them ~45px va nen chu cua quote dai vuot tran LOW-286 (0.42 khung) — do: 0.424.
-    shift = max(0, frame_bottom - safe_zone.bottom(W, H))
+    shift = max(0, frame_bottom + Q_FRAME_DROP - safe_zone.bottom(W, H))
     src_top, frame_bottom = src_top - shift, frame_bottom - shift
     last_line_bottom = frame_bottom - BOX_PAD_Y
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
-    safe_zone.gate("slide quote", {"quote_frame": (frame_top - Q_MARK_CLEAR, frame_bottom)}, W, H)
+    safe_zone.gate("slide quote", {"quote_frame": (frame_top - Q_MARK_CLEAR, frame_bottom + Q_FRAME_DROP)},
+                   W, H)
 
     # LOW-341: voi anh nen phang, "dinh vung chu" la dinh dau " va chip ten kenh — hai thu
     # cuoi len net ngang tren cua khung, cao ~Q_MARK_CLEAR px phia tren net.
@@ -1009,8 +1014,9 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
         lf = _f(F_UI_CH, LABEL_SIZE - 8)            # mono bold, vua chip
         ltb = d.textbbox((0, 0), label, font=lf)
         chip_h = (ltb[3] - ltb[1]) + 2 * 10         # + 2*pad_y
-        # LOW-364: hang chip (chuyen muc + ten model) la noi dung — trong o vuong giua.
-        y_label = min(H - 84, safe_zone.bottom(W, H)) - chip_h
+        # LOW-364: hang chip (chuyen muc + ten model) la noi dung — trong o vuong giua. Tru ca
+        # BONG cung lech 6px cua chip (`_chip_neo`) cong vien, no cung la net ve (do that: 8px).
+        y_label = min(H - 84, safe_zone.bottom(W, H) - CHIP_DROP) - chip_h
     category = (category or "MODEL UPDATE").strip().upper()
     # Khong co label: hook van phai nam TREN chip category o goc duoi-trai.
     wtb = d.textbbox((0, 0), category, font=_f(F_MONO_CH, WM_SIZE))
@@ -1021,7 +1027,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
         weight=HOOK_WEIGHT, lead=HOOK_LEAD)
     y = hook_bottom - total - _ink_over(hf, wrapped, lh)
     safe_zone.gate("bia", {"hook": (y, hook_bottom),
-                           **({"label_chip": (y_label, y_label + chip_h)} if label else {})}, W, H)
+                           **({"label_chip": (y_label, y_label + chip_h + CHIP_DROP)} if label else {})}, W, H)
     # Anh NEN PHANG (LOW-341, Ong Chu 21/09: "bia cung ap dung"): anh 90% be ngang tren chinh
     # mau nen cua no, phan lan vao hook phu mau nen; anh ghep hai nen thi phu vung hook bang mau
     # nen cua tam duoi. Hook va chip label doi mau theo nen do, khong lop phu toi.

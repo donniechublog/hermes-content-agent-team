@@ -61,7 +61,9 @@ def _band_rows_changed(out, x0, x1):
     h, w = a.shape
     b = safe_zone.band(w, h)
     ref = a[b // 2, x0:x1]
-    bad = [y for y in list(range(b)) + list(range(h - b, h))
+    # LOW-365: o vuong that cat lech xuong duoi, nen vung an toan dich len SAFE_SHIFT_UP —
+    # do theo safe_zone.top/bottom chu khong theo dai cat doi xung.
+    bad = [y for y in list(range(safe_zone.top(w, h))) + list(range(safe_zone.bottom(w, h) + 1, h))
            if np.abs(a[y, x0:x1] - ref).max() > TOL]
     return bad, b
 
@@ -79,6 +81,11 @@ def test_band_is_square_center_crop():
     assert safe_zone.band(1080, 1080) == 0
     assert safe_zone.violations({"x": (200, 1300)}, 1200, 1500) == []
     assert safe_zone.violations({"x": (200, 1410)}, 1200, 1500)
+    # LOW-365 (Ong Chu 23/09/2026, anh chup tu IG: tren con du vien, duoi sat chu): ca hai mep
+    # cua vung an toan dich LEN SAFE_SHIFT_UP px.
+    assert safe_zone.bottom(1200, 1500) == 1500 - 150 - safe_zone.SAFE_SHIFT_UP - safe_zone.SAFE_PAD
+    assert safe_zone.top(1200, 1500) == 150 - safe_zone.SAFE_SHIFT_UP + safe_zone.SAFE_PAD
+    assert safe_zone.violations({"x": (200, 1330)}, 1200, 1500)
 
 
 # ------------------------------------------------------------------ Ethan

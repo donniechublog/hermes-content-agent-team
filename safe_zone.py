@@ -15,6 +15,10 @@ Khong phu thuoc renderer nao: ca `card.py` (Ethan), `carousel.py` (Dre) cung goi
 """
 
 SAFE_PAD = 12          # px ho giua noi dung va mep cat — chu khong cham sat mep sau khi cat
+# Ong Chu 23/09/2026, xem bai that tren IG (dong chu cuoi van bi hut): *"safezone ở IG có lẽ cần
+# đẩy lên phía trên khoảng 20px"* — o vuong that khong dung tam khung: no cat sau hon o day.
+# Dich CA hai mep cua vung an toan len bay nhieu px.
+SAFE_SHIFT_UP = 20
 
 
 def band(w: int, h: int) -> int:
@@ -24,12 +28,12 @@ def band(w: int, h: int) -> int:
 
 def top(w: int, h: int) -> int:
     """y nho nhat noi dung quan trong duoc cham toi."""
-    return band(w, h) + SAFE_PAD
+    return band(w, h) - SAFE_SHIFT_UP + SAFE_PAD
 
 
 def bottom(w: int, h: int) -> int:
     """y lon nhat noi dung quan trong duoc cham toi."""
-    return h - band(w, h) - SAFE_PAD
+    return h - band(w, h) - SAFE_SHIFT_UP - SAFE_PAD
 
 
 def violations(boxes: dict, w: int, h: int) -> list:

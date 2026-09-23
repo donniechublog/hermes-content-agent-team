@@ -262,9 +262,9 @@ def test_card_text_box_background_is_flat_over_blotchy_image():
         H, Wc = c.height, c.width
         # Le trong TRAI nam tren mang xanh, le PHAI tren dai xam/do/den: hai mang anh rat
         # khac nhau. Nen khung phang thi hai le gan nhu cung do sang.
-        # Khung ~0.65..0.89H (CEILING_TEXTBOX 30%, LOW-343; nam trong o vuong giua tu LOW-364)
-        # — tranh goc bo tron o dinh/day khung.
-        y0, y1 = int(H * 0.70), int(H * 0.87)
+        # Khung ~0.64..0.87H (CEILING_TEXTBOX 30%, LOW-343; o vuong giua tu LOW-364, dich len
+        # 20px tu LOW-365) — tranh goc bo tron o dinh/day khung.
+        y0, y1 = int(H * 0.69), int(H * 0.85)
         a, b = card.CEILING_FRAME_X + 10, card.CEILING_TEXT_X - 12
         trai = ImageStat.Stat(c.crop((a, y0, b, y1)))
         phai = ImageStat.Stat(c.crop((Wc - b, y0, Wc - a, y1)))
