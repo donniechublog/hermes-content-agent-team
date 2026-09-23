@@ -413,7 +413,7 @@ window.__fitSafe = function (top_limit, bottom_limit) {
     }
     return f;
   };
-  let factor = chang(1, %(FIT_NHE)s);
+  let factor = chang(1, %(FIT_SOFT)s);
   if (over() > 0 && mast) {
     mast.style.display = 'none';
     mast_off = true;
@@ -422,7 +422,7 @@ window.__fitSafe = function (top_limit, bottom_limit) {
   }
   return bao(factor);
 };
-""" % {"FIT_MIN": FIT_MIN_SPACE, "FIT_NHE": FIT_SOFT_SPACE}
+""" % {"FIT_MIN": FIT_MIN_SPACE, "FIT_SOFT": FIT_SOFT_SPACE}
 
 
 def base_css(th):

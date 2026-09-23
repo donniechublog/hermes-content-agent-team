@@ -101,7 +101,7 @@ def test_kite_text_column_inside_safe_zone():
         print("  (bo qua phep do tren Chromium — khong cai o may nay)")
         return
     loi = safe_zone.violations({"masthead": (bao["mast_top"], bao["mast_top"]),
-                                "cot chu": (bao["mast_top"], bao["text_bottom"])},
+                                "text_column": (bao["mast_top"], bao["text_bottom"])},
                                render_edu.W, render_edu.H)
     assert not loi, f"{loi} (bao: {bao})"
     # `.foot` la lop tuyet doi: no KHONG duoc day cot chu xuong.
