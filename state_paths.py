@@ -58,6 +58,11 @@ REDO_WAITING_FILE = "redo_waiting.json"
 MOAT_REPUBLISH_QUEUE_FILE = "moat_republish_queue.json"
 BUSINESS_SEEN_FILE = "business_seen.json"            # scan_business seen-store (Vera), LOW-240
 X_SEEN_FILE = "x_seen.json"                          # scan_x seen-store (Qinn), LOW-240
+# LOW-375: two more seen-stores, same shape. Both names already existed on disk —
+# `models_seen.json` was a hardcoded string in scan_models.py, `finn_seen.json` is
+# new. Declared here so `state_paths` stays the only source of state file names.
+MODELS_SEEN_FILE = "models_seen.json"                # scan_models seen-store (Nova)
+FINN_SEEN_FILE = "finn_seen.json"                    # scan_sources seen-store (Finn)
 MOAT_UNSENT_NOTICES_FILE = "moat_unsent_notices.json"  # moat_publish spool, LOW-240 (was moat_chua_bao.json)
 PUBLISH_SCHEDULE_FILE = "publish_schedule.json"        # con tro slot dang bai (publish_schedule.reserve)
 PUBLISH_SLOT_LOCK = "publish_slot.lock"                # flock: chia slot (giu vai micro-giay)

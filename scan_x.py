@@ -24,7 +24,6 @@ import math
 import os
 import re
 import sys
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -32,6 +31,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                             # noqa: E402
+import scan_seen                                              # noqa: E402
 import state_paths                                           # noqa: E402
 from scan_common import VN, UA                                # noqa: E402
 
@@ -79,28 +79,19 @@ def read_tweets(gio: int, limit: int) -> dict:
     return r.json()
 
 
+# LOW-375: bo nho da-thay dung CHUNG `scan_seen.SeenStore` voi Finn/Nova/Vera.
+# Doan cu o day da lam dung (cat theo thoi gian, giu truong la) nhung la ban
+# chep tay thu hai; gio chi con MOT ban, va no ghi nguyen tu bang ten tep tam
+# mang PID — Qinn chay HAI luot mot ngay nen day khong phai chuyen ly thuyet.
+# `KEEP_DATE = 14` giu nguyen: tweet cu hon the ma quay lai thi coi nhu tin moi.
+
+
+def seen_store() -> scan_seen.SeenStore:
+    return scan_seen.SeenStore(STATE, keep_days=KEEP_DATE)
+
+
 def already_see() -> dict:
-    if not STATE.exists():
-        return {}
-    d = json.loads(STATE.read_text(encoding="utf-8")).get("seen_at", {})
-    return d if isinstance(d, dict) else {k: time.time() for k in d}
-
-
-def write_timestamp(khoa: dict) -> None:
-    """Giu cac truong khac cua tep, cat bo nho theo THOI GIAN (khong theo ten)."""
-    STATE.parent.mkdir(parents=True, exist_ok=True)
-    cu = {}
-    if STATE.exists():
-        try:
-            cu = json.loads(STATE.read_text(encoding="utf-8"))
-        except ValueError:
-            cu = {}
-    nguong = time.time() - KEEP_DATE * 86400
-    cu["seen_at"] = {k: v for k, v in khoa.items() if v >= nguong}
-    cu["updated_at"] = datetime.now(timezone.utc).isoformat()
-    tmp = STATE.with_suffix(".tmp")
-    tmp.write_text(json.dumps(cu, ensure_ascii=False, indent=1), encoding="utf-8")
-    tmp.replace(STATE)
+    return seen_store().read()
 
 
 def one_line(text: str, tran: int = 140) -> str:
@@ -203,10 +194,9 @@ def main() -> int:
     tweets = goi.get("tweets") or []
     fresh = goi.get("freshness") or {}
     cu = already_see()
-    now = time.time()
 
     if a.lan_dau:
-        write_timestamp({**cu, **{t["id"]: now for t in tweets if t.get("id")}})
+        seen_store().mark(t["id"] for t in tweets if t.get("id"))
         print(f"Da ghi moc {len(tweets)} tweet. Lan sau chi bao cai moi.")
         return 0
 
@@ -258,7 +248,7 @@ def main() -> int:
 
     # CHI danh dau tin DA DUA cho Qinn. Tin bi --top cat hom nay van con moi
     # cho lan sau — dung bai hoc cua scan_business: danh dau het la may xoa tin.
-    write_timestamp({**cu, **{t["id"]: now for t in chon if t.get("id")}})
+    seen_store().mark(t["id"] for t in chon if t.get("id"))
     return 0
 
 
