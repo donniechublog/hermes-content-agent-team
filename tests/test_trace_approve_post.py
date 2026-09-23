@@ -12,7 +12,6 @@ Chay:  python tests/test_trace_approve_post.py
 import json
 import os
 import sys
-import tempfile
 import threading
 import types
 from pathlib import Path
@@ -33,6 +32,7 @@ import moat_publish                    # noqa: E402
 import publish_schedule                # noqa: E402
 import state_paths                     # noqa: E402
 from trace_harness import Harness, callback, message, run_tests  # noqa: E402
+import tam  # noqa: E402
 
 BOSS = 42
 DRE, KITE, MILES, JIKA = 55, 66, 88, 89          # topic id gia
@@ -1112,7 +1112,7 @@ def test_low361_refresh_warning_still_hands_task_and_is_told():
 
 def test_low361_refresh_command_and_live_lock(tmp_path=None):
     import subprocess
-    tmp = Path(tempfile.mkdtemp())
+    tmp = Path(tam.temp_dir())
     saved = (post.STATE_DIR, subprocess.run)
     seen = {}
 

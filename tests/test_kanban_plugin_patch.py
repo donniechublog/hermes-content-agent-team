@@ -15,7 +15,6 @@ import io
 import json
 import subprocess
 import sys
-import tempfile
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
@@ -23,6 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import kanban_plugin_build as kpb      # noqa: E402
 import sync_hermes as sync             # noqa: E402
+import tam  # noqa: E402
 
 UPSTREAM = {
     "manifest.json": '{"name": "kanban"}\n',
@@ -54,7 +54,7 @@ def _commit_upstream(agent, files):
 
 def _sandbox():
     """(thu muc tam, repo hermes-agent gia, thu muc ban va da lam tu OURS)."""
-    t = Path(tempfile.mkdtemp(prefix="kanban_patch_test_"))
+    t = Path(tam.temp_dir(prefix="kanban_patch_test_"))
     agent, patches = t / "hermes-agent", t / "patches"
     agent.mkdir()
     _git(agent, "init", "-q", ".")

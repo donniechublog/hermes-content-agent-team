@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import render_edu  # noqa: E402
 import text_bg  # noqa: E402
+import tam  # noqa: E402
 
 MIN_CONTRAST = 4.5          # WCAG AA chu thuong
 
@@ -36,7 +37,7 @@ def _rgb(h):
 
 def _solid_image(rgb):
     from PIL import Image
-    p = Path(tempfile.mkdtemp()) / "cover.png"
+    p = Path(tam.temp_dir()) / "cover.png"
     Image.new("RGB", (600, 800), rgb).save(p, "PNG")
     return str(p)
 
