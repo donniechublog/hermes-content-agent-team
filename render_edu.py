@@ -373,6 +373,7 @@ BASE_CSS_TPL = """
 # `.step`/`.bar`, khoang cua tieu de) voi mot he so <= 1, khong dong toi co chu. Con tran sau khi
 # thu het muc thi la chu qua dai — cong chan bao vai cat bot.
 FIT_MIN_SPACE = 0.45             # thu khoang trang toi da con bay nhieu phan
+FIT_SOFT_SPACE = 0.80            # chang THU NHE, truoc khi bo chip masthead
 FIT_JS = """
 window.__fitSafe = function (top_limit, bottom_limit) {
   const art = document.querySelector('.art');
@@ -384,8 +385,9 @@ window.__fitSafe = function (top_limit, bottom_limit) {
                  && !e.classList.contains('foot'))
     .reduce((m, e) => Math.max(m, e.getBoundingClientRect().bottom), 0);
   const over = () => cot() - bottom_limit;
-  const bao = (factor) => ({factor: factor, over: over(),
-    mast_top: mast ? Math.round(mast.getBoundingClientRect().top) : null,
+  let mast_off = false;
+  const bao = (factor) => ({factor: factor, over: over(), mast_off: mast_off,
+    mast_top: (mast && !mast_off) ? Math.round(mast.getBoundingClientRect().top) : null,
     text_bottom: Math.round(cot()), top_limit: top_limit, bottom_limit: bottom_limit});
   if (over() <= 0) return bao(1);
   const nodes = [];
@@ -394,20 +396,33 @@ window.__fitSafe = function (top_limit, bottom_limit) {
     nodes.push({e: e, mt: parseFloat(cs.marginTop) || 0, mb: parseFloat(cs.marginBottom) || 0,
                 pt: parseFloat(cs.paddingTop) || 0, pb: parseFloat(cs.paddingBottom) || 0});
   });
-  let factor = 1;
-  for (let k = 0; k < 12; k++) {
-    factor = Math.max(%(FIT_MIN)s, factor - 0.05);
-    nodes.forEach(n => {
-      n.e.style.marginTop = (n.mt * factor) + 'px';
-      n.e.style.marginBottom = (n.mb * factor) + 'px';
-      n.e.style.paddingTop = (n.pt * factor) + 'px';
-      n.e.style.paddingBottom = (n.pb * factor) + 'px';
-    });
-    if (over() <= 0 || factor <= %(FIT_MIN)s) break;
+  const dat = (factor) => nodes.forEach(n => {
+    n.e.style.marginTop = (n.mt * factor) + 'px';
+    n.e.style.marginBottom = (n.mb * factor) + 'px';
+    n.e.style.paddingTop = (n.pt * factor) + 'px';
+    n.e.style.paddingBottom = (n.pb * factor) + 'px';
+  });
+  // Thu khoang trang theo hai chang, giua hai chang thi BO CHIP MASTHEAD (Ong Chu 23/09/2026:
+  // *"trong tình huống thiếu ko gian cứ bỏ cái chip ở header, ko vấn đề"*) — thu nhe truoc, het
+  // cho thi bo masthead roi moi thu sau, thay vi bop khoang trang toi muc chat cung.
+  const chang = (tu, den) => {
+    let f = tu;
+    while (f > den && over() > 0) {
+      f = Math.max(den, f - 0.05);
+      dat(f);
+    }
+    return f;
+  };
+  let factor = chang(1, %(FIT_NHE)s);
+  if (over() > 0 && mast) {
+    mast.style.display = 'none';
+    mast_off = true;
+    dat(1);
+    factor = over() <= 0 ? 1 : chang(1, %(FIT_MIN)s);
   }
   return bao(factor);
 };
-""" % {"FIT_MIN": FIT_MIN_SPACE}
+""" % {"FIT_MIN": FIT_MIN_SPACE, "FIT_NHE": FIT_SOFT_SPACE}
 
 
 def base_css(th):
