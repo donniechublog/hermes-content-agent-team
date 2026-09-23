@@ -98,7 +98,10 @@ TIME_LIMIT = 45000
 WAIT_LAYOUT = 900          # ms cho font/ảnh nhúng ổn định trước khi chụp
 IMAGE_TRY = 8              # số lần đợi ảnh đính kèm tải xong
 
-_STATUS = re.compile(r"(?:x|twitter)\.com/[^/]+/status(?:es)?/(\d{5,25})", re.I)
+# `\d{2,25}`: tweet thời nay 19 chữ số, nhưng tweet đời đầu chỉ có hai
+# (`twitter.com/jack/status/20`). Ngưỡng 5 cũ làm chính những link đó không đọc
+# được — test bắt 23/09/2026.
+_STATUS = re.compile(r"(?:x|twitter)\.com/[^/]+/status(?:es)?/(\d{2,25})", re.I)
 
 # Tweet DÀI bị thẻ nhúng cắt: chữ dừng giữa chừng và đính thêm một span "Hiển thị
 # thêm" NGAY TRONG node chữ. Đo 23/09/2026 trên arena/2102497076831818113 — thẻ
@@ -262,6 +265,12 @@ PROMPT_CUT = ("- Tweet này BỊ CẮT giữa chừng. Bỏ hẳn mẩu câu d�
               "kết thúc ở câu hoàn chỉnh cuối cùng.\n")
 
 
+def translate_prompt(text: str, cut=False) -> str:
+    """Prompt đầy đủ gửi cho model. Tách khỏi `translate` để test được mà không
+    phải gọi mạng."""
+    return PROMPT_TRANSLATE + (PROMPT_CUT if cut else "") + "\nTWEET:\n" + text
+
+
 def translate(text: str, model=None, cut=False, verbose=True) -> str:
     """Nguyên văn tweet -> bản dịch tiếng Việt có sẵn `<hl>`. Hỏng thì thoát,
     KHÔNG trả về chữ tiếng Anh: ảnh "vietsub" mà còn nguyên tiếng Anh nhìn vẫn
@@ -274,9 +283,8 @@ def translate(text: str, model=None, cut=False, verbose=True) -> str:
                  "Tự dịch rồi truyền qua --vi.")
     if verbose:
         print(f"[tweet_translate] dịch bằng {model}...", file=sys.stderr, flush=True)
-    prompt = PROMPT_TRANSLATE + (PROMPT_CUT if cut else "") + "\nTWEET:\n" + text
     body = {"model": model, "max_tokens": 1500, "stream": False, "temperature": 0.3,
-            "messages": [{"role": "user", "content": prompt}]}
+            "messages": [{"role": "user", "content": translate_prompt(text, cut)}]}
     t0 = time.time()
     try:
         req = urllib.request.Request(
