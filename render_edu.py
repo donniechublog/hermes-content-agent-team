@@ -110,6 +110,7 @@ import vietnamese  # noqa: E402  (cùng thư mục) — chỉ cần cổng chữ
 import text_bg  # noqa: E402
 # nhan dien + mau ten hang dung chung ca doi designer — LOW-344
 import brand_names  # noqa: E402
+import safe_zone  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 FONTS_DIR = ROOT / "assets" / "fonts"
@@ -194,6 +195,11 @@ PLATFORM_BRANDS = {("HUGGING", "FACE"), ("GITHUB",)}
 HEROES = ("orbit", "grid", "wave", "rings", "graph")   # ten hero SVG tren bia
 
 W, H = 1080, 1350
+# LOW-366/391: o vuong Instagram cat 4:5 (lech len ~20px so voi tam). Chu cua slide — masthead
+# tren, folio duoi — phai nam trong vung an toan, khong thi dang 1:1 mat dong chan
+# "@dcgr.tech - Phan tich - N phut doc" va nua masthead. Le hai ben giu 80px nhu cu.
+PAD_TOP = safe_zone.top(W, H)            # 127
+PAD_BOT = H - safe_zone.bottom(W, H)     # 167
 
 # Bảng font: family-logic -> (tên file trong assets/fonts, weight, style).
 # Đổi sang Archivo/Newsreader = thả TTF vào assets/fonts rồi sửa đúng dòng dưới.
@@ -254,7 +260,7 @@ BASE_CSS_TPL = """
 *{margin:0;padding:0;box-sizing:border-box;}
 .art{position:relative;width:%(W)spx;height:%(H)spx;
   background:radial-gradient(ellipse 130%% 78%% at 50%% -8%%,%(PANEL)s 0%%,%(BG)s 66%%);
-  overflow:hidden;padding:80px;display:flex;flex-direction:column;
+  overflow:hidden;padding:%(PAD_TOP)spx 80px %(PAD_BOT)spx;display:flex;flex-direction:column;
   font-family:%(DISPLAY)s;color:%(WHITE)s;}
 .glow{position:absolute;pointer-events:none;}
 /* masthead */
@@ -289,8 +295,10 @@ BASE_CSS_TPL = """
   padding:30px 34px;}
 .card-num{font-family:%(MONO)s;font-size:26px;font-weight:700;color:%(VIOLET)s;}
 .card-txt{font-size:34px;line-height:1.35;color:%(SOFT)s;}
+/* LOW-366: le tren/duoi cua slide theo vung an toan nen cot chu thap hon 134px — slide
+   `steps` la kieu day nhat, thu khoang dem moi buoc 26 -> 12px cho vua (do that: tran 47px). */
 .step{display:flex;flex-direction:row;align-items:flex-start;gap:32px;
-  padding:26px 0;border-top:1px solid %(LINE)s;}
+  padding:12px 0;border-top:1px solid %(LINE)s;}
 .step-num{font-family:%(MONO)s;font-size:48px;font-weight:700;color:%(CYAN)s;
   line-height:1;min-width:78px;}
 .step-t{font-family:%(DISPLAY)s;font-size:42px;font-weight:700;color:%(WHITE)s;
@@ -310,10 +318,14 @@ BASE_CSS_TPL = """
 .check-m{color:%(CYAN)s;font-size:38px;font-weight:800;line-height:1.1;}
 .check-t{font-size:35px;font-weight:500;line-height:1.35;color:%(SOFT)s;}
 /* bieu do cot ngang tu so that trong bai (kind bars) */
-.bar{display:flex;flex-direction:row;align-items:center;gap:22px;padding:15px 0;}
+/* LOW-366: slide `bars` von da tran SAN tren main (do that: folio bi day xuong 1338..1384, tuc
+   dong chan mat hut khi dang). Le theo vung an toan lam cot chu thap hon 134px nua, nen thu
+   khoang dem va chieu cao thanh cho vua — buoc thu khoang trang (`__fitSafe`) lo hang thi cong
+   chan bao vai cat chu. */
+.bar{display:flex;flex-direction:row;align-items:center;gap:22px;padding:6px 0;}
 .bar-l{font-family:%(MONO)s;font-size:26px;font-weight:700;color:%(SOFT)s;
   flex:none;width:300px;line-height:1.2;}
-.bar-track{flex-grow:1;height:46px;background:%(PANEL)s;border:1px solid %(LINE)s;
+.bar-track{flex-grow:1;height:40px;background:%(PANEL)s;border:1px solid %(LINE)s;
   position:relative;}
 .bar-fill{position:absolute;left:0;top:0;bottom:0;background:%(VIOLET)s;}
 .bar-fill.highlight{background:%(CYAN)s;}
@@ -349,9 +361,54 @@ BASE_CSS_TPL = """
 """
 
 
+# LOW-366: cot chu cua slide phai nam TRON trong vung an toan (masthead tren, folio duoi) vi o
+# vuong Instagram cat 4:5. Le tren/duoi da lay tu `safe_zone`, nhung slide day chu (`steps`,
+# `bars`, `loop`, cover chu dai) van tran — va `bars` thi tran SAN tu truoc (do tren main: folio
+# bi day xuong 1338..1384, tuc dong chan mat hut khi dang). Thay vi chinh tay tung kieu slide,
+# thu KHOANG TRANG cho vua: nhan cac khoang dem doc (margin cua khoi `.mid`, padding cua
+# `.step`/`.bar`, khoang cua tieu de) voi mot he so <= 1, khong dong toi co chu. Con tran sau khi
+# thu het muc thi la chu qua dai — cong chan bao vai cat bot.
+FIT_MIN_SPACE = 0.45             # thu khoang trang toi da con bay nhieu phan
+FIT_JS = """
+window.__fitSafe = function (top_limit, bottom_limit) {
+  const art = document.querySelector('.art');
+  const mast = document.querySelector('.mast');
+  if (!art) return null;
+  // Day cot chu: khoi chu cuoi cung cua slide (nen va anh la lop tuyet doi, khong tinh).
+  const cot = () => [...art.children]
+    .filter(e => !e.classList.contains('figwrap') && !e.classList.contains('glow'))
+    .reduce((m, e) => Math.max(m, e.getBoundingClientRect().bottom), 0);
+  const over = () => cot() - bottom_limit;
+  const bao = (factor) => ({factor: factor, over: over(),
+    mast_top: mast ? Math.round(mast.getBoundingClientRect().top) : null,
+    text_bottom: Math.round(cot()), top_limit: top_limit, bottom_limit: bottom_limit});
+  if (over() <= 0) return bao(1);
+  const nodes = [];
+  art.querySelectorAll('.mid, .mid > *, .step, .bar, .chips, .card, .callout').forEach(e => {
+    const cs = getComputedStyle(e);
+    nodes.push({e: e, mt: parseFloat(cs.marginTop) || 0, mb: parseFloat(cs.marginBottom) || 0,
+                pt: parseFloat(cs.paddingTop) || 0, pb: parseFloat(cs.paddingBottom) || 0});
+  });
+  let factor = 1;
+  for (let k = 0; k < 12; k++) {
+    factor = Math.max(%(FIT_MIN)s, factor - 0.05);
+    nodes.forEach(n => {
+      n.e.style.marginTop = (n.mt * factor) + 'px';
+      n.e.style.marginBottom = (n.mb * factor) + 'px';
+      n.e.style.paddingTop = (n.pt * factor) + 'px';
+      n.e.style.paddingBottom = (n.pb * factor) + 'px';
+    });
+    if (over() <= 0 || factor <= %(FIT_MIN)s) break;
+  }
+  return bao(factor);
+};
+""" % {"FIT_MIN": FIT_MIN_SPACE}
+
+
 def base_css(th):
     return BASE_CSS_TPL % {
-        "W": W, "H": H, "BG": th["bg"], "PANEL": th["panel"], "LINE": th["line"],
+        "W": W, "H": H, "PAD_TOP": PAD_TOP, "PAD_BOT": PAD_BOT,
+        "BG": th["bg"], "PANEL": th["panel"], "LINE": th["line"],
         "WHITE": WHITE, "SOFT": SOFT, "MUTED": MUTED, "DIM": DIM,
         "CYAN": th["a"], "VIOLET": th["b"], "STAND": th["stand"],
         "DISPLAY": _ff("Display"), "SERIF": _ff("EditSerif"), "MONO": _ff("Mono"),
@@ -761,9 +818,13 @@ def eyebrow(text):
 
 
 def folio(left, n, total):
-    return (f'<div class="folio"><div class="folio-line"></div>'
-            f'<div class="folio-row"><span>{esc(left)}</span>'
-            f'<span><span class="cy">{n:02d}</span> / {total:02d}</span></div></div>')
+    """DA BO khoi slide (LOW-366, Ong Chu 23/09/2026: *"'@dcgr.tech … 5 phút đọc' là thông tin
+    ko bắt buộc phải có trong nội dung ig, có thể lược phần đó mà ko cần phải lo gì cả"*).
+
+    O vuong Instagram cat 4:5 nen dai duoi khung bi cat; dong folio nam dung do, va giu no thi
+    cot chu phai thu lai cho vua vung an toan. Bo han: khung rong ra ~90px, chu giu nguyen co.
+    Ham giu lai (tra ve chuoi rong) de mot cho quyet dinh, khong rai `if` o cac cho goi."""
+    return ""
 
 
 # ---- slide builders (mỗi cái trả về body HTML giữa .mast và .folio) -------
@@ -774,14 +835,7 @@ def s_cover(sl, th):
     hon mot so do trang tri."""
     if sl.get("image"):
         return _cover_image(sl, th)
-    by = sl.get("byline", [])
-    bits = []
-    for i, b in enumerate(by):
-        if i:
-            bits.append('<span class="dot"></span>')
-        cls = "b0" if i == 0 else ""
-        bits.append(f'<span class="{cls}">{esc(b)}</span>')
-    byline = f'<div class="byline">{"".join(bits)}</div>' if by else ""
+    byline = byline_html(sl)
     g = (glow(f"top:40px;left:50%;transform:translateX(-50%);width:900px;height:640px;"
               f"background:radial-gradient(ellipse at center,{rgba(th['a'],0.20)} 0%,{rgba(th['a'],0)} 60%);")
          + glow(f"top:120px;right:-80px;width:520px;height:520px;"
@@ -797,15 +851,18 @@ def s_cover(sl, th):
     return g + hero + head
 
 
+def byline_html(sl):
+    """DA BO khoi bia (LOW-366, Ong Chu 23/09/2026): *"'@dcgr.tech … 5 phút đọc' là thông tin ko
+    bắt buộc phải có trong nội dung ig, có thể lược phần đó mà ko cần phải lo gì cả"*. Ten kenh
+    da hien ngay tren bai Instagram, con dong folio thi bo cung dot nay (xem `folio`).
+
+    `sl["byline"]` van la truong hop le cua spec (vai cu viet), chi khong ve ra nua."""
+    return ""
+
+
 def _cover_image(sl, th):
     """Bia lay anh that lam hero — anh vao dong, khoi chu nam duoi mep anh."""
     nen, anh = image_make_background(sl, th, "bia")
-    by = sl.get("byline", [])
-    bits = []
-    for i, b in enumerate(by):
-        if i:
-            bits.append('<span class="dot"></span>')
-        bits.append(f'<span class="{"b0" if i == 0 else ""}">{esc(b)}</span>')
     chu = (f'{eyebrow(sl["eyebrow"])}'
            # 74px chu khong phai 88px nhu bia art: bia co anh chi cho tieu de 2
            # dong, co chu nho hon mot bac thi 2 dong do chua duoc du y.
@@ -813,8 +870,7 @@ def _cover_image(sl, th):
            f'{accent_html(sl["title"], sl.get("accent"), th)}</h1>'
            f'<p class="standfirst" style="font-size:36px;max-width:880px;'
            f'margin-bottom:28px;">{esc(sl["standfirst"])}</p>')
-    if by:
-        chu += f'<div class="byline">{"".join(bits)}</div>'
+    chu += byline_html(sl)
     # KHONG ve dong nguon anh (LOW-292, 20/09/2026): xem ghi chu o `s_figure`.
     return (nen + anh
             + '<div style="flex-grow:1;min-height:0;"></div>'
@@ -1433,6 +1489,7 @@ def slide_read(sl, idx, total, brand, section, folio_left, font_css, th):
     # chỉ giữ hairline — tránh nhắc nhận diện kênh 2 lần trên cùng một slide.
     bare = kind == "cta" and bool(sl.get("follow"))
     inner = masthead(brand, section, bare=bare) + body + folio(fol_left, idx, total)
+    # `.folio` da bo (LOW-366) — day cot chu gio la khoi chu cuoi cung cua `body`.
     return (f'<!doctype html><html><head><meta charset="utf-8"><style>'
             f'{font_css}{base_css(th)}'
             # SVG nao KHONG dat `height` thi trinh duyet noi suy chieu cao tu
@@ -1953,20 +2010,42 @@ def _check_title_line(page, browser, slides, dung_doc):
         raise SystemExit(1)
 
 
+def _fit_safe_zone(page, i, kind, loi):
+    """LOW-366: thu khoang trang cho cot chu vua VUNG AN TOAN, roi kiem lai tren hop chu THAT.
+    Con tran thi ghi loi (chu qua dai — viec cua vai, khong phai cua code)."""
+    page.add_script_tag(content=FIT_JS)
+    bao = page.evaluate(f"() => window.__fitSafe({PAD_TOP}, {H - PAD_BOT})")
+    if not bao:
+        return
+    if bao["over"] > 0:
+        loi.append(f"slide {i} ({kind}): chu vuot vung an toan {int(bao['over'])}px "
+                   f"(day khoi chu o {bao['text_bottom']}, tran duoi la {bao['bottom_limit']}) "
+                   "— dang 1:1 se cat mat chu. Cat bot chu cua slide nay.")
+    if bao.get("mast_top") is not None and bao["mast_top"] < bao["top_limit"]:
+        loi.append(f"slide {i} ({kind}): masthead o {bao['mast_top']} cao hon tran tren "
+                   f"{bao['top_limit']} — dang 1:1 se cat mat.")
+
+
 def _capture_each_slide(page, slides, dung_doc, out, stem):
     """Chup tung slide ra PNG; slide 1 la `out`, con lai `<stem>_<i>.png`."""
-    outs = []
+    outs, loi = [], []
     for i, sl in enumerate(slides, start=1):
         doc = dung_doc(sl, i)
         page.set_content(doc, wait_until="load")
         page.evaluate("document.fonts.ready")
         # Lop mo phan duoi chu dat theo dong chu dau THAT — sau khi font xong.
         page.evaluate("window.__datMan && window.__datMan()")
+        _fit_safe_zone(page, i, sl.get("kind"), loi)
         page.wait_for_timeout(120)
         path = out if i == 1 else Path(f"{stem}_{i}.png")
         page.screenshot(path=str(path),
                         clip={"x": 0, "y": 0, "width": W, "height": H})
         outs.append(path)
+    if loi:
+        print("CONG CHAN DUNG:", file=sys.stderr)
+        for x in loi:
+            print("  - " + x, file=sys.stderr)
+        raise SystemExit(1)
     return outs
 
 
