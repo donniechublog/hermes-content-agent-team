@@ -29,10 +29,10 @@ Hai bước:
 `--brief` in ra nguyên văn tweet để người dịch chép — chính chữ trong thẻ, nên
 không phải gọi crawl-queue (10–40s/lượt) chỉ để lấy lại đúng đoạn đang hiển thị.
 
-Mặc định thẻ ra đã được tỉa: bỏ "Trả lời", "Sao chép liên kết đến bài đăng" và
-khối "Đọc N trả lời" (ảnh đăng lên kênh mình thì không ai bấm được), GIỮ trái
-tim kèm số, và đổi đơn vị "N"/"Tr" của X sang "K"/"M". `--clean` sạch hơn nữa:
-bỏ cả trái tim lẫn nút Theo dõi.
+Mặc định thẻ ra đã được tỉa: bỏ cả hàng trái tim / "Trả lời" / "Sao chép liên
+kết đến bài đăng" lẫn khối "Đọc N trả lời" — ảnh đăng lên kênh mình thì không
+ai bấm được. Thẻ kết thúc ngay sau dòng ngày. `--clean` sạch hơn nữa: bỏ luôn
+nút Theo dõi và icon ⓘ, chỉ còn avatar-tên-tick-chữ-ngày.
 
 Trong bản dịch, bọc cụm cần NHẤN MÀU bằng `<hl>…</hl>`:
 
@@ -91,14 +91,16 @@ IMAGE_TRY = 8              # số lần đợi ảnh đính kèm tải xong
 
 _STATUS = re.compile(r"(?:x|twitter)\.com/[^/]+/status(?:es)?/(\d{5,25})", re.I)
 
-# MẶC ĐỊNH tỉa bớt (Ông Chủ 23/09/2026): bỏ "Trả lời", "Sao chép liên kết đến
-# bài đăng" và cả khối "Đọc N trả lời" — chúng là lời mời bấm, mà ảnh đăng lên
-# kênh mình thì không bấm được. GIỮ trái tim kèm số: đó là bằng chứng bài gốc
-# được đón nhận, không phải nút.
+# MẶC ĐỊNH bỏ hết phần tương tác ở chân thẻ (Ông Chủ 23/09/2026): hàng trái tim
+# / "Trả lời" / "Sao chép liên kết đến bài đăng", và khối "Đọc N trả lời". Chúng
+# là lời mời bấm, mà ảnh đăng lên kênh mình thì không bấm được. Thẻ kết thúc
+# ngay sau dòng ngày.
 #
-# Hàng nút xếp theo thứ tự tim → trả lời → sao chép (đo DOM 23/09/2026), nên
-# giữ con ĐẦU và ẩn phần còn lại; bám thứ tự chứ không bám chữ, vì chữ đổi theo
-# `--lang` và theo bề ngang thẻ ("Sao liên kết" / "Sao chép liên kết đến bài đăng").
+# Bám CẤU TRÚC chứ không bám chữ: chữ đổi theo `--lang` và theo bề ngang thẻ
+# ("Sao liên kết" / "Sao chép liên kết đến bài đăng").
+#
+# Hàng nút phải xét TRƯỚC: con đầu của nó cũng là một `a[role="link"]` có chữ
+# (số lượt thích), nên nhánh dưới chạy trước sẽ chộp nhầm nó.
 _JS_TRIM = """
 () => {
   const root = document.querySelector('article');
@@ -109,35 +111,10 @@ _JS_TRIM = """
   const iText = kids.findIndex(c => c.querySelector('[data-testid="tweetText"]'));
   kids.forEach((c, i) => {
     if (i <= iText) return;
-    // Hàng nút XÉT TRƯỚC: con đầu của nó cũng là một `a[role="link"]` có chữ
-    // ("310,8 N"), nên để nhánh dưới chạy trước là ẩn nhầm cả hàng — mất luôn
-    // trái tim mà Ông Chủ muốn giữ (đo thật 23/09/2026).
-    if (c.querySelector('[role="button"]')) {
-      [...c.children].forEach((ch, j) => { if (j > 0) hide(ch); });
-      return;
-    }
+    if (c.querySelector('[role="button"]')) { hide(c); return; }
     const a = c.querySelector('a[role="link"]');
     if (a && (a.innerText || '').trim() && !/\\d{4}/.test(c.innerText || '')) hide(c);
   });
-  return n;
-}
-"""
-
-# `lang=vi` của X viết tắt nghìn là "N" và triệu là "Tr" ("310,8 N"). Ông Chủ
-# 23/09/2026 muốn ký hiệu quốc tế: "310,8K". Đổi trên TEXT NODE chứ không gán
-# lại innerText cả khối — gán lại là xoá luôn icon trái tim nằm cùng khối.
-_JS_UNIT_K = """
-() => {
-  const root = document.querySelector('article');
-  if (!root) return 0;
-  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let n = 0;
-  while (w.nextNode()) {
-    const t = w.currentNode;
-    const s = t.nodeValue.replace(/(\\d[\\d.,]*)\\s*N\\b/g, '$1K')
-                         .replace(/(\\d[\\d.,]*)\\s*Tr\\b/g, '$1M');
-    if (s !== t.nodeValue) { t.nodeValue = s; n++; }
-  }
   return n;
 }
 """
@@ -288,6 +265,11 @@ def render(url: str, vi, out_path, theme="dark", lang="vi", clean=False,
     with session_or_new(phien) as ph:
         with ph.page(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
                      is_mobile=True, has_touch=True, user_agent=MOBILE_UA) as page:
+            # Nói ngay là đang chờ gì. Bước này im lặng 15–30s (bật Chromium rồi
+            # tải thẻ) — không báo thì nhìn như treo và người chạy bấm Ctrl+C,
+            # đã xảy ra thật 23/09/2026.
+            print(f"[tweet_translate] mở thẻ nhúng id {tid} — bật Chromium và tải "
+                  f"thẻ, thường 15–30s...", file=sys.stderr, flush=True)
             page.goto(embed_url(tid, theme, lang), wait_until="domcontentloaded",
                       timeout=TIME_LIMIT)
             try:
@@ -316,7 +298,6 @@ def render(url: str, vi, out_path, theme="dark", lang="vi", clean=False,
             n = page.evaluate(_JS_CLEAN if clean else _JS_TRIM)
             print(f"[tweet_translate] ẩn {n} phần điều khiển"
                   + (" (--clean)" if clean else ""), file=sys.stderr)
-            page.evaluate(_JS_UNIT_K)
             for _ in range(IMAGE_TRY):
                 if page.evaluate(_JS_IMAGES_READY):
                     break
@@ -370,7 +351,7 @@ def main():
     ap.add_argument("--lang", default="vi",
                     help="Ngôn ngữ CHỮ UI của thẻ (Theo dõi/Trả lời/ngày). Mặc định vi.")
     ap.add_argument("--clean", action="store_true",
-                    help="Sạch hơn mặc định: bỏ cả trái tim và nút Theo dõi, "
+                    help="Sạch hơn mặc định: bỏ luôn nút Theo dõi và icon ⓘ, "
                          "chỉ còn avatar-tên-tick-chữ-ngày")
     ap.add_argument("--quote-vi", help="Bản dịch cho tweet được QUOTE bên trong")
     ap.add_argument("--quote-vi-file", help="Tệp chứa bản dịch của tweet được quote")
