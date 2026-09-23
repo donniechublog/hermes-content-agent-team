@@ -411,6 +411,10 @@ def _clean_use_alone(a: dict, slug: str = "") -> bool:
     anh khi THAT SU co cho doi, khong de ket."""
     if not _clean_photo(a, slug):
         return False
+    if "body" not in (a.get("uses") or []):
+        return False
+    if a.get("subject_box") and subject_crop_window(a, 0.3) is None:
+        return False
     if a.get("landscape"):
         return (int(a.get("h") or 0) >= schema.HEIGHT_MIN_CROP_LANDSCAPE
                 and a.get("landscape_crop_ok") is True)
