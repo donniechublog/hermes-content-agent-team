@@ -105,3 +105,46 @@ def bat_buoc_tam(tmp, **danh_sach):
         yield d
     finally:
         bb.file = cu
+
+
+@contextlib.contextmanager
+def block_network():
+    """Chan MOI ket noi mang trong khoi, ghi lai tung lan thu (22/09/2026).
+
+    Cac test "khong mang" cua `prepare_article()` thay tung pha nang bang stub
+    theo mot danh sach ten. Pha moi (hay pha bi quen) thi khong ai stub: no chay
+    mang THAT, loi mang bi chinh pha do nuot, test van xanh — chi cham di. Da
+    gap ba lan: `_round_capture_source` (13/09), `_round_entity` (13/09, 6 phut
+    34), va lai `_round_entity` trong test_round_brand_always_run (22/09: Wikipedia
+    + vision 9router, qua 180s tren may chu, keo chet ca `tests/run.sh`).
+
+    Chan o muc socket (getaddrinfo + connect) nen bat duoc moi thu vien (urllib,
+    httpx, requests), ke ca localhost (9router). Raise OSError de pha lot luoi
+    tra loi ngay thay vi treo; test phai tu `assert not tried` de lot luoi la DO,
+    khong phai xanh nho pha do nuot loi.
+
+    Dung:
+        with block_network() as tried:
+            ...
+        assert not tried, f"goi mang that: {tried}"
+    """
+    import socket
+
+    tried = []
+    old_getaddrinfo = socket.getaddrinfo
+    old_connect = socket.socket.connect
+    old_connect_ex = socket.socket.connect_ex
+
+    def _refuse(target):
+        tried.append(target)
+        raise OSError(f"tests.tam.block_network: test offline goi mang that ({target})")
+
+    socket.getaddrinfo = lambda host, *a, **k: _refuse(host)
+    socket.socket.connect = lambda self, address: _refuse(address)
+    socket.socket.connect_ex = lambda self, address: _refuse(address)
+    try:
+        yield tried
+    finally:
+        socket.getaddrinfo = old_getaddrinfo
+        socket.socket.connect = old_connect
+        socket.socket.connect_ex = old_connect_ex
