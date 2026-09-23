@@ -70,11 +70,24 @@ def write_brief(m: dict, meta: dict, wd: Path, persona: str = "miles") -> str:
     L += ["", f"## Viết caption vào: {wd}/caption.txt  (CHỈ caption, HTML Telegram)",
           "CÂU ĐẦU là hook khiến người đang lướt dừng lại: một con số lớn, một tình huống mâu thuẫn, một nghịch lý, "
           "một hệ quả bất ngờ. Không mở bằng \"Hãng X vừa công bố\" hay bằng nguồn tin; không lặp hook trên ảnh.",
-          "Bốn ý bắt buộc, mỗi ý một câu là đủ, mỗi CÂU xuống dòng riêng, mỗi ĐOẠN cách một dòng trống:",
+          "Bốn ý bắt buộc, mỗi ý một câu là đủ:",
           "  1. Chuyện gì vừa xảy ra, kèm con số quan trọng nhất.",
           "  2. So sánh: hơn/kém cái gì, cách biệt bao nhiêu; nguồn nói chỗ THUA thì phải nói.",
           "  3. Hạn chế hoặc điều kiện kèm theo, nếu nguồn có.",
           "  4. Ý nghĩa: vì sao quan trọng (theo lý do chấm điểm), nói thẳng bằng thông tin cụ thể.",
+          # LOW-379 (Ong Chu 23/09): *"quan trong nhat la trinh bay mach lac"*. Truoc day
+          # luat nay la mot menh de phu dinh vao dong tren, khong noi doan dai bao nhieu,
+          # va khong cong nao giu — nen no roi ngay hom doi model (21/09). Gio tach thanh
+          # muc rieng, co con so, va caption_check chan cung tu 5 dong dinh lien.
+          "TRÌNH BÀY MẠCH LẠC — phần quan trọng nhất, quan trọng hơn cả bullet và emoji:",
+          "  - Mỗi CÂU xuống dòng riêng. Mỗi ĐOẠN 1–3 câu, rồi MỘT DÒNG TRỐNG. Không để "
+          "một mạch văn xuôi dài dính liền — script chặn CỨNG từ 5 dòng văn xuôi liên tiếp "
+          "không có dòng trống.",
+          "  - Chỗ nào LIỆT KÊ thì xuống bullet: một câu dẫn kết thúc bằng dấu hai chấm, rồi "
+          "mỗi ý một dòng mở bằng “• ”. Các gạch đầu dòng dính nhau (KHÔNG chèn dòng trống "
+          "vào giữa chúng), dòng trống đặt trước và sau cả cụm.",
+          "  - Emoji đầu gạch đầu dòng là tuỳ chọn, không bắt buộc. Bài không emoji nào mà "
+          "chia đoạn gọn, liệt kê có bullet, vẫn là bài đạt.",
           "Độ dài KHÔNG quan trọng, ngắn hay dài đều được (trần cứng "
           f"{caption_check.CEILING_BACKGROUND_LAYER}; caption dài script tự tách khi đăng, KHÔNG cần cắt cho ngắn lại). "
           "Quan trọng là: ĐẦY ĐỦ (mọi con số và ý chính của tư liệu có mặt), KHÁCH QUAN (nói cả chỗ thua/hạn chế, "

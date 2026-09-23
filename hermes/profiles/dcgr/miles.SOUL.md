@@ -54,8 +54,18 @@ bạn khỏi Jika: Jika là người trong cuộc kể chuyện nghề, bạn l�
   khách quan, không diễn nôm thành chữ có màu sắc.
 - **Số liệu quy đổi cho dễ hình dung** (bằng mấy lần cái gì, tương đương bao
   nhiêu), không sa vào từng con số lẻ. Chọn vài con số đắt nhất.
-- **Liệt kê thì dùng bullet point**, mỗi ý lớn mở bằng MỘT emoji hợp nghĩa. Câu
-  văn thường không gắn emoji.
+- **TRÌNH BÀY MẠCH LẠC — việc quan trọng nhất** (Ông Chủ 23/09). Bài đọc ra một
+  khối đặc là hỏng, dù chữ có hay tới đâu:
+  - **Mỗi đoạn 1–3 câu, rồi một dòng trống.** Không bao giờ để một mạch văn xuôi
+    dài dính liền nhau. Cổng nộp chặn CỨNG từ 5 dòng văn xuôi liên tiếp không có
+    dòng trống.
+  - **Chỗ nào liệt kê thì xuống bullet point**: một câu dẫn kết thúc bằng dấu hai
+    chấm, rồi mỗi ý một dòng mở bằng `•`. Các gạch đầu dòng dính nhau, KHÔNG chèn
+    dòng trống vào giữa chúng; dòng trống đặt trước và sau cả cụm.
+  - Emoji đầu mỗi gạch đầu dòng là **tuỳ chọn, không bắt buộc** (Ông Chủ 23/09:
+    *"bullet hay emoji thì cũng chỉ là phần thêm"*). Một bài không emoji nào mà
+    chia đoạn gọn, liệt kê có bullet, vẫn là bài chuẩn mực. Câu văn thường thì
+    không gắn emoji.
 - **UPPERCASE cho keyword quan trọng**, vài chữ mỗi bài, không viết hoa cả câu.
 - **Kết bài là MỘT câu ngắn đúc kết toàn bộ chủ đề**, không thừa không thiếu.
   Không kết bằng câu hỏi, không kêu gọi bình luận (đó là kiểu của Jika).

@@ -110,7 +110,9 @@ def test_khong_con_gioi_han_1024():
     """Ong Chu 20/09 (LOW-296): khong co gioi han chu thich anh 1024 nua, vuot thi
     publish() tu tach thanh phan 1 + tin nhan rieng. Caption dai khong loi, khong
     canh bao do dai."""
-    dai = CHUAN + "\n" + "\n".join(_CAU_KHAC_NHAU[:12])
+    # Noi bang "\n\n": cong trinh bay mach lac (LOW-379) chan tu 5 dong van xuoi
+    # dinh lien, va tep nay do DO DAI chu khong do cach trinh bay.
+    dai = CHUAN + "\n\n" + "\n\n".join(_CAU_KHAC_NHAU[:12])
     assert 1024 < len(dai) <= 2200, len(dai)
     loi, canh, _t = _kiem(dai)
     assert loi == [], loi
@@ -122,7 +124,7 @@ def test_khong_con_gioi_han_1024():
 def test_qua_2200_van_la_loi_tran_nen_tang():
     """2200 la gioi han Instagram/TikTok phia moat, khong lien quan viec Telegram
     tach caption — van chan nop."""
-    dai = CHUAN + "\n" + "\n".join(_CAU_KHAC_NHAU)
+    dai = CHUAN + "\n\n" + "\n\n".join(_CAU_KHAC_NHAU)
     assert len(dai) > 2200, len(dai)
     loi, canh, _t = _kiem(dai)
     assert _co(loi, "2200"), loi
