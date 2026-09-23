@@ -13,6 +13,7 @@ Ba lệnh subprocess trong tệp này gọi `sys.executable`, KHÔNG gõ cứng
 Windows (`venv/Scripts/python.exe`) dù mã chính hoàn toàn ổn — xem lý do đầy đủ
 trong docstring của `material.extract()`.
 """
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -1109,6 +1110,13 @@ def test_bob_use_result_seen_for_pick_mood():
         da_dong["emoji"] = emoji
         Path(ra).write_bytes(b"x")
 
+    # Bob DI THEO ORG GOI NO (23/09/2026): khong co CT_BRAND/HERMES_HOME thi
+    # main() dung han. Test nay do MOOD, khong do brand — nen neu ro mot brand
+    # roi tra lai, thay vi dua vao moi truong san co (tren may chu .secrets.env
+    # co CT_BRAND nen test qua, CI khong co nen chet).
+    brand_cu = os.environ.get("CT_BRAND")
+    os.environ["CT_BRAND"] = "blog"
+
     with tempfile.TemporaryDirectory() as td:
         t = Path(td)
         (t / "goc.png").write_bytes(b"anh gia")
@@ -1139,6 +1147,11 @@ def test_bob_use_result_seen_for_pick_mood():
                 f"khong roi ve mac dinh an toan: {da_dong}"
         finally:
             bob_submit.take_image, bob_submit.line_frame, cb.description_image = goc_lay, goc_khung, goc_mo_ta
+            if brand_cu is None:
+                os.environ.pop("CT_BRAND", None)
+            else:
+                os.environ["CT_BRAND"] = brand_cu
+
 
 # ------------------------------------------- vong [LOI]: dem trong CODE, khong phai chu
 def test_round_error_has_buffer_and_reset_when_error_change():
