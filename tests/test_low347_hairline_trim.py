@@ -14,12 +14,12 @@ import io
 import random
 import re
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import render_edu as re_                                      # noqa: E402
+import tam  # noqa: E402
 
 TH = dict(bg="#171A21", panel="#212530", line="#333846", a="#2FD4E1", b="#8E86F0", stand="#BFC5CF")
 
@@ -40,7 +40,7 @@ def _photo(w=1400, h=1000, bright=False, **edges):
         box = {"top": (0, 0, w, n - 1), "bottom": (0, h - n, w, h), "left": (0, 0, n - 1, h),
                "right": (w - n, 0, w, h)}[side]
         d.rectangle(box, fill=col)
-    tmp = Path(tempfile.mkdtemp()) / "photo.png"
+    tmp = Path(tam.temp_dir()) / "photo.png"
     im.save(tmp)
     return tmp
 
@@ -94,7 +94,7 @@ def test_render_embeds_the_cropped_image():
 
 
 def test_truncated_file_does_not_crash():
-    p = Path(tempfile.mkdtemp()) / "cut.png"
+    p = Path(tam.temp_dir()) / "cut.png"
     good = _photo()
     p.write_bytes(good.read_bytes()[:400])
     assert re_.hairline_box(p) is None

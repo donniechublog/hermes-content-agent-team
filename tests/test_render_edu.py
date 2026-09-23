@@ -36,6 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import render_edu as re_                                      # noqa: E402
+import tam  # noqa: E402
 
 TH = dict(bg="#171A21", panel="#212530", line="#333846",
           a="#2FD4E1", b="#8E86F0", stand="#BFC5CF")
@@ -54,7 +55,7 @@ def _anh_chup_roi(w=1200, h=1500):
         for x in range(0, w, 3):
             c = random.randint(0, 255)
             px[x, y] = (c, c, c)
-    d = tempfile.mkdtemp()
+    d = tam.temp_dir()
     p = Path(d) / "roi.png"
     im.save(p, "PNG")
     return p
@@ -127,7 +128,7 @@ def _anh_bang_xep_hang(w=1188, h=1524):
             for x in range(0, w, 2):
                 if random.random() < 0.4:
                     px[x, y] = (20, 20, 20)
-    d = tempfile.mkdtemp()
+    d = tam.temp_dir()
     p = Path(d) / "bang.png"
     im.save(p, "PNG")
     return p
@@ -156,7 +157,7 @@ def test_anh_gan_nguong_khong_con_lop_mo_che_chu():
 # THAT (khong doi duoc), khong theo chu de noi dung.
 def _anh_mot_mau(rgb, w=600, h=800):
     from PIL import Image
-    d = tempfile.mkdtemp()
+    d = tam.temp_dir()
     p = Path(d) / "mau.png"
     Image.new("RGB", (w, h), rgb).save(p, "PNG")
     return p

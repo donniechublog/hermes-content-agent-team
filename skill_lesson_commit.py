@@ -189,6 +189,8 @@ def run(*, repo=REPO, state=STATE, open_pr=default_open_pr, enable_auto_merge=de
             continue
 
         branch = branch_name(verdict)
+        # mkdtemp-ok: `finally` ngay duoi goi remove_worktree(), trong do co
+        # shutil.rmtree(work_dir) — thu muc nay khong the song qua vong lap.
         work_dir = Path(tempfile.mkdtemp(prefix="skill-lesson-"))
         try:
             build_worktree(repo, work_dir, branch)

@@ -17,18 +17,18 @@ Luật mới trong `prepare.vision.description_image`:
 Chạy:  venv/bin/python tests/test_line_gate_fail_open.py
 """
 import sys
-import tempfile
 from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import prepare.vision as vision                                   # noqa: E402
+import tam  # noqa: E402
 
-_TAM = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-_TAM.write(b"\x89PNG\r\n\x1a\n" + b"\0" * 32)
-_TAM.close()
-ANH = _TAM.name
+# `NamedTemporaryFile(delete=False)` o muc module khong bao gio duoc xoa
+# (LOW-390) — dat trong thu muc tam co don thay vi tu quan ly tep le.
+ANH = str(tam.temp_dir(prefix="line_gate_") / "anh.png")
+Path(ANH).write_bytes(b"\x89PNG\r\n\x1a\n" + b"\0" * 32)
 
 
 class _Resp:

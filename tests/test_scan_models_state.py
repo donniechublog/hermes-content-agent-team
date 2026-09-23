@@ -21,7 +21,6 @@ Chay:  venv/bin/python tests/test_scan_models_state.py
 """
 import json
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -29,6 +28,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
 import scan_models as sm               # noqa: E402
+import tam  # noqa: E402
 
 
 class _State:
@@ -38,7 +38,7 @@ class _State:
         self.noi_dung = noi_dung
 
     def __enter__(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="scan_models_"))
+        self.tmp = Path(tam.temp_dir(prefix="scan_models_"))
         self.old, sm.STATE = sm.STATE, self.tmp / "models_seen.json"
         if self.noi_dung is not None:
             sm.STATE.write_text(self.noi_dung if isinstance(self.noi_dung, str)

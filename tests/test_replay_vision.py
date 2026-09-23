@@ -25,7 +25,6 @@ Chay:  venv/bin/python tests/test_replay_vision.py
 import json
 import os
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -36,6 +35,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 import replay                          # noqa: E402
 import role                            # noqa: E402
 import vision                          # noqa: E402
+import tam  # noqa: E402
 
 RECORDINGS = replay.GOLDEN / "replay" / "vision_gemini_hack.json"
 SNAPSHOT = replay.GOLDEN / "replay" / "classify_snapshot.json"
@@ -51,7 +51,7 @@ class _Replayed:
     def __enter__(self):
         self.rp = replay.VisionReplay.load(RECORDINGS)
         self.undo = self.rp.install(vision, os.environ)
-        self.tmp = Path(tempfile.mkdtemp(prefix="replay_vision_"))
+        self.tmp = Path(tam.temp_dir(prefix="replay_vision_"))
         return self.rp, self.tmp
 
     def __exit__(self, *exc):
@@ -117,7 +117,7 @@ def test_unparsable_answer_is_asked_again_once_then_forced_false():
     rp = replay.VisionReplay([rec])
     undo = rp.install(vision, os.environ)
     try:
-        tmp = Path(tempfile.mkdtemp(prefix="replay_vision_"))
+        tmp = Path(tam.temp_dir(prefix="replay_vision_"))
         found = {}
         _, relevant = _ask(tmp, rec, ket_qua=found)[:2]
         assert relevant is False and found["override"] == "unparsed_twice_forced_false"
@@ -135,7 +135,7 @@ def test_drift_detector_actually_fires_when_the_prompt_changes():
     rp = replay.VisionReplay([rec])
     undo = rp.install(vision, os.environ)
     try:
-        tmp = Path(tempfile.mkdtemp(prefix="replay_vision_"))
+        tmp = Path(tam.temp_dir(prefix="replay_vision_"))
         description, _ = _ask(tmp, rec)[:2]
         assert description == rec["expected"]["description"], "van phai phat lai duoc"
         assert rp.misses == []
@@ -148,7 +148,6 @@ def test_harvest_reads_only_images_the_engine_actually_asked_about():
     """`harvest_vision` la thu LAM RA ban ghi — no sai thi moi fixture sau deu sai.
     Manifest that co ca anh CHUA hoi vision, va vai phien ban ghi `vision_raw`
     duoi dang repr(dict) chu khong phai JSON."""
-    import tempfile as tf
     raw = {"model": "m", "question": "hoi?", "answer": "MO_TA: x\nLIEN_QUAN: co"}
     manifest = {"brand": "dcgr", "draft_id": "d1", "created_at": "2026-09-20", "title": "T",
                 "images": [
@@ -160,7 +159,7 @@ def test_harvest_reads_only_images_the_engine_actually_asked_about():
                     {"id": "A3", "w": 3, "h": 4, "vision_raw": repr(raw)},   # repr(dict)
                     {"id": "A4", "w": 5, "h": 6, "vision_raw": "khong phai dict"},
                 ]}
-    p = Path(tf.mkdtemp()) / "manifest.json"
+    p = Path(tam.temp_dir()) / "manifest.json"
     p.write_text(json.dumps(manifest), encoding="utf-8")
 
     out = replay.harvest_vision(p)
