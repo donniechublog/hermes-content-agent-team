@@ -449,8 +449,13 @@ kanban:
   # 21/09/2026: Ong Chu nang tran toan may 6 -> 20 (10 moi brand x 2 brand) de
   # Kite, Dre, Ethan... nhan task cung luc, khong xep hang vi tran chung.
   # Doi so nay thi doi CUNG image_prepare.COUNT_ENGINE_PARALLEL (= tong hai brand).
+  # 23/09/2026 (LOW-382): per_profile 2 -> 6, dat TREN MAY CHU o ca hai home.
+  # Ly do do that: task anh den theo LO — 101 task/3 ngay roi vao 17 cum, cum to
+  # nhat 29 va 24 task trong 5 phut — nen mot lo 10 bai toan Dre phai chay 2 mot
+  # luot, Dre cho p50 59 phut trong khi Kite va Ethan roi. Tran theo brand van
+  # 10, nen 6 chi la tran moi TRONG mot lo mot vai.
   max_in_progress: 10
-  max_in_progress_per_profile: 1
+  max_in_progress_per_profile: 6
   auto_decompose: true
   auto_decompose_per_tick: 3
   dispatch_stale_timeout_seconds: 14400

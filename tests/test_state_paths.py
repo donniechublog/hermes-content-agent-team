@@ -139,6 +139,7 @@ def test_constants_match_approved_table():
                    - set(_rows_publish_schedule())
                    - set(_rows_scan_overflow())
                    - set(_rows_dispatch_shadow())
+                   - set(_rows_auto_handoff())
                    - set(_rows_model_versions())
                    - set(_rows_repick())
                    - {ten for _, ten in _rows_242().values()}
@@ -361,6 +362,12 @@ def _rows_dispatch_shadow() -> dict:
     """LOW-349 (21/09/2026): log goi y chay bong tu chon tin — sinh ra da English
     san, cung kieu `_rows_publish_schedule`."""
     return {"DISPATCH_SHADOW_FILE": ("dispatch_shadow.jsonl", "state/<brand>/dispatch_shadow.jsonl")}
+
+
+def _rows_auto_handoff() -> dict:
+    """LOW-382 (23/09/2026): co cua cong tu duyet ban nhap (auto_handoff.py) — sinh
+    ra da English san, cung kieu `_rows_publish_schedule`."""
+    return {"AUTO_HANDOFF_FILE": ("auto_handoff.json", "state/<brand>/auto_handoff.json")}
 
 
 def _rows_model_versions() -> dict:

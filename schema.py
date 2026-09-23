@@ -196,6 +196,11 @@ class SidecarImage(TypedDict, total=False):
     source_note: str
     via: str
     last_task: str
+    # LOW-382: task anh hien hanh + no co dang bi chan cho engine dem anh khong.
+    # `route_missing_images` doc hai khoa nay de MO CHAN (du anh) hay DONG task
+    # (chuyen Kite); draft cu khong co chung thi tang do khong cham toi.
+    image_task: str
+    blocked_for_engine: bool
     kite_task_id: str              # approve_post ghi khi Ong Chu bam "Gui Kite"
     transferred_from: str
     transfer_reason: str           # approve_post.create_task_kite (ADF-r2-5: tung ghi ma chua khai)

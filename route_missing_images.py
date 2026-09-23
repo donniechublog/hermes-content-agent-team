@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tang GHEP NOI: bai thieu anh that thi hoi Ong Chu hay chuyen Kite.
+"""Tang GHEP NOI: bai thieu anh that thi chuyen Kite (hoac hoi, khi brand chua co Kite).
 
 Vi sao tach ra (audit_content_team A1): hai viec nay — gui Telegram va tao task
 Kite — la viec cua tang DIEU PHOI, nhung truoc 09/09/2026 chung nam ngay trong
@@ -68,24 +68,85 @@ def _time_send(vai: str, text: str, kb: dict | None = None) -> bool:
     return True
 
 
+def _write_img(draft_id: str, im: dict) -> None:
+    (DRAFTS / (draft_id + ".img.json")).write_text(
+        json.dumps(im, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _unblock_image(draft_id: str, im: dict, reason: str) -> None:
+    """Mo chan task anh ma `create_pair` da chan (LOW-382) — vai lam tiep binh thuong.
+
+    Chi dong vao task ma CHINH minh da chan (`blocked_for_engine`): draft cu,
+    hay draft tao qua duong "Lam lai", khong co co nay va khong bi cham toi.
+    Ha co xuong ngay sau khi mo: goi lai ham nay (engine chay lai `--lam-moi`)
+    khong duoc di mo mot task dang chay."""
+    tid = im.get("image_task")
+    if not im.get("blocked_for_engine") or not tid:
+        return
+    from approve_dispatch import kanban_unblock
+    ok, _ = kanban_unblock(tid, reason)
+    if ok:
+        im["blocked_for_engine"] = False
+        try:
+            _write_img(draft_id, im)
+        except OSError as e:                                  # noqa: BLE001
+            print(f"[route] khong ghi duoc img.json sau khi mo chan: {e!r}", file=sys.stderr)
+
+
+def _close_image_task(draft_id: str, old_tid: str, new_tid: str) -> None:
+    """Dong task cua vai CU sau khi viec da sang Kite (LOW-382).
+
+    Chi dong khi task chua chay ('blocked'/'ready'): dang chay thi worker van
+    chay tiep du co dong dong trong kanban.db hay khong, ma brief cua vai cu da
+    co cau "TIN NAY DA CHUYEN KITE — ket thuc task ngay", nen de no tu ket."""
+    if not old_tid:
+        return
+    import hermes_adapter
+    from approve_dispatch import kanban_complete
+    tt = hermes_adapter.status(old_tid)
+    if tt not in ("blocked", "ready"):
+        # '' = khong ro, None = khong doc duoc kanban.db: ca hai deu KHONG dong,
+        # dong nham mot task dang chay con te hon de no tu ket.
+        print(f"[route] task cu {old_tid} o trang thai {tt!r} — khong dong", file=sys.stderr)
+        return
+    kanban_complete(old_tid, f"Bai chuyen sang Kite (task {new_tid}) — thieu anh that.")
+    ip = DRAFTS / (draft_id + ".img.json")
+    try:
+        im = json.loads(ip.read_text(encoding="utf-8"))
+        im["image_task"], im["blocked_for_engine"] = new_tid, False
+        _write_img(draft_id, im)
+    except (OSError, ValueError) as e:                        # noqa: BLE001
+        print(f"[route] khong cap nhat duoc img.json sau khi dong task cu: {e!r}", file=sys.stderr)
+
+
 def after_prepare(draft_id: str, m: dict) -> None:
-    """0 anh that -> tu chuyen Kite; thieu -> hoi Ong Chu bang nut.
+    """Thieu anh that -> TU CHUYEN Kite, khong hoi (LOW-382). Brand chua co Kite
+    thi moi hoi bang nut.
 
     Doc co `m["missing_images"]` do engine ghi. Ghi nguoc quyet dinh vao `m`
     (`kite_task_id` / `kite_asked` / `kite_unavailable`) — engine ghi ca `m` xuong
-    `manifest.json` ngay sau khi ham nay tra ve."""
-    thieu = m.get("missing_images")
-    if not thieu:
-        return                                     # du anh, khong co gi de hoi
+    `manifest.json` ngay sau khi ham nay tra ve.
+
+    Day cung la noi CHOT VAI ANH (LOW-382): `create_pair` chan task anh lai cho
+    toi luc nay, nen ham nay phai ket thuc bang DUNG mot trong hai viec — mo chan
+    cho vai cu lam tiep, hoac dong task cu va tao task Kite. Thoat ma khong lam
+    viec nao thi task nam `blocked` mai."""
     ip = DRAFTS / (draft_id + ".img.json")
     if not ip.exists():
         return
     im = json.loads(ip.read_text(encoding="utf-8"))
+    thieu = m.get("missing_images")
     # canonical_slug: sidecar cu con ghi ten persona ("dre", "miles") — chinh ly do
     # role.py ton tai. Dung tho thi topics().get("dre") miss -> khong gui gi.
     vai = vai_mod.canonical_slug(im.get("image_role", ""))
+    if not thieu:
+        _unblock_image(draft_id, im, f"engine dem xong: du anh cho {vai or 'vai anh'}")
+        return                                     # du anh, khong co gi de hoi
     if vai == "kite" or im.get("kite_task_id"):
-        return                                     # da la Kite / da chuyen roi
+        # Kite dung duoc voi it anh (`anh_toi_thieu=1`), va bai da chuyen roi thi
+        # task cu khong con la cua ai — ca hai truong hop deu khong doi vai nua.
+        _unblock_image(draft_id, im, "engine dem xong: Kite lam voi so anh dang co")
+        return
     so, tt = int(thieu.get("count", 0)), int(thieu.get("min_images", 5))
     ten = vai_mod.display_name(vai)      # ban dang ky: role.py (audit A4)
     tieu = m.get("title", draft_id)
@@ -104,6 +165,10 @@ def after_prepare(draft_id: str, m: dict) -> None:
 
     if khong_kite:
         # Brand nay chua co Kite (dcgr 05/09/2026). Noi thang, dung hua chuyen.
+        # Van MO CHAN: khong co Kite thi khong doi vai nua, va cau hoi o day la
+        # "lam voi N anh hay bo tin" — de task nam blocked cho mot cau tra loi
+        # co the khong bao gio toi la giam mot bai im lang.
+        _unblock_image(draft_id, im, f"engine dem xong: {so}/{tt} anh, brand chua co Kite")
         kb = {"inline_keyboard": [[{"text": "❌ Bỏ hẳn tin", "callback_data": "imgno:" + draft_id}]]}
         if so == 0:
             _ask("kite_unavailable", f"🖼 <b>{tieu}</b>: <b>0 ảnh thật</b> dùng được, và brand này <b>chưa có Kite</b> "
@@ -112,19 +177,38 @@ def after_prepare(draft_id: str, m: dict) -> None:
             kb["inline_keyboard"][0].insert(0, {"text": f"🖼 {ten} làm với {so} ảnh", "callback_data": "imgtiep:" + draft_id})
             _ask("kite_asked", f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được; brand này chưa có Kite. Chọn:", kb)
         return
-    if so == 0:
-        rid, loi = create_task_kite(draft_id, im, ly_do="engine: 0 anh that dung duoc")
-        if loi:
-            _time_send(vai, f"🖼 <b>{tieu}</b>: 0 ảnh thật dùng được, chuyển Kite <b>lỗi</b>: {loi}")
-            return
-        m["kite_task_id"] = rid                     # task DA tao — co du tin bao co di hay khong
-        if not _time_send(vai, f"🖼 <b>{tieu}</b>: <b>0 ảnh thật</b> dùng được → đã tự chuyển <b>Kite</b> "
-                            f"vẽ vector (task {rid}). {ten} không dựng bộ này."):
-            m["route_error"] = f"da chuyen Kite (task {rid}) nhung khong bao duoc len topic {vai}"
-        print(f"[route] 0 anh -> Kite task {rid}", file=sys.stderr)
+    # THIEU ANH -> TU CHUYEN KITE, KHONG HOI (LOW-382, Ong Chu chot 23/09/2026:
+    # "cu tim duoc duoi 6 anh thi de Kite, tren 6 thi de Dre").
+    #
+    # Truoc day chi nhanh `so == 0` tu chuyen, con 1..tt-1 la mot cau hoi co hai
+    # nut. Do tren approve.log 18-22/09/2026 (ca hai brand): 27 lan bam trong 5
+    # ngay o duong nay, va khong lan nao doi huong khoi luat da co san — tuc cau
+    # hoi khong con la mot quyet dinh, chi la mot buoc go tay lap lai luat "thieu
+    # anh thi pass Kite". Nguong lay tu `min_images` cua manifest (engine da hoi
+    # `role.min_images` cua VAI DUOC GIAO: Dre 6, tin flagship 7) — khong co so 6
+    # nao viet thang o day.
+    #
+    # Brand chua co Kite thi VAN hoi (nhanh `khong_kite` o tren): o do that su con
+    # mot lua chon — ha san lam voi N anh, hay bo tin.
+    ly_do = ("engine: 0 anh that dung duoc" if so == 0
+             else f"engine: chi {so}/{tt} anh that dung duoc")
+    old_tid = im.get("image_task")              # doc TRUOC: create_task_kite ghi de img.json
+    rid, loi = create_task_kite(draft_id, im, ly_do=ly_do)
+    if loi:
+        _time_send(vai, f"🖼 <b>{tieu}</b>: {so}/{tt} ảnh thật dùng được, chuyển Kite <b>lỗi</b>: {loi}")
+        # Ghi lai de brief/nhat ky lo ra: bai nay dang ket o vai cu ma khong ai
+        # biet (cung ly le voi `_ask`, C-r2-1). Truoc day nhanh nay im lang.
+        m["route_error"] = f"chuyen Kite loi: {loi}"
+        # Task cu VAN phai duoc mo chan: tao Kite hong thi vai cu la duong duy
+        # nhat con lai, de no blocked la giet bai.
+        _unblock_image(draft_id, im, f"chuyen Kite hong ({loi}) — vai cu lam tiep")
         return
-    kb = {"inline_keyboard": [[
-        {"text": "🎨 Gửi Kite vẽ vector", "callback_data": "imgkite:" + draft_id},
-        {"text": f"🖼 {ten} làm với {so} ảnh", "callback_data": "imgtiep:" + draft_id}]]}
-    _ask("kite_asked", f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được "
-                     f"(nguồn: {', '.join(m.get('domains') or []) or '—'}). Chọn đường:", kb)
+    m["kite_task_id"] = rid                     # task DA tao — co du tin bao co di hay khong
+    # Dong task cua vai cu NGAY: no dang blocked (create_pair chan), nen dong o
+    # day la no khong bao gio chay. Do 21 ngay truoc khi co buoc nay: 33 task cu
+    # co vet chay, 23 trong so do bat dau TRUOC luc chuyen — 191 phut cua Dre.
+    _close_image_task(draft_id, old_tid, rid)
+    if not _time_send(vai, f"🖼 <b>{tieu}</b>: <b>{so}/{tt} ảnh thật</b> dùng được → đã tự chuyển "
+                        f"<b>Kite</b> vẽ vector (task {rid}). {ten} không dựng bộ này."):
+        m["route_error"] = f"da chuyen Kite (task {rid}) nhung khong bao duoc len topic {vai}"
+    print(f"[route] {so}/{tt} anh -> Kite task {rid}", file=sys.stderr)

@@ -67,6 +67,7 @@ MOAT_UNSENT_NOTICES_FILE = "moat_unsent_notices.json"  # moat_publish spool, LOW
 PUBLISH_SCHEDULE_FILE = "publish_schedule.json"        # con tro slot dang bai (publish_schedule.reserve)
 PUBLISH_SLOT_LOCK = "publish_slot.lock"                # flock: chia slot (giu vai micro-giay)
 PUBLISH_DUE_LOCK = "publish_due.lock"                  # flock: dang mot bai (giu toi vai phut, chan hai tick cron chong nhau)
+AUTO_HANDOFF_FILE = "auto_handoff.json"   # cong tac tu chuyen viec (auto_handoff.py), LOW-382
 BOSS_IDS_FILE = "boss_ids.json"                      # approve allowlist [user_id…], LOW-241 (was ong_chu.json)
 DISPATCH_SHADOW_FILE = "dispatch_shadow.jsonl"         # goi y chay bong tu chon tin (dispatch_shadow.py), LOW-349
 MODEL_VERSIONS_FILE = "model_versions.json"            # cache lich su phien ban model tu Wikipedia (model_version.py), LOW-363

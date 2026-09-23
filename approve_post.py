@@ -27,6 +27,7 @@ _HttpxTimeout = httpx.Timeout
 _HttpxError = httpx.HTTPError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import auto_handoff                                         # noqa: E402
 import moat_publish                                         # noqa: E402
 import publish_schedule                                     # noqa: E402
 import image_provenance                                        # noqa: E402
@@ -61,10 +62,15 @@ def _process_button(token, channel, cq):
             raise                                            # _run_background ghi traceback + bao topic
 
 def keyboard(draft_id):
-    return {"inline_keyboard": [[
-        {"text": "✅ Duyệt & đăng", "callback_data": "ok:" + draft_id},
-        {"text": "❌ Bỏ", "callback_data": "no:" + draft_id},
-    ]]}
+    hang = [{"text": "✅ Duyệt & đăng", "callback_data": "ok:" + draft_id},
+            {"text": "❌ Bỏ", "callback_data": "no:" + draft_id}]
+    # Cong tu duyet dang bat -> them duong PHAN DOI. Bam ✅ van la duyet ngay
+    # (khoi cho het cua so), ❌ van la bo han; "Giu lai" la cai thu ba: giu bai
+    # nay o hang cho tay, va dua CA NGAY ve bam tay (auto_handoff.pause_today).
+    on, _ = auto_handoff.is_on(auto_handoff.GATE_DRAFT_TO_PUBLISH)
+    if on and not auto_handoff.must_review(draft_id):
+        hang.append({"text": "⛔ Giữ lại", "callback_data": "phold:" + draft_id})
+    return {"inline_keyboard": [hang]}
 
 
 VN = timezone(timedelta(hours=7))          # cung quy uoc voi journal.py/ada_prepare.py
@@ -199,9 +205,23 @@ def _send_media_group(token, chat, media, thread_id=None):
                            lambda: {k: open(v, "rb") for k, v in paths.items()},
                            timeout=_upload_timeout(total_bytes))
 
+def _auto_note(draft_id):
+    """Dong nhac "im lang la dong y" (LOW-382), rong khi cong tat.
+
+    Phai NOI RA tren chinh the: luat "khong bam gi trong N phut thi bai di dang"
+    ma Ong Chu khong biet dang bat thi khong phai tu dong hoa, do la bay."""
+    on, _ = auto_handoff.is_on(auto_handoff.GATE_DRAFT_TO_PUBLISH)
+    if not on:
+        return ""
+    if auto_handoff.must_review(draft_id):
+        return "\n\n🔍 Bài lấy mẫu — bài này vẫn phải bấm tay."
+    return (f"\n\n🤖 Im lặng {auto_handoff.HOLD_WINDOW_MIN} phút thì tự xếp lịch đăng "
+            "— bấm ⛔ Giữ lại để chặn.")
+
+
 def draft_push(token, group, draft_id, thread_id=None):
     d = json.loads((DRAFTS / (draft_id + ".json")).read_text(encoding="utf-8"))
-    caption = "<b>BẢN NHÁP</b>\n\n" + d["caption"]
+    caption = "<b>BẢN NHÁP</b>\n\n" + d["caption"] + _auto_note(draft_id)
     payload = {"chat_id": group, "caption": caption, "parse_mode": "HTML",
                "reply_markup": keyboard(draft_id)}
     if thread_id:
@@ -800,6 +820,66 @@ def _process_reason_redo(token, group, msg, thread_id, draft_id, text):
     call(token, "sendMessage", chat_id=group,
          **({"message_thread_id": thread_id} if thread_id else {}),
          reply_to_message_id=msg.get("message_id"), text=note)
+
+def auto_schedule_silent_drafts(token, group):
+    """Cổng `draft_to_publish` (LOW-382): thẻ nháp im lặng quá cửa sổ chờ thì TỰ
+    xếp lịch đăng — gọi ĐÚNG `publish_schedule.schedule` mà nút ✅ gọi, không có
+    đường đăng thứ hai để lệch dần theo thời gian.
+
+    Goi moi vong poll cua approve_service (nhu `_redo_all_done_limit`): no chi
+    doc vai tep JSON va thuong khong gui gi.
+
+    Bon cho KHONG tu xep lich, moi cho mot ly do khac nhau:
+      - cong tat / het han / da bam "Giu lai" hom nay  -> `auto_handoff.is_on`
+      - ngoai khung gio Ong Chu con thuc                -> im lang luc 3h sang
+        khong phai la dong y
+      - bai nam trong phan lay mau                      -> luoi do chat luong troi
+      - bai da bi bam "Giu lai" rieng                   -> `hold`
+    """
+    on, _ = auto_handoff.is_on(auto_handoff.GATE_DRAFT_TO_PUBLISH)
+    if not on or not auto_handoff.in_auto_hours():
+        return
+    han = time.time() - auto_handoff.HOLD_WINDOW_MIN * 60
+    brand = moat_publish.brand_container()
+    for path in sorted(DRAFTS.glob("*.json")):
+        if path.name.count(".") > 1:          # .meta/.img/.writer/.bak — khong phai draft
+            continue
+        try:
+            d = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(d, dict) or d.get("status") != "pending" or d.get("hold"):
+            continue
+        # Loc brand cung ly le voi publish_schedule.due: hai container dung chung
+        # thu muc drafts/, lay nham la tu dang bai cua brand kia.
+        if brand and (d.get("brand") or moat_publish.DEFAULT_BRAND) != brand:
+            continue
+        at = d.get("card_pushed_at") or 0
+        if not at or at > han:
+            continue                          # the chua len, hoac chua het cua so
+        draft_id = path.stem
+        if auto_handoff.must_review(draft_id):
+            continue
+        with _lock_of(draft_id):
+            # Doc LAI trong khoa: Ong Chu co the vua bam ✅/❌/Giu lai giua chung.
+            try:
+                d2 = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if d2.get("status") != "pending" or d2.get("hold"):
+                continue
+            gio = publish_schedule.schedule(draft_id)
+        log("auto", f"tu xep lich {draft_id} (im lang {auto_handoff.HOLD_WINDOW_MIN} phut) "
+                    f"-> dang luc {_clock(gio)}")
+        mid = d.get("tg_card_message_id")
+        if not mid:
+            continue
+        call(token, "editMessageReplyMarkup", chat_id=group, message_id=mid,
+             reply_markup=keyboard_scheduled(draft_id))
+        call(token, "sendMessage", chat_id=group, reply_to_message_id=mid,
+             text=f"🤖 Không ai giữ lại sau {auto_handoff.HOLD_WINDOW_MIN} phút → "
+                  f"đã tự xếp lịch đăng lúc {_clock(gio)}.")
+
 
 def _redo_all_done_limit(token, group):
     """Cho qua REDO_LIMIT giay ma Ong Chu chua neu ly do -> giao theo kieu cu,
@@ -1455,6 +1535,17 @@ def handle_callback(token, channel, cq):
              text="Đang đăng — chờ chút", show_alert=True)
         return
 
+    if action == "phold":
+        # "Giu lai": chan auto cho DUNG bai nay, va dua phan con lai cua ngay
+        # ve bam tay. Khong bo bai — the van con ✅/❌ nhu cu.
+        _d["hold"] = True
+        _write_json(p, _d)
+        auto_handoff.pause_today(auto_handoff.GATE_DRAFT_TO_PUBLISH)
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Đã giữ lại — hôm nay không tự đăng nữa")
+        _fix_story_go_button(token, msg, "⛔ ĐÃ GIỮ LẠI — bài này chờ bấm tay, và "
+                             "phần còn lại của hôm nay cũng bấm tay", keyboard(draft_id))
+        return
     if action == "ok":
         # Nut nay KHONG con dang bai. No chiem mot slot (cach bai truoc mot
         # tieng, xem docs/publish_schedule.md) roi tra the ve ngay; cron
