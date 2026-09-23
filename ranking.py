@@ -28,6 +28,7 @@ sys.path.insert(0, str(ROOT))
 import image_provenance                                           # noqa: E402
 import env_load                                              # noqa: E402
 import manifest_values                                       # noqa: E402
+import model_name                                            # noqa: E402
 import state_paths                                           # noqa: E402
 
 DPR = 2
@@ -285,6 +286,14 @@ def extract_model(tieu_de: str) -> list:
     khong_ngoac = re.sub(r"\s?\([^)]*\)$", "", ten).strip()
     if khong_ngoac != ten:
         ra.append(khong_ngoac)
+    # Ten dang SLUG cua bang ("claude-opus-5-5-max-effort") la MOT tu: vong rut
+    # gon theo tu ben duoi khong chay, nen truoc LOW-381 danh sach chi co dung
+    # mot ung vien — va khong hang nao chua chuoi do, vi bang in "Claude Opus 5.5
+    # (max with fallback)". Quy ve dang hien thi TRUOC roi moi rut gon tiep.
+    display_form = model_name.display_name(khong_ngoac)
+    if display_form and display_form.lower() != khong_ngoac.lower():
+        ra.append(display_form)
+        khong_ngoac = display_form
     ws = khong_ngoac.split()
     # bớt dần từ cuối, nhưng KHÔNG bớt tới dạng MỘT TỪ KHÔNG MANG SỐ — đó là TÊN
     # HÃNG TRẦN ("DeepSeek", "Gemini", "Claude"), nó khớp mọi hàng có chữ đó kể cả
@@ -387,8 +396,13 @@ def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str =
             # phai viec cua LOW-179.
             if re.search(pat, nhac_bang, re.I):
                 on_topic = True
+        # `in_title`: bang duoc goi ten ngay o TIEU DE, hep hon `mentioned` (doc
+        # ca link/via/than bai). Chi THE DU PHONG dung khoa nay — xem `_card_source`.
+        in_title = bool(re.search(n["domain_pattern"], (tieu_de or "").lower(), re.I))
+        if in_title and n.get("board_pattern"):
+            in_title = bool(re.search(n["board_pattern"], (tieu_de or "").lower(), re.I))
         diem[n["id"]] = d
-        ra.append({**n, "mentioned": nhac, "on_topic": on_topic})
+        ra.append({**n, "mentioned": nhac, "on_topic": on_topic, "in_title": in_title})
     return sorted(ra, key=lambda n: -diem[n["id"]])
 
 
@@ -1027,6 +1041,23 @@ def fallback_card(model: str, hang, site: str, bang: str, out: Path, brand: str 
     return out
 
 
+def _card_fields(models: list, nguon_ds: list) -> tuple:
+    """(tên model để IN, nguồn ghi trên thẻ) cho THẺ DỰ PHÒNG. Hàm THUẦN.
+
+    Hai chỗ lệch trên thẻ 23/09 (LOW-381), cùng một tấm:
+
+      - nguồn lấy `nguon_ds[0]`, tức bảng xếp ĐẦU theo điểm — thẻ ghi
+        "ARTIFICIALANALYSIS.AI · Intelligence Index" cho một tin mà hook nói
+        LiveBench (AA lọt vào vì LINK bài trỏ tới đó). Bảng được gọi tên ngay ở
+        TIÊU ĐỀ mới là bảng bài đang nói, nên `in_title` đi trước.
+      - tên model in nguyên slug `claude-opus-5-5-max` thay vì `Claude Opus 5.5`.
+    """
+    n = (next((x for x in nguon_ds if x.get("in_title")), None)
+         or next((x for x in nguon_ds if x.get("mentioned")), None)
+         or (nguon_ds[0] if nguon_ds else SOURCE[0]))
+    return model_name.display_name(models[0]) or models[0], n
+
+
 # ---- Điều phối --------------------------------------------------------------------
 class SessionCapture:
     """Mot phien chromium cho ca luot di nguon: hai context (mobile thu truoc, desktop
@@ -1223,12 +1254,12 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
             break
     if kq_cuoi:
         return kq_cuoi
-    n = nguon_ds[0] if nguon_ds else SOURCE[0]
+    card_name, n = _card_fields(models, nguon_ds)
     out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}card.png"
-    fallback_card(models[0], hang_goi_y, n["site"], n["board"], out, brand, logo)
-    in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {models[0]} #{hang_goi_y or '?'}")
+    fallback_card(card_name, hang_goi_y, n["site"], n["board"], out, brand, logo)
+    in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {card_name} #{hang_goi_y or '?'}")
     return {"file_path": str(out), "kind": "card", "source": n["id"], "site": n["site"], "board": n["board"],
-            "rank": hang_goi_y, "model": models[0], "url": n["url"], "logo": str(logo) if logo else None}
+            "rank": hang_goi_y, "model": card_name, "url": n["url"], "logo": str(logo) if logo else None}
 
 
 MAX_XH = 3      # tran so anh xep hang lay cho MOT tin (cac nguon `independent`)
@@ -1371,12 +1402,12 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
                 da_chup_thuong = True
     if ket_qua:
         return ket_qua
-    n = nguon_ds[0] if nguon_ds else SOURCE[0]
+    card_name, n = _card_fields(models, nguon_ds)
     out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}card.png"
-    fallback_card(models[0], hang_goi_y, n["site"], n["board"], out, brand, logo)
-    in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {models[0]} #{hang_goi_y or '?'}")
+    fallback_card(card_name, hang_goi_y, n["site"], n["board"], out, brand, logo)
+    in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {card_name} #{hang_goi_y or '?'}")
     return [{"file_path": str(out), "kind": "card", "source": n["id"], "site": n["site"], "board": n["board"],
-            "rank": hang_goi_y, "model": models[0], "url": n["url"], "logo": str(logo) if logo else None}]
+            "rank": hang_goi_y, "model": card_name, "url": n["url"], "logo": str(logo) if logo else None}]
 
 
 def main() -> int:
