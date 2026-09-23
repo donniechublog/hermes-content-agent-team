@@ -33,11 +33,15 @@ from pathlib import Path
 import httpx
 
 import scan_common                                            # noqa: E402
+import scan_seen                                              # noqa: E402
+import state_paths                                            # noqa: E402
 import env_load
 import required
 
 ROOT = env_load.ROOT
 STATE = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
+# Tep moc da-thay cua Finn; `--state` tro no sang tep tam khi chay thu (LOW-375).
+SEEN_PATH = None
 UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 
 MAX_AGE_HOURS = 72
@@ -386,6 +390,23 @@ def seen_keys() -> set:
     return keys
 
 
+def seen_store() -> scan_seen.SeenStore:
+    """Kho da-thay THAT cua Finn (LOW-375).
+
+    `seen_keys()` o tren CHI biet nhung gi Finn DA NOP: `finn_candidates_*.json`
+    la ban ghi cua manifest (`manifest_build.MAX_PICK = 8`) va `drafts/*.json`
+    la bai dang lam. Nhung `--top` mac dinh la 40 — tuc ~32 ung vien moi ngay
+    khong duoc ghi nho o dau ca, trong khi cua so la 72h, nen chung quay lai
+    danh sach goi y BA NGAY LIEN. Brief lai dang noi voi Finn rang viec do da
+    xong ("da loc 72h, chong trung").
+
+    Hai kho bo sung cho nhau, KHONG thay the nhau: kho nay nho "da dua cho
+    Finn xem", `seen_keys()` nho "da co vai dang lam". Con dung ca hai.
+    """
+    return scan_seen.SeenStore(SEEN_PATH or (STATE / state_paths.FINN_SEEN_FILE),
+                               window_days=MAX_AGE_HOURS / 24)
+
+
 # ---------- anh minh hoa ----------
 
 # Nhung duong khong bao gio co anh dung duoc — khoi mat mot luot tai
@@ -454,7 +475,16 @@ def main():
                          "tang mang tu 2026-08-20 (xem fetch_reddit), moi lan "
                          "quet dot 5 request timeout vo ich. Duong mang thong "
                          "lai thi them co nay vao cron.")
+    ap.add_argument("--state", help="Duong dan tep moc da-thay khac (de TEST "
+                    "khong dung finn_seen.json that). Mac dinh dung tep that.")
     a = ap.parse_args()
+
+    # LOW-375 luat 6: mot lan chay THU khong duoc ghi vao kho that. Su co
+    # 26/08 cua scan_business (chay thu lam danh dau nham tin chua bao la da
+    # thay) ap dung y nguyen cho Finn.
+    global SEEN_PATH
+    if a.state:
+        SEEN_PATH = Path(a.state)
 
     print("Dang quet...", file=sys.stderr)
     items = []
@@ -478,9 +508,16 @@ def main():
     if trung:
         print(f"  trung giua cac nguon: gop {trung} ban sao (xem `also_on`)", file=sys.stderr)
 
+    # LOW-375 — luat Ong Chu 23/09/2026: "chung ta ko dan lai tin da research
+    # duoc". `seen_keys()` = da co vai dang lam; `seen_store()` = da tung dua
+    # cho Finn xem. Bo qua cai thu hai la ~32 ung vien/ngay quay lai 3 ngay lien.
+    kho = seen_store()
+    da_dua = set(kho.read())
     seen = seen_keys()
-    fresh = [it for it in items if _norm_url(it["link"]) not in seen]
-    print(f"  chong trung: bo {len(items) - len(fresh)} bai da xu ly",
+    fresh = [it for it in items
+             if _norm_url(it["link"]) not in seen and _norm_url(it["link"]) not in da_dua]
+    print(f"  chong trung: bo {len(items) - len(fresh)} bai da xu ly "
+          f"({len(seen)} da co vai lam, {len(da_dua)} da dua cho Finn hom truoc)",
           file=sys.stderr)
 
     # Trung vi tinh RIENG cho tung nguon — so sanh trong cung ho moi cong bang
@@ -535,6 +572,11 @@ def main():
                  "score_relevance (0-20), roi cong lai thanh score tong."),
         "candidates": fresh,
     }
+    # LOW-375 luat 3: danh dau DA DUA, sau khi `--top` da cat. Muc bi cat
+    # KHONG duoc danh dau — mai no van con moi thi van phai len duoc.
+    con = kho.mark(_norm_url(it["link"]) for it in fresh)
+    print(f"  ghi moc da-dua: {len(fresh)} bai (kho con {con} khoa)", file=sys.stderr)
+
     out_json = json.dumps(result, ensure_ascii=False, indent=2)
     if a.out:
         Path(a.out).write_text(out_json, encoding="utf-8")

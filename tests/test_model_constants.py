@@ -18,6 +18,11 @@ import env_load                                                 # noqa: E402
 MODEL_CONSTANTS = ("VISION_MODEL", "VISION_FALLBACK_MODEL", "SAME_STORY_MODEL")
 
 
+# Moi route cua 9router deu la `provider/model` (`ds/...`, `ag/...`, `gemini/...`).
+# 23/09/2026 cong nay tung duoc noi ra de nhan ten TRAN `DS-v4Flash` — mot muc
+# "custom provider" openai-compatible. Muc do da bi xoa khoi 9router, nen cong
+# tro lai chat che: ten tran gio la dau hieu ai do chep nham tu `/v1/models` cua
+# mot tien trinh chua restart (xem comment SAME_STORY_MODEL trong env_load).
 def test_model_constants_exist_and_look_like_a_router_route():
     for name in MODEL_CONSTANTS:
         value = getattr(env_load, name)

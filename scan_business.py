@@ -35,6 +35,7 @@ import scan_common                                            # noqa: E402
 import env_load
 import required
 import safe_xml
+import scan_seen                                              # noqa: E402
 import state_paths
 
 STATE = env_load.state_dir() / state_paths.BUSINESS_SEEN_FILE
@@ -502,7 +503,14 @@ def _unmerged_pairs(n, root):
 # Cohere); pro dung het 12 nhom, ~2 giay.
 SAME_STORY_MODEL = env_load.SAME_STORY_MODEL
 SAME_STORY_LOOKBACK_SECONDS = 3 * 86400
-SAME_STORY_MAX_PRIOR = 200
+# LOW-376: day KHONG phai bo loc, chi la van an toan chong ngay dot bien lam
+# vo prompt. Do 23/09 tren may chu: cua so 3 ngay co 222 tieu de that, tuc
+# tran 200 cu dang cat 22 tieu de — va vi `sorted(-ts)` chay truoc, 22 cai bi
+# cat LUON la nhung cai CU NHAT, dung nhom ma buoc LLM sinh ra de bat (tin cu
+# quay lai duoi cach dien dat khac, ca Glass Imaging cua LOW-253). Cua so 3
+# ngay tren giay thanh ~2 ngay tren thuc te. Dat cao han len lam van, khong
+# lam bo loc.
+SAME_STORY_MAX_PRIOR = 500
 SAME_STORY_TIMEOUT = 120
 SAME_STORY_ASKS = 2
 # Dong tu tin tuc chung: hai tin khac nhau van hay dung chung ("Manus nears $500M
@@ -569,7 +577,15 @@ def ask_same_story(today: list, prior: list) -> str | None:
             raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
         return json.loads(raw)["choices"][0]["message"]["content"]
     except Exception as e:                                   # noqa: BLE001
-        print(f"[same_story] llm loi {type(e).__name__} -> chi dung gom bang code", file=sys.stderr)
+        # Ghi ro MODEL va ma loi: 23/09/2026 lop nay chet nhieu ngay (`ds/deepseek-v4-pro`
+        # bi go khoi 9router, 404 "No active credentials") ma khong ai hay, vi dong cu
+        # chi noi "llm loi HTTPError". Mot lop chong trung tat am tham la bao cao van
+        # trong nhu that.
+        ma = getattr(e, "code", "") or ""
+        print(f"[same_story] TAT: llm loi {type(e).__name__}{f' {ma}' if ma else ''} "
+              f"tren model {SAME_STORY_MODEL!r} -> chi dung gom bang code, "
+              "KHONG con bat duoc tin cu quay lai duoi cach dien dat khac",
+              file=sys.stderr)
         return None
 
 
@@ -652,44 +668,26 @@ def merge_same_story(fresh: list, groups: list) -> tuple:
 
 
 
+# LOW-375: bo nho da-thay gio dung CHUNG mot ban voi Finn/Nova/Qinn
+# (`scan_seen.SeenStore`). Sau luat ma doan code cu o day da tra gia de hoc —
+# cat theo THOI GIAN chu khong theo bang chu cai, va giu cac truong khac cua
+# tep (`note`) — nay nam trong scan_seen, khong con chep tay o bon noi.
+#
+# Mot thay doi hanh vi CO Y: ban cu giu 2000 khoa MOI NHAT theo SO. Do 23/09
+# tren may chu: dung 2000 khoa = 30 luot quet = ~26 ngay, tuc no DA CHAM TRAN
+# va sap bat dau quen. Nay cat theo 30 NGAY, khong theo so — them mot nguon
+# hay nang `--top` cung khong lam tut horizon nua.
+KEEP_DATE = 30
+
+
+def seen_store() -> scan_seen.SeenStore:
+    """Kho da-thay tro vao STATE HIEN TAI (`--state` doi sang tep tam khi test)."""
+    return scan_seen.SeenStore(STATE, keep_days=KEEP_DATE)
+
+
 def already_see() -> dict:
-    """Doc bo nho da-thay: {seen_at: {khoa: unix_ts lan cuoi thay}}.
-
-    Dinh dang cu la list khoa tran — doc duoc ca hai, chuyen dan sang dict.
-    """
-    if not STATE.exists():
-        return {}
-    d = json.loads(STATE.read_text(encoding="utf-8")).get("seen_at", [])
-    if isinstance(d, list):                # dinh dang cu
-        now = time.time()
-        return {k: now for k in d}
-    return d
-
-
-def write_timestamp(khoa: dict):
-    """Ghi bo nho da-thay, cat theo THOI GIAN, giu cac truong khac cua tep.
-
-    Hai loi cu cua ham nay, ca hai da gay chuyen that:
-    - `sorted(khoa)[-2000:]` cat theo BANG CHU CAI: tin bat dau a–m bi day ra
-      khoi bo nho va bao lai mai, tin bat dau z khong bao gio duoc quen. Gio
-      moi khoa keo theo timestamp va cat theo do.
-    - Ghi de ca tep chi voi hai truong -> xoa mat `note` (ghi chu su co
-      26/08 tung bay theo cach nay). Gio doc tep cu, chi thay truong cua minh.
-    """
-    STATE.parent.mkdir(parents=True, exist_ok=True)
-    goc = {}
-    if STATE.exists():
-        try:
-            goc = json.loads(STATE.read_text(encoding="utf-8"))
-        except Exception:                                    # noqa: BLE001
-            goc = {}
-    giu = dict(sorted(khoa.items(), key=lambda kv: kv[1])[-2000:])
-    goc["updated_at"] = datetime.now(timezone.utc).isoformat()
-    goc["seen_at"] = giu
-    tmp = STATE.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(goc, ensure_ascii=False, indent=2),
-                   encoding="utf-8")
-    os.replace(tmp, STATE)
+    """Bo nho da-thay: {khoa: unix_ts lan cuoi bao}."""
+    return seen_store().read()
 
 
 def _merge_same_story_llm(moi: list, cu: dict, now: float) -> tuple:
@@ -808,7 +806,7 @@ def main():
     now = time.time()
 
     if a.lan_dau:
-        write_timestamp({**cu, **{k: now for t in tin for k in t["seen_keys"]}})
+        seen_store().mark(k for t in tin for k in t["seen_keys"])
         print(f"Da ghi moc {len(tin)} tin. Lan sau chi bao cai moi.")
         return
 
@@ -849,7 +847,7 @@ def main():
     # thanh may xoa tin. Tin bi cat hom nay, mai van con moi thi van len duoc.
     # Nhom LLM xac nhan da bao (LOW-253) cung ghi lai, de lan sau buoc 1 loc
     # luon bang khoa, khong phai hoi LLM lai.
-    write_timestamp({**cu, **{k: now for t in chon + reported for k in t["seen_keys"]}})
+    seen_store().mark(k for t in chon + reported for k in t["seen_keys"])
 
 
 if __name__ == "__main__":

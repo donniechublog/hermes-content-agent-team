@@ -135,7 +135,7 @@ def test_constants_match_approved_table():
     hang = {k for k, v in vars(state_paths).items() if k.isupper() and isinstance(v, str)}
     thieu = sorted(hang - set(pairs) - {ten for _, ten in _rows_231().values()}
                    - {ten for _, ten in _rows_237().values()}
-                   - {ten for _, ten in _rows_240().values()} - set(_rows_239())
+                   - {ten for _, ten in _rows_240().values()} - {ten for _, ten in _rows_375().values()} - set(_rows_239())
                    - set(_rows_publish_schedule())
                    - set(_rows_scan_overflow())
                    - set(_rows_dispatch_shadow())
@@ -246,6 +246,40 @@ def test_low240_constants_match_approved_table():
             assert cu == moi, (cu, moi)
             muc = "business_seen" if ten == "BUSINESS_SEEN_FILE" else "x_seen"
             assert f"state_paths.{ten}" in TABLE_240[muc]["_where"] and cu in TABLE_240[muc]["_where"], muc
+
+
+def _rows_375() -> dict:
+    """LOW-375: hai seen-store nua, CUNG hinh dang voi business_seen/x_seen.
+    Ca hai ten deu giu nguyen chu dang co tren dia (`models_seen.json` truoc
+    day go thang trong scan_models.py; `finn_seen.json` la kho moi, dat ten
+    theo dung khuon). {ten CU: (ten MOI, ten hang)}."""
+    sp = state_paths
+    return {
+        "models_seen.json": (sp.MODELS_SEEN_FILE, "MODELS_SEEN_FILE"),
+        "finn_seen.json": (sp.FINN_SEEN_FILE, "FINN_SEEN_FILE"),
+    }
+
+
+def test_low375_constants_match_approved_table():
+    muc_bang = {"MODELS_SEEN_FILE": "models_seen", "FINN_SEEN_FILE": "finn_seen"}
+    for cu, (moi, ten) in _rows_375().items():
+        assert cu == moi, (cu, moi)          # ten giu nguyen, bang chi dat cho
+        muc = muc_bang[ten]
+        assert muc in TABLE_240, f"{muc} chua co trong scan_keys_v2.json"
+        noi = TABLE_240[muc]["_where"]
+        assert f"state_paths.{ten}" in noi and cu in noi, (muc, noi)
+
+
+def test_low375_seen_store_fields_match_the_table():
+    """Ba truong cua Nova nam CUNG tep voi ids/rankings/aa_reported — bang phai
+    ghi ro ten chung, neu khong lan sau co nguoi ghi de ca tep lan nua."""
+    import scan_models
+    bang = TABLE_240["models_seen"]
+    assert bang["khoa_hf"] == scan_models.HF_SEEN_FIELD
+    assert bang["khoa_tin_hang"] == scan_models.STORY_SEEN_FIELD
+    assert bang["khoa_github"] == scan_models.GITHUB_SEEN_FIELD
+    import scan_seen
+    assert TABLE_240["finn_seen"]["khoa"] == scan_seen.SEEN_FIELD
 
 
 def _rows_242() -> dict:

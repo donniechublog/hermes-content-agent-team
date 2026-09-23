@@ -61,8 +61,26 @@ VISION_MODEL = "ag/gemini-3.8-flash"
 VISION_FALLBACK_MODEL = "ds/deepseek-v4-flash-vision-exp"
 # Model gom tin CUNG SU KIEN o ca lung chung (LLM sau luat code): article_sources va
 # scan_business dung chung mot cho. Chua do lai tren Gemini (bo vang:
-# tests/golden/same_story_golden.json), nen van la DeepSeek pro.
-SAME_STORY_MODEL = "ds/deepseek-v4-pro"
+# tests/golden/same_story_golden.json).
+#
+# 23/09/2026 (Ong Chu): "ko dung v4 pro o moi noi, chi dung flash". Ban pro nay
+# nam trong muc "Disabled models" cua provider DeepSeek tren 9router, cung voi
+# v4-pro-max / v4-pro-none / v4-flash-vision-exp / deepseek-chat / deepseek-reasoner.
+# Hai route DUY NHAT con bat: `ds/deepseek-v4.1-flash` va `ds/deepseek-v4-flash`.
+#
+# BAY da vap mot lan, dung vap lai: co mot luc `GET /v1/models` phoi ra ten tran
+# `DS-v4Flash` (mot muc "custom provider" openai-compatible rieng) va ta tro vao
+# do. Muc custom provider ay sau do bi xoa, nhung 9router dang chay VAN liet ke
+# `DS-v4Flash` vi no giu cau hinh trong bo nho tu luc khoi dong — tuc `/v1/models`
+# cua mot tien trinh chua restart KHONG phai nguon su that. Lay ten tu UI provider,
+# roi kiem bang mot loi goi that.
+#
+# CANH BAO khi doc ket qua: LOW-253 do tren lo that 18/09 thay FLASH GOP BUA
+# (Snapdragon voi Tesla AI5, Mistral voi Cohere) con pro dung het 12 nhom. Gop
+# nham la MAT tin — te hon la lot mot tin trung. Hang rao `parse_same_story_groups`
+# (moi tieu de ghep vao nhom phai chung >=1 tu dac trung ngoai watchlist) vi the
+# la thu DUY NHAT con chan gop bua; dung noi long no.
+SAME_STORY_MODEL = "ds/deepseek-v4.1-flash"
 
 # User-Agent RIENG cho moi thu goi Wikimedia (API commons + tai anh tu
 # upload.wikimedia.org). Robot policy cua Wikimedia doi UA co TEN cong cu va

@@ -149,7 +149,10 @@ def _ask_same_event(title: str, candidates: list) -> set | None:
             raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
         text = json.loads(raw)["choices"][0]["message"]["content"]
     except Exception as e:                                   # noqa: BLE001
-        print(f"[nguon_bai] same_story: llm loi {type(e).__name__} -> chi dung luat tu", file=sys.stderr)
+        ma = getattr(e, "code", "") or ""
+        print(f"[nguon_bai] same_story: TAT: llm loi {type(e).__name__}"
+              f"{f' {ma}' if ma else ''} tren model {SAME_STORY_MODEL!r} "
+              "-> chi dung luat tu", file=sys.stderr)
         return None
     found = re.search(r"\[[\d,\s]*\]", text or "")
     if not found:

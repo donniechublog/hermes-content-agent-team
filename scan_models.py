@@ -43,10 +43,40 @@ import httpx
 import model_boards                                            # noqa: E402
 import model_name                                             # noqa: E402
 import scan_common                                            # noqa: E402
+import scan_seen                                              # noqa: E402
+import state_paths                                            # noqa: E402
 import env_load
 
-STATE = env_load.state_dir() / "models_seen.json"
+STATE = env_load.state_dir() / state_paths.MODELS_SEEN_FILE
 UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
+
+# ---- kho nho DA-THAY cho ba nguon TIN (LOW-375) ----------------------------
+# Truoc LOW-375 ba nguon nay KHONG co bo nho nao: bo loc duy nhat la cua so
+# `--ngay` (7 ngay), nen repo nao con trending thi duoc bao lai MOI NGAY toi 7
+# ngay lien. Do 23/09/2026 tren may chu: 9/20 dong bao cao 23/09 la model da
+# nam trong bao cao 22/09; muc TIN TU HANG lap 9/10 giua 21/09 va 22/09.
+#
+# Ba truong nay nam CUNG tep voi `ids`/`rankings`/`aa_reported` — `SeenStore`
+# doc tep cu va chi thay truong cua no, nen ba truong kia khong suy suyen.
+# Khoa phai la DINH DANH ON DINH: cung mot repo ma 22/09 bao "dung dau
+# trending", 23/09 bao "tha trong so", va ngay thi 20/09 roi 16/09 — loc bang
+# tieu de hay bang ngay deu hong.
+HF_SEEN_FIELD = "hf_seen"            # khoa: `org/name` cua repo HuggingFace
+STORY_SEEN_FIELD = "story_seen"      # khoa: link da chuan hoa
+GITHUB_SEEN_FIELD = "github_seen"    # khoa: `repo@tag`
+# LOW-383 them nguon X @arena cho Nova (main tien giua phien LOW-375). No cung
+# chi chong trung TRONG MOT LUOT (`seen` theo url) roi loc cua so `--ngay`, nen
+# dinh y nguyen lop loi cua ba nguon kia. Khoa on dinh san co: url cua tweet.
+ARENA_SEEN_FIELD = "arena_seen"      # khoa: url tweet @arena
+
+
+def seen_store(field: str, window_days: float) -> scan_seen.SeenStore:
+    """Kho da-thay tro vao STATE HIEN TAI (test doi STATE lay tep tam)."""
+    return scan_seen.SeenStore(STATE, field=field, window_days=window_days)
+
+
+def github_key(g: dict) -> str:
+    return f"{g.get('repo', '')}@{g.get('tag', '')}"
 
 # CATALOG cua HERMES (tai lieu cua hermes-agent), KHONG phai catalog cua
 # 9router. metadata.source cua chinh tep do ghi "hermes-agent repo", va
@@ -944,9 +974,17 @@ def write_timestamp(ids: set, xep_hang: dict, da_bao: dict | None = None):
     # da-thay; con ten tep tam CO DINH (`.json.tmp`, ban truoc 06/09/2026) thi
     # cron va mot lan chay tay `--lam-moi` trung thoi diem se ghi lan vao cung
     # mot tep tam va `replace` ban cut cua nhau.
-    env_load.write_json(STATE, {"updated_at": datetime.now(timezone.utc).isoformat(),
-                              "ids": sorted(ids), "rankings": xep_hang,
-                              "aa_reported": da_bao})
+    # LOW-375 luat 2: DOC TEP CU, CHI THAY TRUONG CUA MINH. Ban truoc ghi mot
+    # dict CO DINH bon khoa, nen moi truong khac trong tep bi xoa o lan chay ke
+    # tiep. Tu LOW-375 tep nay con giu `hf_seen`/`story_seen`/`github_seen`, va
+    # ham nay chay TRUOC cac lan `mark()` — giu nguyen kieu cu thi bo nho
+    # ngay-qua-ngay cua Nova bi xoa sach moi sang, dung thu no sinh ra de chan.
+    # Day chinh la su co `note` cua business_seen ngay 26/08.
+    goc = read_state()
+    goc.update({"updated_at": datetime.now(timezone.utc).isoformat(),
+                "ids": sorted(ids), "rankings": xep_hang,
+                "aa_reported": da_bao})
+    env_load.write_json(STATE, goc)
 
 
 import required                                              # noqa: E402
@@ -1142,7 +1180,17 @@ def main():
                          "scan_prepare dung co nay vi brief da in danh sach do "
                          "mot lan roi (ngoai vung cat) — in hai lan ton 5.600 ky "
                          "tu dung o duoi day, tuc chinh no bi cat truoc tien.")
+    # LOW-375 luat 6: khong bao gio de mot lan chay THU ghi vao kho that.
+    # `scan_business` da co co nay tu sau su co 26/08 (chay `--lan-dau` luc
+    # test ghi de business_seen that, danh dau nham tin chua bao la da thay);
+    # Nova thi chua, nen tu truoc toi nay chay thu la hong moc cua Nova.
+    ap.add_argument("--state", help="Duong dan tep moc khac (de TEST khong dung "
+                    "models_seen.json that). Mac dinh dung tep that.")
     a = ap.parse_args()
+
+    global STATE
+    if a.state:
+        STATE = Path(a.state)
 
     RONG2 = ([], None)                       # cac fetch tra (rows, ngay)
     # 15 nguon doc lap, moi nguon da boc trong _thu (hang rao cuoi rieng —
@@ -1198,6 +1246,14 @@ def main():
     tat_ca = {m["id"] for m in catalog}
     cu = already_see()
 
+    # LOW-375: ba kho da-thay cho ba nguon TIN. Cua so quet la `a.ngay`, kho
+    # nho gap doi (xem luat 6 trong scan_seen) — muc con trong cua so ma da
+    # roi khoi kho la muc se quay lai bao cao.
+    hf_seen = seen_store(HF_SEEN_FIELD, a.ngay)
+    story_seen = seen_store(STORY_SEEN_FIELD, a.ngay)
+    gh_seen = seen_store(GITHUB_SEEN_FIELD, a.ngay)
+    arena_seen = seen_store(ARENA_SEEN_FIELD, a.ngay)
+
     # MOT nguon su that cho moi bang. Truoc 06/09/2026 danh sach bang bi chep
     # LAM HAI o hai cho (hang_moi de ghi moc, bang_so de so hang) — them bang
     # ma quen mot cho thi no khong bao gio sinh duoc tin "leo hang", va khong
@@ -1234,10 +1290,28 @@ def main():
                 for mod, rows in bang_so.items()}
     if a.lan_dau:
         write_timestamp(tat_ca, hang_moi)
+        # `--lan-dau` = chi ghi moc, khong bao. Ba nguon tin cung phai duoc ghi
+        # moc o day, neu khong thi lan chay THAT ngay sau se do het tin cu 7
+        # ngay vao bao cao dau tien.
+        hf_seen.mark(m["id"] for m in hf)
+        story_seen.mark(scan_common.standard_link(t.get("link", "")) for t in tin)
+        gh_seen.mark(github_key(g) for g in gh)
         print(f"Da ghi moc {len(tat_ca)} model. Lan sau se chi bao cai moi.")
         return
 
     moi_catalog = [m for m in catalog if m["id"] not in cu]
+
+    # LOW-375 — luat Ong Chu 23/09/2026: "chung ta ko dan lai tin da research
+    # duoc". Bo cac muc DA TUNG vao bao cao cua Nova.
+    hf, bo_hf = hf_seen.unseen(hf, key=lambda m: m["id"])
+    tin, bo_tin = story_seen.unseen(
+        tin, key=lambda t: scan_common.standard_link(t.get("link", "")))
+    gh, bo_gh = gh_seen.unseen(gh, key=github_key)
+    arena_tweets, bo_tw = arena_seen.unseen(arena_tweets, key=lambda t: t.get("url", ""))
+    if bo_hf or bo_tin or bo_gh or bo_tw:
+        print(f"  chong trung ngay-qua-ngay: bo {bo_hf} repo HF, {bo_tin} tin hang, "
+              f"{bo_gh} ban phat hanh, {bo_tw} tweet @arena da bao hom truoc",
+              file=sys.stderr)
 
     for mod in list(arena):
         arena[mod] = arena[mod][:a.top]
@@ -1290,6 +1364,14 @@ def main():
     # chi la ra tin doi muon mot ngay.
     da_bao.update({r["original_name"]: r["released"] for r in ra_mat_aa + yielded_to_arena})
     write_timestamp(tat_ca | cu, hang_moi, da_bao)
+    # LOW-375 luat 3: CHI danh dau thu DA VAO BAO CAO. Phan bi tran CEILING_*
+    # cat khong duoc danh dau — mai no van con moi thi van phai len duoc, dung
+    # bai hoc cua scan_business ("danh dau het la may xoa tin").
+    hf_seen.mark(m["id"] for m in hf[:CEILING_HF])
+    story_seen.mark(scan_common.standard_link(t.get("link", ""))
+                    for t in tin[:CEILING_STORY])
+    gh_seen.mark(github_key(g) for g in gh[:CEILING_GH])
+    arena_seen.mark(t.get("url", "") for t in arena_tweets[:CEILING_ARENA])
     write_required(ra_mat_aa, leo_hang, hf, arena_tweets)
     if not a.khong_bat_buoc:
         # In ra STDERR, khong phai stdout: `scan_prepare` chep nguyen stdout vao
@@ -1315,6 +1397,13 @@ LABEL_BOARD = model_boards.LABEL_BOARD
 # CO CAN TREN, mot ngay xau la nuot sach phan duoi bao cao.
 CEILING_GH = 10           # ban phat hanh engine — truoc: vo han
 CEILING_HF = 10
+# TIN TU HANG: truoc LOW-375 la so 10 go thang trong vong in. Dat ten vi gio
+# no con la moc DANH DAU DA-THAY — hai cho phai dung CUNG mot con so, lech
+# nhau thi tin in ra ma khong duoc danh dau (bao lai hom sau), hoac nguoc
+# lai tin bi cat ma van bi danh dau (mat vinh vien).
+CEILING_STORY = 10
+# X @arena: cung ly do voi CEILING_STORY — vua la moc IN, vua la moc DANH DAU.
+CEILING_ARENA = 8
 CEILING_BOARD = 5          # moi bang xep hang — truoc: 8
 REGION_LABEL = {"my": "My", "tq": "TQ", "khac": "  "}
 # Ban ke khai bang xep hang. main() dung de kiem `bang_so` khong lech, va bao
@@ -1382,7 +1471,7 @@ def _in_report(k: dict):
     if tw:
         print(f"\n=== X @arena ({len(tw)}) — tin model release lay tu arena.ai DAU "
               "TIEN, truoc bang khac (Ong Chu 22/09) ===")
-        for t in tw[:8]:
+        for t in tw[:CEILING_ARENA]:
             dau = t["text"].strip().split("\n", 1)[0]
             print(f"  {t['date']}  [{(t.get('model') or '-')[:18]:<18s}] {dau[:90]}")
             print(f"        {t['url']}")
@@ -1390,7 +1479,7 @@ def _in_report(k: dict):
     tin = k.get("company_news") or []
     if tin:
         print(f"\n=== TIN TU HANG ({len(tin)}) — su kien so dang ky khong the hien ===")
-        for t in tin[:10]:
+        for t in tin[:CEILING_STORY]:
             print(f"  {t['date']}  [{t['company']:<15s}] {t['title'][:70]}")
 
     gh = k.get("releases") or []
