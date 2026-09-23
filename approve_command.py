@@ -152,6 +152,9 @@ COMMAND_HELP = (
     "  Link X / Instagram / Facebook: tự lấy TOÀN VĂN post (crawl 30-60 giây), "
     "vai không phải đọc lại trang gốc.\n"
     "<code>/vai</code> — bảng vai trong container này.\n"
+    "<code>/auto</code> [<code>on</code>|<code>off</code>] — công tắc tự duyệt bản nháp: bật thì thẻ "
+    "nháp im lặng một lúc là TỰ xếp lịch đăng, bấm ⛔ Giữ lại để chặn. "
+    "Gõ trần để xem trạng thái.\n"
     "<code>/help</code> — tin này.\n"
     "Sai cú pháp thì không làm gì — lệnh phải tường minh.")
 
@@ -240,6 +243,27 @@ def _command_article(reply, args):
         dong += "\n⚠️ " + ghi_chu
     reply(dong)
 
+def _command_auto(reply, args, msg):
+    """`/auto` xem trang thai · `/auto on|off` bat/tat cong tu duyet ban nhap.
+
+    Lenh SLASH chu khong phai mot cau chat voi vai: cong tac phai nam trong tay
+    ma (xem docstring `auto_handoff.py`), va duong slash da co allowlist Ong
+    Chu san — `is_boss` da chan o tren truoc khi toi day."""
+    import auto_handoff
+    gate = auto_handoff.GATE_DRAFT_TO_PUBLISH
+    if not args:
+        reply(auto_handoff.status_line(gate))
+        return
+    chon = args[0].lower()
+    if chon not in ("on", "off"):
+        reply("Cú pháp: <code>/auto on</code> hoặc <code>/auto off</code> "
+              "(gõ trần để xem trạng thái). Không đổi gì.")
+        return
+    uid = (msg.get("from") or {}).get("id")
+    auto_handoff.set_gate(gate, chon == "on", by=uid)
+    reply(auto_handoff.status_line(gate))
+
+
 def handle_command(token, group, msg, thread_id, text):
     def reply(t):
         call(token, "sendMessage", chat_id=group,
@@ -268,7 +292,7 @@ def handle_command(token, group, msg, thread_id, text):
     if lenh == "/help" and qua_gateway and not goi_bot:
         log("route", "/help tran: de gateway tra loi; approve co /hd")
         return
-    if lenh not in ("/bai", "/vai", "/hd", "/help") and qua_gateway:
+    if lenh not in ("/bai", "/vai", "/auto", "/hd", "/help") and qua_gateway:
         log("route", f"lenh {lenh}: cua Hermes/gateway, approve im")
         return
 
@@ -284,6 +308,8 @@ def handle_command(token, group, msg, thread_id, text):
         dong.append(f"<b>Vai viết</b>: {viet} — duyệt ảnh xong thì giao cho người viết "
                     "đang ít việc chờ hơn (blog: Miles/Jika, dcgr: Miles).")
         reply("\n".join(dong))
+    elif lenh == "/auto":
+        _command_auto(reply, phan[1:], msg)
     elif lenh == "/bai":
         with _KHOA_DAT_BAI:
             _command_article(reply, phan[1:])

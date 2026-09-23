@@ -54,7 +54,7 @@ from approve_pick import (  # noqa: E402
 )
 from approve_post import (  # noqa: E402
     _redo_all_done_limit, _label_reason_redo, _process_button, already_len_channel, draft_push,
-    handle_reply_approval, push_fingerprint, delete_messages,
+    handle_reply_approval, push_fingerprint, delete_messages, auto_schedule_silent_drafts,
 )
 from approve_chat import (  # noqa: E402
     handle_chat,
@@ -465,6 +465,11 @@ def loop():
             # getUpdates cho toi 50 giay moi luot, nen goi moi vong la du thua
             # cho viec nay: no chi doc mot cau SQL va thuong khong gui gi.
             _redo_all_done_limit(token, group)
+            # Cong tu duyet ban nhap (LOW-382): the im lang qua cua so cho thi
+            # tu xep lich dang. Cung ly do dat o day voi hai dong tren —
+            # getUpdates da cho toi 50 giay moi vong, nen goi moi vong la du
+            # thua cho mot viec chi doc vai tep JSON.
+            auto_schedule_silent_drafts(token, group)
             report_progress_kanban(token, group)
             loi_lien_tiep = 0
         except Exception as e:                              # noqa: BLE001
@@ -528,6 +533,9 @@ def _finish_push_cli(res, draft_id, thread):
             _dp = DRAFTS / (draft_id + ".json")
             _d = json.loads(_dp.read_text(encoding="utf-8"))
             _d["tg_card_message_id"] = _mid
+            # Moc THE LEN TOPIC (LOW-382): cua so "im lang la dong y" dem tu day,
+            # khong dem tu mtime cua tep — tep con bi ghi lai nhieu lan sau do.
+            _d["card_pushed_at"] = time.time()
             _d["tg_extra_message_ids"] = (res.get("extra_ids") or []) if isinstance(res, dict) else []
             _d["tg_push_fingerprint"] = push_fingerprint(_d)
             _write_json(_dp, _d)
