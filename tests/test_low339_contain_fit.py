@@ -148,7 +148,10 @@ def test_real_render_whole_figure_stays_above_text_zone():
     _, old_bottom, old_h = _red_rows(_render_slide(art, image_fit=False))
     # Từ LOW-345 ảnh không co cũng dừng ở dòng chữ đầu (không còn tràn sau chữ), nhưng vẫn thấp hơn
     # đáy ảnh đã co (63% khung): đủ để chứng minh chế độ co mới là thứ giữ hình trong vùng.
-    assert old_bottom / old_h > bottom / h + 0.01, (
+    # LOW-366: bỏ folio + byline nên cột chữ ngồi CAO hơn, dòng chữ đầu lên theo và khoảng cách
+    # này hẹp lại (đo thật: 0.632 so với 0.627, trước đó rộng hơn 0.01). Tính chất cần chứng minh
+    # vẫn nguyên, chỉ so sánh chặt lấy đúng dấu.
+    assert old_bottom / old_h > bottom / h, (
         "ảnh không co lẽ ra phải thấp hơn ảnh đã co (lỗi gốc LOW-339)", old_bottom / old_h, bottom / h)
 
 
