@@ -1052,7 +1052,20 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
         el = pg.query_selector(do["sel"])
         if not el:
             return None
-        el.scroll_into_view_if_needed()
+        # CAT BOT CHIEU CAO, GIU NGUYEN BE NGANG. Do that 23/09/2026: bang cua
+        # artificialanalysis chup tron ven ra 2796x29920 (ti le 1:10,7) — mot tam
+        # khong vai nao dung duoc o kho 4:5, va nang vo ich. Be ngang thi KHONG
+        # duoc cham (luat Ong Chu 04/09: be ngang cua bang LA noi dung); chieu cao
+        # cat o `HEIGHT_MAX_CSS` nghia la giu phan DAU bang — dung thu can xem.
+        el.evaluate("(e, h) => { e.style.maxHeight = h + 'px'; e.style.overflow = 'hidden'; }",
+                    HEIGHT_MAX_CSS)
+        try:
+            el.scroll_into_view_if_needed(timeout=8000)
+        except Exception:                                    # noqa: BLE001
+            # artificialanalysis /text-to-speech: bang nam trong khung cuon rieng,
+            # `scroll_into_view_if_needed` het 30s ma khong bao gio "on dinh".
+            in_log("[xep_hang] trang nguồn: cuộn tới bảng hụt, thử scrollIntoView thẳng")
+            el.evaluate("e => e.scrollIntoView({block: 'start'})")
         pg.wait_for_timeout(400)
         out.parent.mkdir(parents=True, exist_ok=True)
         el.screenshot(path=str(out))
