@@ -105,7 +105,7 @@ def is_tweet(s: str) -> bool:
     return bool(is_url(s) and tweet_translate._STATUS.search(s))
 
 
-def take_card_vietsub(nguon: str, out_path: Path, a) -> str:
+def take_tweet_card(nguon: str, out_path: Path, a) -> str:
     """Link tweet -> thẻ tweet chữ TIẾNG VIỆT ra `out_path` (tweet_translate).
 
     Chưa có bản dịch thì IN NGUYÊN VĂN rồi dừng: đó là lượt một của Bob, không
@@ -256,7 +256,7 @@ def main() -> int:
     # chụp trang). `--tweet-image` kéo link tweet về đường cũ khi Bob muốn đóng
     # khung chính tấm ảnh TRONG tweet thay vì cả thẻ.
     if is_tweet(a.nguon) and not a.tweet_image:
-        cach = take_card_vietsub(a.nguon, src, a)
+        cach = take_tweet_card(a.nguon, src, a)
     else:
         cach = take_image(a.nguon, src)
     print(f"[nguon] {cach}  ({src.stat().st_size // 1024} KB)")
