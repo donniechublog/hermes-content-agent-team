@@ -155,13 +155,13 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
                                     extra_urls=[link, nguon.get("link") or "", bp.get("article_text") or "",
                                                 tom.get("summary") or ""])
         if arena:
-            print(f"[xep_hang] {len(arena)} anh tu X @arena cho {models[0]!r} — dung truoc moi nguon",
+            print(f"[ranking] {len(arena)} anh tu X @arena cho {models[0]!r} — dung truoc moi nguon",
                   file=sys.stderr)
             return arena, True
     if not khong_browser and tin_xep_hang:
         if models:
             ds = ranking.suggest_sources(tieu_de_xh, link, meta.get("via", ""), bp.get("article_text", ""))
-            print(f"[xep_hang] tin xep hang: model={models[0]!r}, thu {', '.join(n['id'] for n in ds[:4])}...",
+            print(f"[ranking] tin xep hang: model={models[0]!r}, thu {', '.join(n['id'] for n in ds[:4])}...",
                   file=sys.stderr)
             # BOC. `find_and_capture_many` import playwright va launch chromium NGOAI
             # moi try cua chinh no (ranking.py:899,904), va `br.close()` khong
@@ -177,11 +177,11 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
                     in_log=lambda t: print(t, file=sys.stderr), phien_browser=phien,
                     arena_checked=True, source_url=link, title=tieu_de_xh)
             except Exception as e:                           # noqa: BLE001
-                print(f"[xep_hang] HONG: {type(e).__name__}: {e} — di tiep khong co anh XH",
+                print(f"[ranking] HONG: {type(e).__name__}: {e} — di tiep khong co anh XH",
                       file=sys.stderr)
                 xhs = []
         else:
-            print("[xep_hang] tin xep hang nhung khong tach duoc ten model tu tieu de", file=sys.stderr)
+            print("[ranking] tin xep hang nhung khong tach duoc ten model tu tieu de", file=sys.stderr)
     return xhs, tin_xep_hang
 
 
