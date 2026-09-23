@@ -455,14 +455,13 @@ def check_empty_image(a: dict | None, nhan: str, limit: float) -> list:
     designer"). `limit` = nguong rieng cua vai (image_rules_<vai>.EMPTY_SHARE_MAX).
     Vision chua do (khoa `empty_share` thieu) thi khong chan."""
     import subject_fit
-    # `logo_card` (LOW-295): logo tren nen tron ma renderer DUNG LAI thanh slide logo
-    # (90% be ngang tren chinh mau nen cua no) — no "trong" dung nghia den, nhung do la
-    # thu he thong CO Y dung, khong phai anh chup hong. `role.blocked_empty` mien no tu
-    # LOW-288 va docstring cua ham do noi chinh no la "MOT ban duy nhat cho ca cong chan
-    # `submit_common.check_empty_image`" — nhung o day thi khong mien, nen hai ben lech
-    # nhau: anh qua duoc danh sach "dung duoc" roi chet o cong nop. Ong Chu tu va tay
-    # dong nay tren may chu 23/09/2026; day la ban co test.
-    if not a or a.get("logo_card") or not subject_fit.too_empty(a.get("empty_share"), limit):
+    # KHONG tu mien `logo_card` o day (PR #256 tung lam, PR #257 do lai va bac):
+    # tu LOW-337 ham nay chi la CAI MIENG — `role.blocked_empty(..., only_brand_card=True)`
+    # moi la cai dau, va no da loc the logo hang truoc khi goi toi day. Mien them o day
+    # la cam mieng dung luc cai dau vua bao "chan": do tren state that 23/09/2026, trong
+    # 188 tam se duoc tha co 138 tam la anh CHUP logo nho tren nen tron — dung loai LOW-273
+    # sinh ra de chan.
+    if not a or not subject_fit.too_empty(a.get("empty_share"), limit):
         return []
     return [f"{nhan}: {a.get('id')} gần như TRỐNG ({float(a['empty_share']):.0%} khung là nền trơn, "
             "chủ thể quá nhỏ) — cần ảnh có chủ thể chính lấp khung 4:5, không dùng logo nhỏ trên nền trơn"]
