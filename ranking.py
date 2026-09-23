@@ -1081,7 +1081,14 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
             # đạt trên trang có quảng cáo + websocket (sự cố 0b395ad, TICKET_TEMPLATE).
             pg.goto(url, wait_until="domcontentloaded", timeout=40000)
             pg.wait_for_timeout(1500)                # font + animation của chart
-            do_moi = pg.evaluate(capture_chart.MEASURE_JS, BOARD_PICK)
+            # Do LAI vai lan truoc khi bo cuoc: trang bang la ung dung React, 1,5s
+            # dau co khi chua ve xong bang nao. Do 23/09: arena.ai/leaderboard/
+            # code/webdev lan thi do ra bang, lan thi ra rong o dung lan do dau.
+            for _ in range(3):
+                do_moi = pg.evaluate(capture_chart.MEASURE_JS, BOARD_PICK)
+                if do_moi["sel"]:
+                    break
+                pg.wait_for_timeout(2000)
             # Lượt hai đo hụt thì GIỮ kết quả lượt đầu: `sel` chỉ là một kiểu phần tử
             # ("table"/"figure"/…), tải lại chậm một nhịp là đo ra rỗng — đo 23/09,
             # arena.ai/leaderboard/code/webdev mất trắng ở đúng chỗ này.
