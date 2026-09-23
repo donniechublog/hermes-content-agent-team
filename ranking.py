@@ -1248,7 +1248,30 @@ def fallback_card(model: str, hang, site: str, bang: str, out: Path, brand: str 
     return out
 
 
-def _card_fields(models: list, nguon_ds: list) -> tuple:
+def _board_named_in_title(title: str):
+    """Bang ma TIEU DE goi dich danh, doc tu `model_boards` — hoac None.
+
+    Tu LOW-389 registry ANH chi con arena, nhung cac benchmark site VAN la nguon
+    SU THAT va tin van noi ve chung. Khong co ham nay thi the du phong cua mot tin
+    LiveBench se ghi "ARENA.AI - Text Arena" (nguon xep dau con lai) — dung cai
+    loi LOW-381 vua chua: the tu khai mot bang ma bai khong noi toi.
+    """
+    import model_boards
+    from urllib.parse import urlparse
+    goi = re.sub(r"[^a-z0-9]", "", (title or "").lower())
+    if not goi:
+        return None
+    for b in model_boards.BOARD:
+        ten_bang = b.tieu_de.split(" (")[0].strip()
+        for ung in (b.khoa, ten_bang.split()[0] if ten_bang else ""):
+            k = re.sub(r"[^a-z0-9]", "", ung.lower())
+            if len(k) >= 5 and k in goi:
+                return {"id": f"named:{b.khoa}", "site": (urlparse(b.link).netloc or "").replace("www.", "").upper(),
+                        "board": ten_bang, "url": b.link}
+    return None
+
+
+def _card_fields(models: list, nguon_ds: list, title: str = "") -> tuple:
     """(tên model để IN, nguồn ghi trên thẻ) cho THẺ DỰ PHÒNG. Hàm THUẦN.
 
     Hai chỗ lệch trên thẻ 23/09 (LOW-381), cùng một tấm:
@@ -1260,6 +1283,7 @@ def _card_fields(models: list, nguon_ds: list) -> tuple:
       - tên model in nguyên slug `claude-opus-5-5-max` thay vì `Claude Opus 5.5`.
     """
     n = (next((x for x in nguon_ds if x.get("in_title")), None)
+         or _board_named_in_title(title)
          or next((x for x in nguon_ds if x.get("mentioned")), None)
          or (nguon_ds[0] if nguon_ds else SOURCE[0]))
     return model_name.display_name(models[0]) or models[0], n
@@ -1428,7 +1452,8 @@ def _board_page_result(phien, models: list, source_url: str, out_dir: Path, in_l
 
 
 def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
-                hang_goi_y=None, in_log=print, phien_browser=None, source_url: str = "") -> dict:
+                hang_goi_y=None, in_log=print, phien_browser=None, source_url: str = "",
+                title: str = "") -> dict:
     """Đi qua từng nguồn, nguồn nào ra ảnh khoanh được model thì dừng; không nguồn
     nào ra thì dựng thẻ dự phòng. Luôn trả về dict mô tả ảnh (file_path, kind, source,
     site, board, rank, model, url). `models` phải khác rỗng."""
@@ -1476,7 +1501,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
             kq_cuoi = _board_page_result(phien, models, source_url, out_dir, in_log)
     if kq_cuoi:
         return kq_cuoi
-    card_name, n = _card_fields(models, nguon_ds)
+    card_name, n = _card_fields(models, nguon_ds, title)
     out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}card.png"
     fallback_card(card_name, hang_goi_y, n["site"], n["board"], out, brand, logo)
     in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {card_name} #{hang_goi_y or '?'}")
@@ -1560,7 +1585,7 @@ def _skip_source(n: dict, da_chup_thuong: bool) -> bool:
 
 def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
                       hang_goi_y=None, in_log=print, toi_da: int = MAX_XH, phien_browser=None,
-                      source_url: str = "",
+                      source_url: str = "", title: str = "",
                       arena_checked: bool = False) -> list:
     """Nhu `find_and_capture`, nhung KHONG dung o thanh cong dau tien: nguon mang
     `independent: True` (xem chu thich tai NGUON) la NANG LUC RIENG cua model, cu gang
@@ -1629,7 +1654,7 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
                 ket_qua.append(kq_trang)
     if ket_qua:
         return ket_qua
-    card_name, n = _card_fields(models, nguon_ds)
+    card_name, n = _card_fields(models, nguon_ds, title)
     out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}card.png"
     fallback_card(card_name, hang_goi_y, n["site"], n["board"], out, brand, logo)
     in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {card_name} #{hang_goi_y or '?'}")
