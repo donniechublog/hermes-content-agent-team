@@ -131,6 +131,32 @@ def test_standard_assignee_finds_kite_from_dre_worker():
         assert r.stdout.strip().splitlines()[-1] == "('kite', None)", r.stdout
 
 
+# ---- brand cua tien trinh: KHONG duoc doan (Ong Chu 23/09/2026) -------------
+
+def test_current_brand_uu_tien_ct_brand():
+    ra = _voi_env("CT_BRAND", "dcgr", env_load.current_brand)
+    assert ra == "dcgr", ra
+    ra = _voi_env("CT_BRAND", "blog", env_load.current_brand)
+    assert ra == "blog", ra
+
+
+def test_current_brand_suy_tu_hermes_home_khi_thieu_ct_brand():
+    """`hermes-dashboard-<brand>.service` chi dat HERMES_HOME, khong dat CT_BRAND."""
+    for ten, home in env_load.hermes_homes().items():
+        def _do(ten=ten, home=home):
+            return _voi_env("HERMES_HOME", str(home), env_load.current_brand)
+        ra = _voi_env("CT_BRAND", None, _do)
+        assert ra == ten, (ten, ra)
+
+
+def test_current_brand_rong_khi_khong_biet_org_nao():
+    """Thieu ca hai thi TRA RONG de nguoi goi tu dung — dang nham brand la loi
+    khong ai thay cho toi khi da dang."""
+    def _do():
+        return _voi_env("HERMES_HOME", "/tmp/khong-phai-home-brand", env_load.current_brand)
+    assert _voi_env("CT_BRAND", None, _do) == ""
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca
     chay_tat_ca(globals())

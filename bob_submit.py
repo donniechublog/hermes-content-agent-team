@@ -240,14 +240,24 @@ def main() -> int:
         sys.exit(f"[LOI] khong thay assets cua skill url-mascot-frame o {SKILL}")
 
     env_load.load()
-    # Chay tay tu shell thi thuong khong co CT_BRAND. Truoc 23/09/2026 cho nay
-    # mac dinh "donniechublog" CHO RIENG handle, con `env_load.topics_path()`
-    # khong mac dinh gi ca -> roi ve `state/topics.json` che do don cu (khong co
-    # topic `bob`), nen anh dong khung ra @donniechublog ma buoc GUI thi chet
-    # "Topic 'bob' khong co". Hai cho doan khac nhau.
-    # Gio mot mac dinh duy nhat, va DAT LAI vao moi truong de publish.py (tien
-    # trinh con) tra dung `state/topics.<brand>.json`.
-    brand = os.environ.get("CT_BRAND", "").strip() or "dcgr"
+    # Bob DI THEO ORG GOI NO, khong co brand mac dinh nao (Ong Chu 23/09/2026).
+    #
+    # Truoc day cho nay mac dinh "donniechublog" CHO RIENG handle, con
+    # `env_load.topics_path()` khong mac dinh gi ca -> roi ve `state/topics.json`
+    # che do don cu (khong co topic `bob`): anh dong khung ra @donniechublog ma
+    # buoc GUI thi chet "Topic 'bob' khong co". Hai cho doan khac nhau, va ca hai
+    # deu doan.
+    #
+    # Gio MOT nguon duy nhat (`env_load.current_brand`: CT_BRAND, roi HERMES_HOME),
+    # va DAT LAI vao moi truong de publish.py (tien trinh con) tra dung
+    # `state/topics.<brand>.json`. Khong xac dinh duoc thi DUNG — dang nham brand
+    # la loi khong ai thay cho toi khi da dang.
+    brand = env_load.current_brand()
+    if not brand:
+        sys.exit("[LOI] khong biet dang chay cho org nao (thieu ca CT_BRAND lan "
+                 "HERMES_HOME). Chay qua profile hermes thi gateway dat san; chay tay "
+                 "thi neu ro, vd:\n"
+                 "  CT_BRAND=dcgr venv/bin/python bob_submit.py \"<link>\"")
     os.environ["CT_BRAND"] = brand
     handle = handle_channel(brand)
 
