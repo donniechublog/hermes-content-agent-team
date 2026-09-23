@@ -241,13 +241,10 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     _check_text(spec, kieu, loi)
     loi += nc.check_not_reused_across_runs(anh, [(x, x) for x in (ma, ma2) if x], m)
     loi += nc.check_image_fall(anh, {x: n for x, n in ((ma, "image"), (ma2, "image2")) if x}, m)
-    # LOW-273: anh trong (logo nho tren nen tron) — "khong chap nhan o moi designer".
-    # Hoi QUA `role.blocked_empty` (LOW-337): ban DUY NHAT cua luat — khong de moi vai doc
-    # mot luat. `only_brand_card=True`: chi THE LOGO HANG that duoc mien, khong phai moi
-    # tam co co `logo_card` (Ong Chu chot 23/09/2026) — xem `role.blocked_empty`.
+    # LOW-273: anh trong (logo nho tren nen tron) — "khong chap nhan o moi designer"
     import image_rules_ethan
     for x, n in ((ma, "image"), (ma2, "image2")):
-        if x and role.blocked_empty(anh.get(x) or {}, "ethan", only_brand_card=True):
+        if x:
             loi += nc.check_empty_image(anh.get(x), n, image_rules_ethan.EMPTY_SHARE_MAX)
     loi += _check_subject_above_quote(spec, kieu, a, ma, ma2, m)
     # Hook/attrib con nguyen tieng Anh, va so tren the khong co trong tu lieu:
