@@ -41,6 +41,45 @@ def test_blocked_empty_matches_gate():
     assert role.blocked_empty(_img("A1", empty=None), "dre") is False
 
 
+def _limit(vai):
+    """Nguong cua vai — dung con so ma chinh `role.blocked_empty` dung."""
+    import subject_fit
+    return getattr(role.rules_module(vai), "EMPTY_SHARE_MAX", subject_fit.EMPTY_SHARE_MAX)
+
+
+def test_logo_card_not_blocked_by_submit_gate():
+    """LOW-295: logo tren nen tron duoc renderer dung lai thanh SLIDE LOGO, nen cong
+    nop khong duoc goi no la "anh trong".
+
+    Fail tren ma cu: `check_empty_image` chan A77 du `logo_card` True — anh qua duoc
+    danh sach "dung duoc" (role.blocked_empty mien) roi chet o cong nop. Dung loi Ong
+    Chu va tay tren may chu 23/09/2026."""
+    the_logo = _img("A77", empty=0.75, logo_card=True)
+    assert nc.check_empty_image(the_logo, "bìa", _limit("dre")) == [], \
+        "cong nop van goi slide logo la anh trong"
+    # khong phai logo_card thi VAN chan — khong noi long ca cong
+    assert nc.check_empty_image(_img("A78", empty=0.75), "bìa", _limit("dre")) != []
+
+
+def test_two_gates_agree_on_every_sample():
+    """Hai cong phai tra CUNG mot cau tra loi: `role.blocked_empty` la ban duy nhat
+    (docstring cua chinh no), `check_empty_image` chi la mat cua no o buoc nop.
+
+    Day la test giu cho chung khoi lech lan nua — lan truoc lech lam Kite dung han
+    (LOW-337) va Dre ket o slide 6 (LOW-288)."""
+    mau = [_img("A26", empty=0.05),                        # anh day
+           _img("A77", empty=0.75),                        # logo nen tron, chua dung lai
+           _img("A77b", empty=0.75, logo_card=True),       # ... da dung thanh slide logo
+           _img("A1", empty=None),                         # vision chua do
+           _img("A2", empty=0.75, logo_card=False)]
+    for vai in ("dre", "ethan", "kite"):
+        for a in mau:
+            cong_nop = bool(nc.check_empty_image(a, "bìa", _limit(vai)))
+            ban_duy_nhat = role.blocked_empty(a, vai)
+            assert cong_nop == ban_duy_nhat, \
+                f"{vai}/{a['id']}: cong nop noi {cong_nop}, role.blocked_empty noi {ban_duy_nhat}"
+
+
 def test_image_fall_not_ask_for_empty_image(monkey=None):
     """A56 rối được dùng khi ảnh sạch còn lại chỉ là logo nền trơn A77/A78."""
     anh = {"A56": _img("A56", cluttered=True, has_keywords=False),
