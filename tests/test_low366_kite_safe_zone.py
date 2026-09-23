@@ -83,14 +83,15 @@ def test_kite_padding_follows_safe_zone():
     assert f"padding:{render_edu.PAD_TOP}px 80px {render_edu.PAD_BOT}px" in css
 
 
-def test_kite_no_byline_or_folio():
-    """Dong byline ("dcgr.tech · Phân tích · N phút đọc") va dong folio (nhan + so trang) khong
-    con tren slide — Ong Chu: khong bat buoc phai co trong noi dung IG."""
+def test_kite_byline_moved_to_footer_and_no_folio():
+    """Dong folio (nhan + so trang) bo han; dong byline chuyen xuong CHAN khung (`.foot`, lop
+    tuyet doi trong dai bi cat) — Ong Chu: *"chuyển xuống footer luôn, ko ảnh hưởng chất lượng"*."""
     html = _slide_html()
-    assert "5 phút đọc" not in html and "Phân tích" not in html
-    assert '<div class="folio">' not in html and '<div class="byline">' not in html
-    assert render_edu.folio("dcgr.tech", 1, 7) == ""
-    assert render_edu.byline_html(SPEC["slides"][0]) == ""
+    assert '<div class="folio">' not in html and render_edu.folio("dcgr.tech", 1, 7) == ""
+    assert '<div class="foot">' in html
+    for phan in SPEC["slides"][0]["byline"]:
+        assert phan in html, phan
+    assert render_edu.byline_html(SPEC["slides"][0]) == ""   # khong con trong cot chu
 
 
 def test_kite_text_column_inside_safe_zone():
@@ -103,6 +104,8 @@ def test_kite_text_column_inside_safe_zone():
                                 "cot chu": (bao["mast_top"], bao["text_bottom"])},
                                render_edu.W, render_edu.H)
     assert not loi, f"{loi} (bao: {bao})"
+    # `.foot` la lop tuyet doi: no KHONG duoc day cot chu xuong.
+    assert bao["text_bottom"] <= safe_zone.bottom(render_edu.W, render_edu.H), bao
 
 
 def test_kite_gate_catches_slide_that_cannot_fit():

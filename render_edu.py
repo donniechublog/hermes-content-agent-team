@@ -351,6 +351,10 @@ BASE_CSS_TPL = """
   letter-spacing:2px;margin-bottom:14px;}
 .readmore-t{font-family:%(SERIF)s;font-style:italic;font-size:36px;font-weight:500;
   color:%(WHITE)s;line-height:1.3;}
+/* LOW-366: dong byline (ten kenh · chuyen muc · thoi luong doc) DUOI CHAN khung, trong dai bi
+   cat 1:1 (Ong Chu 23/09/2026: *"cái dòng byline đó chuyển xuống footer luôn, ko ảnh hưởng chất
+   lượng"*). Dat TUYET DOI nen khong an vao cot chu — cot chu van tron trong vung an toan. */
+.foot{position:absolute;left:80px;right:80px;bottom:52px;z-index:2;}
 /* folio pinned bottom */
 .folio{margin-top:auto;position:relative;z-index:2;}
 .folio-line{height:1px;background:%(LINE)s;margin-bottom:20px;}
@@ -376,7 +380,8 @@ window.__fitSafe = function (top_limit, bottom_limit) {
   if (!art) return null;
   // Day cot chu: khoi chu cuoi cung cua slide (nen va anh la lop tuyet doi, khong tinh).
   const cot = () => [...art.children]
-    .filter(e => !e.classList.contains('figwrap') && !e.classList.contains('glow'))
+    .filter(e => !e.classList.contains('figwrap') && !e.classList.contains('glow')
+                 && !e.classList.contains('foot'))
     .reduce((m, e) => Math.max(m, e.getBoundingClientRect().bottom), 0);
   const over = () => cot() - bottom_limit;
   const bao = (factor) => ({factor: factor, over: over(),
@@ -852,12 +857,23 @@ def s_cover(sl, th):
 
 
 def byline_html(sl):
-    """DA BO khoi bia (LOW-366, Ong Chu 23/09/2026): *"'@dcgr.tech … 5 phút đọc' là thông tin ko
-    bắt buộc phải có trong nội dung ig, có thể lược phần đó mà ko cần phải lo gì cả"*. Ten kenh
-    da hien ngay tren bai Instagram, con dong folio thi bo cung dot nay (xem `folio`).
-
-    `sl["byline"]` van la truong hop le cua spec (vai cu viet), chi khong ve ra nua."""
+    """Dong byline KHONG con trong cot chu (LOW-366) — xem `byline_footer`."""
     return ""
+
+
+def byline_footer(sl):
+    """Dong byline dat duoi CHAN khung, trong dai bi cat 1:1 (Ong Chu 23/09/2026: *"cái dòng
+    byline đó chuyển xuống footer luôn, ko ảnh hưởng chất lượng"*). Tuyet doi nen khong day cot
+    chu; dang IG cat mat cung khong sao, xem 4:5 day du thi van co."""
+    by = sl.get("byline") or []
+    if not by:
+        return ""
+    bits = []
+    for i, b in enumerate(by):
+        if i:
+            bits.append('<span class="dot"></span>')
+        bits.append(f'<span class="{"b0" if i == 0 else ""}">{esc(b)}</span>')
+    return f'<div class="foot"><div class="byline">{"".join(bits)}</div></div>' 
 
 
 def _cover_image(sl, th):
@@ -1488,8 +1504,10 @@ def slide_read(sl, idx, total, brand, section, folio_left, font_css, th):
     # slide cta đã có follow (vd "Theo dõi @donniechublog") thì header bỏ chữ,
     # chỉ giữ hairline — tránh nhắc nhận diện kênh 2 lần trên cùng một slide.
     bare = kind == "cta" and bool(sl.get("follow"))
-    inner = masthead(brand, section, bare=bare) + body + folio(fol_left, idx, total)
-    # `.folio` da bo (LOW-366) — day cot chu gio la khoi chu cuoi cung cua `body`.
+    inner = (masthead(brand, section, bare=bare) + body + folio(fol_left, idx, total)
+             + byline_footer(sl))
+    # `.folio` da bo (LOW-366) — day cot chu gio la khoi chu cuoi cung cua `body`; `.foot` la
+    # lop tuyet doi duoi chan khung nen khong tinh vao cot chu.
     return (f'<!doctype html><html><head><meta charset="utf-8"><style>'
             f'{font_css}{base_css(th)}'
             # SVG nao KHONG dat `height` thi trinh duyet noi suy chieu cao tu
