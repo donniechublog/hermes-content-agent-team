@@ -111,19 +111,19 @@ def test_ca_nhieu_bang_doc_lap_van_du_tu_cach_qua_on_topic():
         assert xh.source_proves_story(ds[ma]) is True, ma
 
 
-def test_tin_openrouter_van_chup_duoc_bang_openrouter():
-    """Khong duoc chan oan: hai bai kia DUNG la tin luot dung OpenRouter."""
+def test_tin_luot_dung_gio_khong_con_nguon_nao():
+    """LOW-389 (23/09/2026): openrouter ra khoi duong ANH han — Ong Chu bo no tu
+    LOW-185 nhung luc do chi go o `scan_models`. Cai gia da biet truoc: hai tin
+    luot dung nay tu nay ra THE CHU."""
     for td in (TD_FLASH, TD_PRO):
-        ds = {n["id"]: n for n in xh.suggest_sources(td, "", "", "")}
-        assert xh.source_proves_story(ds["openrouter"]) is True, td
+        assert "openrouter" not in {n["id"] for n in xh.suggest_sources(td, "", "", "")}
+        assert [n["id"] for n in xh.suggest_sources(td, "", "", "")
+                if xh.source_proves_story(n)] == [], td
 
 
-def test_tin_tha_trong_so_khong_duoc_lay_bang_luot_dung():
-    """Bang LLM Rankings do thi phan token — khong do luot tai, khong do trending."""
-    ds = {n["id"]: n for n in xh.suggest_sources(TD_HF, "", "", "")}
-    assert ds["openrouter"]["mentioned"] is False
-    assert ds["openrouter"]["on_topic"] is False
-    assert xh.source_proves_story(ds["openrouter"]) is False
+def test_tin_tha_trong_so_khong_duoc_lay_bang_nao():
+    """Bai hoc goc (LOW-179): tin tha trong so tung ra anh bang LUOT DUNG. Gio bang
+    do khong con, va khong bang arena nao du tu cach — dung ra the chu."""
     assert [n["id"] for n in xh.suggest_sources(TD_HF, "", "", "")
             if xh.source_proves_story(n)] == []
 
@@ -131,8 +131,9 @@ def test_tin_tha_trong_so_khong_duoc_lay_bang_luot_dung():
 def test_on_topic_doc_o_tieu_de_khong_doc_than_bai():
     """Bai hoc LOW-22: than bai lam moi nguon trong nhu duoc nhac."""
     ds = {n["id"]: n for n in xh.suggest_sources(
-        TD_HF, "", "", "Bang xep hang openrouter cho thay luot dung tang manh.")}
-    assert ds["openrouter"]["on_topic"] is False
+        TD_HF, "", "", "Bang text-to-image arena cho thay diem tang manh.")}
+    assert ds["arena-t2i"]["on_topic"] is False
+    assert ds["arena-t2i"]["mentioned"] is False
 
 
 def test_loc_nguon_noi_ra_da_bo_bao_nhieu():

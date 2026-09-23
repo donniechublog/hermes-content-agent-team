@@ -175,7 +175,7 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
                     models, ds, wd / state_paths.ORIGINAL_DIR, _brand_of(meta),
                     ranking.extract_rank(title, models[0]) or ranking.extract_rank(nguon.get("title_en") or "", models[0]),
                     in_log=lambda t: print(t, file=sys.stderr), phien_browser=phien,
-                    arena_checked=True, source_url=link)
+                    arena_checked=True, source_url=link, title=tieu_de_xh)
             except Exception as e:                           # noqa: BLE001
                 print(f"[xep_hang] HONG: {type(e).__name__}: {e} — di tiep khong co anh XH",
                       file=sys.stderr)

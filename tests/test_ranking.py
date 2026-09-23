@@ -156,7 +156,12 @@ def test_size_copy_real_gpt_image_2_5_take_all_two_board():
             da_chup_thuong = True
     assert "arena-image-edit" in thu and "arena-t2i" in thu, thu
     # Tin CHI ve mot nang luc (code) thi khong duoc keo them nguon thuong khac
-    ds2 = xh.suggest_sources("Kimi-K3 leo len #1 Frontend Code Arena", "", "", "")
+    # LOC nhu production: `find_and_capture_many` chay `_sources_proving_story`
+    # TRUOC vong lap. Truoc LOW-389 vong nay vo tinh dung vi cac nguon khong du tu
+    # cach (swebench, aider...) la nguon "thuong" nen bi `_skip_source` chan — gio
+    # registry chi con arena, phai loc dung cho moi con nghia.
+    ds2 = [n for n in xh.suggest_sources("Kimi-K3 leo len #1 Frontend Code Arena", "", "", "")
+           if xh.source_proves_story(n)]
     da_chup_thuong2 = False
     thu2 = []
     for n in ds2[:6]:

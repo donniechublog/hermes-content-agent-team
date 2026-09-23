@@ -84,14 +84,16 @@ def test_fallback_card_names_the_board_from_the_title():
     """The du phong 23/09 ghi ARTIFICIALANALYSIS vi LINK bai tro toi do, trong khi
     tieu de (va hook) noi LiveBench."""
     ds = ranking.suggest_sources(TITLE, link="https://artificialanalysis.ai/leaderboards/models")
-    card_name, source = ranking._card_fields(ranking.extract_model(TITLE), ds)
-    assert source["id"] == "livebench", f"the van ghi bang {source['id']}"
+    card_name, source = ranking._card_fields(ranking.extract_model(TITLE), ds, TITLE)
+    # Tu LOW-389 livebench khong con la nguon ANH, nhung van la nguon SU THAT —
+    # the phai goi dung ten bang bai noi toi, doc tu `model_boards`.
+    assert source["site"] == "LIVEBENCH.AI", f"the van ghi bang {source['site']}"
     assert card_name == "Claude Opus 5.5", "the in nguyen slug"
 
 
 def test_fallback_card_keeps_a_source_when_the_title_names_none():
     ds = ranking.suggest_sources("Kimi-K3 leo lên #1", link="")
-    card_name, source = ranking._card_fields(["Kimi-K3"], ds)
+    card_name, source = ranking._card_fields(["Kimi-K3"], ds, "Kimi-K3 leo lên #1")
     assert source and source.get("site") and source.get("board"), "khong duoc rong khi tieu de khong goi ten bang"
     assert card_name == "Kimi-K3"
 

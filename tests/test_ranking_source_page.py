@@ -24,10 +24,17 @@ import ranking  # noqa: E402
 
 # Bon `link goc` THAT, lay tu brief.md cua cac bai da roi ve the chu tren may chu.
 BOARD_PAGES = [
+    "https://arena.ai/leaderboard/code/webdev",
+    "https://arena.ai/leaderboard/text",
+]
+# Tu LOW-389 (Ong Chu 23/09): anh CHI lay tu arena.ai, cac benchmark site con lai
+# la nguon SU THAT. Ba trang AA duoi day tung mo duoc nac nay trong nua ngay
+# 23/09 — gio phai bi tu choi.
+NOT_IMAGE_SOURCE = [
     "https://artificialanalysis.ai/leaderboards/models",
     "https://artificialanalysis.ai/text-to-speech",
     "https://artificialanalysis.ai/speech-to-text",
-    "https://arena.ai/leaderboard/code/webdev",
+    "https://www.tbench.ai/leaderboard",
 ]
 ARTICLE_PAGES = [
     "https://techcrunch.com/2026/09/11/kimi-maker-moonshot-ai-targets-2-billion-in-annual-revenue/",
@@ -41,15 +48,15 @@ ARTICLE_PAGES = [
 def test_only_a_board_page_opens_the_new_rung():
     for url in BOARD_PAGES:
         assert ranking.source_page_is_board(url), url
-    for url in ARTICLE_PAGES:
-        assert not ranking.source_page_is_board(url), f"{url} khong phai trang bang"
+    for url in ARTICLE_PAGES + NOT_IMAGE_SOURCE:
+        assert not ranking.source_page_is_board(url), f"{url} khong duoc mo nac chup"
 
 
-def test_three_of_those_boards_have_no_entry_in_the_registry():
-    """Ly do nac nay ton tai: vong di nguon khong bao gio toi duoc cac bang do."""
+def test_arena_has_board_pages_the_registry_does_not_list():
+    """Ly do nac nay van ton tai sau LOW-389: arena co trang bang khong khai rieng
+    trong registry — bai dan thang toi do thi vong di nguon khong cham toi."""
     urls = {n["url"] for n in ranking.SOURCE}
-    ngoai = [u for u in BOARD_PAGES if u not in urls]
-    assert len(ngoai) == 3, ngoai
+    assert "https://arena.ai/leaderboard/code/webdev" not in urls
 
 
 def test_it_only_grabs_a_real_table_or_chart():
