@@ -353,7 +353,7 @@ def main() -> int:
         if n_truoc != len(cands):
             print(f"[tim them] bo {n_truoc - len(cands)} ung vien trung URL da co", file=sys.stderr)
         cands.sort(key=lambda c: -c.get("score", 0))
-        bo_sung = download_and_filter(cands, wd2) if cands else []
+        bo_sung = download_and_filter(cands, wd2, da_giu=m["images"]) if cands else []
         print(f"[tim them] tai + loc: {len(bo_sung)} anh giu lai / {len(cands)} ung vien "
               f"({time.time() - t0:.0f}s)", file=sys.stderr)
         moi = say_image_new(m, bo_sung, wd, tieu_de)

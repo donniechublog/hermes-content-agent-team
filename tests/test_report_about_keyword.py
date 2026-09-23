@@ -140,7 +140,7 @@ def test_rank_empty_then_find_report_by_keyword_scan_image():
         ung_vien = {"image_url": "https://x/photo.jpg", "alt": "", "og": False, "source": "browser",
                    "page_url": "https://baomoi.example/moonshot", "w": 1600, "h": 1000, "score": 45}
 
-        def tai_va_loc_gia(cands, wd2):
+        def tai_va_loc_gia(cands, wd2, da_giu=()):
             ra = []
             for i, c in enumerate(cands, 1):
                 tam = wd2 / f"A{i}.png"

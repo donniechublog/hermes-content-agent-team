@@ -44,7 +44,7 @@ def test_cands_ok_sort_by_score_decrease_guide_before_when_download():
 
     goi = {}
 
-    def tai_va_loc_gia(cands, wd):
+    def tai_va_loc_gia(cands, wd, da_giu=()):
         goi["thu_tu_diem"] = [c["score"] for c in cands]
         return []
 
@@ -98,7 +98,7 @@ def test_new_rank_has_it_most_one_image_before_when_rank_which_ok_extra():
     def bao_thuong_hieu_rong_gia(h, wd, phien=None):
         return cands_theo_hang.get(h["key"], [])
 
-    def tai_va_loc_gia(cands, wd):
+    def tai_va_loc_gia(cands, wd, da_giu=()):
         wd.mkdir(parents=True, exist_ok=True)
         ra = []
         for i, c in enumerate(cands):

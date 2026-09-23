@@ -113,9 +113,35 @@ def _provenance_of(c: dict) -> str:
             "arxiv_figure": "arxiv_figure"}.get(str(c.get("source") or ""), "engine_download")
 
 
-def download_and_filter(cands: list, wd: Path) -> list:
+def kept_hashes(anh) -> list:
+    """(dhash, nguong, duong dan) cua nhung anh DA GIU o cac vong TRUOC.
+
+    LOW-337 (23/09/2026): `da_tai` chi song trong MOT lan goi `download_and_filter`,
+    nen anh trung chi bi khu trong CUNG mot vong. Bai Pentagon 23/09: cung mot anh
+    hien truong bi bo o vong 1 ("lech 0 bit", inkl.com) lai duoc vong [bao thuc the]
+    tai ve lan hai thanh A21, roi ca A2 lan A21 vao bo ep cua Kite — cong LOW-284
+    chan, cong ep doi, vai khong con duong nop."""
+    ra = []
+    rules = role.active_rules()
+    for a in anh or []:
+        p = (a or {}).get("original_path")
+        if not p:
+            continue
+        try:
+            im = Image.open(p).convert("RGB")
+            ra.append((rules.dhash(im), rules.dhash_threshold_for(im), p))
+        except Exception as e:                               # noqa: BLE001
+            print(f"[tai] khong doc duoc anh da giu {str(p)[-50:]}: {type(e).__name__}: {e!r}",
+                  file=sys.stderr)
+    return ra
+
+
+def download_and_filter(cands: list, wd: Path, da_giu=()) -> list:
     """Tai ung vien theo thu tu diem, loai trung (md5) va anh be, luu PNG co dau
     xuat xu. Tra ve danh sach anh da tai [{id, original_path, ...}].
+
+    `da_giu`: anh cac VONG TRUOC da giu (LOW-337) — ung vien trung gan giong mot
+    trong so do bi bo ngay, khong them mot ban nua vao bo.
 
     Pha 1 (song song, ThreadPoolExecutor): tai TRUOC toan bo bytes cho tung ung
     vien — moi tai la mot HTTP GET doc lap, khong quyet dinh gi ve loc/dedup.
@@ -134,6 +160,7 @@ def download_and_filter(cands: list, wd: Path) -> list:
     with ThreadPoolExecutor(max_workers=env_load.quantity(6)) as ex:
         tai_truoc = list(ex.map(_download_candidate, ung_vien))
     da_tai = []                       # [(dhash, im, c, data_len)] — de khu trung gan giong
+    da_giu_h = kept_hashes(da_giu)    # LOW-337: hash anh vong TRUOC, chi de BO ban moi
     for i_uv, (c, (data, loi)) in enumerate(zip(ung_vien, tai_truoc)):
         if len(da_tai) >= MAX_IMAGE + 4:
             # LOW-225: truoc day cac ung vien con lai bi bo IM LANG — ghi lai.
@@ -196,6 +223,18 @@ def download_and_filter(cands: list, wd: Path) -> list:
             # phai IN RA: cac nhanh loai bo khac quanh day deu co dong stderr,
             # rieng nhanh nay truoc 06/09/2026 bo im lang.
             ng = rules.dhash_threshold_for(im)
+            # Vong TRUOC da giu ban nay roi (LOW-337): bo ban moi, khong so lon/nho —
+            # anh cu da qua vision, da co ma A?, doi no ra chi lam lech ma khap noi.
+            cu = next((t for t in da_giu_h
+                       if rules.is_near_duplicate(h, t[0], min(ng, t[1]))), None)
+            if cu is not None:
+                print(f"[tai] bo ban moi vi trung anh vong truoc: "
+                      f"{str(c.get('image_url'))[:60]}", file=sys.stderr)
+                decision_log.drop_candidate(
+                    wd, c, "near_duplicate", "dhash_kept_earlier",
+                    f"lech {bin(h ^ cu[0]).count('1')} bit, nguong {min(ng, cu[1])}, "
+                    f"trung anh vong truoc {str(cu[2])[-60:]}", im=im)
+                continue
             trung = next((k for k, (h2, im2, _, _) in enumerate(da_tai)
                           if rules.is_near_duplicate(h, h2, rules.dhash_threshold_for(im2, ng))), None)
             if trung is not None:

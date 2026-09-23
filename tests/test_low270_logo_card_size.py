@@ -92,7 +92,7 @@ def test_round_brand_small_logo_gets_no_priority_bonus():
     def run(small):
         seen = {}
 
-        def download(cands, wd):
+        def download(cands, wd, da_giu=()):
             seen["kinds"] = [c["brand_match"]["kind"] for c in cands]
             return []
         with tempfile.TemporaryDirectory() as d, \

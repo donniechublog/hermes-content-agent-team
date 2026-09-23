@@ -51,7 +51,7 @@ def test_round_brand_anh_da_loai_khong_chiem_tran():
                                            "kind": "person", "person": "Dario Amodei"}}
              for i in range(3)]
 
-    def tai_va_loc_gia(cands, wd):
+    def tai_va_loc_gia(cands, wd, da_giu=()):
         wd.mkdir(parents=True, exist_ok=True)
         ra = []
         for i, c in enumerate(cands):
@@ -93,7 +93,7 @@ def test_round_brand_van_dung_o_tran_khi_anh_con_giu_da_du():
              "brand_match": {"company": "Anthropic", "key": "anthropic", "kind": "person",
                              "person": "Dario Amodei"}}]
 
-    def tai_va_loc_gia(cands, wd):
+    def tai_va_loc_gia(cands, wd, da_giu=()):
         wd.mkdir(parents=True, exist_ok=True)
         p = wd / "tai.png"
         p.write_bytes(b"\x89PNG\r\n")
