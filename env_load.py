@@ -154,6 +154,28 @@ def hermes_homes() -> dict:
             "dcgr": Path.home() / ".hermes-dcgr"}
 
 
+def current_brand() -> str:
+    """Brand ma tien trinh nay DANG chay cho ('blog'|'dcgr'), "" neu khong xac
+    dinh duoc.
+
+    Thu tu: CT_BRAND (systemd/cron/gateway dat san), roi suy nguoc tu
+    HERMES_HOME — co service chi dat HERMES_HOME chu khong dat CT_BRAND
+    (`hermes-dashboard-<brand>.service`).
+
+    KHONG doan bua mot brand nao khi ca hai deu thieu. Ong Chu 23/09/2026: *"mac
+    dinh ko phai la donniechublog, cung ko phai dcgr.tech — goi role Bob o org
+    nao thi di theo org do"*. Dang nham brand la loi khong ai thay cho toi khi
+    da dang; nguoi goi phai tu quyet, khong de ham nay chon ho."""
+    b = _brand()
+    if b:
+        return b
+    home = hermes_home()
+    for ten, p in hermes_homes().items():
+        if home == p:
+            return ten
+    return ""
+
+
 def topics(brand: str = None) -> dict:
     """Anh xa ten vai -> thread_id cua brand; rong neu tep thieu hoac hong.
     `brand`: xem `state_dir`."""

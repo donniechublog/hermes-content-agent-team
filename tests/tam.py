@@ -91,6 +91,14 @@ def chay_tat_ca(ns: dict) -> None:
         except AssertionError as e:
             hong += 1
             print(f"FAIL {h.__name__}: {e}")
+        except SystemExit as e:
+            # `SystemExit` la BaseException, KHONG phai Exception — khong bat o
+            # day thi mot `sys.exit()` trong ma dang test giet CA tep test ma
+            # khong in mot dong nao: run.sh chi hien "HONG (ma 1)" tron, va
+            # nguoi doc khong co manh moi nao. Da mat mot buoi vi dung cai bay
+            # nay (23/09/2026, bob_submit dung khi khong biet brand).
+            hong += 1
+            print(f"ERR  {h.__name__}: SystemExit: {e}")
         except Exception as e:                               # noqa: BLE001
             hong += 1
             dong = traceback.extract_tb(e.__traceback__)[-1]
