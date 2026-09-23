@@ -999,6 +999,19 @@ def capture_logo(page, out: Path):
 BOARD_PICK = ["table", "figure", "svg", "canvas"]
 
 
+# Boc phan tu can chup vao mot <div> cat san chieu cao. Tra ve de goi tu Python:
+# `max-height` tren chinh <table> khong co tac dung (xem chu thich noi goi).
+JS_CROP = """
+(e, h) => {
+  const w = document.createElement('div');
+  w.setAttribute('data-xh-crop', '1');
+  w.style.cssText = 'max-height:' + h + 'px;overflow:hidden;width:max-content;background:#fff';
+  e.parentNode.insertBefore(w, e);
+  w.appendChild(e);
+}
+"""
+
+
 def source_page_is_board(url: str) -> bool:
     """Hàm THUẦN: `link gốc` của bài có phải một trang BẢNG XẾP HẠNG không?
 
@@ -1057,18 +1070,24 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
         # khong vai nao dung duoc o kho 4:5, va nang vo ich. Be ngang thi KHONG
         # duoc cham (luat Ong Chu 04/09: be ngang cua bang LA noi dung); chieu cao
         # cat o `HEIGHT_MAX_CSS` nghia la giu phan DAU bang — dung thu can xem.
-        el.evaluate("(e, h) => { e.style.maxHeight = h + 'px'; e.style.overflow = 'hidden'; }",
-                    HEIGHT_MAX_CSS)
+        #
+        # Phai BOC element vao mot <div> roi cat cai div: `max-height` dat thang
+        # len chinh <table> thi trinh duyet BO QUA (CSS khong ap max-height cho
+        # display:table) — do 23/09: dat xong van ra dung 29920px.
+        el.evaluate(JS_CROP, HEIGHT_MAX_CSS)
+        khung = pg.query_selector("[data-xh-crop]") or el
         try:
-            el.scroll_into_view_if_needed(timeout=8000)
+            khung.scroll_into_view_if_needed(timeout=8000)
         except Exception:                                    # noqa: BLE001
             # artificialanalysis /text-to-speech: bang nam trong khung cuon rieng,
             # `scroll_into_view_if_needed` het 30s ma khong bao gio "on dinh".
             in_log("[xep_hang] trang nguồn: cuộn tới bảng hụt, thử scrollIntoView thẳng")
-            el.evaluate("e => e.scrollIntoView({block: 'start'})")
+            khung.evaluate("e => e.scrollIntoView({block: 'start'})")
         pg.wait_for_timeout(400)
         out.parent.mkdir(parents=True, exist_ok=True)
-        el.screenshot(path=str(out))
+        # `animations=disabled`: trang bang hay co hieu ung chay so/thanh do, playwright
+        # doi chung "on dinh" tron 30s roi nem (mat /text-to-speech, do 23/09).
+        khung.screenshot(path=str(out), timeout=20000, animations="disabled")
         rong_that, mo_ta = role.active_rules().is_blank_image(Image.open(out).convert("RGB"))
         if rong_that:
             in_log(f"[xep_hang] trang nguồn: ảnh ra RỖNG ({mo_ta}) — bỏ")
