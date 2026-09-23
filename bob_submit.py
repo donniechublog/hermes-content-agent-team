@@ -108,34 +108,27 @@ def is_tweet(s: str) -> bool:
 def take_tweet_card(nguon: str, out_path: Path, a) -> str:
     """Link tweet -> thẻ tweet chữ TIẾNG VIỆT ra `out_path` (tweet_translate).
 
-    Chưa có bản dịch thì IN NGUYÊN VĂN rồi dừng: đó là lượt một của Bob, không
-    phải lỗi. Bob đọc, dịch, chạy lại cùng lệnh kèm `--vi-file`.
+    Không đưa bản dịch thì MÁY DỊCH bằng Grok (`env_load.TRANSLATE_MODEL`) — Bob
+    chỉ cần một lượt. Bản dịch máy in ra stderr; không ưng thì chạy lại kèm
+    `--vi "<bản của mình>"`, nó thắng tuyệt đối.
     """
-    if not (a.vi or a.vi_file):
-        source = tweet_translate.render(nguon, None, None, theme=a.theme, lang=a.lang)
-        print("--- NGUYÊN VĂN TWEET (dịch rồi chạy lại với --vi-file) ---")
-        print(source[0])
-        if len(source) > 1:
-            print("\n--- TWEET ĐƯỢC QUOTE BÊN TRONG (cũng nằm trong ảnh) ---")
-            print("\n\n".join(source[1:]))
-        print("\nBọc <hl>…</hl> quanh cụm cần nhấn màu. Quote thì --quote-vi-file "
-              "để dịch, hoặc --hide-quote để bỏ hẳn.")
-        sys.exit(0)
-
-    vi = tweet_translate.read_vi(a.vi, a.vi_file, a.bo_qua_dau, "tweet chính")
+    tu_dich = None if (a.vi or a.vi_file) else (a.model or True)
+    vi = (tweet_translate.read_vi(a.vi, a.vi_file, a.bo_qua_dau, "tweet chính")
+          if (a.vi or a.vi_file) else None)
     quote_vi = (tweet_translate.read_vi(a.quote_vi, a.quote_vi_file, a.bo_qua_dau, "quote")
                 if (a.quote_vi or a.quote_vi_file) else None)
     source = tweet_translate.render(nguon, vi, out_path, theme=a.theme, lang=a.lang,
                                     clean=a.clean, quote_vi=quote_vi,
-                                    hide_quote=a.hide_quote, hl_color=a.hl_color)
-    # Cùng cổng chặn như tweet_translate chạy riêng: tweet có quote mà không dịch,
-    # không ẩn thì ảnh lẫn nguyên một khối tiếng Anh — và ở đây nó sẽ đi thẳng
-    # qua bước đóng khung rồi lên Telegram.
-    if len(source) > 1 and quote_vi is None and not a.hide_quote:
+                                    hide_quote=a.hide_quote, hl_color=a.hl_color,
+                                    auto=tu_dich)
+    # Chỉ còn cho trường hợp NGƯỜI đưa bản dịch: tweet có quote mà không dịch,
+    # không ẩn thì ảnh lẫn nguyên một khối tiếng Anh — và ở đây nó đi thẳng qua
+    # bước đóng khung rồi lên Telegram. Máy dịch thì quote đã được dịch.
+    if len(source) > 1 and quote_vi is None and not a.hide_quote and not tu_dich:
         out_path.unlink(missing_ok=True)
         sys.exit("[LOI] tweet có QUOTE lồng bên trong, chữ tiếng Anh của nó sẽ nằm "
                  f"trong ảnh:\n  {source[1][:160]!r}\n"
-                 "  Dịch bằng --quote-vi-file, hoặc bỏ hẳn bằng --hide-quote.")
+                 "  Dịch bằng --quote-vi, hoặc bỏ hẳn bằng --hide-quote.")
     return "thẻ tweet dịch tiếng Việt (tweet_translate.py)"
 
 
@@ -234,6 +227,8 @@ def main() -> int:
                     help="Thẻ tweet sạch hơn: bỏ nút Theo dõi và icon ⓘ")
     ap.add_argument("--bo-qua-dau", action="store_true",
                     help="Bỏ qua cổng chặn chữ Việt mất dấu")
+    ap.add_argument("--model", help="Model dịch tweet (mặc định "
+                                    f"{tweet_translate.env_load.TRANSLATE_MODEL})")
     ap.add_argument("--tweet-image", action="store_true",
                     help="Link tweet: lấy ẢNH TRONG tweet như trước, không dịch thẻ")
     a = ap.parse_args()

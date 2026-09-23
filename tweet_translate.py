@@ -21,13 +21,17 @@ Gin/Itachi, không phải của script này.
 Khung chụp là khung MOBILE dùng chung của đội (`browser_session.MOBILE_*`,
 414px × DPR 3 = 1242px) — cùng một bản với `capture_page`, không chép số riêng.
 
-Hai bước:
+Một lệnh, MÁY DỊCH bằng Grok (`env_load.TRANSLATE_MODEL`):
 
-    venv/bin/python tweet_translate.py "<link>" --brief
-    venv/bin/python tweet_translate.py "<link>" --vi-file vi.txt --out tweet.png
+    venv/bin/python tweet_translate.py "<link>" --out tweet.png
 
-`--brief` in ra nguyên văn tweet để người dịch chép — chính chữ trong thẻ, nên
-không phải gọi crawl-queue (10–40s/lượt) chỉ để lấy lại đúng đoạn đang hiển thị.
+Bản dịch máy in ra stderr để người duyệt. Muốn bản của mình thì `--vi`, nó
+thắng tuyệt đối; `--brief` chỉ in nguyên văn tweet rồi dừng.
+
+Vì sao Grok: Ông Chủ 23/09/2026 — *"hiểu twitter nhất chắc chắn là grok"*. Đo
+thật cùng ngày trên một tweet đầy tiếng lóng, các bản rẻ hơn đều hỏng theo cách
+riêng (grok-3 bỏ nguyên hai dòng không dịch, grok-4 gộp đoạn); số đo trong
+`env_load.TRANSLATE_MODEL`.
 
 Mặc định thẻ ra đã được tỉa: bỏ cả hàng trái tim / "Trả lời" / "Sao chép liên
 kết đến bài đăng" lẫn khối "Đọc N trả lời" — ảnh đăng lên kênh mình thì không
@@ -48,13 +52,18 @@ cùng một màu (Ông Chủ 23/09/2026); `--hl-color` ép một màu cụ thể
 import argparse
 import contextlib
 import html
+import json
+import os
 import re
 import sys
+import time
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
+import env_load                                              # noqa: E402
 import image_provenance                                      # noqa: E402
 import vietnamese                                            # noqa: E402
 from browser_session import (MOBILE_DPR, MOBILE_UA,          # noqa: E402
@@ -232,6 +241,65 @@ def embed_url(tid: str, theme: str, lang: str) -> str:
             f"&conversation=none&hideThread=true")
 
 
+# Dịch tự động bằng Grok (`env_load.TRANSLATE_MODEL`). Ông Chủ 23/09/2026: *"hiểu
+# twitter nhất chắc chắn là grok"* — tweet đầy tiếng lóng, viết tắt và ẩn ý của
+# giới công nghệ, thứ mà một model dịch chung hay dịch phẳng ra hoặc bỏ qua.
+TRANSLATE_TIMEOUT = 180
+PROMPT_TRANSLATE = """Dịch tweet sau sang tiếng Việt, cho người Việt đọc tin công nghệ.
+
+LUẬT:
+- Dịch HẾT. Không để lại câu nào bằng tiếng Anh, kể cả câu đùa hay khẩu hiệu cuối bài.
+- Giữ NGUYÊN tên model, tên hãng, @handle, con số, mã kỹ thuật, tên benchmark.
+- Giữ ĐÚNG số đoạn và vị trí dòng trống của bản gốc.
+- Tiếng lóng thì dịch sang cách nói tương đương của người Việt, đừng dịch từng chữ.
+- Bọc <hl>…</hl> quanh ĐÚNG một hoặc hai cụm đáng nhấn nhất: con số đắt giá, hoặc cái mới. Không bọc cả câu.
+- Chỉ trả về bản dịch. Không giải thích, không thêm dấu ngoặc kép bao ngoài.
+"""
+# Thêm khi thẻ nhúng đã cắt mất phần đuôi: chữ dừng giữa chừng nên mẩu cuối là
+# một mảnh câu. Không dặn thì model dịch cả mảnh đó — đo thật 23/09/2026: tweet
+# cụt ở "The", bản dịch ra một dòng "Cái" lơ lửng nằm chình ình trong ảnh.
+PROMPT_CUT = ("- Tweet này BỊ CẮT giữa chừng. Bỏ hẳn mẩu câu dở dang ở cuối, "
+              "kết thúc ở câu hoàn chỉnh cuối cùng.\n")
+
+
+def translate(text: str, model=None, cut=False, verbose=True) -> str:
+    """Nguyên văn tweet -> bản dịch tiếng Việt có sẵn `<hl>`. Hỏng thì thoát,
+    KHÔNG trả về chữ tiếng Anh: ảnh "vietsub" mà còn nguyên tiếng Anh nhìn vẫn
+    "đẹp" nên rất dễ lọt tới bước đăng."""
+    env_load.load()
+    model = model or env_load.TRANSLATE_MODEL
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        sys.exit("Thiếu OPENAI_API_KEY (secret.common.env) — không gọi được router để dịch. "
+                 "Tự dịch rồi truyền qua --vi.")
+    if verbose:
+        print(f"[tweet_translate] dịch bằng {model}...", file=sys.stderr, flush=True)
+    prompt = PROMPT_TRANSLATE + (PROMPT_CUT if cut else "") + "\nTWEET:\n" + text
+    body = {"model": model, "max_tokens": 1500, "stream": False, "temperature": 0.3,
+            "messages": [{"role": "user", "content": prompt}]}
+    t0 = time.time()
+    try:
+        req = urllib.request.Request(
+            env_load.ROUTER_URL, data=json.dumps(body).encode(),
+            headers={"Content-Type": "application/json", "Authorization": "Bearer " + key})
+        raw = urllib.request.urlopen(req, timeout=TRANSLATE_TIMEOUT).read().decode().strip()
+        # 9router có lúc trả dạng SSE dù `stream: false` — cùng mẹo bóc như
+        # article_sources._ask_same_event.
+        if raw.startswith("data:"):
+            raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
+        vi = json.loads(raw)["choices"][0]["message"]["content"]
+    except Exception as e:                                   # noqa: BLE001
+        ma = getattr(e, "code", "") or ""
+        sys.exit(f"Dịch hỏng ({type(e).__name__}{f' {ma}' if ma else ''}) trên model "
+                 f"{model!r}. Tự dịch rồi truyền qua --vi.")
+    vi = (vi or "").strip().strip('"')
+    if not vi:
+        sys.exit(f"Model {model!r} trả về rỗng. Tự dịch rồi truyền qua --vi.")
+    if verbose:
+        print(f"[tweet_translate] dịch xong {time.time() - t0:.1f}s", file=sys.stderr)
+    return vi
+
+
 def pick_hl(tid: str, theme: str, chon=None) -> tuple:
     """(tên, mã màu) cho cụm được nhấn. `chon` = tên trong bảng hoặc mã `#rrggbb`."""
     bang = HL_LIGHT if theme == "light" else HL_DARK
@@ -272,7 +340,7 @@ def _card(page):
 
 
 def render(url: str, vi, out_path, theme="dark", lang="vi", clean=False,
-           quote_vi=None, hide_quote=False, hl_color=None, phien=None) -> list:
+           quote_vi=None, hide_quote=False, hl_color=None, auto=None, phien=None) -> list:
     """Mở thẻ nhúng của `url`, thay chữ bằng `vi` (None = giữ nguyên), chụp ra
     `out_path` (None = không chụp).
 
@@ -303,14 +371,27 @@ def render(url: str, vi, out_path, theme="dark", lang="vi", clean=False,
             # `conversation=none` bỏ được thread nhưng KHÔNG bỏ quote — quote là
             # một phần của chính tweet này.
             nodes = page.query_selector_all(SEL_TEXT)
-            source = []
+            source, da_cat = [], []
             for i, n in enumerate(nodes):
                 chu, bi_cat = cut_show_more(n.inner_text() or "")
                 source.append(chu)
+                da_cat.append(bi_cat)
                 if bi_cat:
                     print(f"[tweet_translate] CẢNH BÁO: {'tweet' if i == 0 else 'quote'} dài, "
                           f"thẻ nhúng chỉ trả {len(chu)} ký tự rồi cắt. Mở link đọc phần còn "
                           f"lại trước khi dịch — bản in ra CHƯA ĐỦ.", file=sys.stderr, flush=True)
+            # Tự dịch NGAY TRONG phiên trình duyệt này: `auto` (tên model, hoặc
+            # True để lấy mặc định). Dịch ở ngoài thì phải mở Chromium hai lượt,
+            # một lượt lấy chữ và một lượt dựng ảnh — 15-30s mỗi lượt.
+            if vi is None and auto:
+                model = None if auto is True else auto
+                vi = translate(source[0], model=model, cut=da_cat[0])
+                print("--- BẢN DỊCH MÁY (sửa được bằng --vi) ---\n"
+                      + strip_marks(vi) + "\n", file=sys.stderr)
+                if len(source) > 1 and not hide_quote and quote_vi is None:
+                    quote_vi = translate(source[1], model=model, cut=da_cat[1])
+                    print("--- BẢN DỊCH MÁY CHO QUOTE ---\n"
+                          + strip_marks(quote_vi) + "\n", file=sys.stderr)
             if vi is not None:
                 ten_mau, ma_mau = pick_hl(tid, theme, hl_color)
                 print(f"[tweet_translate] màu nhấn: {ten_mau} {ma_mau}"
@@ -393,6 +474,8 @@ def main():
     ap.add_argument("--hl-color",
                     help="Màu cụm <hl>: mã #rrggbb hoặc tên "
                          f"({', '.join(HL_DARK)}). Không đặt thì chọn theo id tweet.")
+    ap.add_argument("--model", help=f"Model dịch (mặc định {env_load.TRANSLATE_MODEL}). "
+                                    "Chỉ dùng khi KHÔNG truyền --vi.")
     ap.add_argument("--bo-qua-dau", action="store_true",
                     help="Bỏ qua cổng chặn chữ Việt mất dấu (bản dịch là tiếng Anh)")
     a = ap.parse_args()
@@ -407,24 +490,27 @@ def main():
 
     if not a.out:
         sys.exit("Thiếu --out (hoặc dùng --brief để chỉ đọc nguyên văn).")
-    if not (a.vi or a.vi_file):
-        sys.exit("Thiếu --vi / --vi-file. Chạy --brief trước để lấy nguyên văn tweet.")
 
-    vi = read_vi(a.vi, a.vi_file, a.bo_qua_dau, "tweet chính")
+    # Không đưa bản dịch thì MÁY DỊCH. `--vi` vẫn thắng tuyệt đối.
+    tu_dich = None if (a.vi or a.vi_file) else (a.model or True)
+    vi = (read_vi(a.vi, a.vi_file, a.bo_qua_dau, "tweet chính")
+          if (a.vi or a.vi_file) else None)
     quote_vi = (read_vi(a.quote_vi, a.quote_vi_file, a.bo_qua_dau, "quote")
                 if (a.quote_vi or a.quote_vi_file) else None)
     source = render(a.url, vi, a.out, theme=a.theme, lang=a.lang, clean=a.clean,
-                    quote_vi=quote_vi, hide_quote=a.hide_quote, hl_color=a.hl_color)
+                    quote_vi=quote_vi, hide_quote=a.hide_quote, hl_color=a.hl_color,
+                    auto=tu_dich)
     # Tweet có QUOTE mà không dịch, không ẩn => ảnh ra lẫn nguyên một khối tiếng
     # Anh, nhìn vẫn "đẹp" nên rất dễ lọt tới bước đăng. Chặn ở đây, và xoá luôn
     # tấm vừa chụp để không ai nhặt nhầm.
-    if len(source) > 1 and quote_vi is None and not a.hide_quote:
+    # Cổng này chỉ còn cho trường hợp NGƯỜI đưa bản dịch: máy dịch thì quote đã
+    # được dịch ngay trong render.
+    if len(source) > 1 and quote_vi is None and not a.hide_quote and not tu_dich:
         Path(a.out).unlink(missing_ok=True)
         sys.exit("Tweet này có QUOTE lồng bên trong, chữ tiếng Anh của nó sẽ nằm trong ảnh:\n"
                  f"  {source[1][:160]!r}\n"
                  "Dịch nó bằng --quote-vi-file, hoặc bỏ hẳn bằng --hide-quote.")
     print(f"gốc  : {source[0][:120]!r}", file=sys.stderr)
-    print(f"dịch : {strip_marks(vi)[:120]!r}", file=sys.stderr)
     print(a.out)
 
 

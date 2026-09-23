@@ -26,13 +26,15 @@ Ngoài lệnh trên không chạy gì khác: không `curl`, không tự gọi `g
 hay `image_frame.py` hay `publish.py`, không mở trình duyệt. Kết thúc task bằng dòng
 "Kết quả task" script in ra.
 
-## Link tweet thì bạn dịch, cùng một lệnh, hai lượt
+## Link tweet: máy dịch sẵn, bạn duyệt
 
 Với link tới một tweet, script không đi lấy tấm ảnh trong tweet nữa — nó dựng
-lại **cả thẻ tweet với chữ tiếng Việt**, rồi mới đóng khung như thường.
+lại **cả thẻ tweet với chữ tiếng Việt**, rồi mới đóng khung như thường. Vẫn
+đúng một lệnh như trên: Grok dịch, và bản dịch máy được in ra dưới dòng
+`--- BẢN DỊCH MÁY ---`.
 
-Lượt một, chạy đúng lệnh trên. Script in nguyên văn tweet rồi dừng — **đó không
-phải lỗi**, đó là lúc bạn dịch. Lượt hai, chạy lại cùng lệnh kèm bản dịch:
+**Đọc bản dịch đó trước khi gửi.** Không ưng thì chạy lại với bản của bạn, nó
+thắng tuyệt đối:
 
 ```bash
 cd /home/dc-group/content-team && venv/bin/python bob_submit.py "<link tweet>" --vi "<bản dịch>"
@@ -40,15 +42,15 @@ cd /home/dc-group/content-team && venv/bin/python bob_submit.py "<link tweet>" -
 
 Viết `\n` chỗ cần xuống dòng, và bọc `<hl>…</hl>` quanh cụm muốn nhấn màu.
 
-Dịch cho người Việt đọc, không dịch từng chữ: giữ nguyên tên model, tên hãng,
-con số và mã kỹ thuật; bỏ lối nói quảng cáo của bản gốc nếu tiếng Việt nghe
-sượng. **Nhấn một hoặc hai cụm thôi** — con số đắt giá, hoặc cái mới. Bôi cả
-câu thì không còn gì là nhấn.
+Khi tự viết: dịch cho người Việt đọc, không dịch từng chữ; giữ nguyên tên model,
+tên hãng, con số và mã kỹ thuật. **Nhấn một hoặc hai cụm thôi** — con số đắt
+giá, hoặc cái mới. Bôi cả câu thì không còn gì là nhấn.
 
 Ba tình huống script sẽ nói và bạn phải quyết, đừng chạy bừa:
 
-- **"tweet dài … cắt"**: thẻ nhúng chỉ giữ được đoạn đầu. Mở link đọc nốt phần
-  còn lại rồi hãy dịch, đừng dịch mỗi khúc script in ra.
+- **"tweet dài … cắt"**: thẻ nhúng chỉ giữ được đoạn đầu, nên bản dịch máy cũng
+  chỉ có chừng đó. Mở link đọc nốt phần còn lại; thiếu ý quan trọng thì tự viết
+  bản đầy đủ và đưa vào `--vi`.
 - **"có QUOTE lồng bên trong"**: tweet này trích một tweet khác, chữ tiếng Anh
   của nó sẽ nằm trong ảnh. Quote có ý thì dịch nó bằng `--quote-vi "<…>"`; chỉ
   là cái cớ dẫn vào thì `--hide-quote`. Đây là quyết định về nội dung, không
