@@ -311,7 +311,45 @@ def extract_rank(tieu_de: str, model: str):
     return ro if ro is not None else mo
 
 
-def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str = "") -> list:
+# Thu tu thu bang cho tin RA MAT: bang TONG HOP truoc (mot tam noi duoc nhieu nhat),
+# roi agentic/terminal, roi code. Nhieu hon 3 la cham ma noi cung mot y.
+RELEASE_BOARD_KEYS = ("intelligence", "tbench", "swebench")
+MAX_RELEASE_BOARD = 3
+
+
+def release_boards() -> list:
+    """Bang xep hang duoc phep lam ANH cho tin RA MAT model — doc tu `model_boards`.
+
+    Ong Chu 23/09/2026: *"voi model release thi bang nao cha dung? chi tin tuc lien quan
+    toi model thi ko uu tien dung bang thoi"*, va *"AA chi de tang tinh confirm la rule
+    trong role research, lien quan gi toi designer? hai vi tri khac nhau ma dung chung
+    rule, logic gi vay?"*.
+
+    LOW-389 (cung ngay) thu hep registry ANH ve arena va chep cau noi ve vai RESEARCH
+    vao day — do la lay luat cua vi tri nay ap cho vi tri kia. Nay tach lai: arena van
+    dung DAU cho moi tin (LOW-337 22/09), nhung tin RA MAT thi cac bang con lai duoc
+    chup TIEP sau arena, con tin thuong nhac toi model thi khong (LOW-389 giu nguyen).
+
+    `independent: True` de `find_and_capture_many` khong dung lai sau bang dau: moi bang
+    o day do MOT nang luc khac (tri tue tong hop / agent go lenh / sua bug that).
+    """
+    import model_boards
+    from urllib.parse import urlparse
+    ra = []
+    for khoa in RELEASE_BOARD_KEYS:
+        b = next((x for x in model_boards.BOARD if x.khoa == khoa), None)
+        if not b or not b.link:
+            continue
+        mien = (urlparse(b.link).netloc or "").replace("www.", "")
+        ra.append({"id": f"release:{b.khoa}", "site": mien.upper(),
+                   "board": b.tieu_de.split(" (")[0].strip(), "url": b.link,
+                   "domain_pattern": re.escape(mien), "release_board": True,
+                   "independent": True})
+    return ra[:MAX_RELEASE_BOARD]
+
+
+def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str = "",
+                    ra_mat: bool = False) -> list:
     """Xếp registry: nguồn được NHẮC (tiêu đề/link/via/chữ bài) trước, rồi theo chủ
     đề tin, rồi phần còn lại. Hàm này KHÔNG loại nguồn nào — nó chỉ xếp thứ tự;
     việc loại nằm ở `source_proves_story`, xem đó.
@@ -343,7 +381,9 @@ def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str =
     # khong bao gio no. Nguon co `board_pattern` thi phai KHOP bang moi la duoc nhac.
     nhac_bang = f"{tieu_de} {link} {via}".lower()
     diem, ra = {}, []
-    for i, n in enumerate(SOURCE):
+    # Tin RA MAT: cac bang ngoai arena duoc noi vao CUOI registry — arena van dung dau
+    # (diem `1000 - i` cao hon), nhung chup xong arena thi con bang de chup tiep.
+    for i, n in enumerate(list(SOURCE) + (release_boards() if ra_mat else [])):
         d = 1000 - i
         nhac = bool(re.search(n["domain_pattern"], goi, re.I))
         if nhac and n.get("board_pattern"):
@@ -1384,6 +1424,25 @@ ARGS_CAPTURE = ("--no-sandbox", "--disable-dev-shm-usage", "--force-color-profil
 _VERSION_TOKEN = re.compile(r"\d+(?:\.\d+)*")
 
 
+def _row_carries_variant(full_name: str, kq: dict) -> bool:
+    """Tên model của hàng khoanh có mang một BIẾN THỂ KHÁC không (Astra khi bài nói Sol).
+
+    Đo thật 23/09/2026, bài "GPT-6 Sol and Luna": bảng Terminal-Bench không có hàng Sol
+    nên engine tụt xuống tên lỏng "GPT-6" và khoanh **GPT-6 Astra** — một model khác của
+    cùng họ. `row_carries_version` (LOW-338) chỉ xét SỐ nên "6" khớp và nó lọt.
+
+    Chỉ xét Ô TÊN MODEL (`kq["model"]`), KHÔNG xét cả hàng: hàng còn có cột hãng
+    (OpenAI), cột agent (Codex)… — đọc cả hàng thì từ nào cũng thành "biến thể lạ".
+    Tên bảng ngắn hơn tên bài ("gpt-image-2.5" cho bài "GPT Image 2.5 Flare") KHÔNG bị
+    chặn: nó không mang tên biến thể nào khác, và số phiên bản đã có cổng riêng.
+    """
+    MUC = {"max", "high", "medium", "low", "xhigh", "none", "mini", "preview", "beta",
+           "base", "instruct", "chat", "thinking", "reasoning", "latest", "new"}
+    tu_bai = {w.lower() for w in re.split(r"[^A-Za-z]+", full_name or "") if len(w) >= 3}
+    tu_hang = {w.lower() for w in re.split(r"[^A-Za-z]+", str(kq.get("model") or "")) if len(w) >= 3}
+    return not (tu_hang - tu_bai - MUC)
+
+
 def row_carries_version(models: list, kq: dict) -> bool:
     """LOW-338: hàng khoanh được phải mang PHIÊN BẢN của bài.
 
@@ -1399,6 +1458,12 @@ def row_carries_version(models: list, kq: dict) -> bool:
     if not models or not kq:
         return True
     full_name = models[0]
+    # LOW-337 (23/09/2026): tên BIẾN THỂ cũng phải có trong hàng, không chỉ SỐ. Đo thật:
+    # bài "GPT-6 Sol and Luna", bảng Terminal-Bench không có hàng Sol nên engine tụt
+    # xuống tên lỏng "GPT-6" và khoanh **GPT-6 Astra** — đúng lỗi LOW-338 nhưng ở phần
+    # chữ. Lấy các từ chữ (≥3 ký tự) SAU từ đầu (họ model: GPT/Claude/Grok…).
+    if not _row_carries_variant(full_name, kq):
+        return False
     tokens = _VERSION_TOKEN.findall(full_name)
     if not tokens:
         return True
@@ -1557,8 +1622,14 @@ def source_proves_story(n: dict) -> bool:
     Hết nguồn đủ tư cách thì rơi về THẺ DỰ PHÒNG, không thay bằng bảng khác —
     thẻ là chữ engine tự in, `is_capture("card")` là False nên `needs_ranking_image`
     không ép vai dùng nó.
+
+    `release_board` (LOW-337, Ông Chủ 23/09/2026) là tư cách THỨ BA: tin RA MẮT model
+    thì mọi bảng đều nói đúng về chính model ấy — *"với model release thì bảng nào chả
+    dùng? chỉ tin tức liên quan tới model thì ko ưu tiên dùng bảng thôi"*. Các nguồn này
+    chỉ có mặt trong danh sách khi `suggest_sources(..., ra_mat=True)`, nên tin thường
+    KHÔNG đi qua nhánh này — LOW-179 giữ nguyên.
     """
-    return bool(n.get("mentioned") or n.get("on_topic"))
+    return bool(n.get("mentioned") or n.get("on_topic") or n.get("release_board"))
 
 
 def _sources_proving_story(nguon_ds: list, in_log) -> list:

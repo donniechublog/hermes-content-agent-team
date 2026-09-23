@@ -62,6 +62,65 @@ def _supplement_source(nguon: dict, nguon_path: Path, source_pages: list, link: 
     return source_pages
 
 
+MAX_BENCHMARK_PAGE = 4            # tran trang benchmark them vao cho MOT bai ra mat
+
+
+def _benchmark_pages(nguon: dict, nguon_path: Path, source_pages: list, tieu_de: str,
+                     category: str = "") -> list:
+    """Trang BENCHMARK cho tin RA MAT model — tim WEB, khong gioi han chi muc TIN.
+
+    Ong Chu 23/09/2026: *"nhung thong tin nhu nay ma ko dua vao noi thi ky nang research
+    con duoi ca intern"* (bang diem AA, bang gia, bieu do cost-per-task), roi *"nguon nao
+    cha duoc mien la ra benchmark chuan"*.
+
+    Do that tren bai "GPT-6 Sol and Luna": 9 nguon research deu la bai viet lai tin, vi
+    `other_outlets_bing`/`report_about_keyword` chi tra Bing News + Google News. Cac trang
+    CO bang/bieu do (kingy.ai, metricnexus, finout, artificialanalysis/comparisons) khong
+    nam trong chi muc tin nen khong bao gio xuat hien.
+
+    Chay TRUOC browser de browser ghe luon nhung trang nay va boc figure/table ra
+    (`prepare/browser.JS_FIG`). Chi cho tin RA MAT (story_type.is_model_release) —
+    tin thoi su co model la chu the khong doi bang (LOW-389).
+    """
+    import story_type
+    if not story_type.is_model_release(category, f"{tieu_de} {nguon.get('title_en') or ''}"):
+        return source_pages
+    import ranking
+    models = (ranking.extract_model(nguon.get("title_en") or "")
+              or ranking.extract_model(tieu_de) or [])
+    if not models:
+        print("[benchmark] tin ra mat nhung khong tach duoc ten model — bo qua", file=sys.stderr)
+        return source_pages
+    import time as _t
+
+    import article_sources
+    m = models[0]
+    truy_van = [f"{m} benchmark cost per task", f"{m} vs comparison table", f"{m} pricing benchmark"]
+    co = {t.get("url") for t in source_pages}
+    mien_co = {_domain(t.get("url", "")) for t in source_pages}
+    them_tong = []
+    for i, q in enumerate(truy_van):
+        if len(them_tong) >= MAX_BENCHMARK_PAGE:
+            break
+        if i:
+            _t.sleep(article_sources.WEB_SEARCH_SLEEP)       # DDG tra 202 khi hoi don
+        for t in article_sources.web_search(q, so=MAX_BENCHMARK_PAGE, bo_mien=tuple(mien_co)):
+            if t["url"] in co or _domain(t["url"]) in mien_co:
+                continue
+            co.add(t["url"])
+            mien_co.add(_domain(t["url"]))
+            them_tong.append(t)
+            nguon["pages"].append(t)
+            if len(them_tong) >= MAX_BENCHMARK_PAGE:
+                break
+    if them_tong:
+        _write_json(nguon_path, nguon)
+        source_pages = nguon["pages"]
+    print(f"[benchmark] tin ra mat {m!r}: +{len(them_tong)} trang benchmark "
+          f"({', '.join(_domain(t['url']) for t in them_tong) or 'khong co'})", file=sys.stderr)
+    return source_pages
+
+
 def _extra_announcement_page(nguon: dict, nguon_path: Path, source_pages: list, tieu_de: str,
                         tom_tat: str = "") -> list:
     """TRANG CONG BO CHINH CHU cua model trong tin (LOW-21, Ong Chu 11/09/2026:
@@ -149,6 +208,14 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
     # khi tin da la "tin xep hang" VA co browser — "xAI ra mat Grok 4.7" (is_ranking_story
     # False) khong bao gio toi duoc. Chi mang, khong browser. Ra anh -> bai thanh tin xep
     # hang: cong `needs_ranking_image` co san ep anh chinh/bia la XH o moi designer.
+    # Tin RA MAT model (LOW-337, Ong Chu 23/09/2026): moi bang deu dung duoc, va bang
+    # phai duoc chup KE CA khi da co anh @arena — bai "GPT-6 Sol and Luna" co @arena nen
+    # dung ngay o day, khong bang nao khac duoc thu, deck ra logo + chan dung.
+    ra_mat = story_type.is_model_release(meta.get("category"),
+                                         f"{title} {nguon.get('title_en') or ''}")
+    if ra_mat:
+        tin_xep_hang = True
+    arena = []
     if models:
         arena = ranking.arena_first(models, wd / state_paths.ORIGINAL_DIR,
                                     lambda t: print(t, file=sys.stderr),
@@ -157,10 +224,13 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
         if arena:
             print(f"[xep_hang] {len(arena)} anh tu X @arena cho {models[0]!r} — dung truoc moi nguon",
                   file=sys.stderr)
-            return arena, True
+            if not ra_mat:
+                return arena, True
+            print("[xep_hang] tin RA MAT: chup tiep cac bang khac sau @arena", file=sys.stderr)
     if not khong_browser and tin_xep_hang:
         if models:
-            ds = ranking.suggest_sources(tieu_de_xh, link, meta.get("via", ""), bp.get("article_text", ""))
+            ds = ranking.suggest_sources(tieu_de_xh, link, meta.get("via", ""),
+                                         bp.get("article_text", ""), ra_mat=ra_mat)
             print(f"[xep_hang] tin xep hang: model={models[0]!r}, thu {', '.join(n['id'] for n in ds[:4])}...",
                   file=sys.stderr)
             # BOC. `find_and_capture_many` import playwright va launch chromium NGOAI
@@ -182,7 +252,9 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
                 xhs = []
         else:
             print("[xep_hang] tin xep hang nhung khong tach duoc ten model tu tieu de", file=sys.stderr)
-    return xhs, tin_xep_hang
+    # @arena dung DAU, cac bang khac noi sau (LOW-337): thu tu nay di thang vao ma
+    # XH/XH2/XH3 nen bia van la tam @arena.
+    return (arena + xhs) if arena else xhs, tin_xep_hang
 
 
 def _image_item_ranking(i: int, xh: dict) -> dict:
@@ -599,7 +671,10 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     for c in cands:
         bm = c.get("brand_match") or {}
         if not bm.get("small_logo"):
-            c["score"] = c.get("score", 0) + story_type.score_by_type(category, bm.get("kind", "photo"))
+            # `tieu_de_nhin` di kem (LOW-337, 23/09/2026): tin RA MAT model xep chart/score
+            # cong bo TRUOC logo/founder, khac tin thoi su co model la chu the.
+            c["score"] = c.get("score", 0) + story_type.score_by_type(category, bm.get("kind", "photo"),
+                                                                      tieu_de_nhin)
     # `download_and_filter` tu ghi hop dong "tai ung vien THEO THU TU DIEM" — noi duy
     # nhat trong ca thang anh thuong hieu ma diem THAT SU khac nhau (anh noi/san
     # pham 28 > nguoi 24 > logo 18, dat o `image_brand._candidate`), nhung

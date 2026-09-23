@@ -76,6 +76,12 @@ BOARD_IMAGE_BY_TYPE = {
     # LOW-337 (Ong Chu 21/09/2026): tin ve MODEL uu tien logo > benchmark/chart > founder > office.
     # Qwen-Image-2.1 ra the anh toa nha Alibaba trong khi engine da co san the logo + Jack Ma.
     "MODEL":     ("logo", "ranking", "announcement_chart", "founder", "headquarters", "concept"),
+    # LOW-337 (Ong Chu 23/09/2026): *"Model release la dong tin KHAC voi tin thoi su co
+    # model la chu the, nen thu tu uu tien la: @arena -> chart/score cong bo (AA,
+    # tbench...) -> logo -> founder"*. Do that tren bai "GPT-6 Sol and Luna" (23/09):
+    # deck ra logo OpenAI + chan dung Sam Altman, trong khi bai cong bo co 8 bieu do
+    # benchmark. Bang "MODEL" o tren VAN GIU cho tin thoi su co model la chu the
+    # (LOW-337 21/09: Qwen-Image-2.1 ra anh toa nha Alibaba thay vi logo Qwen).
     "BENCHMARK": ("ranking", "announcement_chart", "logo"),
     "INFRA":     ("infrastructure_concept", "headquarters", "company_country_flag", "logo"),
     "LAB":       _UU_TIEN_ANH_HANG + ("company_country_flag",),
@@ -83,8 +89,24 @@ BOARD_IMAGE_BY_TYPE = {
     "SECURITY":  ("concept", "logo"),
     "ARXIV":     ("announcement_chart", "concept", "logo"),
     "TOOL":      ("announcement_chart", "logo", "concept"),
+    "MODEL_RELEASE": ("ranking", "announcement_chart", "logo", "founder", "headquarters", "concept"),
 }
 DEFAULT = _UU_TIEN_ANH_HANG + ("concept",)   # tin không có category hợp lệ
+
+
+# Tin RA MAT model: tieu de tu noi ra viec cong bo. Khong bat "report/rumor/leak"
+# (tin don) lan tin thoi su ("X dung model Y de...") — nhung tin do chu the van la
+# model nhung khong co bo chart cong bo di kem.
+RELEASE_WORD = re.compile(
+    r"\b(introduc\w*|launch\w*|unveil\w*|releas\w*|announc\w*|debut\w*|roll\w* out|"
+    r"is here|are here|now available|available now|goes live|drops?\b|ships?\b)|"
+    r"ra m[aắ]t|tr[iì]nh l[aà]ng|c[oô]ng b[oố]|ph[aá]t h[aà]nh|ra b[aả]n|"
+    r"gi[oớ]i thi[eệ]u|\btung\b|\bm[oở] kho\b|\bch[ií]nh th[uứ]c c[oó]\b", re.I)
+
+
+def is_model_release(category, tieu_de: str = "") -> bool:
+    """Tin RA MAT model (khac tin thoi su co model la chu the) — Ong Chu 23/09/2026."""
+    return bool(is_model_story(category) and RELEASE_WORD.search(tieu_de or ""))
 
 
 # LOW-337 (Ong Chu 21/09/2026): tin nhac toi MODEL chi duoc dung logo CUA MODEL (Qwen,
@@ -96,23 +118,27 @@ def is_model_story(category) -> bool:
     return standard_type(category) in MODEL_STORY_TYPES
 
 
-def order_image(category) -> tuple:
+def order_image(category, tieu_de: str = "") -> tuple:
+    """Thứ tự vật làm ảnh. `tieu_de` chỉ để tách tin RA MẮT model khỏi tin thời sự
+    có model là chủ thể (LOW-337, 23/09/2026) — bỏ trống thì giữ bảng theo category."""
+    if is_model_release(category, tieu_de):
+        return BOARD_IMAGE_BY_TYPE["MODEL_RELEASE"]
     return BOARD_IMAGE_BY_TYPE.get(standard_type(category), DEFAULT)
 
 
-def late(category, vat: str) -> bool:
+def late(category, vat: str, tieu_de: str = "") -> bool:
     """Loại tin này có muốn vật `vat` không."""
-    return vat in order_image(category)
+    return vat in order_image(category, tieu_de)
 
 
-def is_ranking_story_type(category) -> bool:
+def is_ranking_story_type(category, tieu_de: str = "") -> bool:
     """Loại tin này LÀ tin xếp hạng (bảng xếp hạng là ảnh CHÍNH, đứng đầu bảng —
     MODEL/BENCHMARK). Khác `late(category, "ranking")`: từ LOW-264 BUSINESS/M&A/
     LAB cũng có `ranking`, nhưng ở cuối bảng, như ảnh BỐI CẢNH của hãng — dùng
     `late` ở chỗ này từng ép mọi tin về một hãng thành tin xếp hạng (LOW-266)."""
     # LOW-337: MODEL dat logo len dau nhung van la tin xep hang (ranking o vi tri 2);
     # BUSINESS/M&A/LAB dat ranking o vi tri 4-5 nen van khong lot vao day (LOW-266).
-    return "ranking" in order_image(category)[:2]
+    return "ranking" in order_image(category, tieu_de)[:2]
 
 
 # Điểm cộng theo thứ tự trong bảng: vật đứng đầu +100, kế +80, +60, +40, +20,
@@ -132,9 +158,9 @@ def is_ranking_story_type(category) -> bool:
 _LOAI_UNG_VIEN = {"photo": "headquarters", "person": "founder", "logo": "logo", "stock": "stock"}
 
 
-def score_by_type(category, loai_ung_vien: str) -> int:
+def score_by_type(category, loai_ung_vien: str, tieu_de: str = "") -> int:
     vat = _LOAI_UNG_VIEN.get(loai_ung_vien, loai_ung_vien)
-    thu_tu = order_image(category)
+    thu_tu = order_image(category, tieu_de)
     if vat not in thu_tu:
         return 0
     return max(0, 100 - 20 * thu_tu.index(vat))
@@ -197,9 +223,11 @@ def line_brief(m: dict) -> list:
     có logo/cờ/biểu đồ giá), và cặp ảnh hai hãng khi là thương vụ. Thuần."""
     ra = []
     loai = standard_type(m.get("category"))
+    tieu_de = f"{m.get('title') or ''} {m.get('title_en') or ''}"
     if loai:
-        ra.append(f"Loại tin {loai} → ảnh hợp lệ theo thứ tự: "
-                  + " > ".join(manifest_values.story_object_label(v) for v in order_image(loai))
+        ra.append(f"Loại tin {loai}{' (RA MẮT)' if is_model_release(loai, tieu_de) else ''}"
+                  " → ảnh hợp lệ theo thứ tự: "
+                  + " > ".join(manifest_values.story_object_label(v) for v in order_image(loai, tieu_de))
                   + " (bảng story_type.py, Ông Chủ 12/09/2026).")
     if m.get("two_company_pairs"):
         ra.append("THƯƠNG VỤ: ghép ảnh của HAI hãng — " +
