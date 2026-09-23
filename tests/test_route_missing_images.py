@@ -106,17 +106,22 @@ def test_timestamp_no_then_still_write_done_json():
 
 
 # ------------------------------------------------------- tầng ghép nối quyết định
-def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None), gui_ok=True):
+def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None), gui_ok=True,
+            kanban=None, trang_thai_task_cu="blocked"):
     """Goi rt.after_prepare voi sidecar gia. Tra (m, cac tin da gui).
 
-    `gui_ok=False` gia lap Telegram tu choi (400) — _time_send tra False."""
+    `gui_ok=False` gia lap Telegram tu choi (400) — _time_send tra False.
+    `kanban` (tuy chon): dict de ghi lai cac lenh kanban da goi (LOW-382)."""
     import approve_dispatch as dgv
     import approve_post as db
+    import hermes_adapter as ha
     drafts = Path(tmp) / "drafts"
     drafts.mkdir(parents=True, exist_ok=True)
     (drafts / "d1.img.json").write_text(json.dumps(im), encoding="utf-8")
     tin = []
-    cu = (rt.DRAFTS, rt._time_send, dgv.standard_assignee, db.create_task_kite)
+    goi = kanban if kanban is not None else {}
+    cu = (rt.DRAFTS, rt._time_send, dgv.standard_assignee, db.create_task_kite,
+          dgv.kanban_unblock, dgv.kanban_complete, ha.status)
     rt.DRAFTS = drafts
 
     def _gui(vai, text, kb=None):
@@ -125,11 +130,20 @@ def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None), gui_ok=True):
     rt._time_send = _gui
     dgv.standard_assignee = lambda v: (v, not kite_co)
     db.create_task_kite = lambda *a, **k: tao_kite
+    goi.setdefault("unblock", []), goi.setdefault("complete", [])
+    dgv.kanban_unblock = lambda tid, ly_do="": (goi["unblock"].append(tid), (True, None))[1]
+    dgv.kanban_complete = lambda tid, kq="": (goi["complete"].append(tid), (True, None))[1]
+    ha.status = lambda tid: trang_thai_task_cu
     try:
         rt.after_prepare("d1", m)
         return m, tin
     finally:
-        rt.DRAFTS, rt._time_send, dgv.standard_assignee, db.create_task_kite = cu
+        (rt.DRAFTS, rt._time_send, dgv.standard_assignee, db.create_task_kite,
+         dgv.kanban_unblock, dgv.kanban_complete, ha.status) = cu
+
+
+def _img_on_disk(tmp):
+    return json.loads((Path(tmp) / "drafts" / "d1.img.json").read_text(encoding="utf-8"))
 
 
 def test_telegram_reject_then_no_list_mark_already_ask():
@@ -266,6 +280,93 @@ def test_create_task_kite_error_then_report_out_no_set_has():
                          {"image_role": "dre"}, tao_kite=(None, "kanban 500"))
         assert "kite_task_id" not in m, "dat co chuyen_kite du tao task hong"
         assert tin and "lỗi" in tin[0][1], tin
+
+
+# ------------------------------------------------- chốt vai ảnh sau bước đếm (LOW-382)
+def test_enough_images_unblocks_the_image_task():
+    """`create_pair` chan task anh lai cho toi khi engine dem xong; du anh thi
+    tang ghep noi phai MO CHAN, khong thi vai nam blocked mai.
+
+    Fail tren ma cu: truoc 23/09/2026 nhanh "du anh" `return` ngay, khong ai mo."""
+    with tempfile.TemporaryDirectory() as tmp:
+        goi = {}
+        m, tin = _router(tmp, {"title": "x"},
+                         {"image_role": "dre", "image_task": "t_1", "blocked_for_engine": True},
+                         kanban=goi)
+        assert goi["unblock"] == ["t_1"], goi
+        assert tin == [], tin
+        assert _img_on_disk(tmp)["blocked_for_engine"] is False, _img_on_disk(tmp)
+
+
+def test_unblock_only_task_this_layer_blocked():
+    """Draft cu (khong co `blocked_for_engine`) thi khong dong vao kanban."""
+    with tempfile.TemporaryDirectory() as tmp:
+        goi = {}
+        _router(tmp, {"title": "x"}, {"image_role": "dre", "image_task": "t_1"}, kanban=goi)
+        assert goi["unblock"] == [], goi
+
+
+def test_transfer_closes_the_blocked_task_of_old_role():
+    """Chuyen Kite thi task cua vai cu phai duoc DONG — no dang blocked nen dong
+    o day la no khong bao gio chay. Sidecar tro sang task Kite."""
+    with tempfile.TemporaryDirectory() as tmp:
+        goi = {}
+        m, tin = _router(tmp, {"missing_images": {"count": 3, "min_images": 5}, "title": "T"},
+                         {"image_role": "dre", "image_task": "t_1", "blocked_for_engine": True},
+                         kanban=goi)
+        assert m.get("kite_task_id") == "t_7", m
+        assert goi["complete"] == ["t_1"], goi
+        assert goi["unblock"] == [], "task cu bi dong roi thi khong duoc mo chan"
+
+
+def test_running_task_of_old_role_left_alone():
+    """Task cu DANG CHAY thi khong dong: worker van chay tiep du co doi dong
+    trong kanban.db hay khong, ma brief cua vai cu da bao no tu ket."""
+    with tempfile.TemporaryDirectory() as tmp:
+        goi = {}
+        _router(tmp, {"missing_images": {"count": 3, "min_images": 5}, "title": "T"},
+                {"image_role": "dre", "image_task": "t_1", "blocked_for_engine": True},
+                kanban=goi, trang_thai_task_cu="running")
+        assert goi["complete"] == [], goi
+
+
+def test_failed_transfer_unblocks_so_old_role_can_still_work():
+    """Tao task Kite hong -> vai cu la duong duy nhat con lai, phai mo chan."""
+    with tempfile.TemporaryDirectory() as tmp:
+        goi = {}
+        m, tin = _router(tmp, {"missing_images": {"count": 3, "min_images": 5}, "title": "T"},
+                         {"image_role": "dre", "image_task": "t_1", "blocked_for_engine": True},
+                         tao_kite=(None, "kanban 500"), kanban=goi)
+        assert goi["unblock"] == ["t_1"], goi
+        assert goi["complete"] == [], goi
+
+
+def test_create_pair_blocks_image_task_before_running_engine():
+    """Task anh phai bi CHAN truoc khi engine chay, va sidecar phai mang
+    `image_task` — khong co hai thu do thi tang ghep noi khong biet mo cai gi.
+
+    Kiem bang doc ma (cung kieu voi test_threshold_image_by_role): goi
+    `create_pair` that keo theo research + bang den + kanban."""
+    import inspect
+
+    import approve_pick as dct
+    src = inspect.getsource(dct.create_pair)
+    assert "kanban_block(" in src, "create_pair khong chan task anh lai"
+    assert src.index("kanban_block(") < src.index("_block_run_engine("), \
+        "chan task SAU khi engine chay thi vai da kip bat dau roi"
+    assert '"image_task"' in inspect.getsource(dct._crop_sidecar), \
+        "sidecar .img.json khong ghi image_task — khong ai mo chan duoc"
+
+
+def test_brand_without_kite_unblocks_too():
+    """Khong co Kite thi khong doi vai nua — de task blocked cho mot cau tra loi
+    co the khong bao gio toi la giam mot bai im lang."""
+    with tempfile.TemporaryDirectory() as tmp:
+        goi = {}
+        _router(tmp, {"missing_images": {"count": 3, "min_images": 5}, "title": "T"},
+                {"image_role": "dre", "image_task": "t_1", "blocked_for_engine": True},
+                kite_co=False, kanban=goi)
+        assert goi["unblock"] == ["t_1"], goi
 
 
 if __name__ == "__main__":

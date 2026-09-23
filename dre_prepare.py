@@ -61,9 +61,15 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                  "đã nhận nút Bỏ hẳn trên topic.")
         return "\n".join(L)
     if m.get("kite_task_id"):
-        L.append(f"🛑 TIN NÀY ĐÃ CHUYỂN KITE (task {m['kite_task_id']}) vì 0 ảnh thật dùng được. "
-                 "KHÔNG viết spec, KHÔNG dựng. Kết thúc task ngay bằng một câu: "
-                 "\"Đã chuyển Kite vì không có ảnh thật\".")
+        # Noi DUNG so anh, khong go cung "0": tu LOW-382 bai chuyen Kite khi
+        # THIEU anh (1..min-1) chu khong chi khi rong, nen cau "0 anh that" cu
+        # noi sai voi phan lon truong hop — va vai doc no truoc khi lam gi.
+        _thieu = m.get("missing_images") or {}
+        _so = _thieu.get("count", m.get("usable_count", 0))
+        _tt = _thieu.get("min_images", m.get("min_images", 5))
+        L.append(f"🛑 TIN NÀY ĐÃ CHUYỂN KITE (task {m['kite_task_id']}) vì chỉ có {_so}/{_tt} "
+                 "ảnh thật dùng được. KHÔNG viết spec, KHÔNG dựng. Kết thúc task ngay bằng "
+                 f"một câu: \"Đã chuyển Kite vì chỉ có {_so}/{_tt} ảnh thật\".")
         return "\n".join(L)
     # Mac dinh bang CUNG cong thuc voi nguoi ghi (schema.count_image_use_ok): ban
     # cu dem `len([a for a in m["images"] if a["uses"]])` — mot so KHAC, vi chum anh

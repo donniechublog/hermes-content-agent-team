@@ -178,6 +178,52 @@ def create_task(title, assignee, body, parent=None, max_runtime="25m"):
         return None, r.stdout[-300:]
 
 
+def _run_kanban(sub_args, timeout=60):
+    """Chay mot lenh phu cua `hermes kanban` (khong phai `create`). Tra (ok, loi).
+
+    Cung mot cach goi voi `create_task` — CLI cua hermes, HERMES_HOME cua container
+    hien tai — nhung khong can workspace va khong doc JSON: cac lenh nay chi doi
+    trang thai mot task da co.
+    """
+    args = [str(env_load.HERMES_PY), "-m", "hermes_cli.main", "kanban"] + list(sub_args)
+    try:
+        r = subprocess.run(args, cwd=str(env_load.HERMES_DIR),
+                           env=dict(os.environ, HERMES_HOME=str(env_load.hermes_home())),
+                           capture_output=True, text=True, timeout=timeout)
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, f"{type(e).__name__}: {e!r}"
+    if r.returncode != 0:
+        return False, (r.stderr[-300:] or r.stdout[-300:] or f"rc={r.returncode}")
+    return True, None
+
+
+def block_task(task_id, reason, kind="transient"):
+    """Chan mot task lai (LOW-382): vai chua duoc bat dau. Tra (ok, loi).
+
+    THU TU DOI SO quan trong: `reason` la positional `nargs="*"` dung sau
+    `task_id`, dat `--kind` xen vao giua thi argparse cua hermes tu choi ca lenh
+    ("unrecognized arguments"). Do that tren may chu 23/09/2026.
+
+    `transient`: khoi chan bang `unblock`, khong can nguoi. Khac `needs_input` —
+    cai do la cho NGUOI tra loi, va bang tien do se goi Ong Chu.
+    """
+    return _run_kanban(["block", task_id, reason, "--kind", kind])
+
+
+def unblock_task(task_id, reason=""):
+    """Mo chan mot task -> ve `ready` cho dispatcher. Tra (ok, loi)."""
+    return _run_kanban(["unblock", task_id] + (["--reason", reason] if reason else []))
+
+
+def complete_task(task_id, result=""):
+    """Dong mot task ma khong ai lam no nua (vd viec da chuyen sang vai khac).
+
+    Chi chan LUOT CHAY CHUA BAT DAU: task dang chay thi tien trinh worker van
+    chay tiep, dong o day chi doi dong trong kanban.db.
+    """
+    return _run_kanban(["complete", task_id] + (["--result", result] if result else []))
+
+
 def job(tu_ts=None, vai=None, so=None, moi_truoc=False, db=None):
     """Danh sach task da chuan hoa; None neu khong doc duoc kanban.db.
 

@@ -24,7 +24,7 @@ from approve_base import (  # noqa: E402
     BRAND, DRAFTS, ROOT, STATE_DIR, _write_json, _send_text, _load_json, _reply_real, call, log,
 )
 from approve_dispatch import (  # noqa: E402
-    BLACKBOARD_MENTION, DEFAULT_IMAGE, NAME_BRIGHT_CAP, NAME_ROLE_IMAGE, ROLE_CAROUSEL, ROLE_EDU, _blackboard_root, _report_receive_job, standard_label, kanban_create,
+    BLACKBOARD_MENTION, DEFAULT_IMAGE, NAME_BRIGHT_CAP, NAME_ROLE_IMAGE, ROLE_CAROUSEL, ROLE_EDU, _blackboard_root, _report_receive_job, standard_label, kanban_create, kanban_block,
 )
 from submit_common import _strip_diacritics                  # noqa: E402
 # Khuon body task (van ban dai) tach sang task_bodies.py — xem ghi chu o do.
@@ -345,17 +345,21 @@ def _block_run_engine(draft_id):
 
 
 def _crop_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu, root_id, illu_id,
-                 vai_quet=None):
+                 vai_quet=None, blocked_for_engine=False):
     """Hai sidecar: <id>.img.json de LAM LAI duoc, <id>.writer.json de task viet
     CHI sinh khi Ong Chu bam Duyet anh. Tra ve vai_viet."""
     # Cat lai body task anh de LAM LAI duoc: Ong Chu bam "Lam lai" tren anh chua
     # dat thi tao lai dung task nay (them ghi chu doi anh khac). Thieu file nay
     # thi nut Lam lai bao khong co thong tin.
+    # `image_task` + `blocked_for_engine` (LOW-382): tang ghep noi phai biet task
+    # nao de MO CHAN khi engine dem xong anh — va chi mo cai do CHINH no da chan.
+    # Draft cu khong co hai khoa nay thi `route_missing_images` khong dung toi.
     _write_json(DRAFTS / (draft_id + ".img.json"),
               {"image_role": vai_anh, "carousel": la_carousel or la_edu,
                "title": item["title"], "body": illu_body, "remakes": 0,
                "link": item.get("link", ""), "summary": item.get("summary", ""),
-               "source_note": item.get("source_note", ""), "via": item.get("via", "")})
+               "source_note": item.get("source_note", ""), "via": item.get("via", ""),
+               "image_task": illu_id, "blocked_for_engine": blocked_for_engine})
 
     # KHONG tao task viet ngay nua. Tinh san writer_body + vai_viet roi cat vao
     # sidecar `<draft_id>.writer.json`; task viet CHI sinh khi Ong Chu bam
@@ -446,8 +450,21 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
     # mot tep chua ai ghi: truoc gio chi mat tom tat (im lang), nay con mat ca
     # nguong nen Ethan lai bi doi du anh cho carousel. Doi cho hai dong nay la
     # du — _crop_sidecar khong can gi tu engine.
+    # CHAN TASK ANH toi khi engine dem xong anh (LOW-382, Ong Chu chot 23/09/2026:
+    # "chot vai anh sau buoc dem"). Truoc day task san sang ngay, ma engine chay
+    # NEN mat vai phut — nen vai anh thuong bat dau TRUOC khi biet bai co du anh
+    # cho minh khong. Do 21 ngay tren may chu: 33 bai bi chuyen Kite co task cu
+    # con vet chay, 23 trong so do DA BAT DAU truoc luc chuyen — tong 191 phut
+    # cua Dre (vai tac nhat, cho p90 91 phut) do vao viec bi bo di.
+    #
+    # `transient` = tu mo bang `unblock`, khong goi nguoi. Engine chet giua chung
+    # thi task nam `blocked` — HIEN RA tren kanban + bang tien do, thay vi bai
+    # bien mat im lang; do la ly do chan chu khong phai hoan tao task.
+    blocked_for_engine, _ = kanban_block(
+        illu_id, f"cho engine dem anh xong roi moi chot vai (draft {draft_id})")
     vai_viet = _crop_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu,
-                            root_id, illu_id, vai_quet=vai_quet)
+                            root_id, illu_id, vai_quet=vai_quet,
+                            blocked_for_engine=blocked_for_engine)
     _block_run_engine(draft_id)
 
     item["picked"] = True

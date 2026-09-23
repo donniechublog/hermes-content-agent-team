@@ -120,6 +120,37 @@ def kanban_create(title, assignee, body, parent=None):
     log("kanban", f"tao task {tid} cho {assignee}: {title[:60]}")
     return tid, None
 
+
+# --- doi trang thai mot task DA CO (LOW-382) --------------------------------
+# Ba ham mong nhu nhau: hermes_adapter biet hinh dang lenh, o day chi con mot
+# dong log doc duoc. Loi KHONG nem len: chan/mo chan that bai thi cung lam la
+# quay ve hanh vi cu (task chay ngay), khong duoc lam hong ca duong chon tin.
+def kanban_block(tid, reason):
+    ok, loi = hermes_adapter.block_task(tid, reason)
+    if ok:
+        log("kanban", f"chan task {tid}: {reason}")
+    else:
+        write_log.error("kanban", f"chan task {tid} LOI: {str(loi)[:200]}")
+    return ok, loi
+
+
+def kanban_unblock(tid, reason=""):
+    ok, loi = hermes_adapter.unblock_task(tid, reason)
+    if ok:
+        log("kanban", f"mo chan task {tid}: {reason}")
+    else:
+        write_log.error("kanban", f"mo chan task {tid} LOI: {str(loi)[:200]}")
+    return ok, loi
+
+
+def kanban_complete(tid, result=""):
+    ok, loi = hermes_adapter.complete_task(tid, result)
+    if ok:
+        log("kanban", f"dong task {tid}: {result[:80]}")
+    else:
+        write_log.error("kanban", f"dong task {tid} LOI: {str(loi)[:200]}")
+    return ok, loi
+
 # Kanban cua home container hien tai. Viec bi chan/that bai duoc bao qua
 # report_progress_kanban (kem ly do); ham bao_viec_bi_chan rieng truoc day trung
 # viec voi no va bo sot Kite, da bo 05/09/2026.
