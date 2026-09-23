@@ -27,7 +27,7 @@ from approve_dispatch import (  # noqa: E402
     NAME_BRIGHT_CAP, NAME_ROLE_IMAGE, NAME_ROLE_WRITE, ROLE_IMAGE, ROLE_CAROUSEL, ROLE_EDU,
 )
 from approve_pick import (  # noqa: E402
-    _draft_id, create_pair,
+    _draft_id, create_pair, live_drafts_same_link,
 )
 
 
@@ -222,6 +222,9 @@ def _command_article(reply, args):
         "category": None, "score": "?",
         "score_reason": "dat tay, khong qua cham diem",
     }
+    # LOW-337: soi TRUOC khi tao (sau do chinh draft moi cung nam trong danh sach).
+    # Chi canh bao, khong chan — xem `approve_pick.live_drafts_same_link`.
+    trung_link = live_drafts_same_link(url, brand)
     tid, err = create_pair(item, vai_anh=vai_anh, brand=brand)
     if err:
         reply("❌ " + html_escape(err))
@@ -239,6 +242,10 @@ def _command_article(reply, args):
     # approve_pick.py (bao cao chon tin) — sot lai o day vi hai cho viet rieng.
     dong = ("✅ <b>" + html_escape(title) + "</b>\n"
             + f"{ten_hien} dựng ảnh ({brand}) — task {tid}")
+    if trung_link:
+        ds = ", ".join(f"{ma} ({NAME_ROLE_IMAGE.get(v, v)})" for ma, v in trung_link[:3])
+        dong += (f"\n⚠️ Tin này đã có {len(trung_link)} bản chưa lên channel: {html_escape(ds)}"
+                 " — vẫn đặt thêm, nhưng duyệt cả hai là tin lên hai lần")
     if ghi_chu:
         dong += "\n⚠️ " + ghi_chu
     reply(dong)

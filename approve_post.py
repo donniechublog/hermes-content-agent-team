@@ -37,6 +37,7 @@ import skill_lesson_approve                                  # noqa: E402
 import role                                                  # noqa: E402
 import role_spec                                             # noqa: E402
 
+import approve_base                                          # noqa: E402
 from approve_base import (  # noqa: E402
     API, DRAFTS, BOSS_IDS, ROOT, STATE_DIR, _extract_line, _run_background, _write_json, _send_text, _lock_of, _load_json, _reply_real, call, call_upload, is_boss, log,
 )
@@ -357,17 +358,12 @@ def _split_caption_html(caption, limit=CAPTION_LIMIT):
 # publish_failed va moi bam Duyet lai. Truoc 09/09/2026 chi album co dau, nen
 # bai anh don / bai chi co chu se len channel LAN THU HAI — doc gia thay hai
 # bai giong het nhau, dung thu hong README goi la te nhat.
-MARK_LEN_CHANNEL = ("channel_album_mid", "channel_photo_mid", "channel_text_mid")
-
-
-def already_len_channel(d: dict) -> bool:
-    """Draft nay da co PHAN NAO len channel chua (theo MARK_LEN_CHANNEL).
-
-    `_rescue_article_end_publishing` (approve_service) dung de phan biet hai canh
-    giong het nhau tu ben ngoai: bai CHUA kip len channel (moi bam Duyet lai),
-    voi bai DA len roi ma tien trinh chet truoc khi kip ghi "published" (khong
-    duoc moi bam lai)."""
-    return any(d.get(k) for k in MARK_LEN_CHANNEL)
+# LOW-337 (23/09/2026): hai ten nay CHUYEN sang approve_base de duong DAT BAI
+# (`approve_pick.live_drafts_same_link`) doc duoc dau "da len channel" ma khong phai
+# keo ca approve_post — keo la vong import, va ca cay publish/moat/fcntl di theo.
+# Ten cu giu o day: approve_service va test van goi qua approve_post.
+MARK_LEN_CHANNEL = approve_base.MARK_LEN_CHANNEL
+already_len_channel = approve_base.already_len_channel
 
 
 def _write_mark(p_draft, d, khoa, mid):
