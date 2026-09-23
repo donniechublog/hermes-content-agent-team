@@ -1042,19 +1042,26 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
     import capture_chart
     ctx = None
     try:
-        rong = capture_chart.EMPTY_MARK
+        rong, do = capture_chart.EMPTY_MARK, None
         for _ in range(2):          # lượt 1 đo, lượt 2 (nếu cần) nới khung rồi chụp lại
             if ctx:
                 ctx.close()
-            ctx = br.new_context(viewport={"width": rong, "height": 1400},
+            # Khung nhin cao hon vung cat: duong lui `pg.screenshot(clip=...)` ben
+            # duoi chi chup duoc phan nam trong khung nhin.
+            ctx = br.new_context(viewport={"width": rong, "height": HEIGHT_MAX_CSS + 200},
                                  device_scale_factor=DPR, user_agent=UA)
             pg = ctx.new_page()
             # `domcontentloaded` chứ không `networkidle`: networkidle không bao giờ
             # đạt trên trang có quảng cáo + websocket (sự cố 0b395ad, TICKET_TEMPLATE).
             pg.goto(url, wait_until="domcontentloaded", timeout=40000)
             pg.wait_for_timeout(1500)                # font + animation của chart
-            do = pg.evaluate(capture_chart.MEASURE_JS, BOARD_PICK)
-            if not do["sel"]:
+            do_moi = pg.evaluate(capture_chart.MEASURE_JS, BOARD_PICK)
+            # Luot hai (khung rong hon) do hut thi GIU ket qua luot dau: `sel` chi la
+            # mot kieu phan tu ("table"/"figure"/...), tai lai cham hon mot nhip la
+            # do ra rong — do 23/09, arena.ai/leaderboard/code/webdev mat trang o
+            # dung cho nay du luot dau da thay bang.
+            do = do_moi if do_moi["sel"] else do
+            if not do or not do["sel"]:
                 in_log(f"[xep_hang] trang nguồn {url}: không có bảng/đồ thị nào đủ lớn")
                 return None
             rong_moi = capture_chart.frame_can(do["w"], rong)
@@ -1087,7 +1094,20 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
         out.parent.mkdir(parents=True, exist_ok=True)
         # `animations=disabled`: trang bang hay co hieu ung chay so/thanh do, playwright
         # doi chung "on dinh" tron 30s roi nem (mat /text-to-speech, do 23/09).
-        khung.screenshot(path=str(out), timeout=20000, animations="disabled")
+        try:
+            khung.screenshot(path=str(out), timeout=15000, animations="disabled")
+        except Exception:                                    # noqa: BLE001
+            # `ElementHandle.screenshot` DOI phan tu dung yen; trang co hieu ung
+            # chay so thi no doi mai roi nem (mat /text-to-speech, do 23/09).
+            # `page.screenshot(clip=...)` khong doi gi ca — cat theo toa do.
+            hop = khung.bounding_box()
+            if not hop:
+                raise
+            in_log("[xep_hang] trang nguồn: chụp phần tử hụt (trang không đứng yên), cắt theo toạ độ")
+            pg.screenshot(path=str(out), animations="disabled", clip={
+                "x": max(0, hop["x"]), "y": max(0, hop["y"]),
+                "width": min(hop["width"], rong - max(0, hop["x"])),
+                "height": min(hop["height"], HEIGHT_MAX_CSS)})
         rong_that, mo_ta = role.active_rules().is_blank_image(Image.open(out).convert("RGB"))
         if rong_that:
             in_log(f"[xep_hang] trang nguồn: ảnh ra RỖNG ({mo_ta}) — bỏ")
