@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tang GHEP NOI: bai thieu anh that thi hoi Ong Chu hay chuyen Kite.
+"""Tang GHEP NOI: bai thieu anh that thi chuyen Kite (hoac hoi, khi brand chua co Kite).
 
 Vi sao tach ra (audit_content_team A1): hai viec nay — gui Telegram va tao task
 Kite — la viec cua tang DIEU PHOI, nhung truoc 09/09/2026 chung nam ngay trong
@@ -69,7 +69,8 @@ def _time_send(vai: str, text: str, kb: dict | None = None) -> bool:
 
 
 def after_prepare(draft_id: str, m: dict) -> None:
-    """0 anh that -> tu chuyen Kite; thieu -> hoi Ong Chu bang nut.
+    """Thieu anh that -> TU CHUYEN Kite, khong hoi (LOW-382). Brand chua co Kite
+    thi moi hoi bang nut.
 
     Doc co `m["missing_images"]` do engine ghi. Ghi nguoc quyet dinh vao `m`
     (`kite_task_id` / `kite_asked` / `kite_unavailable`) — engine ghi ca `m` xuong
@@ -112,19 +113,30 @@ def after_prepare(draft_id: str, m: dict) -> None:
             kb["inline_keyboard"][0].insert(0, {"text": f"🖼 {ten} làm với {so} ảnh", "callback_data": "imgtiep:" + draft_id})
             _ask("kite_asked", f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được; brand này chưa có Kite. Chọn:", kb)
         return
-    if so == 0:
-        rid, loi = create_task_kite(draft_id, im, ly_do="engine: 0 anh that dung duoc")
-        if loi:
-            _time_send(vai, f"🖼 <b>{tieu}</b>: 0 ảnh thật dùng được, chuyển Kite <b>lỗi</b>: {loi}")
-            return
-        m["kite_task_id"] = rid                     # task DA tao — co du tin bao co di hay khong
-        if not _time_send(vai, f"🖼 <b>{tieu}</b>: <b>0 ảnh thật</b> dùng được → đã tự chuyển <b>Kite</b> "
-                            f"vẽ vector (task {rid}). {ten} không dựng bộ này."):
-            m["route_error"] = f"da chuyen Kite (task {rid}) nhung khong bao duoc len topic {vai}"
-        print(f"[route] 0 anh -> Kite task {rid}", file=sys.stderr)
+    # THIEU ANH -> TU CHUYEN KITE, KHONG HOI (LOW-382, Ong Chu chot 23/09/2026:
+    # "cu tim duoc duoi 6 anh thi de Kite, tren 6 thi de Dre").
+    #
+    # Truoc day chi nhanh `so == 0` tu chuyen, con 1..tt-1 la mot cau hoi co hai
+    # nut. Do tren approve.log 18-22/09/2026 (ca hai brand): 27 lan bam trong 5
+    # ngay o duong nay, va khong lan nao doi huong khoi luat da co san — tuc cau
+    # hoi khong con la mot quyet dinh, chi la mot buoc go tay lap lai luat "thieu
+    # anh thi pass Kite". Nguong lay tu `min_images` cua manifest (engine da hoi
+    # `role.min_images` cua VAI DUOC GIAO: Dre 6, tin flagship 7) — khong co so 6
+    # nao viet thang o day.
+    #
+    # Brand chua co Kite thi VAN hoi (nhanh `khong_kite` o tren): o do that su con
+    # mot lua chon — ha san lam voi N anh, hay bo tin.
+    ly_do = ("engine: 0 anh that dung duoc" if so == 0
+             else f"engine: chi {so}/{tt} anh that dung duoc")
+    rid, loi = create_task_kite(draft_id, im, ly_do=ly_do)
+    if loi:
+        _time_send(vai, f"🖼 <b>{tieu}</b>: {so}/{tt} ảnh thật dùng được, chuyển Kite <b>lỗi</b>: {loi}")
+        # Ghi lai de brief/nhat ky lo ra: bai nay dang ket o vai cu ma khong ai
+        # biet (cung ly le voi `_ask`, C-r2-1). Truoc day nhanh nay im lang.
+        m["route_error"] = f"chuyen Kite loi: {loi}"
         return
-    kb = {"inline_keyboard": [[
-        {"text": "🎨 Gửi Kite vẽ vector", "callback_data": "imgkite:" + draft_id},
-        {"text": f"🖼 {ten} làm với {so} ảnh", "callback_data": "imgtiep:" + draft_id}]]}
-    _ask("kite_asked", f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được "
-                     f"(nguồn: {', '.join(m.get('domains') or []) or '—'}). Chọn đường:", kb)
+    m["kite_task_id"] = rid                     # task DA tao — co du tin bao co di hay khong
+    if not _time_send(vai, f"🖼 <b>{tieu}</b>: <b>{so}/{tt} ảnh thật</b> dùng được → đã tự chuyển "
+                        f"<b>Kite</b> vẽ vector (task {rid}). {ten} không dựng bộ này."):
+        m["route_error"] = f"da chuyen Kite (task {rid}) nhung khong bao duoc len topic {vai}"
+    print(f"[route] {so}/{tt} anh -> Kite task {rid}", file=sys.stderr)

@@ -134,10 +134,11 @@ def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None), gui_ok=True):
 
 def test_telegram_reject_then_no_list_mark_already_ask():
     """C-r2-1: truoc day _time_send vut ket qua post, m["kite_asked"]=True van ghi vao
-    manifest.json — bai 'dang cho Ong Chu chon' ma Ong Chu chua bao gio nhan nut."""
+    manifest.json — bai 'dang cho Ong Chu chon' ma Ong Chu chua bao gio nhan nut.
+    Nhanh CON hoi sau LOW-382 la brand chua co Kite."""
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"missing_images": {"count": 3, "min_images": 5}, "title": "T"},
-                         {"image_role": "dre"}, gui_ok=False)
+                         {"image_role": "dre"}, kite_co=False, gui_ok=False)
         assert len(tin) == 1, "van phai THU gui"
         assert "kite_asked" not in m, m
         assert "route_error" in m and "kite_asked" in m["route_error"], m
@@ -153,7 +154,7 @@ def test_sidecar_old_write_slug_old_still_dark_use_topic():
             m, tin = _router(tmp, {"missing_images": {"count": 3, "min_images": 5}, "title": "T"},
                              {"image_role": chu})
             assert tin and tin[0][0] == "dre", (chu, tin)
-            assert m.get("kite_asked") is True, (chu, m)
+            assert m.get("kite_task_id") == "t_7", (chu, m)
 
 
 def test_time_send_real_read_ok_of_telegram():
@@ -216,13 +217,28 @@ def test_no_image_which_then_from_transfer_kite():
         assert tin and "Kite" in tin[0][1], tin
 
 
-def test_missing_but_remaining_image_then_ask_boss_two_button():
+def test_short_of_images_transfers_to_kite_without_asking():
+    """LOW-382: thieu anh thi TU chuyen Kite, khong con nut nao de bam.
+
+    Fail tren ma cu: truoc 23/09/2026 nhanh 1..min-1 gui mot cau hoi hai nut
+    (`imgkite` / `imgtiep`) va dat `kite_asked`, bai nam cho tay Ong Chu."""
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"missing_images": {"count": 3, "min_images": 5}, "title": "Tin B"},
                          {"image_role": "dre"})
-        assert m.get("kite_asked") is True, m
-        nut = [b["callback_data"] for b in tin[0][2]["inline_keyboard"][0]]
-        assert "imgkite:d1" in nut and "imgtiep:d1" in nut, nut
+        assert m.get("kite_task_id") == "t_7", m
+        assert "kite_asked" not in m, m
+        assert len(tin) == 1 and tin[0][2] is None, f"van con nut de bam: {tin}"
+        assert "3/5" in tin[0][1] and "Kite" in tin[0][1], tin
+
+
+def test_threshold_read_from_manifest_not_hardcoded_six():
+    """Nguong la `min_images` cua manifest (engine hoi role.min_images: Dre 6,
+    flagship 7) — khong duoc go cung so 6 o tang dinh tuyen. 6/7 anh van thieu."""
+    with tempfile.TemporaryDirectory() as tmp:
+        m, tin = _router(tmp, {"missing_images": {"count": 6, "min_images": 7}, "title": "Tin F"},
+                         {"image_role": "dre"})
+        assert m.get("kite_task_id") == "t_7", m
+        assert "6/7" in tin[0][1], tin
 
 
 def test_brand_no_has_kite_then_no_promise_transfer():
