@@ -52,6 +52,13 @@ K_SHADOW = 0.028
 FOOTER = {"@donniechublog": ">_ vibe working & agentic AI",
           "@dcgr.tech": ">_ AI & BUSINESS DAILY"}          # Ông Chủ 23/09/2026
 
+# MAU dong footer, cung theo brand. `COLOR_PROMPT` la mau nhan dien cua
+# donniechublog; dcgr.tech CHI trang va den (xem `card.BRAND["dcgr"]`), nen in
+# dong footer cua no bang mau xanh cua brand kia la sai thuong hieu — cung loai
+# loi ma bang FOOTER sinh ra de chan, chi khac la o MAU chu khong o CHU.
+# Dung dung ma den cua khung (`BORDER`) chu khong phai mot ma den khac.
+COLOR_FOOTER = {"@dcgr.tech": BORDER}                      # Ông Chủ 23/09/2026
+
 
 def _make_full(x) -> int:
     """Lam tron NHU `Math.round` cua JS: nua lam tron LEN.
@@ -194,7 +201,7 @@ def line_frame(nguon, out_path, emoji: str = "", handle: str = "@donniechublog",
         day_footer = the_h - R(footer_h / 2) + R(co_footer * 0.35)
         d.text((canh * N, day_footer * N), prompt,
                font=_font(FONT_DIR / "JetBrainsMono-Regular.ttf", co_footer * N),
-               fill=_color(COLOR_PROMPT), anchor="ls")
+               fill=_color(COLOR_FOOTER.get(handle, COLOR_PROMPT)), anchor="ls")
 
     khung = lop.resize((CW, CH), Image.Resampling.LANCZOS)
 

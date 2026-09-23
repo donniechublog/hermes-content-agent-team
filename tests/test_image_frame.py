@@ -171,6 +171,19 @@ def test_handle_is_then_no_late_footer_of_brand_other():
     assert ka.FOOTER.get(la) is None, "handle la thi dung doan ho"
 
 
+def test_mau_footer_dcgr_la_den_khong_phai_mau_brand_kia():
+    """dcgr.tech chi trang va den. In footer cua no bang mau nhan dien cua
+    donniechublog la sai thuong hieu — cung loai loi bang FOOTER chan, chi khac
+    la o MAU chu khong o CHU."""
+    den = ka.COLOR_FOOTER.get("@dcgr.tech")
+    assert den == ka.BORDER, (den, ka.BORDER)
+    assert den != ka.COLOR_PROMPT
+    r, g, b = ka._color(den)[:3]
+    assert max(r, g, b) <= 40, f"phai la den, dang la {(r, g, b)}"
+    # handle khong khai mau rieng thi van dung mau chung, khong doi mau ai ca
+    assert ka.COLOR_FOOTER.get("@donniechublog") is None
+
+
 def test_moi_brand_mot_dong_footer_rieng():
     """Hai brand phai co hai dong KHAC nhau — dan tagline brand kia len anh la
     loi thuong hieu khong ai thay cho toi khi da dang."""
