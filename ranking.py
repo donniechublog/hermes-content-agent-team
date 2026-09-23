@@ -29,6 +29,7 @@ import image_provenance                                           # noqa: E402
 import env_load                                              # noqa: E402
 import manifest_values                                       # noqa: E402
 import model_name                                            # noqa: E402
+import role                                                  # noqa: E402
 import state_paths                                           # noqa: E402
 
 DPR = 2
@@ -203,7 +204,10 @@ TOPIC = [
 # Ma English tu LOW-230 (bang cu -> table, bang-ghep -> table-stitched, danh-sach -> list,
 # danh-sach-ghep -> list-stitched, the -> card).
 # "x_post": do hoa xep hang chinh chu tu tweet @arena (arena_x.py, LOW-337) — anh THAT cua nguon.
-KIND_CAPTURE = frozenset({"table", "table-stitched", "list", "list-stitched", "svg", "x_post"})
+# "board-page": bang cua CHINH trang nguon bai, chup khi khong nguon nao khoanh duoc
+# hang (LOW-385). VAN la anh THAT cua mot bang — chi khac la chua khoanh hang nao.
+KIND_CAPTURE = frozenset({"table", "table-stitched", "list", "list-stitched", "svg",
+                          "x_post", "board-page"})
 
 
 def is_capture(kieu) -> bool:
@@ -985,6 +989,247 @@ def capture_logo(page, out: Path):
         return None
 
 
+# ---- Nấc trước thẻ chữ: chụp bảng của CHÍNH trang nguồn bài --------------------
+# Ông Chủ 23/09/2026 (LOW-385): *"sao chúng ta ko chụp luôn trang này mà lại dùng
+# text nhỉ?"* — *"hình ảnh chart sẽ luôn được ưu tiên hơn text thuần chứ"*.
+#
+# Chỉ lấy phần tử THẬT SỰ là bảng/đồ thị. `capture_chart.PICK_DEFAULT` còn có
+# `img`/`picture` và lui về chụp cả trang — ở đây thì không: chụp cả trang một
+# bài bất kỳ rồi gọi nó là "ảnh xếp hạng" đúng là lỗi LOW-179 cấm.
+BOARD_PICK = ["table", "figure", "svg", "canvas"]
+
+
+# Boc phan tu can chup vao mot <div> cat san chieu cao. Tra ve de goi tu Python:
+# `max-height` tren chinh <table> khong co tac dung (xem chu thich noi goi).
+# Dem noi dung THAT trong phan tu sap chup: so hang co chu, va tong so ky tu.
+# Khung xuong luc dang tai (skeleton) co du kich thuoc nhung KHONG co chu nao.
+JS_CONTENT = """
+(sel) => {
+  const e = document.querySelector(sel);
+  if (!e) return {rows: 0, chars: 0};
+  const rows = Array.from(e.querySelectorAll('tr,[role=row]'))
+    .filter(r => (r.innerText || '').trim().length >= 3);
+  return {rows: rows.length, chars: (e.innerText || '').replace(/\s+/g, '').length};
+}
+"""
+
+# Tim phan tu bang/chart LON NHAT va DANH DAU no. Phai danh dau chu khong chi
+# tra ve ten kieu ("table"): `capture_chart.MEASURE_JS` chi tra `sel`, roi ben
+# Python `query_selector("table")` lay BANG DAU TIEN cua trang — khong nhat thiet
+# la cai vua do. Do 23/09 tren arena.ai: do mot dang, chup mot neo, ra tam anh co
+# bang o tren va nua duoi toan khung chart dang quay.
+JS_BOARD_FIND = """
+(sels) => {
+  document.querySelectorAll('[data-xh-board]').forEach(e => e.removeAttribute('data-xh-board'));
+  let best = null;
+  for (const s of sels) {
+    for (const el of document.querySelectorAll(s)) {
+      const r = el.getBoundingClientRect();
+      const w = Math.max(el.scrollWidth || 0, r.width);
+      const h = Math.max(el.scrollHeight || 0, r.height);
+      if (w < 320 || h < 200) continue;
+      if (!best || w * h > best.w * best.h) best = {sel: s, w, h, el};
+    }
+    if (best) break;
+  }
+  if (!best) return {sel: null, w: 0, h: 0};
+  best.el.setAttribute('data-xh-board', '1');
+  return {sel: best.sel, w: best.w, h: best.h};
+}
+"""
+BOARD_MARK = "[data-xh-board]"
+
+
+# Day cua HANG THU N con chu, tinh theo khung nhin. Cat theo day nay chu khong
+# theo chieu cao phan tu, cung khong theo hang CUOI:
+#   - theo chieu cao phan tu: o arena.ai, bang luc chua tai xong chi co 10 hang roi
+#     den cac khung chart ben duoi — cat theo phan tu thi nua duoi tam anh la
+#     chart dang quay (do that 23/09, hai lan chup lien).
+#   - theo hang cuoi: cung trang do luc DA tai xong co 131 hang, cao 6934px.
+# Anh cua mot bang xep hang can phan DAU bang; N hang dau la thu do, va no khong
+# phu thuoc trang co bao nhieu hang hay ben duoi bang con gi.
+#
+# 18 chu khong phai 15: do that tren hai trang bang, 15 hang ra ti le 1,68-1,70 —
+# qua nguong 1,6 cua `card.kiem_anh_thap` nen Ethan khong dung mot minh duoc,
+# phai ghep doc. 18 hang ha ti le ve ~1,4, tuc tam anh DUNG duoc lam hero.
+BOARD_ROWS_SHOWN = 18
+JS_ROWS_BOX = """
+([sel, n]) => {          // playwright truyen MOT doi so: phai bo dau ngoac ra
+  const e = document.querySelector(sel);
+  if (!e) return null;
+  const rows = Array.from(e.querySelectorAll('tr,[role=row]'))
+    .filter(r => (r.innerText || '').trim().length >= 3);
+  if (!rows.length) return null;
+  const cuoi = rows[Math.min(n, rows.length) - 1];
+  return {top: e.getBoundingClientRect().top, bottom: cuoi.getBoundingClientRect().bottom};
+}
+"""
+
+
+BOARD_ROWS_MIN = 5
+# So lan do lai truoc khi ket luan trang khong co bang. Trang bang la ung dung
+# React; do 23/09 tren arena.ai, bang co khi hien sau 6s.
+BOARD_MEASURE_TRIES = 5
+BOARD_CHARS_MIN = 80
+
+
+def _board_has_content(pg, sel: str, kieu: str = "table") -> tuple:
+    """(du noi dung chua, mo ta) cho phan tu `sel` tren trang dang mo. `kieu` la
+    loai phan tu da do duoc (table/figure/svg/canvas)."""
+    dem = pg.evaluate(JS_CONTENT, sel)
+    if kieu == "table":
+        return dem["rows"] >= BOARD_ROWS_MIN, f"{dem['rows']} hàng có chữ"
+    if kieu == "canvas":
+        return True, "canvas (không đọc được chữ)"
+    return dem["chars"] >= BOARD_CHARS_MIN, f"{dem['chars']} ký tự"
+
+
+def source_page_is_board(url: str) -> bool:
+    """Hàm THUẦN: `link gốc` của bài có phải một trang BẢNG XẾP HẠNG không?
+
+    Chỉ tính khi tên miền ĐÃ nằm trong registry `SOURCE` — không chụp đại chart
+    của một bài bất kỳ (LOW-179). Đo 23/09/2026 trên 23 bài đã rơi về thẻ chữ:
+    4 bài có link gốc là trang bảng, và cả 4 đều thuộc tên miền khai ở đây —
+    artificialanalysis ×3 (`/leaderboards/models`, `/text-to-speech`,
+    `/speech-to-text`), arena.ai ×1 (`/leaderboard/code/webdev`). Ba trong số đó
+    là bảng KHÔNG có mục riêng trong registry, nên vòng đi nguồn không bao giờ
+    chạm tới chúng dù bài lấy tin từ đúng trang ấy.
+    """
+    return bool(url) and any(re.search(n["domain_pattern"], url, re.I) for n in SOURCE)
+
+
+def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
+    """Chụp bảng/đồ thị của chính trang nguồn bài. None khi trang không có cái nào.
+
+    KHÔNG khoanh hàng: nấc này chạy đúng lúc không nguồn nào khớp được tên model,
+    nên ảnh ra là cả bảng. Vì vậy nó mang `kind` riêng (`board-page`) — `alt` phải
+    nói "chưa khoanh hàng", không được đội lốt ảnh đã khoanh (bài học LOW-177).
+
+    Dùng phép đo bề ngang của `capture_chart` (`MEASURE_JS` + `frame_can`): nới
+    khung cho vừa bảng rồi mới chụp, vì bề ngang của một bảng LÀ nội dung (luật
+    Ông Chủ 04/09/2026). Chiều cao thì cắt ở `HEIGHT_MAX_CSS` — giữ phần ĐẦU bảng,
+    đúng thứ cần xem.
+
+    Không gọi `capture_chart.capture`: hàm đó tự mở một phiên playwright riêng
+    (lồng vào phiên đang mở ở đây thì nổ) và `sys.exit` khi chụp thiếu, tức giết
+    cả engine thay vì lui về thẻ chữ.
+
+    Chụp bằng `page.screenshot(clip=...)`, KHÔNG bằng `element.screenshot()`. Đo
+    thật 23/09/2026 trên bốn trang bảng, `element.screenshot` hỏng hai kiểu khác
+    nhau: nó ĐỢI phần tử đứng yên nên hết giờ trên trang có hiệu ứng chạy số
+    (artificialanalysis/text-to-speech), và trang React vẽ lại giữa chừng thì ném
+    "Element is not attached to the DOM" (arena.ai). `clip` chỉ là bốn con số —
+    không đợi gì, không đụng vào DOM.
+    """
+    import capture_chart
+    ctx = None
+    try:
+        rong, do = capture_chart.EMPTY_MARK, None
+        cao_khung = HEIGHT_MAX_CSS + 200          # khung nhìn phải chứa trọn vùng cắt
+        for _ in range(2):          # lượt 1 đo, lượt 2 (nếu cần) nới khung rồi chụp lại
+            if ctx:
+                ctx.close()
+            ctx = br.new_context(viewport={"width": rong, "height": cao_khung},
+                                 device_scale_factor=DPR, user_agent=UA)
+            pg = ctx.new_page()
+            # `domcontentloaded` chứ không `networkidle`: networkidle không bao giờ
+            # đạt trên trang có quảng cáo + websocket (sự cố 0b395ad, TICKET_TEMPLATE).
+            pg.goto(url, wait_until="domcontentloaded", timeout=40000)
+            pg.wait_for_timeout(1500)                # font + animation của chart
+            # Do LAI vai lan truoc khi bo cuoc: trang bang la ung dung React, 1,5s
+            # dau co khi chua ve xong bang nao. Do 23/09: arena.ai/leaderboard/
+            # code/webdev lan thi do ra bang, lan thi ra rong o dung lan do dau.
+            for _ in range(BOARD_MEASURE_TRIES):
+                do_moi = pg.evaluate(JS_BOARD_FIND, BOARD_PICK)
+                if do_moi["sel"]:
+                    break
+                pg.wait_for_timeout(2000)
+            # Lượt hai đo hụt thì GIỮ kết quả lượt đầu: `sel` chỉ là một kiểu phần tử
+            # ("table"/"figure"/…), tải lại chậm một nhịp là đo ra rỗng — đo 23/09,
+            # arena.ai/leaderboard/code/webdev mất trắng ở đúng chỗ này.
+            do = do_moi if do_moi["sel"] else do
+            if not do or not do["sel"]:
+                in_log(f"[xep_hang] trang nguồn {url}: không có bảng/đồ thị nào đủ lớn")
+                return None
+            rong_moi = capture_chart.frame_can(do["w"], rong)
+            if rong_moi <= rong:
+                break
+            in_log(f"[xep_hang] trang nguồn: nới khung {rong} -> {rong_moi}px cho vừa bảng")
+            rong = rong_moi
+        el = pg.query_selector(BOARD_MARK)
+        if not el:
+            return None
+        # DOI DU LIEU VE. Do that 23/09/2026: arena.ai/leaderboard/code/webdev chup
+        # ra dung KHUNG XUONG luc dang tai — may o xam tren nen trang, khong mot
+        # con so nao. Cong "anh rong" khong bat duoc (no co hinh khoi, khong phang),
+        # va tam do di tiep duoc toi tan slide (dung loi bo Broadcom 04/09).
+        for lan in range(6):
+            du, mo_ta_dem = _board_has_content(pg, BOARD_MARK, do["sel"])
+            if du:
+                break
+            if lan == 0:
+                in_log(f"[xep_hang] trang nguồn: bảng chưa có dữ liệu ({mo_ta_dem}), đợi…")
+            pg.wait_for_timeout(2000)
+        else:
+            in_log(f"[xep_hang] trang nguồn {url}: bảng không bao giờ có dữ liệu ({mo_ta_dem}) — bỏ")
+            return None
+        try:
+            el.scroll_into_view_if_needed(timeout=8000)
+        except Exception:                                    # noqa: BLE001
+            # Bảng nằm trong khung cuộn riêng: `scroll_into_view_if_needed` đợi nó
+            # "ổn định" và không bao giờ đạt (đo 23/09, /text-to-speech).
+            in_log("[xep_hang] trang nguồn: cuộn tới bảng hụt, thử scrollIntoView thẳng")
+            el.evaluate("e => e.scrollIntoView({block: 'start'})")
+        pg.wait_for_timeout(400)
+        hop = el.bounding_box()
+        if not hop:
+            in_log(f"[xep_hang] trang nguồn {url}: không đo được vị trí bảng")
+            return None
+        x, y = max(0.0, hop["x"]), max(0.0, hop["y"])
+        cao = hop["height"]
+        khung_hang = pg.evaluate(JS_ROWS_BOX, [BOARD_MARK, BOARD_ROWS_SHOWN])
+        if khung_hang and khung_hang["bottom"] > khung_hang["top"]:
+            # Cat ngay duoi hang thu `BOARD_ROWS_SHOWN`.
+            cao = min(cao, khung_hang["bottom"] - y + 8)
+        clip = {"x": x, "y": y,
+                "width": min(hop["width"], rong - x),
+                "height": min(cao, float(HEIGHT_MAX_CSS), cao_khung - y)}
+        if clip["width"] < 320 or clip["height"] < 200:
+            in_log(f"[xep_hang] trang nguồn {url}: vùng chụp quá nhỏ "
+                   f"({clip['width']:.0f}x{clip['height']:.0f})")
+            return None
+        out.parent.mkdir(parents=True, exist_ok=True)
+        pg.screenshot(path=str(out), animations="disabled", clip=clip)
+        rong_that, mo_ta = role.active_rules().is_blank_image(Image.open(out).convert("RGB"))
+        if rong_that:
+            in_log(f"[xep_hang] trang nguồn: ảnh ra RỖNG ({mo_ta}) — bỏ")
+            out.unlink(missing_ok=True)
+            return None
+        bang = (pg.title() or "").strip()[:60] or "trang nguồn của bài"
+        image_provenance.stamp_file(out, "ranking_board_page", source="source-page",
+                                    board=bang, url=url)
+        im = Image.open(out)
+        in_log(f"[xep_hang] chụp bảng của CHÍNH trang nguồn ({do['sel']}, {im.width}x{im.height}) "
+               f"— chưa khoanh hàng: {bang}")
+        return {"file_path": str(out), "kind": "board-page", "source": "source-page",
+                "site": _domain_of(url), "board": bang, "rank": None, "url": url, "row": ""}
+    except Exception as e:                                   # noqa: BLE001
+        in_log(f"[xep_hang] trang nguồn {url}: {type(e).__name__}: {str(e)[:80]}")
+        return None
+    finally:
+        if ctx:
+            try:
+                ctx.close()
+            except Exception:                                # noqa: BLE001
+                pass
+
+
+
+def _domain_of(url: str) -> str:
+    from urllib.parse import urlparse
+    return (urlparse(url).netloc or url).replace("www.", "").upper()
+
+
 # ---- Thẻ dự phòng: tên model + #hạng + logo + site ------------------------------
 def fallback_card(model: str, hang, site: str, bang: str, out: Path, brand: str = "donniechublog",
                  logo: Path | None = None) -> Path:
@@ -1207,8 +1452,21 @@ def arena_first(models: list, out_dir: Path, in_log, extra_urls=()) -> list:
         return []
 
 
+def _board_page_result(phien, models: list, source_url: str, out_dir: Path, in_log) -> dict | None:
+    """Nac LOW-385, dung chung cho hai ham dieu phoi: khong nguon nao khoanh duoc
+    hang thi chup lay bang cua CHINH trang nguon bai truoc khi in the chu."""
+    if not source_page_is_board(source_url):
+        return None
+    out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}source_page.png"
+    kq = capture_source_board(phien.br, source_url, out, in_log)
+    if kq:
+        kq["model"] = model_name.display_name(models[0]) or models[0]
+        kq["mentioned"] = True          # chinh trang bai dang dan, khong the "bang khac"
+    return kq
+
+
 def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
-                hang_goi_y=None, in_log=print, phien_browser=None) -> dict:
+                hang_goi_y=None, in_log=print, phien_browser=None, source_url: str = "") -> dict:
     """Đi qua từng nguồn, nguồn nào ra ảnh khoanh được model thì dừng; không nguồn
     nào ra thì dựng thẻ dự phòng. Luôn trả về dict mô tả ảnh (file_path, kind, source,
     site, board, rank, model, url). `models` phải khác rỗng."""
@@ -1252,6 +1510,8 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
                        "url": n["url"], "row": kq["row"], "logo": str(logo) if logo else None,
                        "mentioned": bool(n.get("mentioned", True))}
             break
+        if not kq_cuoi:
+            kq_cuoi = _board_page_result(phien, models, source_url, out_dir, in_log)
     if kq_cuoi:
         return kq_cuoi
     card_name, n = _card_fields(models, nguon_ds)
@@ -1338,6 +1598,7 @@ def _skip_source(n: dict, da_chup_thuong: bool) -> bool:
 
 def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
                       hang_goi_y=None, in_log=print, toi_da: int = MAX_XH, phien_browser=None,
+                      source_url: str = "",
                       arena_checked: bool = False) -> list:
     """Nhu `find_and_capture`, nhung KHONG dung o thanh cong dau tien: nguon mang
     `independent: True` (xem chu thich tai NGUON) la NANG LUC RIENG cua model, cu gang
@@ -1400,6 +1661,10 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
                             "mentioned": bool(n.get("mentioned", True))})
             if not n.get("independent"):
                 da_chup_thuong = True
+        if not ket_qua:
+            kq_trang = _board_page_result(phien, models, source_url, out_dir, in_log)
+            if kq_trang:
+                ket_qua.append(kq_trang)
     if ket_qua:
         return ket_qua
     card_name, n = _card_fields(models, nguon_ds)

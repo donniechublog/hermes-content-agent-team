@@ -175,7 +175,7 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
                     models, ds, wd / state_paths.ORIGINAL_DIR, _brand_of(meta),
                     ranking.extract_rank(title, models[0]) or ranking.extract_rank(nguon.get("title_en") or "", models[0]),
                     in_log=lambda t: print(t, file=sys.stderr), phien_browser=phien,
-                    arena_checked=True)
+                    arena_checked=True, source_url=link)
             except Exception as e:                           # noqa: BLE001
                 print(f"[xep_hang] HONG: {type(e).__name__}: {e} — di tiep khong co anh XH",
                       file=sys.stderr)
@@ -201,9 +201,14 @@ def _image_item_ranking(i: int, xh: dict) -> dict:
         return {"id": ma, "original_path": xh["file_path"], "url": xh["url"], "alt": mo_ta_xh[:120],
                 "source": "ranking", "page_url": xh["url"], "domain": _domain(xh["url"]),
                 "chart_hint": True, "ranking": xh}
+    # Moi kieu mot cau MO TA DUNG cai minh la. "board-page" (LOW-385) chup ca bang
+    # cua trang nguon, khong khoanh hang nao — noi "da khoanh hang model" o do la
+    # mot loi khang dinh ve tam anh, dung loai LOW-177 cam.
+    duoi = {"card": " — THẺ DỰ PHÒNG (không chụp được bảng)",
+            "board-page": " — bảng của chính trang nguồn, CHƯA khoanh hàng"}
     mo_ta_xh = (f"bảng xếp hạng {xh['site']} ({xh['board']}) — {xh['model']}"
                 + (f" #{xh['rank']}" if xh.get("rank") else "")
-                + (" — THẺ DỰ PHÒNG (không chụp được bảng)" if xh["kind"] == "card" else ", đã khoanh hàng model"))
+                + duoi.get(xh["kind"], ", đã khoanh hàng model"))
     return {"id": ma, "original_path": xh["file_path"], "url": xh["url"], "alt": mo_ta_xh[:120],
             "source": "ranking", "page_url": xh["url"], "domain": _domain(xh["url"]),
             "chart_hint": xh["kind"] != "card", "ranking": xh}
