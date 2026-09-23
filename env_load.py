@@ -82,6 +82,27 @@ VISION_FALLBACK_MODEL = "ds/deepseek-v4-flash-vision-exp"
 # la thu DUY NHAT con chan gop bua; dung noi long no.
 SAME_STORY_MODEL = "ds/deepseek-v4.1-flash"
 
+# Dich tweet sang tieng Viet (tweet_translate.py). Ong Chu 23/09/2026: *"hieu
+# twitter nhat chac chan la grok, nen hay dung model grok"*.
+#
+# Do that 23/09/2026 qua 9router tren MOT tweet trang trong (@arena) va MOT tweet
+# nhieu tieng long ("cooked", "no cap", "mid", "banger", "skill issue"):
+#     gcli/grok-4.7   23s   dich HET, giu dung so doan, xu ly long dung chat
+#     xai/grok-4.5    27s   dat
+#     gcli/grok-4.5   30s   dat
+#     gcli/grok-4.6   71s   dat, nhung cham nhat
+#     xai/grok-4      13s   GOP DOAN (mat dong trong), con "get shipped on"
+#     xai/grok-4-fast-reasoning 11s  cut lui, sot chu
+#     xai/grok-3      1,4s  tot o tweet trang trong; tweet long thi BO NGUYEN
+#                           hai dong khong dich
+# Chon 4.7 KHONG phai vi no to: no la ban NHANH NHAT trong nhom dat. Mot dong
+# tieng Anh sot lai trong anh "vietsub" te hon la khong dich, va cai gia phai tra
+# cho ban "nhe hon" o day la 0 giay — 4.5/4.6 deu cham hon.
+#
+# `xai/grok-4.6` va `xai/grok-4.5` tra HTTP 400 khi gui `thinking: disabled` —
+# route `xai/` khong nhan tham so do; `gcli/` nhan nhung khong nhanh len.
+TRANSLATE_MODEL = "gcli/grok-4.7"
+
 # User-Agent RIENG cho moi thu goi Wikimedia (API commons + tai anh tu
 # upload.wikimedia.org). Robot policy cua Wikimedia doi UA co TEN cong cu va
 # DUONG LIEN HE trong ngoac; UA kieu "Mozilla/5.0 (compatible; donniechu-dre/1.0)"
