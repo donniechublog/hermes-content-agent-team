@@ -17,6 +17,15 @@ Dung:
     venv/bin/python bob_submit.py /duong/dan/anh.jpg          # anh da tai san
     venv/bin/python bob_submit.py "<url>" --emoji "🤔"        # chon mood khac
     venv/bin/python bob_submit.py "<url>" --khong-gui --out /tmp/x.png   # thu
+
+LINK TWEET di duong rieng (23/09/2026): thay vi lay anh TRONG tweet, dung ca
+THE tweet voi chu da dich sang tieng Viet (tweet_translate.py) roi moi dong
+khung + mascot nhu thuong. Hai luot:
+
+    venv/bin/python bob_submit.py "<link tweet>"              # in nguyen van de dich
+    venv/bin/python bob_submit.py "<link tweet>" --vi-file vi.txt --khong-gui --out /tmp/x.png
+
+`--tweet-image` keo link tweet ve duong CU (dong khung chinh tam anh trong tweet).
 """
 import argparse
 import os
@@ -32,6 +41,7 @@ sys.path.insert(0, str(ROOT))
 import image_frame                                             # noqa: E402
 import capture_page                                            # noqa: E402
 import env_load                                              # noqa: E402
+import tweet_translate                                        # noqa: E402
 
 # Skill nam trong repo (profile tro vao qua skills.external_dirs), khong phai
 # trong ~/.hermes — nen duong dan tinh tu ROOT, khong doan theo HERMES_HOME.
@@ -87,6 +97,46 @@ def mood_from_vision(txt: str) -> str:
 
 def is_url(s: str) -> bool:
     return urlparse(s).scheme in ("http", "https")
+
+
+def is_tweet(s: str) -> bool:
+    """Link tới MỘT tweet cụ thể. Trang hồ sơ (`x.com/arena`) không tính —
+    không có bài nào để dịch."""
+    return bool(is_url(s) and tweet_translate._STATUS.search(s))
+
+
+def take_card_vietsub(nguon: str, out_path: Path, a) -> str:
+    """Link tweet -> thẻ tweet chữ TIẾNG VIỆT ra `out_path` (tweet_translate).
+
+    Chưa có bản dịch thì IN NGUYÊN VĂN rồi dừng: đó là lượt một của Bob, không
+    phải lỗi. Bob đọc, dịch, chạy lại cùng lệnh kèm `--vi-file`.
+    """
+    if not (a.vi or a.vi_file):
+        source = tweet_translate.render(nguon, None, None, theme=a.theme, lang=a.lang)
+        print("--- NGUYÊN VĂN TWEET (dịch rồi chạy lại với --vi-file) ---")
+        print(source[0])
+        if len(source) > 1:
+            print("\n--- TWEET ĐƯỢC QUOTE BÊN TRONG (cũng nằm trong ảnh) ---")
+            print("\n\n".join(source[1:]))
+        print("\nBọc <hl>…</hl> quanh cụm cần nhấn màu. Quote thì --quote-vi-file "
+              "để dịch, hoặc --hide-quote để bỏ hẳn.")
+        sys.exit(0)
+
+    vi = tweet_translate.read_vi(a.vi, a.vi_file, a.bo_qua_dau, "tweet chính")
+    quote_vi = (tweet_translate.read_vi(a.quote_vi, a.quote_vi_file, a.bo_qua_dau, "quote")
+                if (a.quote_vi or a.quote_vi_file) else None)
+    source = tweet_translate.render(nguon, vi, out_path, theme=a.theme, lang=a.lang,
+                                    clean=a.clean, quote_vi=quote_vi,
+                                    hide_quote=a.hide_quote, hl_color=a.hl_color)
+    # Cùng cổng chặn như tweet_translate chạy riêng: tweet có quote mà không dịch,
+    # không ẩn thì ảnh lẫn nguyên một khối tiếng Anh — và ở đây nó sẽ đi thẳng
+    # qua bước đóng khung rồi lên Telegram.
+    if len(source) > 1 and quote_vi is None and not a.hide_quote:
+        out_path.unlink(missing_ok=True)
+        sys.exit("[LOI] tweet có QUOTE lồng bên trong, chữ tiếng Anh của nó sẽ nằm "
+                 f"trong ảnh:\n  {source[1][:160]!r}\n"
+                 "  Dịch bằng --quote-vi-file, hoặc bỏ hẳn bằng --hide-quote.")
+    return "thẻ tweet dịch tiếng Việt (tweet_translate.py)"
 
 
 def take_image(nguon: str, out_path: Path) -> str:
@@ -168,6 +218,24 @@ def main() -> int:
                     help="Bo qua buoc vision mo ta anh (nhanh hon, tu chon mood)")
     ap.add_argument("--khong-gui", action="store_true", help="Thu: khong gui Telegram")
     ap.add_argument("--out", help="Duong dan anh ra (mac dinh tep tam)")
+    # --- link tweet: dựng thẻ chữ tiếng Việt rồi mới đóng khung (23/09/2026) ---
+    ap.add_argument("--vi", help="Bản dịch tiếng Việt của tweet (<hl>…</hl> = nhấn màu)")
+    ap.add_argument("--vi-file", help="Tệp chứa bản dịch — dùng khi có nhiều dòng")
+    ap.add_argument("--quote-vi", help="Bản dịch cho tweet được QUOTE bên trong")
+    ap.add_argument("--quote-vi-file", help="Tệp chứa bản dịch của quote")
+    ap.add_argument("--hide-quote", action="store_true", help="Ẩn hẳn khối quote")
+    ap.add_argument("--hl-color",
+                    help="Màu cụm <hl>: mã #rrggbb hoặc tên "
+                         f"({', '.join(tweet_translate.HL_DARK)}). "
+                         "Không đặt thì chọn theo id tweet.")
+    ap.add_argument("--theme", default="dark", choices=("dark", "light"))
+    ap.add_argument("--lang", default="vi", help="Ngôn ngữ chữ UI của thẻ tweet")
+    ap.add_argument("--clean", action="store_true",
+                    help="Thẻ tweet sạch hơn: bỏ nút Theo dõi và icon ⓘ")
+    ap.add_argument("--bo-qua-dau", action="store_true",
+                    help="Bỏ qua cổng chặn chữ Việt mất dấu")
+    ap.add_argument("--tweet-image", action="store_true",
+                    help="Link tweet: lấy ẢNH TRONG tweet như trước, không dịch thẻ")
     a = ap.parse_args()
 
     # Kiem ASSETS cua skill (avatar/font/palette) — phan .js da bo, nhung khung
@@ -184,7 +252,13 @@ def main() -> int:
     ra = Path(a.out) if a.out else tam / "framed.png"
     ra.parent.mkdir(parents=True, exist_ok=True)
 
-    cach = take_image(a.nguon, src)
+    # Link tweet đi đường vietsub; mọi URL khác giữ nguyên đường cũ (ảnh CDN,
+    # chụp trang). `--tweet-image` kéo link tweet về đường cũ khi Bob muốn đóng
+    # khung chính tấm ảnh TRONG tweet thay vì cả thẻ.
+    if is_tweet(a.nguon) and not a.tweet_image:
+        cach = take_card_vietsub(a.nguon, src, a)
+    else:
+        cach = take_image(a.nguon, src)
     print(f"[nguon] {cach}  ({src.stat().st_size // 1024} KB)")
 
     # NHIN anh giup Bob. Tren profile bob, toolset `vision_analyze` khong dung

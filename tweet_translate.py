@@ -91,6 +91,27 @@ IMAGE_TRY = 8              # số lần đợi ảnh đính kèm tải xong
 
 _STATUS = re.compile(r"(?:x|twitter)\.com/[^/]+/status(?:es)?/(\d{5,25})", re.I)
 
+# Tweet DÀI bị thẻ nhúng cắt: chữ dừng giữa chừng và đính thêm một span "Hiển thị
+# thêm" NGAY TRONG node chữ. Đo 23/09/2026 trên arena/2102497076831818113 — thẻ
+# chỉ trả 293 ký tự, và bấm vào span đó KHÔNG mở rộng (293 trước, 293 sau), tức
+# phần còn lại không nằm trong DOM. `social_fetch` qua crawl-queue cắt đúng chỗ
+# ấy, nên không có nguồn nào trong đội lấy được toàn văn — người dịch phải tự mở
+# link. Ở đây chỉ làm một việc: NÓI RA, thay vì lặng lẽ đưa bản cụt đi dịch.
+#
+# Bám chữ chứ không bám tên node (X không đặt data-testid cho span này trong thẻ
+# nhúng). X đổi chữ thì mất cảnh báo — không ra ảnh sai, vì bản dịch vẫn là chữ
+# người viết đưa vào.
+SHOW_MORE = ("hiển thị thêm", "xem thêm", "show more")
+
+
+def cut_show_more(t: str) -> tuple:
+    """(chữ đã bỏ nhãn 'Hiển thị thêm', tweet có bị cắt không)."""
+    s = (t or "").rstrip()
+    for nhan in SHOW_MORE:
+        if s.lower().endswith(nhan):
+            return (s[: -len(nhan)].rstrip(), True)
+    return (s, False)
+
 # MẶC ĐỊNH bỏ hết phần tương tác ở chân thẻ (Ông Chủ 23/09/2026): hàng trái tim
 # / "Trả lời" / "Sao chép liên kết đến bài đăng", và khối "Đọc N trả lời". Chúng
 # là lời mời bấm, mà ảnh đăng lên kênh mình thì không bấm được. Thẻ kết thúc
@@ -282,7 +303,14 @@ def render(url: str, vi, out_path, theme="dark", lang="vi", clean=False,
             # `conversation=none` bỏ được thread nhưng KHÔNG bỏ quote — quote là
             # một phần của chính tweet này.
             nodes = page.query_selector_all(SEL_TEXT)
-            source = [(n.inner_text() or "") for n in nodes]
+            source = []
+            for i, n in enumerate(nodes):
+                chu, bi_cat = cut_show_more(n.inner_text() or "")
+                source.append(chu)
+                if bi_cat:
+                    print(f"[tweet_translate] CẢNH BÁO: {'tweet' if i == 0 else 'quote'} dài, "
+                          f"thẻ nhúng chỉ trả {len(chu)} ký tự rồi cắt. Mở link đọc phần còn "
+                          f"lại trước khi dịch — bản in ra CHƯA ĐỦ.", file=sys.stderr, flush=True)
             if vi is not None:
                 ten_mau, ma_mau = pick_hl(tid, theme, hl_color)
                 print(f"[tweet_translate] màu nhấn: {ten_mau} {ma_mau}"
@@ -322,6 +350,11 @@ def render(url: str, vi, out_path, theme="dark", lang="vi", clean=False,
 
 def read_vi(text, file_path, bo_qua_dau: bool, nhan: str) -> str:
     vi = Path(file_path).read_text(encoding="utf-8") if file_path else text
+    if not file_path:
+        # `--vi` gõ trên MỘT dòng lệnh: nhận `\n` viết liền hai ký tự thành
+        # xuống dòng thật. Vai Bob chạy theo allowlist từng chuỗi lệnh nên
+        # không ghi được tệp tạm, mà tweet thì gần như luôn nhiều đoạn.
+        vi = (vi or "").replace("\\n", "\n")
     vi = (vi or "").strip("\n")
     if not vi.strip():
         sys.exit(f"Bản dịch {nhan} rỗng.")
