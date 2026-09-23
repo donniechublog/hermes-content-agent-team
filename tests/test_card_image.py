@@ -182,14 +182,15 @@ def test_card_ceiling_has_frame_text_most_net():
     with tempfile.TemporaryDirectory() as t:
         im = _use_card(t, (1920, 1080), "Nvidia mở kho mô hình Nemotron")
         x = card.CEILING_FRAME_X + card.CEILING_FRAME_LW // 2
-        cot = [im.getpixel((x, y)) for y in range(int(1500 * 0.72), int(1500 * 0.88))]
+        cot = [im.getpixel((x, y)) for y in range(int(1500 * 0.72), int(1500 * 0.85))]
         lech = max(max(abs(p[i] - cot[0][i]) for i in range(3)) for p in cot)
         assert lech < 24, f"khong thay net doc cua khung o x={x} (lech {lech})"
         # ...va ngay ben trong khung la OVERLAY chu khong phai mang DAC: tu LOW-336 (Ong Chu
         # 21/09/2026 "nen cua text bi loang lo la ko duoc phep") trong khung la mot lop
         # overlay deu alpha 84% nen gan phang, nhung anh van lo qua 16% — khong mot mau tuyet doi.
-        # LOW-364: khung nam trong o vuong giua (~0.65..0.89H) — do trong khung, tranh goc bo tron.
-        trong = [im.getpixel((x + 18, y)) for y in range(int(1500 * 0.70), int(1500 * 0.87))]   # le trong giua net khung va chu
+        # LOW-364/365: khung nam trong o vuong giua, da dich len 20px (~0.64..0.87H) — do trong
+        # khung, tranh goc bo tron.
+        trong = [im.getpixel((x + 18, y)) for y in range(int(1500 * 0.69), int(1500 * 0.85))]   # le trong giua net khung va chu
         lech_trong = max(max(abs(p[i] - trong[0][i]) for i in range(3)) for p in trong)
         assert lech_trong > 2, "ben trong khung la mang DAC mot mau, khong phai overlay"
         assert lech_trong < 24, f"ben trong khung loang lo (lech {lech_trong})"

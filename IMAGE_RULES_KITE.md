@@ -853,6 +853,11 @@ thuộc vào hình lúc publish nữa"*. Cùng một nội dung ở cả ba tệ
 - **Vùng an toàn** = ô vuông giữa khung: dải cắt mỗi đầu = (H − W) / 2 (4:5 → 10% chiều cao:
   135px ở 1080×1350, 150px ở 1200×1500), cộng lề `safe_zone.SAFE_PAD` = 12px. Một chỗ tính:
   `safe_zone.py`.
+- **Ô vuông thật nằm cao hơn tâm khung** (LOW-391, Ông Chủ 23/09/2026 xem bài trên IG: *"phía
+  trên vẫn còn dư một viền đen nhưng phía dưới thì lại quá sát text"*, *"safezone ở IG có lẽ cần
+  đẩy lên phía trên khoảng 20px"*): cả hai mép vùng an toàn dịch LÊN `safe_zone.SAFE_SHIFT_UP` =
+  20px. Tính cả nét vẽ tràn ra ngoài khối: bóng chip nhãn bìa (`CHIP_DROP` = 8) và dấu đóng
+  ngoặc dưới khung quote (`Q_FRAME_DROP` = 12).
 - **Trong vùng an toàn:** khung chữ + kicker + tựa (thẻ Ethan), hook + hàng chip chuyên mục/tên
   model (bìa Dre), khối chữ slide thân (`carousel.TEXT_BASE` = 1203), khung quote, đỉnh nội dung
   ảnh nền phẳng (`carousel.FLAT_TOP` = 147 — hàng tiêu đề bảng/hình paper).

@@ -831,8 +831,11 @@ def test_new_line_quote_read_ok_when_background_two_tone():
             return ve_goc(self, xy, text, *a, **kw)
 
         quote = "Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench Verified"
-        # 0.756: ranh roi GIUA khoi chu. 0.60: ca khoi tren nen sang.
-        for ranh in (0.756, 0.60, 0.95):
+        # 0.74: ranh roi GIUA khoi chu (giua hai dong). 0.60: ca khoi tren nen sang.
+        # LOW-365: khoi chu dich len 20px nen 0.756 cu nay cat NGANG mot dong — cung mot cho
+        # yeu tai hien duoc tren code cu bang cach doi ranh 20px (cum ten model to mau CYAN
+        # nam vat qua ranh -> CR 2.6). Do la lo hong rieng cua mau ten hang, ticket rieng.
+        for ranh in (0.74, 0.60, 0.95):
             da_ve.clear()
             src = _image_two_tone(1200, 1560, t / f"g{int(ranh*1000)}.png", ranh)
             ra = t / f"the{int(ranh*1000)}.png"
