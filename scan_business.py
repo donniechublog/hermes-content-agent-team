@@ -577,7 +577,15 @@ def ask_same_story(today: list, prior: list) -> str | None:
             raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
         return json.loads(raw)["choices"][0]["message"]["content"]
     except Exception as e:                                   # noqa: BLE001
-        print(f"[same_story] llm loi {type(e).__name__} -> chi dung gom bang code", file=sys.stderr)
+        # Ghi ro MODEL va ma loi: 23/09/2026 lop nay chet nhieu ngay (`ds/deepseek-v4-pro`
+        # bi go khoi 9router, 404 "No active credentials") ma khong ai hay, vi dong cu
+        # chi noi "llm loi HTTPError". Mot lop chong trung tat am tham la bao cao van
+        # trong nhu that.
+        ma = getattr(e, "code", "") or ""
+        print(f"[same_story] TAT: llm loi {type(e).__name__}{f' {ma}' if ma else ''} "
+              f"tren model {SAME_STORY_MODEL!r} -> chi dung gom bang code, "
+              "KHONG con bat duoc tin cu quay lai duoi cach dien dat khac",
+              file=sys.stderr)
         return None
 
 
