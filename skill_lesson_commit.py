@@ -6,7 +6,7 @@ Layer 2 (skill_lesson_filter.py) judges each staged skill write and marks it
 and turns them into real repo history: a fresh worktree off `github/main`
 (never the server's production checkout), one commit per lesson with a
 traceable metadata comment, a pushed branch, a PR, and auto-merge once CI is
-green. It never pushes `origin` (that stays a deliberate, manual deploy step)
+green. It never pushes `deploy` (that stays a deliberate, manual deploy step)
 and never touches a lesson the boss still needs to review (verdict "flagged").
 
 Once a lesson is merged — or found impossible to re-apply because `main`
