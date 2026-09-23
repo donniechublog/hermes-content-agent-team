@@ -16,7 +16,6 @@ Chay:  venv/bin/python tests/test_scan_seen.py
 """
 import json
 import sys
-import tempfile
 import time
 from pathlib import Path
 
@@ -25,10 +24,11 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
 import scan_seen                                             # noqa: E402
+import tam  # noqa: E402
 
 
 def _store(noi_dung=None, **kw):
-    tmp = Path(tempfile.mkdtemp(prefix="scan_seen_"))
+    tmp = Path(tam.temp_dir(prefix="scan_seen_"))
     p = tmp / "seen.json"
     if noi_dung is not None:
         p.write_text(noi_dung if isinstance(noi_dung, str) else json.dumps(noi_dung),
@@ -87,7 +87,7 @@ def test_other_fields_survive_a_write():
 def test_a_second_role_field_in_the_same_file_is_untouched():
     """Nova gan `seen_at` canh cac truong khac; hai kho khac `field` trong CUNG
     mot tep khong duoc dam nhau."""
-    p = Path(tempfile.mkdtemp(prefix="scan_seen_")) / "models_seen.json"
+    p = Path(tam.temp_dir(prefix="scan_seen_")) / "models_seen.json"
     hf = scan_seen.SeenStore(p, field="hf_seen")
     story = scan_seen.SeenStore(p, field="story_seen")
     hf.mark(["org/model-a"])

@@ -9,8 +9,8 @@ nếu prompt không nhắc thì Kite chỉ biết qua thông báo lỗi, và có
 Chạy:  venv/bin/python tests/test_low346_kite_image_force_prompt.py
 """
 import sys
-import tempfile
 from pathlib import Path
+import tam  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -48,7 +48,7 @@ def test_gate_message_and_key_match_the_prompt():
     import kite_submit as ks
     import render_edu as re_
     from PIL import Image
-    boxed = Path(tempfile.mkdtemp()) / "boxed.png"
+    boxed = Path(tam.temp_dir()) / "boxed.png"
     import random
     random.seed(11)
     im = Image.new("RGB", (1080, 1350), (0, 0, 0))

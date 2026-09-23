@@ -20,12 +20,12 @@ Chạy:  venv/bin/python tests/test_render_edu_confirm_layer_open.py
 """
 import random
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import render_edu as re_                                      # noqa: E402
+import tam  # noqa: E402
 
 TH = dict(bg="#171A21", panel="#212530", line="#333846",
           a="#2FD4E1", b="#8E86F0", stand="#BFC5CF")
@@ -43,7 +43,7 @@ def _image_capture(w=600, h=760):
         for x in range(0, w, 3):
             c = random.randint(0, 255)
             px[x, y] = (c, c, c)
-    d = tempfile.mkdtemp()
+    d = tam.temp_dir()
     p = Path(d) / "chup.png"
     im.save(p, "PNG")
     return p

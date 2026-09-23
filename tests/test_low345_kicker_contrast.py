@@ -17,12 +17,12 @@ Chạy:  venv/bin/python tests/test_low345_kicker_contrast.py
 import json
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import render_edu as re_                                      # noqa: E402
+import tam  # noqa: E402
 
 LONG_TITLE = "Kế hoạch bảo tồn trọng số mở của nhiều mô hình lớn"
 LONG_STAND = ("Hình ảnh cướp biển đại diện cho triết lý chia sẻ ngang hàng tự do không thể bị kiểm duyệt, "
@@ -42,7 +42,7 @@ def _light_photo(w=1200, h=1500):
         for x in range(w):
             v = 205 + random.randint(-45, 45)
             px[x, y] = (v, v, min(255, v + 8))
-    tmp = Path(tempfile.mkdtemp()) / "light.png"
+    tmp = Path(tam.temp_dir()) / "light.png"
     im.save(tmp)
     return tmp
 
@@ -54,7 +54,7 @@ def _flat_table(w=1200, h=1500):
     d = ImageDraw.Draw(im)
     for y in range(60, h, 70):
         d.rectangle((60, y, w - 60, y + 30), fill=(220, 30, 30))
-    tmp = Path(tempfile.mkdtemp()) / "table.png"
+    tmp = Path(tam.temp_dir()) / "table.png"
     im.save(tmp)
     return tmp
 
@@ -75,7 +75,7 @@ def _render(image, long_text=False):
               {"kind": "cta", "eyebrow": "E", "title": "Sáu", "checks": ["a", "b"]}]
     spec = {"brand": "donniechublog", "section": "TEST", "folio": "TEST", "theme": "ink", "hero": "orbit",
             "slides": slides}
-    d = Path(tempfile.mkdtemp())
+    d = Path(tam.temp_dir())
     (d / "spec.json").write_text(json.dumps(spec, ensure_ascii=False), encoding="utf-8")
     r = subprocess.run([sys.executable, str(ROOT / "render_edu.py"), "--spec", str(d / "spec.json"),
                         "--out", str(d / "s.png"), "--brand", "donniechublog", "--theme", "ink",
@@ -148,7 +148,7 @@ def test_flat_table_ends_above_first_text_line():
 def test_flat_branch_carries_trim_script():
     """Nhánh phẳng phải có script cắt ảnh ở dòng chữ đầu (renderer gọi window.__datMan)."""
     from PIL import Image
-    p = Path(tempfile.mkdtemp()) / "flat.png"
+    p = Path(tam.temp_dir()) / "flat.png"
     Image.new("RGB", (1200, 1500), (255, 255, 255)).save(p)
     nen, _ = re_.image_make_background({"image": str(p)}, dict(next(iter(re_.THEMES.values())), hero=None),
                                         "figure")

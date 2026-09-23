@@ -31,9 +31,9 @@ Khong phai tep test: ten khong bat dau bang test_ nen tests/run.sh bo qua.
 """
 import json
 import shutil
-import tempfile
 import types
 from pathlib import Path
+import tam  # noqa: E402
 
 
 class StopLoop(BaseException):
@@ -147,7 +147,7 @@ class Harness:
 
     # -- vong doi --------------------------------------------------------
     def __enter__(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="trace_"))
+        self.tmp = Path(tam.temp_dir(prefix="trace_"))
         self.drafts = self.tmp / "drafts"
         self.state = self.tmp / "state"
         self.drafts.mkdir()

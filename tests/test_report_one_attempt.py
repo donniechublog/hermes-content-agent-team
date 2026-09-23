@@ -75,6 +75,12 @@ def _run_main(tmp, stderr, stdout=None, manifest=None):
     Tra ve (ma thoat, danh sach lan goi gui). `gui` bi thay bang ban ghi nhan
     de test khong dung toi Telegram."""
     d = Path(tmp)
+    # Nho GIA TRI CU de tra lai o `finally` (LOW-390). Khong tra lai thi sau khi
+    # `with TemporaryDirectory()` cua nguoi goi xoa `d`, CT_STATE_DIR con tro vao
+    # cho da bien mat — va `env_load.state_dir()` LUON TAO SAN thu muc, nen no
+    # dung day lai mot thu muc rong roi bo do. Do la thu muc tam duy nhat con sot
+    # sau khi va ca bo test. Khuon save/restore nay lay tu test_cape.py:55.
+    cu_state = os.environ.get("CT_STATE_DIR")
     os.environ["CT_STATE_DIR"] = str(d)
     wd = d / "scan" / f"vera_{datetime.now(scan_submit.qb.VN).strftime('%Y%m%d')}"
     wd.mkdir(parents=True, exist_ok=True)
@@ -91,6 +97,10 @@ def _run_main(tmp, stderr, stdout=None, manifest=None):
             ma = scan_submit.main()
     finally:
         scan_submit._run, scan_submit.send, sys.argv = cu_chay, cu_gui, cu_argv
+        if cu_state is None:
+            os.environ.pop("CT_STATE_DIR", None)
+        else:
+            os.environ["CT_STATE_DIR"] = cu_state
     return ma, da_gui
 
 

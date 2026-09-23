@@ -22,7 +22,6 @@ Chay:  venv/bin/python tests/test_replay_model_watch.py
 import json
 import os
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -32,6 +31,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 import env_load                        # noqa: E402
 import model_watch                     # noqa: E402
 import publish                         # noqa: E402
+import tam  # noqa: E402
 
 GOLDEN = Path(__file__).resolve().parent / "golden" / "replay" / "model_watch_probes.json"
 RECORDED = json.loads(GOLDEN.read_text(encoding="utf-8"))["responses"]
@@ -110,7 +110,7 @@ class _Run:
         self.saved = {}
 
     def __enter__(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="model_watch_"))
+        self.tmp = Path(tam.temp_dir(prefix="model_watch_"))
         state = Path(self.state_dir or (self.tmp / "state"))
         state.mkdir(parents=True, exist_ok=True)
         self.state_file = state / "model_health.json"
@@ -161,7 +161,7 @@ class _Run:
 # =========================================================================
 def test_every_profile_chain_is_collected_not_just_the_root():
     """Tung thieu nova + market: model cua hai vai do hong thi khong ai thu."""
-    tmp = tempfile.mkdtemp()
+    tmp = tam.temp_dir()
     home = _home(tmp, profiles={"ada": ("ag/gemini-3.8-flash",
                                         ["ds/deepseek-v4-pro", "gcli/grok-4.6"]),
                                 "dre": ("ag/gemini-3.8-flash", ["ds/deepseek-v4-flash"])})
@@ -179,7 +179,7 @@ def test_every_profile_chain_is_collected_not_just_the_root():
 
 
 def test_broken_or_missing_config_is_skipped_not_fatal():
-    tmp = tempfile.mkdtemp()
+    tmp = tam.temp_dir()
     home = _home(tmp, profiles={"ada": ("ds/deepseek-v4-pro", [])})
     (home / "profiles" / "hong" / "config.yaml").parent.mkdir(parents=True)
     (home / "profiles" / "hong" / "config.yaml").write_text("{ khong phai yaml: [", encoding="utf-8")
@@ -269,7 +269,7 @@ def test_network_failure_is_reported_not_raised():
 # main — canh bao CHI khi trang thai DOI
 # =========================================================================
 def _base_home():
-    return _home(tempfile.mkdtemp(),
+    return _home(tam.temp_dir(),
                  profiles={"ada": ("ag/gemini-3.8-flash",
                                    ["ds/deepseek-v4-pro", "gcli/grok-4.6"]),
                            "dre": ("ag/gemini-3.8-flash", ["ds/deepseek-v4-flash"])})
@@ -336,7 +336,7 @@ def test_model_seen_for_the_first_time_is_only_announced_when_already_broken():
 
 def test_role_losing_its_whole_chain_gets_the_loud_line():
     """Canh bao nang: mot vai mat CA model chinh lan moi du phong = khong chay duoc."""
-    home = _home(tempfile.mkdtemp(),
+    home = _home(tam.temp_dir(),
                  profiles={"ada": ("ag/gemini-3.8-flash", ["ds/deepseek-v4-pro"])})
     with _Run(home, argv=("model_watch.py", "--quiet"),
               overrides={"ag/gemini-3.8-flash": "BOC-402/nha-cung-cap",
@@ -418,7 +418,7 @@ def test_non_json_body_does_not_crash_the_probe():
 
 
 def test_home_without_a_root_config_still_reads_the_profiles():
-    tmp = tempfile.mkdtemp()
+    tmp = tam.temp_dir()
     home = _home(tmp, profiles={"ada": ("ds/deepseek-v4-pro", ["gcli/grok-4.6"])})
     (home / "config.yaml").unlink()
     old = model_watch.hermes_home
