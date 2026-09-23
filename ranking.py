@@ -1013,18 +1013,73 @@ JS_CONTENT = """
 }
 """
 
-# Bang phai co it nhat bay nhieu hang CO CHU — cung nguong voi `capture_board`
-# (bang >=5 hang) de hai duong khong noi hai chuyen khac nhau.
+# Tim phan tu bang/chart LON NHAT va DANH DAU no. Phai danh dau chu khong chi
+# tra ve ten kieu ("table"): `capture_chart.MEASURE_JS` chi tra `sel`, roi ben
+# Python `query_selector("table")` lay BANG DAU TIEN cua trang — khong nhat thiet
+# la cai vua do. Do 23/09 tren arena.ai: do mot dang, chup mot neo, ra tam anh co
+# bang o tren va nua duoi toan khung chart dang quay.
+JS_BOARD_FIND = """
+(sels) => {
+  document.querySelectorAll('[data-xh-board]').forEach(e => e.removeAttribute('data-xh-board'));
+  let best = null;
+  for (const s of sels) {
+    for (const el of document.querySelectorAll(s)) {
+      const r = el.getBoundingClientRect();
+      const w = Math.max(el.scrollWidth || 0, r.width);
+      const h = Math.max(el.scrollHeight || 0, r.height);
+      if (w < 320 || h < 200) continue;
+      if (!best || w * h > best.w * best.h) best = {sel: s, w, h, el};
+    }
+    if (best) break;
+  }
+  if (!best) return {sel: null, w: 0, h: 0};
+  best.el.setAttribute('data-xh-board', '1');
+  return {sel: best.sel, w: best.w, h: best.h};
+}
+"""
+BOARD_MARK = "[data-xh-board]"
+
+
+# Day cua HANG THU N con chu, tinh theo khung nhin. Cat theo day nay chu khong
+# theo chieu cao phan tu, cung khong theo hang CUOI:
+#   - theo chieu cao phan tu: o arena.ai, bang luc chua tai xong chi co 10 hang roi
+#     den cac khung chart ben duoi — cat theo phan tu thi nua duoi tam anh la
+#     chart dang quay (do that 23/09, hai lan chup lien).
+#   - theo hang cuoi: cung trang do luc DA tai xong co 131 hang, cao 6934px.
+# Anh cua mot bang xep hang can phan DAU bang; N hang dau la thu do, va no khong
+# phu thuoc trang co bao nhieu hang hay ben duoi bang con gi.
+#
+# 18 chu khong phai 15: do that tren hai trang bang, 15 hang ra ti le 1,68-1,70 —
+# qua nguong 1,6 cua `card.kiem_anh_thap` nen Ethan khong dung mot minh duoc,
+# phai ghep doc. 18 hang ha ti le ve ~1,4, tuc tam anh DUNG duoc lam hero.
+BOARD_ROWS_SHOWN = 18
+JS_ROWS_BOX = """
+([sel, n]) => {          // playwright truyen MOT doi so: phai bo dau ngoac ra
+  const e = document.querySelector(sel);
+  if (!e) return null;
+  const rows = Array.from(e.querySelectorAll('tr,[role=row]'))
+    .filter(r => (r.innerText || '').trim().length >= 3);
+  if (!rows.length) return null;
+  const cuoi = rows[Math.min(n, rows.length) - 1];
+  return {top: e.getBoundingClientRect().top, bottom: cuoi.getBoundingClientRect().bottom};
+}
+"""
+
+
 BOARD_ROWS_MIN = 5
+# So lan do lai truoc khi ket luan trang khong co bang. Trang bang la ung dung
+# React; do 23/09 tren arena.ai, bang co khi hien sau 6s.
+BOARD_MEASURE_TRIES = 5
 BOARD_CHARS_MIN = 80
 
 
-def _board_has_content(pg, sel: str) -> tuple:
-    """(du noi dung chua, mo ta) cho phan tu `sel` tren trang dang mo."""
+def _board_has_content(pg, sel: str, kieu: str = "table") -> tuple:
+    """(du noi dung chua, mo ta) cho phan tu `sel` tren trang dang mo. `kieu` la
+    loai phan tu da do duoc (table/figure/svg/canvas)."""
     dem = pg.evaluate(JS_CONTENT, sel)
-    if sel == "table":
+    if kieu == "table":
         return dem["rows"] >= BOARD_ROWS_MIN, f"{dem['rows']} hàng có chữ"
-    if sel == "canvas":
+    if kieu == "canvas":
         return True, "canvas (không đọc được chữ)"
     return dem["chars"] >= BOARD_CHARS_MIN, f"{dem['chars']} ký tự"
 
@@ -1084,8 +1139,8 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
             # Do LAI vai lan truoc khi bo cuoc: trang bang la ung dung React, 1,5s
             # dau co khi chua ve xong bang nao. Do 23/09: arena.ai/leaderboard/
             # code/webdev lan thi do ra bang, lan thi ra rong o dung lan do dau.
-            for _ in range(3):
-                do_moi = pg.evaluate(capture_chart.MEASURE_JS, BOARD_PICK)
+            for _ in range(BOARD_MEASURE_TRIES):
+                do_moi = pg.evaluate(JS_BOARD_FIND, BOARD_PICK)
                 if do_moi["sel"]:
                     break
                 pg.wait_for_timeout(2000)
@@ -1101,7 +1156,7 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
                 break
             in_log(f"[xep_hang] trang nguồn: nới khung {rong} -> {rong_moi}px cho vừa bảng")
             rong = rong_moi
-        el = pg.query_selector(do["sel"])
+        el = pg.query_selector(BOARD_MARK)
         if not el:
             return None
         # DOI DU LIEU VE. Do that 23/09/2026: arena.ai/leaderboard/code/webdev chup
@@ -1109,7 +1164,7 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
         # con so nao. Cong "anh rong" khong bat duoc (no co hinh khoi, khong phang),
         # va tam do di tiep duoc toi tan slide (dung loi bo Broadcom 04/09).
         for lan in range(6):
-            du, mo_ta_dem = _board_has_content(pg, do["sel"])
+            du, mo_ta_dem = _board_has_content(pg, BOARD_MARK, do["sel"])
             if du:
                 break
             if lan == 0:
@@ -1131,9 +1186,14 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
             in_log(f"[xep_hang] trang nguồn {url}: không đo được vị trí bảng")
             return None
         x, y = max(0.0, hop["x"]), max(0.0, hop["y"])
+        cao = hop["height"]
+        khung_hang = pg.evaluate(JS_ROWS_BOX, [BOARD_MARK, BOARD_ROWS_SHOWN])
+        if khung_hang and khung_hang["bottom"] > khung_hang["top"]:
+            # Cat ngay duoi hang thu `BOARD_ROWS_SHOWN`.
+            cao = min(cao, khung_hang["bottom"] - y + 8)
         clip = {"x": x, "y": y,
                 "width": min(hop["width"], rong - x),
-                "height": min(hop["height"], float(HEIGHT_MAX_CSS), cao_khung - y)}
+                "height": min(cao, float(HEIGHT_MAX_CSS), cao_khung - y)}
         if clip["width"] < 320 or clip["height"] < 200:
             in_log(f"[xep_hang] trang nguồn {url}: vùng chụp quá nhỏ "
                    f"({clip['width']:.0f}x{clip['height']:.0f})")
