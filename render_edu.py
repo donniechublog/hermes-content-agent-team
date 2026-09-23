@@ -974,8 +974,13 @@ def _css_mast_dark():
     """Masthead (ten kenh trai, section phai, gach ngang) doi sang TOI — dung
     khi DINH the (o tren, sau masthead) la nen sang: mot man toi rieng dat len
     tren se ve ra mot dai band vat ngang, dung cai dang tranh."""
+    # LOW-366: dong byline o CHAN khung (`.foot`) cung doi mau theo — bia nen sang truoc day
+    # cho chu trang tren giay trang (do that: mat ten kenh o bia Grok 4.7).
     return ('<style>.mast-name,.mast-sec{color:rgba(0,0,0,0.62);}'
-            '.rule{background:rgba(0,0,0,0.16);}</style>')
+            '.rule{background:rgba(0,0,0,0.16);}'
+            '.foot .byline{color:rgba(0,0,0,0.55);}'
+            '.foot .byline .b0{color:rgba(0,0,0,0.85);}'
+            '.foot .dot{background:rgba(0,0,0,0.4);}</style>')
 
 
 def _css_text_dark_region(scope, th):
