@@ -379,7 +379,7 @@ def check_subject_above_text(spec_r: dict, m: dict, text_tops: dict) -> list:
                                f"khung, đè lên đáy hình đã co ({render_edu.CONTAIN_BOTTOM / render_edu.H:.0%}). "
                                "Rút gọn chữ của slide (standfirst/caption/cards)")
                 continue
-        if not a or top is None or a.get("kind") == "chart" or a.get("ranking") or a.get("unpadded_path"):
+        if not a or top is None or a.get("kind") == "chart" or a.get("ranking") or a.get("unpadded_path") or sl.get("image_force"):
             continue
         path = sl["image"]
         faces = image_rules_kite.face_boxes(path) if a.get("faces") else None
