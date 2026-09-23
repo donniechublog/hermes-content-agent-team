@@ -250,6 +250,50 @@ def _draft_id(item, brand, vai_anh):
     base = base.strip("-") or ("item-" + str(item["index"]))
     return f"{base}-{khoa}"
 
+
+LIVE_DRAFT_DAYS = 14          # draft cu hon the thi coi nhu xong chuyen, khong nhac nua
+
+
+def _link_key(link: str) -> str:
+    """Khoa so sanh link: bo scheme/www/query/dau gach cuoi. Du de nhan ra CUNG mot
+    bai khi hai lan dat co utm khac nhau; khong co tham vong doi link rut gon."""
+    s = re.sub(r"^https?://(www\.)?", "", (link or "").strip().lower())
+    return s.split("?")[0].split("#")[0].rstrip("/")
+
+
+def live_drafts_same_link(link: str, brand: str) -> list:
+    """[(draft_id, vai anh)] cac draft CUNG LINK, CUNG brand, CHUA len channel.
+
+    LOW-337 (Ong Chu 23/09/2026): tin "GPT-6 Sol and Luna" ra HAI album trong mot
+    chieu — mot draft cua Dre duoc chuyen sang Kite (duong chuyen vai dung lai draft
+    cu), mot draft Kite dat moi luc 15:31. `_draft_id` co y cho mot tin di nhieu vai
+    (moi vai mot draft rieng, khong de file len nhau), va cong chan giao trung o
+    `_process_pick` chi so CUNG vai + CUNG brand TRONG cung mot ban tin — nen hai
+    duong nay gap nhau thi khong ai keu. Day chi la CANH BAO: van dat bai, chi noi
+    ra de Ong Chu bo mot ban truoc khi ca hai cung len channel (dau "da len channel"
+    tinh theo draft, khong theo link).
+    """
+    import time as _t
+    from approve_base import already_len_channel
+    khoa, han = _link_key(link), _t.time() - LIVE_DRAFT_DAYS * 86400
+    ra = []
+    for p in DRAFTS.glob("*.img.json"):
+        try:
+            if p.stat().st_mtime < han:
+                continue
+            d = _load_json(p, {}) or {}
+            if _link_key(d.get("link", "")) != khoa or not khoa:
+                continue
+            ma = p.name[: -len(".img.json")]
+            if (_load_json(DRAFTS / (ma + ".meta.json"), {}) or {}).get("brand", BRAND) != brand:
+                continue
+            if already_len_channel(_load_json(DRAFTS / (ma + ".json"), {}) or {}):
+                continue                                  # da len channel roi: chuyen da xong
+            ra.append((ma, d.get("image_role") or "?"))
+        except Exception as e:                            # noqa: BLE001
+            log("chon", f"doc draft {p.name} de soi trung link hong: {type(e).__name__}: {e!r}")
+    return ra
+
 # Phai TRUNG article_sources.EXIT_ONLY_ORIGINAL (tests/test_research_source_exit.py
 # chan lech). Khong import article_sources: no chay tien trinh con co chu dich,
 # chet thi approve van song va bao duoc loi (C-r2-6).
@@ -575,10 +619,18 @@ def _process_pick(token, group, thread_id, vai, lenh, manifest_path=None):
                 lines.append(f"#{n}: đã giao {ten_da} ({brand}) trước đó — hỏi lại bên dưới")
                 hoi_lai.append((n, it, brand))
                 continue
+            # LOW-337: soi TRUOC khi tao — sau khi tao thi chinh draft moi cung nam
+            # trong danh sach. Chi canh bao, khong chan: giao mot tin cho nhieu vai
+            # van la viec co that (xem `_draft_id`).
+            trung_link = live_drafts_same_link(it.get("link", ""), brand)
             tid, err = create_pair(it, vai_anh=vai_anh, brand=brand, vai_quet=vai)
             if err:
                 lines.append("#" + str(n) + ": lỗi — " + err)
                 continue
+            if trung_link:
+                ds = ", ".join(f"{ma} ({NAME_ROLE_IMAGE.get(v, v)})" for ma, v in trung_link[:3])
+                lines.append(f"   ⚠️ #{n}: tin này đã có {len(trung_link)} bản chưa lên channel: "
+                             f"{ds} — vẫn đặt thêm, nhưng duyệt cả hai là tin lên hai lần")
             ten_hien = NAME_ROLE_IMAGE.get(vai_anh, "Ethan")
             # Ong Chu 08/09/2026: bo cum "X viet caption sau khi duyet anh" — thua,
             # ai cung biet quy trinh nay, khong can nhac lai moi lan giao task.

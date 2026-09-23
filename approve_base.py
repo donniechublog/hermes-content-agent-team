@@ -285,3 +285,23 @@ def is_boss(msg) -> bool:
     if not cho_phep:
         return True
     return ((msg or {}).get("from") or {}).get("id") in cho_phep
+
+
+# Dau "da len channel" — MOT ban cho ca duong DANG (approve_post/approve_service) lan
+# duong DAT BAI (approve_pick.live_drafts_same_link, LOW-337).
+#
+# Vi sao phai co ca ba: tien trinh chet GIUA `publish()` va `mark_draft("published")`
+# thi bai ket o "publishing", buoc cuu ha ve publish_failed va moi bam Duyet lai. Truoc
+# 09/09/2026 chi album co dau, nen bai anh don / bai chi co chu se len channel LAN THU
+# HAI — doc gia thay hai bai giong het nhau.
+MARK_LEN_CHANNEL = ("channel_album_mid", "channel_photo_mid", "channel_text_mid")
+
+
+def already_len_channel(d: dict) -> bool:
+    """Draft nay da co PHAN NAO len channel chua (theo MARK_LEN_CHANNEL).
+
+    `_rescue_article_end_publishing` (approve_service) dung de phan biet hai canh
+    giong het nhau tu ben ngoai: bai CHUA kip len channel (moi bam Duyet lai), voi
+    bai DA len roi ma tien trinh chet truoc khi kip ghi "published" (khong duoc moi
+    bam lai)."""
+    return any(d.get(k) for k in MARK_LEN_CHANNEL)
