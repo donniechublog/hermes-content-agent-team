@@ -159,10 +159,25 @@ def test_no_mascot_then_no_about_mascot():
 
 def test_handle_is_then_no_late_footer_of_brand_other():
     """Loi thuong hieu khong ai thay cho toi khi da dang: moi khung dcgr tung
-    mang tagline cua donniechublog."""
+    mang tagline cua donniechublog.
+
+    Truoc 23/09/2026 test nay do handle "@dcgr" — KHONG phai handle that cua
+    brand do ("@dcgr.tech", xem card.BRAND), nen no chi chung minh mot chuoi
+    bat ky khong co trong bang. Gio dung dung y do: mot handle la thi khong lay
+    tagline cua ai ca."""
+    la = "@khong-co-trong-bang"
     with tempfile.TemporaryDirectory() as t:
-        ka.line_frame(_source(t), Path(t) / "ra.png", handle="@dcgr", khong_mascot=True)
-    assert ka.FOOTER.get("@dcgr") is None, "chua khai footer cho @dcgr — dung doan ho"
+        ka.line_frame(_source(t), Path(t) / "ra.png", handle=la, khong_mascot=True)
+    assert ka.FOOTER.get(la) is None, "handle la thi dung doan ho"
+
+
+def test_moi_brand_mot_dong_footer_rieng():
+    """Hai brand phai co hai dong KHAC nhau — dan tagline brand kia len anh la
+    loi thuong hieu khong ai thay cho toi khi da dang."""
+    blog = ka.FOOTER.get("@donniechublog")
+    dcgr = ka.FOOTER.get("@dcgr.tech")
+    assert blog and dcgr, ka.FOOTER
+    assert blog != dcgr, ka.FOOTER
 
 
 def test_footer_transmit_manual_then_ok_use():

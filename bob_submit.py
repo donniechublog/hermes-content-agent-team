@@ -240,7 +240,15 @@ def main() -> int:
         sys.exit(f"[LOI] khong thay assets cua skill url-mascot-frame o {SKILL}")
 
     env_load.load()
-    brand = os.environ.get("CT_BRAND", "").strip() or "donniechublog"
+    # Chay tay tu shell thi thuong khong co CT_BRAND. Truoc 23/09/2026 cho nay
+    # mac dinh "donniechublog" CHO RIENG handle, con `env_load.topics_path()`
+    # khong mac dinh gi ca -> roi ve `state/topics.json` che do don cu (khong co
+    # topic `bob`), nen anh dong khung ra @donniechublog ma buoc GUI thi chet
+    # "Topic 'bob' khong co". Hai cho doan khac nhau.
+    # Gio mot mac dinh duy nhat, va DAT LAI vao moi truong de publish.py (tien
+    # trinh con) tra dung `state/topics.<brand>.json`.
+    brand = os.environ.get("CT_BRAND", "").strip() or "dcgr"
+    os.environ["CT_BRAND"] = brand
     handle = handle_channel(brand)
 
     tam = Path(tempfile.mkdtemp(prefix="bob_"))   # mkdtemp-ok: don co dieu kien ngay duoi

@@ -49,7 +49,8 @@ K_SHADOW = 0.028
 # cho dcgr.tech deu mang tagline cua donniechublog — loai loi thuong hieu khong
 # ai thay cho toi khi da dang. Handle la khoa; handle la thi KHONG co footer
 # (khong muon tra ve tagline cua brand khac) va noi ra tren stderr.
-FOOTER = {"@donniechublog": ">_ vibe working & agentic AI"}
+FOOTER = {"@donniechublog": ">_ vibe working & agentic AI",
+          "@dcgr.tech": "AI market shift"}                  # Ông Chủ 23/09/2026
 
 
 def _make_full(x) -> int:
