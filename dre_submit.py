@@ -139,7 +139,8 @@ def _clean_cover_stack_pair(anh: dict, cap_ids) -> list | None:
         return (a.get("relevant") is True and not a.get("cluttered") and not a.get("faces")
                 and a.get("kind") != "chart" and not a.get("ranking")
                 and "cover_headline_block" not in (a.get("uses") or [])
-                and a.get("source") != "capture_source")
+                and a.get("source") != "capture_source"
+                and not nc.check_empty_image(a, "bìa", image_rules_dre.EMPTY_SHARE_MAX))
     for c in cap_ids:
         if len(c) == 2 and all(clean(x) for x in c):
             return list(c)
