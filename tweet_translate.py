@@ -29,6 +29,11 @@ Hai bước:
 `--brief` in ra nguyên văn tweet để người dịch chép — chính chữ trong thẻ, nên
 không phải gọi crawl-queue (10–40s/lượt) chỉ để lấy lại đúng đoạn đang hiển thị.
 
+Mặc định thẻ ra đã được tỉa: bỏ "Trả lời", "Sao chép liên kết đến bài đăng" và
+khối "Đọc N trả lời" (ảnh đăng lên kênh mình thì không ai bấm được), GIỮ trái
+tim kèm số, và đổi đơn vị "N"/"Tr" của X sang "K"/"M". `--clean` sạch hơn nữa:
+bỏ cả trái tim lẫn nút Theo dõi.
+
 Trong bản dịch, bọc cụm cần TÔ ĐỎ bằng `<hl>…</hl>`:
 
     Qwen3.8 Flash <hl>miễn phí</hl> trong một tuần.
@@ -66,6 +71,57 @@ WAIT_LAYOUT = 900          # ms cho font/ảnh nhúng ổn định trước khi 
 IMAGE_TRY = 8              # số lần đợi ảnh đính kèm tải xong
 
 _STATUS = re.compile(r"(?:x|twitter)\.com/[^/]+/status(?:es)?/(\d{5,25})", re.I)
+
+# MẶC ĐỊNH tỉa bớt (Ông Chủ 23/09/2026): bỏ "Trả lời", "Sao chép liên kết đến
+# bài đăng" và cả khối "Đọc N trả lời" — chúng là lời mời bấm, mà ảnh đăng lên
+# kênh mình thì không bấm được. GIỮ trái tim kèm số: đó là bằng chứng bài gốc
+# được đón nhận, không phải nút.
+#
+# Hàng nút xếp theo thứ tự tim → trả lời → sao chép (đo DOM 23/09/2026), nên
+# giữ con ĐẦU và ẩn phần còn lại; bám thứ tự chứ không bám chữ, vì chữ đổi theo
+# `--lang` và theo bề ngang thẻ ("Sao liên kết" / "Sao chép liên kết đến bài đăng").
+_JS_TRIM = """
+() => {
+  const root = document.querySelector('article');
+  if (!root) return 0;
+  let n = 0;
+  const hide = el => { if (el && el.style.display !== 'none') { el.style.display = 'none'; n++; } };
+  const kids = [...root.children];
+  const iText = kids.findIndex(c => c.querySelector('[data-testid="tweetText"]'));
+  kids.forEach((c, i) => {
+    if (i <= iText) return;
+    // Hàng nút XÉT TRƯỚC: con đầu của nó cũng là một `a[role="link"]` có chữ
+    // ("310,8 N"), nên để nhánh dưới chạy trước là ẩn nhầm cả hàng — mất luôn
+    // trái tim mà Ông Chủ muốn giữ (đo thật 23/09/2026).
+    if (c.querySelector('[role="button"]')) {
+      [...c.children].forEach((ch, j) => { if (j > 0) hide(ch); });
+      return;
+    }
+    const a = c.querySelector('a[role="link"]');
+    if (a && (a.innerText || '').trim() && !/\\d{4}/.test(c.innerText || '')) hide(c);
+  });
+  return n;
+}
+"""
+
+# `lang=vi` của X viết tắt nghìn là "N" và triệu là "Tr" ("310,8 N"). Ông Chủ
+# 23/09/2026 muốn ký hiệu quốc tế: "310,8K". Đổi trên TEXT NODE chứ không gán
+# lại innerText cả khối — gán lại là xoá luôn icon trái tim nằm cùng khối.
+_JS_UNIT_K = """
+() => {
+  const root = document.querySelector('article');
+  if (!root) return 0;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let n = 0;
+  while (w.nextNode()) {
+    const t = w.currentNode;
+    const s = t.nodeValue.replace(/(\\d[\\d.,]*)\\s*N\\b/g, '$1K')
+                         .replace(/(\\d[\\d.,]*)\\s*Tr\\b/g, '$1M');
+    if (s !== t.nodeValue) { t.nodeValue = s; n++; }
+  }
+  return n;
+}
+"""
 
 # Ẩn phần điều khiển khi có `--clean` — giữ avatar, tên, handle, tick, logo X,
 # ảnh đính kèm và ngày, vì đó là thứ chứng minh tweet này của ai.
@@ -219,9 +275,10 @@ def render(url: str, vi, out_path, theme="dark", lang="vi", clean=False,
                         nodes[1].evaluate(_JS_HIDE_QUOTE)
                     elif quote_vi is not None:
                         nodes[1].evaluate("(n, h) => { n.innerHTML = h; }", to_html(quote_vi))
-            if clean:
-                n = page.evaluate(_JS_CLEAN)
-                print(f"[tweet_translate] ẩn {n} nút tương tác (--clean)", file=sys.stderr)
+            n = page.evaluate(_JS_CLEAN if clean else _JS_TRIM)
+            print(f"[tweet_translate] ẩn {n} phần điều khiển"
+                  + (" (--clean)" if clean else ""), file=sys.stderr)
+            page.evaluate(_JS_UNIT_K)
             for _ in range(IMAGE_TRY):
                 if page.evaluate(_JS_IMAGES_READY):
                     break
@@ -275,7 +332,8 @@ def main():
     ap.add_argument("--lang", default="vi",
                     help="Ngôn ngữ CHỮ UI của thẻ (Theo dõi/Trả lời/ngày). Mặc định vi.")
     ap.add_argument("--clean", action="store_true",
-                    help="Ẩn nút theo dõi/thích/trả lời, giữ avatar-tên-tick-ngày")
+                    help="Sạch hơn mặc định: bỏ cả trái tim và nút Theo dõi, "
+                         "chỉ còn avatar-tên-tick-chữ-ngày")
     ap.add_argument("--quote-vi", help="Bản dịch cho tweet được QUOTE bên trong")
     ap.add_argument("--quote-vi-file", help="Tệp chứa bản dịch của tweet được quote")
     ap.add_argument("--hide-quote", action="store_true",
