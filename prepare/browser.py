@@ -50,24 +50,39 @@ def _js_browser() -> dict:
                      && !XAU_URL.test((i.alt||'').replace(/[-_]/g,' ')))
         .map(i => ({src: i.currentSrc || i.src, alt: i.alt || '',
                     w: i.naturalWidth, h: i.naturalHeight})).slice(0, 12)"""
-    JS_FIG = JS_LOAI + """() => { const ra = []; let k = 0;
-        for (const s of ['table', 'canvas', 'svg', 'figure']) {
+    # LOW-337 (23/09/2026): quet <figure> TRUOC. Tran la 4 anh, ma trang cong bo
+    # GPT-6 co 2 bang nho + mot <canvas> nen 1585x920 dung truoc trong thu tu cu —
+    # chiem het cho, 8 bieu do (nam trong <figure>) khong bao gio toi luot. <figure>
+    # la khung co CHU THICH, tuc thu bien tap co y dat ra de doc.
+    JS_FIG = JS_LOAI + """() => { const ra = []; let k = 0; const daLay = [];
+        for (const s of ['figure', 'table', 'canvas', 'svg']) {
           for (const el of document.querySelectorAll(s)) {
             if (!trongBai(el) || xau(el)) continue;
+            if (daLay.some(t => t.contains(el) || el.contains(t))) continue;   // khoi chup long nhau
             // <figure> la khung CHUNG cho ca chart LAN anh bien tap (photo +
             // figcaption) — LOW-45 (12/09/2026): TechCrunch boc dung anh hero
             // cua bai trong <figure>, code cu chup nguyen khoi coi la "chart",
             // dinh ca dai credit, roi vong chup nguon (LOW-22) lai tu tim ra
             // DUNG anh hero do lan nua — cung mot anh len ca bia lan slide
-            // than. Chi coi <figure> la ung vien chart khi no THAT SU boc mot
-            // bang/do thi (co canvas/svg/table ben trong); <figure><img> thuan
-            // (anh bao + caption) thi bo qua o day — da co JS_IMG quet <img>
-            // rieng, va vong chup nguon se tu tim hero neu con thieu.
-            if (s === 'figure' && !el.querySelector('canvas, svg, table')) continue;
+            // than. Nen <figure><img> thuan (anh bao + caption) VAN bo qua o
+            // day — da co JS_IMG quet <img> rieng.
+            //
+            // LOW-337 (23/09/2026): truoc day dieu kien la "PHAI co canvas/svg/
+            // table ben trong". Trang cong bo GPT-6 Sol and Luna dung 8 bieu do
+            // BANG DIV (data-figure-content, cot la <div> chu khong phai svg),
+            // nen ca 8 bi bo — bai ra logo + chan dung Sam Altman trong khi bai
+            // goc day chart. Dao lai dieu kien: figure KHONG chua <img> ma co
+            // chu thich/khung chart thi la bieu do, chup.
+            if (s === 'figure' && (el.querySelector('img')
+                                   || !el.querySelector('canvas, svg, table, figcaption'))) continue;
             const r = el.getBoundingClientRect();
             const w = Math.max(el.scrollWidth || 0, r.width), h = Math.max(el.scrollHeight || 0, r.height);
-            if (w < 600 || h < 300 || w > 4000 || h > 6000 || caoQua(r)) continue;
+            // Cot noi dung cua nhieu trang cong bo hep hon 600 (openai.com: 546 o
+            // khung 1280); bang so lieu thi thap (676x144). Do rieng theo the.
+            const wMin = 480, hMin = (s === 'table') ? 120 : 300;
+            if (w < wMin || h < hMin || w > 4000 || h > 6000 || caoQua(r)) continue;
             el.setAttribute('data-dre', 'f' + k);
+            daLay.push(el);
             ra.push({sel: '[data-dre="f' + k + '"]', w, h, tag: s}); k++;
             if (ra.length >= 4) return ra;
           } }
@@ -95,7 +110,9 @@ def _take_image_page(page, url, page_index, wd, ctx, JS, chup_fig=True, tran=Non
             continue
         try:
             el.scroll_into_view_if_needed()
-            page.wait_for_timeout(300)
+            # LOW-337: bieu do dung bang div chi ve khi cuon toi (openai.com) — 300ms
+            # tung chup trung khung con trong.
+            page.wait_for_timeout(700)
             el.screenshot(path=str(out))
         except Exception:                                # noqa: BLE001
             continue

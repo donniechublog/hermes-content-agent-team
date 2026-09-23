@@ -599,7 +599,10 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     for c in cands:
         bm = c.get("brand_match") or {}
         if not bm.get("small_logo"):
-            c["score"] = c.get("score", 0) + story_type.score_by_type(category, bm.get("kind", "photo"))
+            # `tieu_de_nhin` di kem (LOW-337, 23/09/2026): tin RA MAT model xep chart/score
+            # cong bo TRUOC logo/founder, khac tin thoi su co model la chu the.
+            c["score"] = c.get("score", 0) + story_type.score_by_type(category, bm.get("kind", "photo"),
+                                                                      tieu_de_nhin)
     # `download_and_filter` tu ghi hop dong "tai ung vien THEO THU TU DIEM" — noi duy
     # nhat trong ca thang anh thuong hieu ma diem THAT SU khac nhau (anh noi/san
     # pham 28 > nguoi 24 > logo 18, dat o `image_brand._candidate`), nhung
