@@ -208,9 +208,33 @@ def _force_raw(m: dict) -> list:
     # xuong than — mot man hinh trang bao dat o `figure` la lap lai tit cua bai.
     # KHONG ep tam bi cong ANH TRONG chan (LOW-278/LOW-288): truoc day brief va cong
     # doi Kite dung A12 (logo nen tron 85%) ma `check_empty_image` chan cung -> ket.
-    return [a["id"] for a in figure_real(m)
-            if a.get("relevant") is True and not a.get("concept")
-            and not a.get("capture_source") and not vai_mod.blocked_empty(a, "kite")][:MAX_FORCE_FIGURE]
+    hop_le = [a for a in figure_real(m)
+              if a.get("relevant") is True and not a.get("concept")
+              and not a.get("capture_source") and not vai_mod.blocked_empty(a, "kite")]
+    return [a["id"] for a in _drop_same_photo(hop_le)][:MAX_FORCE_FIGURE]
+
+
+def _drop_same_photo(anh: list) -> list:
+    """Bo khoi bo EP nhung tam la CUNG MOT buc anh voi mot tam da giu (giu ban TO hon)
+    — dung luat ma `submit_common.check_same_photo` (LOW-284) chan luc nop.
+
+    LOW-337 (23/09/2026, bai Pentagon): bo ep co A2 va A21 (cung anh hien truong, tai
+    tu ibtimes.co.uk va images.inkl.com) lan A16 va A17 (cung anh huy hieu Lau Nam Goc,
+    hai ban cat). Bo ma thi thieu anh ep, giu ma thi cong trung chan — Kite dung han.
+    Hai cong phai doc CUNG mot luat.
+
+    Chi xet anh CHUP: chart/bang xep hang cung khuon khop nhieu diem (same_photo.py).
+    Thieu cv2 -> `is_same_photo` False, bo ep giu nguyen nhu truoc."""
+    import same_photo
+    giu = []
+    for a in sorted(anh, key=lambda x: -(x.get("w") or 0) * (x.get("h") or 0)):
+        if a.get("original_path") and a.get("kind") != "chart" and not a.get("ranking") and any(
+                b.get("original_path") and same_photo.is_same_photo(a["original_path"], b["original_path"])
+                for b in giu):
+            continue
+        giu.append(a)
+    thu_tu = {a["id"]: i for i, a in enumerate(anh)}
+    return sorted(giu, key=lambda a: thu_tu[a["id"]])
 
 
 def figure_right_use(m: dict) -> list:

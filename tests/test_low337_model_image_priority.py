@@ -132,7 +132,7 @@ def test_brand_round_drops_parent_logo_keeps_model_logo():
     class Stop(Exception):
         pass
 
-    def fake_download(cands, wd):
+    def fake_download(cands, wd, da_giu=()):
         seen["cands"] = [c["image_url"] for c in cands]
         raise Stop
 
@@ -209,7 +209,7 @@ def test_research_story_on_gemini_uses_model_not_google():
     class Stop(Exception):
         pass
 
-    def fake_download(cands, wd):
+    def fake_download(cands, wd, da_giu=()):
         seen["cands"] = [c["image_url"] for c in cands]
         raise Stop
 

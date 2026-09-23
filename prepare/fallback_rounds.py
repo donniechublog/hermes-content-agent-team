@@ -269,7 +269,8 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
             print(f"[commons] '{tk}': {len(them)} anh", file=sys.stderr)
             if them:
                 da = {a["url"] for a in anh}
-                bo_sung = download_and_filter([c for c in them if c["image_url"] not in da], wd / "commons")
+                bo_sung = download_and_filter([c for c in them if c["image_url"] not in da],
+                                              wd / "commons", da_giu=anh)
                 for i, a in enumerate(bo_sung, start=len(anh) + 1):
                     if len(anh) >= MAX_IMAGE:
                         break
@@ -368,7 +369,7 @@ def _round_widen_search(anh: list, source_pages: list, tieu_de_nhin: str, toi_th
     if n_truoc != len(cands2):
         print(f"[tim rong] bo {n_truoc - len(cands2)} ung vien trung URL da co", file=sys.stderr)
     cands2.sort(key=lambda c: -c.get("score", 0))
-    bo_sung = download_and_filter(cands2, wd2) if cands2 else []
+    bo_sung = download_and_filter(cands2, wd2, da_giu=anh) if cands2 else []
     print(f"[tim rong] tai + loc: {len(bo_sung)} anh giu lai / {len(cands2)} ung vien", file=sys.stderr)
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
@@ -608,7 +609,7 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     cands.sort(key=lambda c: -c.get("score", 0))
     da = {a["url"] for a in anh}
     cands = [c for c in cands if c["image_url"] not in da]
-    bo_sung = download_and_filter(cands, wd4) if cands else []
+    bo_sung = download_and_filter(cands, wd4, da_giu=anh) if cands else []
     # CONG BANG GIUA CAC HANG khi cat: neu cu giu nguyen thu tu diem (tren) roi
     # lay N tam dau, tin nhieu hang de bi mot hang co LOAI anh diem cao (vd
     # "nguoi": chan dung CEO) nuot het slot cua hang con lai chi co "anh"
@@ -662,7 +663,7 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         # lap lai o image_brand.py, sua chung mot cho o env_load.brand_long().
         c = _ranking_context_edge(hangs, wd4, env_load.brand_long(), phien=phien)
         if c:
-            them = download_and_filter([c], wd4 / state_paths.BOARD_DIR)
+            them = download_and_filter([c], wd4 / state_paths.BOARD_DIR, da_giu=anh)
             for a in them[:1]:
                 a["id"] = f"A{len(anh) + 1}"
                 moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
@@ -923,7 +924,7 @@ def _round_concept(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     da = {a["url"] for a in anh}
     cands = [c for c in cands if c["image_url"] not in da]
     wd3 = wd / state_paths.CONCEPT_DIR
-    bo_sung = download_and_filter(cands, wd3) if cands else []
+    bo_sung = download_and_filter(cands, wd3, da_giu=anh) if cands else []
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
         if len(anh) >= MAX_IMAGE + 6:
@@ -955,7 +956,7 @@ def _round_entity(anh: list, tieu_de_nhin: str, wd: Path) -> tuple:
     cands = [c for c in cands if c["image_url"] not in da]
     cands.sort(key=lambda c: -c.get("score", 0))
     wd6 = wd / state_paths.ENTITY_DIR
-    bo_sung = download_and_filter(cands, wd6) if cands else []
+    bo_sung = download_and_filter(cands, wd6, da_giu=anh) if cands else []
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
         if len(anh) >= MAX_IMAGE + 6 or len(anh) - n0 >= MAX_EXTRA_ENTITY_:

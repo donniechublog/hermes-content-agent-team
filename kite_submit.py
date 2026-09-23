@@ -113,8 +113,15 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             nhan = f"slide {i} ({img})"
 
-            # LOW-273: anh trong (logo nho tren nen tron) — "khong chap nhan o moi designer"
-            loi += nc.check_empty_image(hinh[img], f"slide {i}", image_rules_kite.EMPTY_SHARE_MAX)
+            # LOW-273: anh trong (logo nho tren nen tron) — "khong chap nhan o moi designer".
+            # Hoi QUA `role.blocked_empty` (LOW-337, 23/09/2026): the logo hang duoc mien o
+            # do tu LOW-295 (renderer dung lai thanh slide logo 90% be ngang), va chinh ham
+            # do la thu `kite_prepare._force_raw` dung de chon bo ep. Truoc day cong nay doc
+            # thang `check_empty_image` — hai ben hai luat, bai "GPT-6 Sol and Luna" (23/09)
+            # ket cung: bo ep doi A13 (the logo OpenAI), cong nay chan dung A13.
+            import role as vai_mod
+            if vai_mod.blocked_empty(hinh[img], "kite"):
+                loi += nc.check_empty_image(hinh[img], f"slide {i}", image_rules_kite.EMPTY_SHARE_MAX)
 
 
             l, c = image_rules_kite.check_duplicate(nhan, img_path, da_thay)
