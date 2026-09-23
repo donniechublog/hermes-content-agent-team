@@ -45,6 +45,7 @@ import state_paths                                           # noqa: E402
 import image_rules_dre                                       # noqa: E402
 import subject_fit                                           # noqa: E402
 import role_spec                                             # noqa: E402
+import role                                                  # noqa: E402
 
 DRAFTS = ROOT / "drafts"
 
@@ -105,8 +106,14 @@ def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
         return None
     for x in ghep:
         bo.nhan_ma(x, nhan)
-        # LOW-273: anh trong (logo nho tren nen tron) khong ghep (vd SoftBank A12, TRONG 0.92)
-        bo.loi.extend(nc.check_empty_image(bo.anh[x], nhan, image_rules_dre.EMPTY_SHARE_MAX))
+        # LOW-273: anh trong (logo nho tren nen tron) khong ghep (vd SoftBank A12, TRONG 0.92).
+        # Hoi QUA `role.blocked_empty` (LOW-337): do la ban DUY NHAT cua luat. Doc thang
+        # `check_empty_image` thi Kite mot luat, Dre mot luat khac — dung canh da lam Kite
+        # dung han o bai "GPT-6 Sol and Luna" (23/09/2026).
+        # `only_brand_card=True`: chi THE LOGO HANG that duoc mien, khong phai moi tam co
+        # co `logo_card` (Ong Chu chot 23/09/2026) — xem `role.blocked_empty`.
+        if role.blocked_empty(bo.anh[x], "dre", only_brand_card=True):
+            bo.loi.extend(nc.check_empty_image(bo.anh[x], nhan, image_rules_dre.EMPTY_SHARE_MAX))
     bo.kiem_lien_quan(ghep, nhan)
     r1, r2 = (im.width / im.height for im in
               (Image.open(bo.anh[x]["original_path"]) for x in ghep))
@@ -140,7 +147,7 @@ def _clean_cover_stack_pair(anh: dict, cap_ids) -> list | None:
                 and a.get("kind") != "chart" and not a.get("ranking")
                 and "cover_headline_block" not in (a.get("uses") or [])
                 and a.get("source") != "capture_source"
-                and not nc.check_empty_image(a, "bìa", image_rules_dre.EMPTY_SHARE_MAX))
+                and not role.blocked_empty(a, "dre", only_brand_card=True))
     for c in cap_ids:
         if len(c) == 2 and all(clean(x) for x in c):
             return list(c)
@@ -202,7 +209,8 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
         ra["image"] = a["original_path"]
         if a.get("kind") == "chart":
             ra["chart"] = True                   # carousel._flat_plan xet nguong noi cua chart
-        bo.loi.extend(nc.check_empty_image(a, nhan, image_rules_dre.EMPTY_SHARE_MAX))
+        if role.blocked_empty(a, "dre", only_brand_card=True):    # LOW-337: mot luat
+            bo.loi.extend(nc.check_empty_image(a, nhan, image_rules_dre.EMPTY_SHARE_MAX))
         bo.kiem_mat([ma], muc, nhan)
         bo.dung_anh.append((nhan, [ma]))
         return ra
@@ -267,7 +275,8 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
         return ra
     else:
         ra["image"] = a["ready_path"]
-    bo.loi.extend(nc.check_empty_image(a, nhan, image_rules_dre.EMPTY_SHARE_MAX))
+    if role.blocked_empty(a, "dre", only_brand_card=True):        # LOW-337: mot luat
+        bo.loi.extend(nc.check_empty_image(a, nhan, image_rules_dre.EMPTY_SHARE_MAX))
     _place_subject(bo, a, ma, muc, nhan, la_bia, ra)
     bo.kiem_mat([ma], muc, nhan)
     bo.dung_anh.append((nhan, [ma]))
