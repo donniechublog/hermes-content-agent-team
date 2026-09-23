@@ -28,6 +28,7 @@ khung + mascot nhu thuong. Hai luot:
 `--tweet-image` keo link tweet ve duong CU (dong khung chinh tam anh trong tweet).
 """
 import argparse
+import atexit
 import os
 import shutil
 import subprocess
@@ -242,10 +243,16 @@ def main() -> int:
     brand = os.environ.get("CT_BRAND", "").strip() or "donniechublog"
     handle = handle_channel(brand)
 
-    tam = Path(tempfile.mkdtemp(prefix="bob_"))
+    tam = Path(tempfile.mkdtemp(prefix="bob_"))   # mkdtemp-ok: don co dieu kien ngay duoi
     src = tam / "original.png"
     ra = Path(a.out) if a.out else tam / "framed.png"
     ra.parent.mkdir(parents=True, exist_ok=True)
+    # Don thu muc tam CHI KHI anh ra khong nam trong no (LOW-390). Khong co
+    # `--out` thi `ra` chinh la `tam/framed.png` — xoa la xoa mat san pham, nen
+    # truong hop do phai giu. Truoc 23/09/2026 khong don bao gio, va 265 thu muc
+    # `bob_*` nam lai tren may chu (/tmp o do la tmpfs, tuc an RAM).
+    if ra.parent != tam:
+        atexit.register(shutil.rmtree, tam, ignore_errors=True)
 
     # Link tweet đi đường vietsub; mọi URL khác giữ nguyên đường cũ (ảnh CDN,
     # chụp trang). `--tweet-image` kéo link tweet về đường cũ khi Bob muốn đóng

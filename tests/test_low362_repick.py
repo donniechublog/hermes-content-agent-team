@@ -9,7 +9,6 @@ Ko lam lai".
 import json
 import re
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 import approve_pick as pick                 # noqa: E402
 import scan_submit                          # noqa: E402
 import state_paths                          # noqa: E402
+import tam  # noqa: E402
 
 DRAFT_ID_OK = re.compile(r"^[a-z0-9][a-z0-9-]{0,54}$")     # = approve_post._DRAFT_ID_HOP_LE
 
@@ -26,7 +26,7 @@ class _Env:
     """STATE_DIR/DRAFTS gia + ghi lai moi lan goi Telegram / tao task."""
 
     def __enter__(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="low362_"))
+        self.tmp = Path(tam.temp_dir(prefix="low362_"))
         (self.tmp / "drafts").mkdir()
         self.calls, self.created, self.redo = [], [], []
         self.saved = {k: getattr(pick, k) for k in ("STATE_DIR", "DRAFTS", "call", "_send_text",

@@ -7,12 +7,12 @@ Khong dung pytest (chua co trong venv). Chay:
 Khong dung home that: HOMES/REPO tro vao thu muc tam.
 """
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import sync_hermes as db  # noqa: E402
+import tam  # noqa: E402
 
 CO_VA = b'x\nif (!props.laneByProfile) return null;\nCOLUMN_ORDER = ["running", "ready", "blocked"]\ntenVai(a)\n'
 KHONG_VA = b'x\nif (!props.laneByProfile || props.column.name !== "running") return null;\nCOLUMN_ORDER = ["triage", "todo"]\n'
@@ -42,7 +42,7 @@ def _temp():
 class _TamCtx:
     def __enter__(self):
         self.cu = {k: getattr(db, k) for k in _HANG_DE}
-        t = self.t = Path(tempfile.mkdtemp())
+        t = self.t = Path(tam.temp_dir())
         db.HOMES = {"blog": t / "blog", "dcgr": t / "dcgr"}
         db.REPO = t / "repo"
         db.PLUGIN_REPO = db.REPO / "plugins" / "kanban" / "dashboard"

@@ -11,13 +11,13 @@ Chạy:  venv/bin/python tests/test_low339_contain_fit.py
 """
 import subprocess
 import sys
-import tempfile
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import render_edu as re_                                      # noqa: E402
+import tam  # noqa: E402
 
 TH = dict(bg="#171A21", panel="#212530", line="#333846",
           a="#2FD4E1", b="#8E86F0", stand="#BFC5CF")
@@ -34,7 +34,7 @@ def _line_art(w=806, h=980, color=(200, 20, 20), border_touch=True):
     d.ellipse((int(w * 0.05), 0 if border_touch else 20, int(w * 0.95), int(h * 0.98)),
               outline=color, width=int(w * 0.06))
     d.rectangle((int(w * 0.35), int(h * 0.45), int(w * 0.65), int(h * 0.75)), fill=color)
-    tmp = Path(tempfile.mkdtemp()) / "art.png"
+    tmp = Path(tam.temp_dir()) / "art.png"
     im.save(tmp)
     return tmp
 
@@ -49,7 +49,7 @@ def _photo(w=806, h=980):
     for y in range(h):
         for x in range(w):
             px[x, y] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-    tmp = Path(tempfile.mkdtemp()) / "photo.png"
+    tmp = Path(tam.temp_dir()) / "photo.png"
     im.save(tmp)
     return tmp
 
@@ -115,7 +115,7 @@ def _render_slide(image, image_fit):
               {"kind": "loop", "eyebrow": "D", "title": "Năm", "standfirst": "s",
                "chips": ["a", "b"], "callout": "c"},
               {"kind": "cta", "eyebrow": "E", "title": "Sáu", "checks": ["a", "b"]}]
-    d = Path(tempfile.mkdtemp())
+    d = Path(tam.temp_dir())
     spec = {"brand": "donniechublog", "section": "TEST", "folio": "TEST", "theme": "ink",
             "hero": "orbit", "slides": slides}
     (d / "spec.json").write_text(json.dumps(spec, ensure_ascii=False), encoding="utf-8")
@@ -166,7 +166,7 @@ def _padded_canvas():
     for y in range(400, 960):
         for x in range(40, 1040):
             px[x, y] = (random.randint(80, 255), random.randint(80, 255), random.randint(80, 255))
-    tmp = Path(tempfile.mkdtemp()) / "padded.png"
+    tmp = Path(tam.temp_dir()) / "padded.png"
     im.save(tmp)
     return tmp
 
@@ -186,7 +186,7 @@ def test_flat_padding_is_trimmed_before_fitting():
     # đã trong bằng nền phẳng thì không cắt gì
     assert re_.content_box(_line_art(), (255, 255, 255)) is not None
     from PIL import Image
-    blank = Path(tempfile.mkdtemp()) / "blank.png"
+    blank = Path(tam.temp_dir()) / "blank.png"
     Image.new("RGB", (300, 300), (255, 255, 255)).save(blank)
     assert re_.content_box(blank, (255, 255, 255)) is None
 
@@ -202,7 +202,7 @@ def _boxed_picture(pic_w=700, pic_h=1000):
     for y in range(y0, y0 + pic_h):
         for x in range(x0, x0 + pic_w):
             px[x, y] = (random.randint(60, 255), random.randint(60, 255), random.randint(60, 255))
-    tmp = Path(tempfile.mkdtemp()) / "boxed.png"
+    tmp = Path(tam.temp_dir()) / "boxed.png"
     im.save(tmp)
     return tmp
 
@@ -270,7 +270,7 @@ def _framed_picture(bar=30, side=2, sky=False):
         d.rectangle((x0, y0, x1, y0 + bar), fill=(245, 245, 245))
         d.rectangle((x0, y0, x0 + side - 1, y1), fill=(230, 230, 230))
         d.rectangle((x1 - side, y0, x1, y1), fill=(230, 230, 230))
-    tmp = Path(tempfile.mkdtemp()) / "framed.png"
+    tmp = Path(tam.temp_dir()) / "framed.png"
     im.save(tmp)
     return tmp
 

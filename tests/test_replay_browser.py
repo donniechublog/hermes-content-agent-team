@@ -13,7 +13,6 @@ cach chay that tren trang that.
 Chay:  venv/bin/python tests/test_replay_browser.py
 """
 import sys
-import tempfile
 from pathlib import Path
 
 from PIL import Image
@@ -24,13 +23,14 @@ sys.path.insert(0, str(ROOT / "tests"))
 
 import capture_page                    # noqa: E402
 import replay                          # noqa: E402
+import tam  # noqa: E402
 
 HAR = replay.GOLDEN / "replay" / "wikipedia_gartner.har.zip"
 URL = "https://en.wikipedia.org/wiki/Gartner"      # ban ghi di qua chuyen huong m. -> en.
 
 
 def test_capture_renders_recorded_page_offline():
-    out = Path(tempfile.mkdtemp(prefix="replay_browser_")) / "page.png"
+    out = Path(tam.temp_dir(prefix="replay_browser_")) / "page.png"
     with replay.replay_session(HAR) as session:
         assert capture_page.capture(URL, out, phien=session) is True
     w, h = Image.open(out).size
@@ -51,7 +51,7 @@ def test_page_text_comes_from_the_recording():
 def test_mobile_lead_block_is_cut_from_the_recorded_page():
     """Ong Chu 06/09 + 12/09/2026: chup trang nguon o khung mobile, cat khoi lead
     lam bia. Truoc gio chi kiem duoc bang cach chay that."""
-    out = Path(tempfile.mkdtemp(prefix="replay_browser_")) / "lead.png"
+    out = Path(tam.temp_dir(prefix="replay_browser_")) / "lead.png"
     with replay.replay_session(HAR) as session:
         lead = capture_page.capture_lead_mobile(URL, out, phien=session)
     assert lead and lead["source"] == "capture_source" and lead["capture_source"] is True

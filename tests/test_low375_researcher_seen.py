@@ -20,7 +20,6 @@ Chay:  venv/bin/python tests/test_low375_researcher_seen.py
 """
 import json
 import sys
-import tempfile
 import time
 from pathlib import Path
 
@@ -33,10 +32,11 @@ import scan_models as nova                                   # noqa: E402
 import scan_sources as finn                                  # noqa: E402
 import scan_business as vera                                 # noqa: E402
 import scan_x as qinn                                        # noqa: E402
+import tam  # noqa: E402
 
 
 def _tmp(ten: str) -> Path:
-    return Path(tempfile.mkdtemp(prefix="low375_")) / ten
+    return Path(tam.temp_dir(prefix="low375_")) / ten
 
 
 # =========================================================================
