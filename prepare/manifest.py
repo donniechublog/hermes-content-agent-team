@@ -347,7 +347,11 @@ def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict
          "base_min_images": vai_mod.min_images(vai_anh), "domains": so_mien,
          "images": anh, "stackable_pairs": dx["stackable_pairs"], "cover_suggestions": goi_y_bia, "material": tl,
          "two_company_pairs": pair_two_vendor_images(anh, meta.get("category", "")),
-         "image_order_by_story_type": list(story_type.order_image(meta.get("category", ""))),
+         # Tieu de di kem (LOW-337, 23/09/2026): tin RA MAT model dung bang rieng
+         # (@arena > chart/score cong bo > logo > founder), khac tin thoi su co model
+         # la chu the. Lay ca `title_en` vi tieu de Viet cua Finn co the bo dong tu.
+         "image_order_by_story_type": list(story_type.order_image(
+             meta.get("category", ""), f"{title} {nguon.get('title_en') or ''}")),
          "usable_count": so_dung_duoc, "not_yet_seen": chua_nhin,
          "ranking": ({k: xhs[0].get(k) for k in ("model", "rank", "site", "board", "kind", "mentioned")}
                      if xhs else None),

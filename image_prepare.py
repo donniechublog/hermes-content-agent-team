@@ -82,7 +82,7 @@ from prepare.vision import _seen_image, description_image                  # noq
 from prepare.download_filter import _save_crop                          # noqa: E402
 from prepare.fallback_rounds import (  # noqa: E402
     _image_item_ranking, _supplement_source, _capture_ranking, _gather_and_download_image,
-    _take_from_browser, _extra_announcement_page, _round_capture_source, _round_concept, _round_entity,
+    _take_from_browser, _benchmark_pages, _extra_announcement_page, _round_capture_source, _round_concept, _round_entity,
     capability_block_headline,
     _round_brand, _round_widen_search,
 )
@@ -151,6 +151,10 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         # Trang cong bo CHINH CHU cua model (LOW-21): chay cho moi tin nhac model
         # cua hang trong watchlist, TRUOC browser de browser ghe lay chart.
         source_pages = _extra_announcement_page(nguon, nguon_path, source_pages, title, tom.get("summary", ""))
+        # Trang BENCHMARK cho tin RA MAT (LOW-337, Ong Chu 23/09/2026: "nguon nao cha
+        # duoc mien la ra benchmark chuan") — tim WEB, khong gioi han chi muc tin.
+        source_pages = _benchmark_pages(nguon, nguon_path, source_pages, title,
+                                        meta.get("category", ""))
         bp = {"title_en": "", "article_text": "", "cands": [], "extra_pages": []}
         if not khong_browser:
             bp, source_pages = _take_from_browser(source_pages, wd, nguon, nguon_path, phien=phien)

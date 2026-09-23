@@ -584,6 +584,59 @@ def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int
     return ra
 
 
+DDG_HTML = "https://html.duckduckgo.com/html/"
+WEB_SEARCH_SLEEP = 2.0            # giãn nhịp giữa hai truy vấn: DDG trả 202 khi hỏi dồn
+
+
+def web_search(truy_van: str, so: int = 6, bo_mien: tuple = ()) -> list:
+    """Tìm WEB (không phải chỉ mục TIN) — trả [{url, kind, title, outlet_url}].
+
+    LOW-337 (Ông Chủ 23/09/2026): *"nguồn nào chả được miễn là ra benchmark chuẩn"*.
+    Cả khâu research trước nay chỉ tra Bing News + Google News, nên những trang có
+    bảng/biểu đồ benchmark mà KHÔNG phải báo tin (kingy.ai, metricnexus, finout,
+    artificialanalysis/comparisons…) không bao giờ xuất hiện. Đo thật 23/09 từ máy chủ:
+    truy vấn "GPT-6 Sol Luna benchmark cost per task" ra kingy.ai, metricnexus, finout,
+    datacamp; "… vs Claude Opus 5.5 comparison table" ra kingy.ai, artificialanalysis,
+    unite.ai — đúng những trang Ông Chủ chỉ ra là phải dùng.
+
+    Không lọc theo danh sách trang cho phép: bảng nào đúng số thì dùng được. Vẫn giữ
+    cổng SSRF (`scan_common.url_hide_whole`) và `DROP_DOMAIN`, và bỏ link quảng cáo của
+    chính DDG (`duckduckgo.com/y.js`). Hỏng/bị chặn nhịp -> trả [] và ghi một dòng, KHÔNG
+    ném: đây là vòng BỔ SUNG, không được làm chết cả engine ảnh.
+    """
+    import html as _html
+    import urllib.parse as _up
+    try:
+        r = httpx.post(DDG_HTML, data={"q": truy_van}, headers=HDR, timeout=30,
+                       follow_redirects=True)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[tim web] {truy_van!r}: {type(e).__name__}", file=sys.stderr)
+        return []
+    if r.status_code != 200:
+        print(f"[tim web] {truy_van!r}: HTTP {r.status_code} (bi chan nhip?) — bo qua",
+              file=sys.stderr)
+        return []
+    ra, thay = [], set()
+    for m in re.finditer(r'<a[^>]+class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>', r.text, re.S):
+        u = _html.unescape(m.group(1))
+        if u.startswith("//duckduckgo.com/l/?uddg=") or u.startswith("https://duckduckgo.com/l/?uddg="):
+            u = _up.unquote(u.split("uddg=")[1].split("&")[0])
+        if not u.startswith("http") or "duckduckgo.com/y.js" in u:
+            continue                                        # quang cao cua chinh DDG
+        if not scan_common.url_hide_whole(u):
+            continue
+        mien = (re.match(r"https?://([^/]+)", u).group(1) or "").replace("www.", "")
+        if not mien or mien in thay or any(b in mien for b in DROP_DOMAIN + tuple(bo_mien)):
+            continue
+        thay.add(mien)
+        td = re.sub(r"<[^>]+>", "", m.group(2) or "").strip()
+        ra.append({"url": u, "kind": "other_outlet", "title": _html.unescape(td)[:160],
+                   "outlet_url": "https://" + mien})
+        if len(ra) >= so:
+            break
+    return ra
+
+
 def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: int | None = None) -> list:
     """Bao THẬT về một TỪ KHOÁ (tên hãng/sản phẩm) qua Bing News RSS — KHÁC
     `other_outlets_bing`: không đòi "cùng một sự kiện" với một tiêu đề gốc, VÀ

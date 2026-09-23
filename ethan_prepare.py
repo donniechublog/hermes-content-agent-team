@@ -193,7 +193,8 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         if hero and not a.get("faces"):
             # LOW-337: theo bang story_type (logo > founder > tru so...) truoc; LOW-336: roi den
             # vung khung chu SACH & khong mat chi tiet mep (thay cho "nua duoi toi").
-            goi_y.append((-story_type.score_by_type(m.get("category"), (a.get("brand_match") or {}).get("kind", "")),
+            goi_y.append((-story_type.score_by_type(m.get("category"), (a.get("brand_match") or {}).get("kind", ""),
+                                                     f"{m.get('title') or ''} {m.get('title_en') or ''}"),
                           zone_rank(z), -a.get("short_side", 0), a["id"]))
         dong = (f"- {a['id']}: {a['w']}x{a['h']} ({a['ratio']}) {manifest_values.kind_label(a['kind']).upper()} | {'; '.join(dung)}"
                 f" | nguồn: {a['domain'] or manifest_values.source_label(a['source'])}")

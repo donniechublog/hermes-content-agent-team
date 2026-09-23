@@ -38,13 +38,19 @@ from test_spec_kite import _cover, _statement, _hinh, _m, _chay  # noqa: E402
 # --------------------------------------------------- 1. figure ảnh biên tập
 def test_js_fig_skips_pure_image_figure_without_chart():
     """`<figure><img><figcaption>...</figcaption></figure>` (ảnh báo + credit,
-    đúng khuôn TechCrunch bọc ảnh hero của Moonshot/Kimi) không còn được
-    `_take_image_page` coi là ứng viên chart — chỉ `<figure>` bọc canvas/svg/table
-    (chart thật) mới còn được chụp."""
+    đúng khuôn TechCrunch bọc ảnh hero của Moonshot/Kimi) không được
+    `_take_image_page` coi là ứng viên chart.
+
+    LOW-337 (23/09/2026) ĐẢO cách viết điều kiện: trước là "PHẢI có canvas/svg/table
+    bên trong", nay là "KHÔNG có `<img>`, và có canvas/svg/table/figcaption" — vì
+    trang công bố GPT-6 Sol and Luna vẽ 8 biểu đồ bằng DIV nên luật cũ bỏ sạch. Điều
+    LOW-45 bảo vệ thì KHÔNG đổi: khuôn ảnh-báo-kèm-credit vẫn bị bỏ, vì nó có `<img>`.
+    """
     js = browser._js_browser()["FIG"]
-    assert "el.querySelector('canvas, svg, table')" in js, js
-    i_figure_loop = js.index("for (const s of ['table', 'canvas', 'svg', 'figure'])")
-    i_guard = js.index("el.querySelector('canvas, svg, table')")
+    assert "el.querySelector('img')" in js, js
+    assert "canvas, svg, table, figcaption" in js, js
+    i_figure_loop = js.index("for (const s of ['figure', 'table', 'canvas', 'svg'])")
+    i_guard = js.index("el.querySelector('img')")
     i_push = js.index("ra.push")
     assert i_figure_loop < i_guard < i_push, "cổng phải nằm TRONG vòng lặp, TRƯỚC khi push ứng viên"
 
