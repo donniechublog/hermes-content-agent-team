@@ -29,6 +29,7 @@ import numpy as np  # noqa: E402
 from PIL import Image  # noqa: E402
 
 import card  # noqa: E402
+import carousel  # noqa: E402
 import text_bg  # noqa: E402
 from test_gate import _image_two_tone  # noqa: E402
 
@@ -65,7 +66,7 @@ def _render(tmp):
                 rong = d.textlength(text, font=font)
                 if colored and role and i < len(ghi):
                     bb = font.getbbox(text)
-                    ghi[i]["hop"] = (x + 0 if False else xx + bb[0], y + bb[1], xx + bb[2], y + bb[3])
+                    ghi[i]["hop"] = (xx + bb[0], y + bb[1], xx + bb[2], y + bb[3])
                     ghi[i]["chu"] = text
                     i += 1
                 xx += rong
@@ -115,6 +116,66 @@ def test_brand_color_keeps_contrast_on_the_seam():
             cr = text_bg.ratio_wall_part(tuple(g["mau"]), (round(that),) * 3)
             assert cr >= card.BRAND_MIN_CONTRAST_LARGE, (
                 f"{g['chu']}: CR {cr:.2f} < {card.BRAND_MIN_CONTRAST_LARGE} tren nen {that:.0f}")
+
+
+# ---------------------------------------------------- bia carousel cua Dre (duong DANG CHAY)
+HOOK = "GPT-5 và Claude Opus 5.5 cùng hạ giá API trong một tuần"
+COVER_MIN_CR = 2.5           # tren nen sang L~156, mau SANG NHAT cung chi dat ~2.72 (tran vat ly)
+
+
+def _render_cover(tmp, seam):
+    """Bia Dre tren anh hai tong -> (duong dan, [(hop net chu, mau)])."""
+    ghi = []
+    goc = card.draw_brand_line
+
+    def spy(d, x, y, dong, font, mau, colored=True, nen_sang=False, fallback=None,
+            bg_level=None, words=None, bg_for=None):
+        import brand_names
+        xx, khoang = x, d.textlength(" ", font=font)
+        for word in (words if words is not None else brand_names.line_segments(dong)):
+            for text, role, key in word:
+                rong = d.textlength(text, font=font)
+                if colored and role:
+                    bb = font.getbbox(text)
+                    muc = bg_level
+                    if bg_for is not None:
+                        muc = bg_for(xx + bb[0], y + bb[1], xx + bb[2], y + bb[3])
+                    ghi.append({"chu": text, "muc": muc,
+                                "hop": (xx + bb[0], y + bb[1], xx + bb[2], y + bb[3]),
+                                "mau": card.brand_fill(key, role, nen_sang, fallback, muc)})
+                xx += rong
+            xx += khoang
+        try:
+            return goc(d, x, y, dong, font, mau, colored, nen_sang, fallback, bg_level, words, bg_for)
+        except TypeError:            # ma cu chua co `bg_for` — van do duoc hanh vi that cua no
+            return goc(d, x, y, dong, font, mau, colored, nen_sang, fallback, bg_level, words)
+
+    carousel.set_brand("dcgr")
+    carousel.set_background("dark")
+    src = _image_two_tone(carousel.W, carousel.H, Path(tmp) / f"nen{seam}.png", seam)
+    ra = Path(tmp) / f"bia{seam}.png"
+    card.draw_brand_line = spy
+    try:
+        carousel.build_cover(str(src), HOOK, "OPUS 5.5", str(ra), category="MODEL RELEASE")
+    finally:
+        card.draw_brand_line = goc
+    return ra, ghi
+
+
+def test_dre_cover_brand_name_keeps_contrast_on_bright_band():
+    """Bia Dre: hook nam tren dai SANG cua anh chup. Truoc LOW-392 hook khong do nen gi ca
+    (`bg_level` None) nen mau hang giu nguyen palette — do that: "Claude" cam tren nen 151
+    chi con CR 1.07-1.28, gan nhu mat chu ben canh dong chu trang cung dong."""
+    with tempfile.TemporaryDirectory() as t:
+        for seam in (0.55, 0.62):
+            ra, ghi = _render_cover(t, seam)
+            assert ghi, f"ranh {seam}: khong ghi nhan cum ten hang nao"
+            for g in ghi:
+                assert g["muc"] is not None, f"{g['chu']}: hook khong do nen, mau to mu"
+                that = _background_under(ra, g["hop"], g["mau"])
+                cr = text_bg.ratio_wall_part(tuple(g["mau"]), (round(that),) * 3)
+                assert cr >= COVER_MIN_CR, (
+                    f"ranh {seam} {g['chu']}: CR {cr:.2f} < {COVER_MIN_CR} tren nen {that:.0f}")
 
 
 if __name__ == "__main__":
