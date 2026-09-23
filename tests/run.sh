@@ -30,6 +30,22 @@ LOC="${1:-}"
 # vao tung test tu monkeypatch — hai test subprocess cua test_cong_chan da
 # khong. Tu dat o day de "xanh" nghia la xanh trong cach ly, khong phai xanh
 # nho ghi tam vao state that roi xoa di.
+# DON RAC TAM (LOW-382, 23/09/2026). Do tren may chu: /tmp la tmpfs (tuc RAM)
+# va dang co ~1800 thu muc `tmp*` moi ngay, 2.2 GB — phan lon la
+# `tempfile.mkdtemp()` cua chinh bo test (19 tep, 41 cho goi) khong tu don,
+# cong `CT_STATE_DIR` cua moi luot chay. May don cua he (systemd-tmpfiles) chi
+# quet theo tuoi moi ngay nen rac nam lai rat lau TRONG RAM.
+#
+# Dat TMPDIR ve MOT thu muc cua rieng luot chay nay: moi mkdtemp/NamedTemporaryFile
+# cua test deu roi vao day (Python doc TMPDIR), don mot lan la sach ca — khong
+# phai sua 41 cho goi trong 19 tep. Chi don thu CHINH minh tao ra.
+# `CT_KEEP_TMP=1` de giu lai khi can mo xac rac sau mot lan test hong.
+if [ -z "${CT_KEEP_TMP:-}" ]; then
+  _tmp_run=$(mktemp -d)
+  export TMPDIR="$_tmp_run"
+  trap 'rm -rf "$_tmp_run"' EXIT INT TERM
+fi
+
 export CT_STATE_DIR="${CT_STATE_DIR:-$(mktemp -d)}"
 # Console Windows cp1252 lam UnicodeEncodeError o dong in ket qua — tuc test
 # qua ma tep bao hong. -X utf8 vo hai tren Linux.
