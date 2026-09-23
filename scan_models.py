@@ -1094,10 +1094,10 @@ def prefer_arena(releases_aa: list, rank_climbs: list, in_log=None) -> tuple:
     releases = [r for r in releases_aa if key(r["original_name"]) not in new_on_arena]
     dropped = [r for r in releases_aa if key(r["original_name"]) in new_on_arena]
     if in_log and (len(climbs) < len(rank_climbs) or dropped):
-        bo = ([f"{c['board']}|{c['name']}" for c in rank_climbs if c not in climbs]
-              + [f"release|{r['original_name']}" for r in dropped])
-        in_log(f"[uu tien arena] bo {len(bo)} muc cua artificialanalysis vi arena.ai "
-               f"da co cung model: {', '.join(bo[:8])}")
+        labels = ([f"{c['board']}|{c['name']}" for c in rank_climbs if c not in climbs]
+                  + [f"release|{r['original_name']}" for r in dropped])
+        in_log(f"[uu tien arena] bo {len(labels)} muc cua artificialanalysis vi arena.ai "
+               f"da co cung model: {', '.join(labels[:8])}")
     return releases, climbs, dropped
 
 
@@ -1254,7 +1254,7 @@ def main():
     # Cung model quet duoc o ca hai phia thi giu ban arena (LOW-383). Loc TRUOC
     # khi dung `ket`: bao cao cua Nova va danh sach BAT BUOC phai thay cung mot
     # danh sach, khong phai hai ban khac nhau cua cung mot lan quet.
-    ra_mat_aa, leo_hang, bo_cho_arena = prefer_arena(
+    ra_mat_aa, leo_hang, yielded_to_arena = prefer_arena(
         ra_mat_aa, leo_hang, in_log=lambda s: print(s, file=sys.stderr))
 
     ket = {
@@ -1288,7 +1288,7 @@ def main():
 
     # Muc da nhuong cho arena cung tinh la DA BAO: de no quay lai lan quet sau
     # chi la ra tin doi muon mot ngay.
-    da_bao.update({r["original_name"]: r["released"] for r in ra_mat_aa + bo_cho_arena})
+    da_bao.update({r["original_name"]: r["released"] for r in ra_mat_aa + yielded_to_arena})
     write_timestamp(tat_ca | cu, hang_moi, da_bao)
     write_required(ra_mat_aa, leo_hang, hf, arena_tweets)
     if not a.khong_bat_buoc:

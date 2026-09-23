@@ -65,35 +65,35 @@ def test_display_name_does_not_touch_ordinary_names():
 
 def test_extract_model_expands_a_slug_title():
     """DO trong ticket: truoc LOW-381 danh sach nay dung MOT phan tu."""
-    ra = ranking.extract_model(TITLE)
-    assert ra[0] == "claude-opus-5-5-max", "ban dai nhat van duoc thu truoc"
-    assert "Claude Opus 5.5" in ra, "thieu ten hien thi -> khong bang nao khop"
-    assert len(ra) > 1
+    names = ranking.extract_model(TITLE)
+    assert names[0] == "claude-opus-5-5-max", "ban dai nhat van duoc thu truoc"
+    assert "Claude Opus 5.5" in names, "thieu ten hien thi -> khong bang nao khop"
+    assert len(names) > 1
 
 
 def test_variant_matches_the_real_row_but_a_shorter_one_does_not():
-    ra = ranking.extract_model(TITLE)
-    assert not _matches(ROW_AA, ra[0]), "chinh cho tin 23/09 chet: dau '(' chen giua"
-    assert any(_matches(ROW_AA, m) for m in ra), "phai co it nhat mot bien the khop hang that"
+    names = ranking.extract_model(TITLE)
+    assert not _matches(ROW_AA, names[0]), "chinh cho tin 23/09 chet: dau '(' chen giua"
+    assert any(_matches(ROW_AA, m) for m in names), "phai co it nhat mot bien the khop hang that"
     # Luat cu (LOW-177) khong duoc no: "Claude Opus 5" khong duoc an vao "5.5".
     assert not _matches(ROW_AA, "Claude Opus 5")
-    assert "Claude" not in ra, "ten hang tran khoanh trung moi hang co chu Claude"
+    assert "Claude" not in names, "ten hang tran khoanh trung moi hang co chu Claude"
 
 
 def test_fallback_card_names_the_board_from_the_title():
     """The du phong 23/09 ghi ARTIFICIALANALYSIS vi LINK bai tro toi do, trong khi
     tieu de (va hook) noi LiveBench."""
     ds = ranking.suggest_sources(TITLE, link="https://artificialanalysis.ai/leaderboards/models")
-    ten, n = ranking._card_fields(ranking.extract_model(TITLE), ds)
-    assert n["id"] == "livebench", f"the van ghi bang {n['id']}"
-    assert ten == "Claude Opus 5.5", "the in nguyen slug"
+    card_name, source = ranking._card_fields(ranking.extract_model(TITLE), ds)
+    assert source["id"] == "livebench", f"the van ghi bang {source['id']}"
+    assert card_name == "Claude Opus 5.5", "the in nguyen slug"
 
 
 def test_fallback_card_keeps_a_source_when_the_title_names_none():
     ds = ranking.suggest_sources("Kimi-K3 leo lên #1", link="")
-    ten, n = ranking._card_fields(["Kimi-K3"], ds)
-    assert n and n.get("site") and n.get("board"), "khong duoc rong khi tieu de khong goi ten bang"
-    assert ten == "Kimi-K3"
+    card_name, source = ranking._card_fields(["Kimi-K3"], ds)
+    assert source and source.get("site") and source.get("board"), "khong duoc rong khi tieu de khong goi ten bang"
+    assert card_name == "Kimi-K3"
 
 
 if __name__ == "__main__":

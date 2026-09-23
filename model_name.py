@@ -42,14 +42,14 @@ def _merge_version(tokens: list) -> list:
     Slug tach phien ban bang gach noi (`claude-opus-5-5`), con bang in dau cham
     (`Claude Opus 5.5`). Chi noi hai nhom CHU SO lien nhau va ngan (<=2 chu so)
     de khong nuot duoi ngay hay so tham so."""
-    ra = []
+    out = []
     for t in tokens:
-        if (ra and t.isdigit() and len(t) <= 2
-                and re.fullmatch(r"\d{1,2}(\.\d{1,2})*", ra[-1])):
-            ra[-1] = f"{ra[-1]}.{t}"
+        if (out and t.isdigit() and len(t) <= 2
+                and re.fullmatch(r"\d{1,2}(\.\d{1,2})*", out[-1])):
+            out[-1] = f"{out[-1]}.{t}"
         else:
-            ra.append(t)
-    return ra
+            out.append(t)
+    return out
 
 
 def _case(t: str) -> str:
@@ -60,12 +60,12 @@ def _case(t: str) -> str:
     return t[:1].upper() + t[1:] if t.islower() else t
 
 
-def display_name(ten: str) -> str:
+def display_name(name: str) -> str:
     """'claude-opus-5-5-max-effort' -> 'Claude Opus 5.5'; 'GPT-6 Astra (high)' -> 'GPT-6 Astra'.
 
     Ten da o dang hien thi thi chi bo phan trong ngoac va hau to muc no luc —
     KHONG doi hoa/thuong cua no, vi do la ten hang tu viet."""
-    t = _PAREN.sub(" ", str(ten or "")).strip()
+    t = _PAREN.sub(" ", str(name or "")).strip()
     t = re.sub(r"\s+", " ", t)
     if not t:
         return ""
@@ -82,7 +82,7 @@ def display_name(ten: str) -> str:
     return " ".join(tokens)
 
 
-def key(ten: str) -> str:
+def key(name: str) -> str:
     """Khoa de so ten giua HAI nha cung cap: 'claude-opus-5-5-max' va
     'Claude Opus 5.5 (max with fallback)' ra cung mot khoa.
 
@@ -94,4 +94,4 @@ def key(ten: str) -> str:
     Chu so KHONG bi nuot: 'claude opus 5' -> 'claudeopus5' khac
     'claude opus 5.5' -> 'claudeopus55'.
     """
-    return re.sub(r"[\s\-_–—.]+", "", display_name(ten).lower())
+    return re.sub(r"[\s\-_–—.]+", "", display_name(name).lower())

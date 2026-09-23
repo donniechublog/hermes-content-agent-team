@@ -290,10 +290,10 @@ def extract_model(tieu_de: str) -> list:
     # gon theo tu ben duoi khong chay, nen truoc LOW-381 danh sach chi co dung
     # mot ung vien — va khong hang nao chua chuoi do, vi bang in "Claude Opus 5.5
     # (max with fallback)". Quy ve dang hien thi TRUOC roi moi rut gon tiep.
-    hien_thi = model_name.display_name(khong_ngoac)
-    if hien_thi and hien_thi.lower() != khong_ngoac.lower():
-        ra.append(hien_thi)
-        khong_ngoac = hien_thi
+    display_form = model_name.display_name(khong_ngoac)
+    if display_form and display_form.lower() != khong_ngoac.lower():
+        ra.append(display_form)
+        khong_ngoac = display_form
     ws = khong_ngoac.split()
     # bớt dần từ cuối, nhưng KHÔNG bớt tới dạng MỘT TỪ KHÔNG MANG SỐ — đó là TÊN
     # HÃNG TRẦN ("DeepSeek", "Gemini", "Claude"), nó khớp mọi hàng có chữ đó kể cả
@@ -1254,12 +1254,12 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
             break
     if kq_cuoi:
         return kq_cuoi
-    ten_the, n = _card_fields(models, nguon_ds)
+    card_name, n = _card_fields(models, nguon_ds)
     out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}card.png"
-    fallback_card(ten_the, hang_goi_y, n["site"], n["board"], out, brand, logo)
-    in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {ten_the} #{hang_goi_y or '?'}")
+    fallback_card(card_name, hang_goi_y, n["site"], n["board"], out, brand, logo)
+    in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {card_name} #{hang_goi_y or '?'}")
     return {"file_path": str(out), "kind": "card", "source": n["id"], "site": n["site"], "board": n["board"],
-            "rank": hang_goi_y, "model": ten_the, "url": n["url"], "logo": str(logo) if logo else None}
+            "rank": hang_goi_y, "model": card_name, "url": n["url"], "logo": str(logo) if logo else None}
 
 
 MAX_XH = 3      # tran so anh xep hang lay cho MOT tin (cac nguon `independent`)
@@ -1402,12 +1402,12 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
                 da_chup_thuong = True
     if ket_qua:
         return ket_qua
-    ten_the, n = _card_fields(models, nguon_ds)
+    card_name, n = _card_fields(models, nguon_ds)
     out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}card.png"
-    fallback_card(ten_the, hang_goi_y, n["site"], n["board"], out, brand, logo)
-    in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {ten_the} #{hang_goi_y or '?'}")
+    fallback_card(card_name, hang_goi_y, n["site"], n["board"], out, brand, logo)
+    in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {card_name} #{hang_goi_y or '?'}")
     return [{"file_path": str(out), "kind": "card", "source": n["id"], "site": n["site"], "board": n["board"],
-            "rank": hang_goi_y, "model": ten_the, "url": n["url"], "logo": str(logo) if logo else None}]
+            "rank": hang_goi_y, "model": card_name, "url": n["url"], "logo": str(logo) if logo else None}]
 
 
 def main() -> int:
