@@ -99,59 +99,23 @@ SOURCE: list[dict] = [
     {"id": "arena-search",   "site": "ARENA.AI",  "board": "Search Arena",
      "url": "https://arena.ai/leaderboard/search",        "domain_pattern": r"arena\.ai|lmarena",
      "board_pattern": r"\bsearch\b|tìm kiếm|tim kiem"},
-    {"id": "aa-models",      "site": "ARTIFICIALANALYSIS.AI", "board": "Intelligence Index",
-     "url": "https://artificialanalysis.ai/leaderboards/models", "domain_pattern": r"artificialanalysis"},
-    # mobile KHONG dung duoc (do 06/09/2026): bang rong 892px trong khung cuon ngang, khung 414 mat cot.
-    {"id": "tbench",         "site": "TBENCH.AI", "board": "Terminal-Bench",
-     "url": "https://www.tbench.ai/leaderboard",          "domain_pattern": r"tbench|terminal[-_ ]?bench",
-     "viewport": "desktop"},
-    # mobile KHONG dung duoc (do 06/09/2026): bang rong 990px trong khung cuon ngang, khung 414 mat cot.
-    {"id": "swebench",       "site": "SWEBENCH.COM", "board": "SWE-bench",
-     "url": "https://www.swebench.com/",                  "domain_pattern": r"swebench|swe[-_ ]?bench",
-     "viewport": "desktop"},
-    # mobile KHONG dung duoc (do 06/09/2026): khung hep chi bat duoc bieu do CHI PHI
-    # chu khong phai bang xep hang, ten model lai bi cat cut ("Claude 4.7 Opu...").
-    {"id": "livebench",      "site": "LIVEBENCH.AI", "board": "LiveBench",
-     "url": "https://livebench.ai/",                      "domain_pattern": r"livebench",
-     "viewport": "desktop"},
-    {"id": "aider",          "site": "AIDER.CHAT", "board": "Aider Polyglot",
-     "url": "https://aider.chat/docs/leaderboards/",      "domain_pattern": r"aider"},
-    # Ông Chủ 06/09/2026: "phải sử dụng hình ảnh từ tất cả trang này, đừng tự giới
-    # hạn nguồn ảnh". Bảy mục dưới đây đều ĐO THẬT (chụp ra ảnh có khoanh model)
-    # trước khi thêm — không thêm nguồn chưa chụp được, vì mỗi nguồn hỏng ngốn
-    # ~18s của trần 150s mà không bao giờ ra ảnh.
-    # ĐÃ THỬ, CHƯA ĐƯỢC, nên KHÔNG có trong danh sách:
-    #   bigcode-bench.github.io — có bảng 171 hàng nhưng hàng nằm dưới đáy khung
-    #     nhìn mà `scrollIntoView` không kéo trang lên (khung cuộn lạ).
-    #   designarena.ai / scale.com/leaderboard / vals.ai — không có <table> lẫn
-    #     nhóm hàng lặp nào nhận ra được; mỗi trang cần một bộ bóc riêng.
-    #   epoch.ai — bảng vẽ bằng <canvas>, không định vị được hàng để khoanh.
-    #   mteb (HF Space) — benchmark embedding, không phải xếp hạng model kiểu tin.
-    # openrouter khong render bang xep hang nao o khung <900px -> luon lui ve desktop.
-    {"id": "openrouter",     "site": "OPENROUTER.AI", "board": "LLM Rankings (lượt dùng)",
-     "url": "https://openrouter.ai/rankings",             "domain_pattern": r"openrouter",
-     "viewport": "desktop"},
-    # mobile KHONG dung duoc (do 06/09/2026): bang rong 556px, rong hon khung 414 nen mat cot.
-    {"id": "livecodebench",  "site": "LIVECODEBENCH", "board": "LiveCodeBench",
-     "url": "https://livecodebench.github.io/leaderboard.html", "domain_pattern": r"livecodebench",
-     "viewport": "desktop"},
-    {"id": "bfcl",           "site": "GORILLA (UC BERKELEY)", "board": "Function-Calling Leaderboard",
-     "url": "https://gorilla.cs.berkeley.edu/leaderboard.html",
-     "domain_pattern": r"\bbfcl\b|gorilla\.cs\.berkeley|berkeley function"},
-    # mobile KHONG dung duoc (do 06/09/2026): bang cuon ngang 1788px, khung 414 mat cot.
-    {"id": "gaia",           "site": "GAIA BENCHMARK", "board": "GAIA",
-     "url": "https://gaia-benchmark-leaderboard.hf.space/", "domain_pattern": r"\bgaia\b",
-     "viewport": "desktop"},
-    {"id": "hle",            "site": "SAFE.AI", "board": "Humanity's Last Exam",
-     "url": "https://agi.safe.ai/",                       "domain_pattern": r"agi\.safe\.ai|humanity'?s? last exam|\bHLE\b"},
-    # mobile KHONG dung duoc (do 06/09/2026): bieu do cot mang ngu nghia bang: toa do hang khong trung cho hien, chup ra lech.
-    {"id": "vellum",         "site": "VELLUM.AI", "board": "LLM Leaderboard",
-     "url": "https://www.vellum.ai/llm-leaderboard",      "domain_pattern": r"vellum",
-     "viewport": "desktop"},
-    # mobile KHONG dung duoc (do 06/09/2026): bang rong 1417px trong khung cuon ngang, khung 414 mat cot.
-    {"id": "opencompass",    "site": "OPENCOMPASS", "board": "OpenCompass LLM",
-     "url": "https://rank.opencompass.org.cn/leaderboard/llm", "domain_pattern": r"opencompass|司南",
-     "viewport": "desktop"},
+    # ---- CHI ARENA (Ong Chu 23/09/2026, LOW-389) --------------------------------
+    # *"vi anh ko dep nen chung ta moi chi dung source arena.ai, con AA chi dung de
+    # tang tinh confirm"* — *"Chung ta quet arena.ai thoi, cac benchmark site con lai
+    # la nguon su that"*.
+    #
+    # Nhung bang DA TUNG nam o day va bi go khoi duong ANH (van la nguon SU THAT,
+    # xem `model_boards.py` + `required.LINK_BOARD`): artificialanalysis (aa-models),
+    # tbench, swebench, livebench, aider, livecodebench, bfcl, gaia, hle, vellum,
+    # opencompass. Rieng OPENROUTER thi khong con la nguon gi ca — Ong Chu bo tu
+    # LOW-185 (16/09/2026), nhung luc do chi go o `scan_models`, con o day no van
+    # song va van de ra 3 tam anh tu bang LUOT DUNG.
+    #
+    # So do 23/09 tren toan bo log con trong `state`: arena ra 40/45 tam anh,
+    # aa-models ra 0/45. Cai gia da biet truoc: tin ve chinh mot bang khac (vd
+    # "Grok 4.7 top 6 Terminal-Bench") gio ra THE CHU neu model do khong co tren
+    # arena — Ong Chu chot vay.
+
 ]
 
 # Từ khoá chọn bảng con của một site theo chủ đề tin (video → arena-t2v trước...).
@@ -178,15 +142,13 @@ TOPIC = [
      ["arena-t2i", "arena-image-edit", "arena-multi-image-edit"]),
     (r"\bvision\b|thị giác|multimodal|đa phương thức", ["arena-vision"]),
     (r"webdev|frontend|front-end|\bcode\b|coding|lập trình|swe[-_ ]?bench",
-     ["arena-code", "swebench", "aider", "livecodebench"]),
-    (r"terminal|agentic|\bagent\b", ["tbench", "gaia"]),
+     ["arena-code"]),
     (r"\bsearch\b|tìm kiếm", ["arena-search"]),
-    (r"intelligence|trí tuệ|artificial ?analysis", ["aa-models"]),
-    # Xep hang theo LUOT DUNG THAT, khong phai diem benchmark — khac han ve ban chat
-    # nen phai co tu khoa rieng, dung de tin "top 10 OpenRouter" roi vao bang diem.
-    (r"openrouter|\busage\b|lượt dùng|thị phần|market share|token/tuần", ["openrouter"]),
-    (r"function[- ]?call|tool[- ]?use|gọi hàm|dùng công cụ", ["bfcl"]),
-    (r"humanity'?s? last exam|\bhle\b|đề thi khó nhất", ["hle"]),
+    # Da bo cung dot LOW-389 vi nguon cua chung khong con tren duong ANH:
+    # terminal/agentic -> tbench+gaia; intelligence -> aa-models; openrouter/usage;
+    # function-call -> bfcl; humanity last exam -> hle. Mot dong TOPIC tro toi mot
+    # nguon khong ton tai thi `suggest_sources` im lang bo qua, khong ai thay — nen
+    # bo han thay vi de lai.
 ]
 
 # ---- Nhận diện tin xếp hạng + tách model/hạng ---------------------------------
