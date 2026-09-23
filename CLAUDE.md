@@ -47,6 +47,7 @@ Bối cảnh: repo này được sửa từ nhiều máy (Mac này + 2 máy khá
 Áp cho mọi thay đổi ảnh hưởng tới hình xuất ra: nền chữ, bố cục, crop, cỡ chữ, ghép ảnh (`carousel.py`, `card.py`, `render_edu.py`, `crop_ratio.py`…).
 
 - **Đọc lại luật hình đang có trước khi sửa** (`IMAGE_RULES_<vai>.md`, nhất là mục 6–7). Sửa một lời phàn nàn KHÔNG được phá một luật cũ. Bài học 19/09/2026: LOW-272 chữa "chữ nhoè" bằng nền đặc 30–47% khung, phá luật "chữ ~20% khung, nền chữ chỉ là overlay". Ông Chủ bác cùng ngày (LOW-286).
-- **Dựng lại ít nhất 3 slide/thẻ THẬT** từ `state/<brand>/prepare/*/` trên máy chủ, bằng code nhánh, ra `/tmp` (không đụng production). Làm ảnh trước/sau và gửi Ông Chủ xem **trước khi merge/deploy**. Test chỉ chứng minh điều mình đã nghĩ tới, còn hình thật mới lộ điều mình chưa nghĩ tới.
+- **Dựng lại ít nhất 3 slide/thẻ THẬT** từ `state/<brand>/prepare/*/` trên máy chủ, bằng code nhánh, ra `~/render-check/<ticket>/` (không đụng production). Làm ảnh trước/sau và gửi Ông Chủ xem **trước khi merge/deploy**. Test chỉ chứng minh điều mình đã nghĩ tới, còn hình thật mới lộ điều mình chưa nghĩ tới.
+  Trước 23/09/2026 câu này ghi `/tmp`. Đổi vì `/tmp` trên máy chủ là **tmpfs (RAM)** và từ 23/09 bị quét theo tuổi **3 ngày** (`/etc/tmpfiles.d/tmp.conf`, LOW-382) — ảnh trước/sau để đối chiếu qua hôm sau sẽ biến mất. `~/render-check/<ticket>/` nằm ngoài vùng quét và có thư mục theo ticket nên đối chiếu về sau dễ hơn. Dọn tay khi ticket đóng.
 - Luật hình mới được chốt thì khoá bằng **test + cổng đo trên pixel thật**, không chỉ ghi vào tài liệu. Mẫu: `carousel._gate_text_background`, `tests/test_low286_text_overlay.py`.
 
