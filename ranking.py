@@ -1001,17 +1001,6 @@ BOARD_PICK = ["table", "figure", "svg", "canvas"]
 
 # Boc phan tu can chup vao mot <div> cat san chieu cao. Tra ve de goi tu Python:
 # `max-height` tren chinh <table> khong co tac dung (xem chu thich noi goi).
-JS_CROP = """
-(e, h) => {
-  const w = document.createElement('div');
-  w.setAttribute('data-xh-crop', '1');
-  w.style.cssText = 'max-height:' + h + 'px;overflow:hidden;width:max-content;background:#fff';
-  e.parentNode.insertBefore(w, e);
-  w.appendChild(e);
-}
-"""
-
-
 def source_page_is_board(url: str) -> bool:
     """Hàm THUẦN: `link gốc` của bài có phải một trang BẢNG XẾP HẠNG không?
 
@@ -1034,21 +1023,30 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
     nói "chưa khoanh hàng", không được đội lốt ảnh đã khoanh (bài học LOW-177).
 
     Dùng phép đo bề ngang của `capture_chart` (`MEASURE_JS` + `frame_can`): nới
-    khung cho vừa chart rồi mới chụp, vì bề ngang của một bảng LÀ nội dung
-    (luật Ông Chủ 04/09/2026). Không gọi `capture_chart.capture` vì hàm đó tự mở
-    một phiên playwright riêng — lồng vào phiên đang mở ở đây thì nổ — và nó
-    `sys.exit` khi chụp thiếu, tức giết cả engine thay vì lui về thẻ chữ.
+    khung cho vừa bảng rồi mới chụp, vì bề ngang của một bảng LÀ nội dung (luật
+    Ông Chủ 04/09/2026). Chiều cao thì cắt ở `HEIGHT_MAX_CSS` — giữ phần ĐẦU bảng,
+    đúng thứ cần xem.
+
+    Không gọi `capture_chart.capture`: hàm đó tự mở một phiên playwright riêng
+    (lồng vào phiên đang mở ở đây thì nổ) và `sys.exit` khi chụp thiếu, tức giết
+    cả engine thay vì lui về thẻ chữ.
+
+    Chụp bằng `page.screenshot(clip=...)`, KHÔNG bằng `element.screenshot()`. Đo
+    thật 23/09/2026 trên bốn trang bảng, `element.screenshot` hỏng hai kiểu khác
+    nhau: nó ĐỢI phần tử đứng yên nên hết giờ trên trang có hiệu ứng chạy số
+    (artificialanalysis/text-to-speech), và trang React vẽ lại giữa chừng thì ném
+    "Element is not attached to the DOM" (arena.ai). `clip` chỉ là bốn con số —
+    không đợi gì, không đụng vào DOM.
     """
     import capture_chart
     ctx = None
     try:
         rong, do = capture_chart.EMPTY_MARK, None
+        cao_khung = HEIGHT_MAX_CSS + 200          # khung nhìn phải chứa trọn vùng cắt
         for _ in range(2):          # lượt 1 đo, lượt 2 (nếu cần) nới khung rồi chụp lại
             if ctx:
                 ctx.close()
-            # Khung nhin cao hon vung cat: duong lui `pg.screenshot(clip=...)` ben
-            # duoi chi chup duoc phan nam trong khung nhin.
-            ctx = br.new_context(viewport={"width": rong, "height": HEIGHT_MAX_CSS + 200},
+            ctx = br.new_context(viewport={"width": rong, "height": cao_khung},
                                  device_scale_factor=DPR, user_agent=UA)
             pg = ctx.new_page()
             # `domcontentloaded` chứ không `networkidle`: networkidle không bao giờ
@@ -1056,10 +1054,9 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
             pg.goto(url, wait_until="domcontentloaded", timeout=40000)
             pg.wait_for_timeout(1500)                # font + animation của chart
             do_moi = pg.evaluate(capture_chart.MEASURE_JS, BOARD_PICK)
-            # Luot hai (khung rong hon) do hut thi GIU ket qua luot dau: `sel` chi la
-            # mot kieu phan tu ("table"/"figure"/...), tai lai cham hon mot nhip la
-            # do ra rong — do 23/09, arena.ai/leaderboard/code/webdev mat trang o
-            # dung cho nay du luot dau da thay bang.
+            # Lượt hai đo hụt thì GIỮ kết quả lượt đầu: `sel` chỉ là một kiểu phần tử
+            # ("table"/"figure"/…), tải lại chậm một nhịp là đo ra rỗng — đo 23/09,
+            # arena.ai/leaderboard/code/webdev mất trắng ở đúng chỗ này.
             do = do_moi if do_moi["sel"] else do
             if not do or not do["sel"]:
                 in_log(f"[xep_hang] trang nguồn {url}: không có bảng/đồ thị nào đủ lớn")
@@ -1072,42 +1069,28 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
         el = pg.query_selector(do["sel"])
         if not el:
             return None
-        # CAT BOT CHIEU CAO, GIU NGUYEN BE NGANG. Do that 23/09/2026: bang cua
-        # artificialanalysis chup tron ven ra 2796x29920 (ti le 1:10,7) — mot tam
-        # khong vai nao dung duoc o kho 4:5, va nang vo ich. Be ngang thi KHONG
-        # duoc cham (luat Ong Chu 04/09: be ngang cua bang LA noi dung); chieu cao
-        # cat o `HEIGHT_MAX_CSS` nghia la giu phan DAU bang — dung thu can xem.
-        #
-        # Phai BOC element vao mot <div> roi cat cai div: `max-height` dat thang
-        # len chinh <table> thi trinh duyet BO QUA (CSS khong ap max-height cho
-        # display:table) — do 23/09: dat xong van ra dung 29920px.
-        el.evaluate(JS_CROP, HEIGHT_MAX_CSS)
-        khung = pg.query_selector("[data-xh-crop]") or el
         try:
-            khung.scroll_into_view_if_needed(timeout=8000)
+            el.scroll_into_view_if_needed(timeout=8000)
         except Exception:                                    # noqa: BLE001
-            # artificialanalysis /text-to-speech: bang nam trong khung cuon rieng,
-            # `scroll_into_view_if_needed` het 30s ma khong bao gio "on dinh".
+            # Bảng nằm trong khung cuộn riêng: `scroll_into_view_if_needed` đợi nó
+            # "ổn định" và không bao giờ đạt (đo 23/09, /text-to-speech).
             in_log("[xep_hang] trang nguồn: cuộn tới bảng hụt, thử scrollIntoView thẳng")
-            khung.evaluate("e => e.scrollIntoView({block: 'start'})")
+            el.evaluate("e => e.scrollIntoView({block: 'start'})")
         pg.wait_for_timeout(400)
+        hop = el.bounding_box()
+        if not hop:
+            in_log(f"[xep_hang] trang nguồn {url}: không đo được vị trí bảng")
+            return None
+        x, y = max(0.0, hop["x"]), max(0.0, hop["y"])
+        clip = {"x": x, "y": y,
+                "width": min(hop["width"], rong - x),
+                "height": min(hop["height"], float(HEIGHT_MAX_CSS), cao_khung - y)}
+        if clip["width"] < 320 or clip["height"] < 200:
+            in_log(f"[xep_hang] trang nguồn {url}: vùng chụp quá nhỏ "
+                   f"({clip['width']:.0f}x{clip['height']:.0f})")
+            return None
         out.parent.mkdir(parents=True, exist_ok=True)
-        # `animations=disabled`: trang bang hay co hieu ung chay so/thanh do, playwright
-        # doi chung "on dinh" tron 30s roi nem (mat /text-to-speech, do 23/09).
-        try:
-            khung.screenshot(path=str(out), timeout=15000, animations="disabled")
-        except Exception:                                    # noqa: BLE001
-            # `ElementHandle.screenshot` DOI phan tu dung yen; trang co hieu ung
-            # chay so thi no doi mai roi nem (mat /text-to-speech, do 23/09).
-            # `page.screenshot(clip=...)` khong doi gi ca — cat theo toa do.
-            hop = khung.bounding_box()
-            if not hop:
-                raise
-            in_log("[xep_hang] trang nguồn: chụp phần tử hụt (trang không đứng yên), cắt theo toạ độ")
-            pg.screenshot(path=str(out), animations="disabled", clip={
-                "x": max(0, hop["x"]), "y": max(0, hop["y"]),
-                "width": min(hop["width"], rong - max(0, hop["x"])),
-                "height": min(hop["height"], HEIGHT_MAX_CSS)})
+        pg.screenshot(path=str(out), animations="disabled", clip=clip)
         rong_that, mo_ta = role.active_rules().is_blank_image(Image.open(out).convert("RGB"))
         if rong_that:
             in_log(f"[xep_hang] trang nguồn: ảnh ra RỖNG ({mo_ta}) — bỏ")
@@ -1130,6 +1113,7 @@ def capture_source_board(br, url: str, out: Path, in_log=print) -> dict | None:
                 ctx.close()
             except Exception:                                # noqa: BLE001
                 pass
+
 
 
 def _domain_of(url: str) -> str:
