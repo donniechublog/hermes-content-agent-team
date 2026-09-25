@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import caption_check                                         # noqa: E402
+import digest_writer                                         # noqa: E402
 import submit_common as nc                                       # noqa: E402
 import state_paths                                            # noqa: E402
 
@@ -78,6 +79,8 @@ def main() -> int:
     p_tl = wd / state_paths.MATERIAL_FILE
     tl = p_tl.read_text(encoding="utf-8") if p_tl.exists() else ""
     loi, canh, tin = caption_check.check(cap, tl)
+    if digest_writer.is_digest(meta):                     # ban tin van Hiro (LOW-405)
+        loi += digest_writer.check_caption(cap, wd)
     if persona == "jika":
         loi += caption_check.check_jika_voice(cap)
     print(f"[do] {tin.get('char_count', 0)} ký tự | {tin.get('sentence_count', 0)} câu | {tin.get('number_count', 0)} chỗ có số"

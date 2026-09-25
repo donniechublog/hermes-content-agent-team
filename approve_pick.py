@@ -283,6 +283,8 @@ def live_drafts_same_link(link: str, brand: str) -> list:
             if p.stat().st_mtime < han:
                 continue
             d = _load_json(p, {}) or {}
+            if d.get("image_role") == "hiro":
+                continue                                  # ban tin van (LOW-405): link tin #1 chi la dai dien
             if _link_key(d.get("link", "")) != khoa or not khoa:
                 continue
             ma = p.name[: -len(".img.json")]

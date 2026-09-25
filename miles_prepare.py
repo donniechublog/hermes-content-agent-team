@@ -18,6 +18,7 @@ Dung:
     venv/bin/python miles_prepare.py <draft_id>
 """
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -26,6 +27,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import route_missing_images                                       # noqa: E402
 import caption_check                                         # noqa: E402
+import digest_writer                                         # noqa: E402
 import submit_common as nc                                        # noqa: E402
 import state_paths                                                # noqa: E402
 
@@ -114,6 +116,20 @@ def main() -> int:
     ap.add_argument("--im", action="store_true")
     ap.add_argument("--cho", type=int, default=300)
     a = ap.parse_args()
+    # BAN TIN VAN cua Hiro (LOW-405): KHONG goi engine — no chay tren link tin #1 ngay
+    # trong thu muc cua Hiro, ghi de contact_sheet va 0 anh thi chuyen draft sang Kite.
+    p_meta = DRAFTS / f"{a.draft_id}.meta.json"
+    if p_meta.exists() and digest_writer.is_digest(json.loads(p_meta.read_text(encoding="utf-8"))):
+        meta0 = cb.load_meta(a.draft_id)                  # dat CT_BRAND theo brand cua draft
+        import env_load
+        wd = cb.workdir(env_load.state_dir(), a.draft_id)
+        persona = nc.writer_persona_name(nc.writer_for_article(a.draft_id, cb._brand_of(meta0)))
+        voice = VOICE.get(cb._brand_of(meta0), VOICE["donniechublog"])
+        brief = digest_writer.prepare(meta0, wd, a.draft_id, persona, voice, ROOT)
+        (wd / f"brief_{persona}.md").write_text(brief, encoding="utf-8")
+        if not a.im:
+            print(brief)
+        return 0
     # Engine dung chung: da chay tu luc chon tin (vai anh) -> chi doc; chua co thi
     # chay khong browser (Miles chi can chu).
     m, wd, meta = cb.run(a.draft_id, a.lam_moi, khong_browser=True, cho=a.cho,
