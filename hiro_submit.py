@@ -11,7 +11,8 @@ CONG (vi pham = dung, in cach sua):
   - tieng Viet co dau (carousel._gate_text), bo em-dash; chu vua khung 20% (digest_slide);
   - sau khi ve: nen chu dung luat overlay LOW-286 / nen phang LOW-341, do tren pixel.
 
-Telegram nhan toi da 10 anh mot album: bo 11-20 slide gui HAI album, nut Duyet o album cuoi.
+Tran MAX_SLIDES = 10 (LOW-418, bang hiro_pick.MAX_SLIDES): vua MOT album Telegram. `send` van
+chia album moi ALBUM_MAX anh, nut Duyet o album cuoi — phong khi tran doi.
 
 KHONG ghi so "anh da dung" (`rules.record_used`): anh hero cua mot tin trong ban tin van la
 anh Ethan/Dre se can khi Ong Chu giao rieng tin do (Ong Chu chot 25/09: hai tang khong loai
@@ -35,7 +36,7 @@ import state_paths                                            # noqa: E402
 
 ROLE = hiro_prepare.ROLE
 DRAFTS = ROOT / "drafts"
-MAX_SLIDES = 20
+MAX_SLIDES = 10                    # = hiro_pick.MAX_SLIDES (LOW-418); test giu hai ban khop nhau
 ALBUM_MAX = 10                     # gioi han sendMediaGroup cua Telegram
 TITLE_MAX, SUMMARY_MAX = 110, 260  # ky tu — tran cung truoc khi do khung (digest_slide)
 
