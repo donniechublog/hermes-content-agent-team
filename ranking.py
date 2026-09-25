@@ -235,9 +235,60 @@ def is_ranking_story(tieu_de: str, tom_tat: str) -> bool:
     return bool(_XEP_HANG.search(f"{tieu_de} {tom_tat}"))
 
 
-def extract_model(tieu_de: str) -> list:
+# ---- Ten model THAT tren bang (LOW-409) ----------------------------------------
+# `_HO` la danh sach ho model VIET CUNG, toan ho model van ban. Do 25/09/2026 tren
+# top 40 moi bang arena.ai: _MODEL khong bat duoc 24/40 ten bang Tao anh, 23/40
+# Sua anh, 33/40 Tao video (Reve, Seedance, Flux, Veo, Sora, Kling, Wan...) —
+# tin "Reve-2.1 leo mot bac ... Bang Tao anh Arena" ra models=[] va khong bao gio
+# duoc chup bang, du `reve-2.1` nam ngay hang #5. Them tung ho vao `_HO` (MiMo
+# 22/09) luon cham hon bang mot buoc, nen khop them voi TEN THAT tren cac bang ma
+# Nova vua quet (`models_seen.json` -> `rankings`): tin leo hang cua Nova sinh ra
+# tu chinh tep do, nen ten chac chan co trong do.
+_NAME_TOKEN = re.compile(r"[a-z0-9]+(?:\.[a-z0-9]+)*")
+_NAME_QUALIFIER = re.compile(r"\s*[(\[][^)\]]*[)\]]")      # "(medium)", "[web-search]"
+
+
+def board_names() -> list:
+    """Moi ten model tren cac bang Nova quet lan gan nhat; [] khi chua co tep."""
+    path = env_load.state_dir() / state_paths.MODELS_SEEN_FILE
+    try:
+        rankings = json.loads(path.read_text(encoding="utf-8")).get("rankings") or {}
+    except (OSError, ValueError, AttributeError):
+        return []
+    return sorted({name for rows in rankings.values() if isinstance(rows, dict)
+                   for name in rows if isinstance(name, str)})
+
+
+def _board_name_in_title(title: str, names) -> tuple:
+    """(vi tri ky tu, ten tren bang) cua ten bang xuat hien SOM nhat trong tieu de,
+    dai nhat neu cung cho; (None, None) khi khong ten nao co mat.
+
+    Khop theo DAY TOKEN lien tiep, khong theo chuoi con: `gpt-5` KHONG khop
+    "GPT-5.5", con `reve-2.1` khop "Reve-2.1" va `dreamina-seedance-2.0-720p` khop
+    "Dreamina Seedance 2.0 720p". Ten mot token khong mang so ("muse") bo qua — no
+    trung tu thuong."""
+    spans = [(m.start(), m.group()) for m in _NAME_TOKEN.finditer((title or "").lower())]
+    words = [w for _, w in spans]
+    best = (None, None, 0)
+    for name in names or ():
+        for form in dict.fromkeys((name, _NAME_QUALIFIER.sub("", name))):
+            need = _NAME_TOKEN.findall(form.lower())
+            if not need or (len(need) == 1 and not any(c.isdigit() for c in need[0])):
+                continue
+            for i in range(len(words) - len(need) + 1):
+                if words[i:i + len(need)] == need:
+                    pos = spans[i][0]
+                    if best[0] is None or (pos, -len(need)) < (best[0], -best[2]):
+                        best = (pos, name, len(need))
+                    break
+    return best[0], best[1]
+
+
+def extract_model(tieu_de: str, known_names=None) -> list:
     """Danh sách tên model để thử khớp, DÀI trước NGẮN sau.
-    "GPT-6 Astra (max) 55 điểm" -> ["GPT-6 Astra (max)", "GPT-6 Astra", "GPT-6"]."""
+    "GPT-6 Astra (max) 55 điểm" -> ["GPT-6 Astra (max)", "GPT-6 Astra", "GPT-6"].
+
+    `known_names`: tên thật trên bảng xếp hạng; None -> `board_names()` (LOW-409)."""
     # Tieu de trang HuggingFace la "org/Model · Hugging Face": "deepseek-ai/"
     # dung truoc nen _MODEL bat "deepseek" (khong so, khong duoi) roi dung —
     # _lock_model ra rong va trang cong bo chinh chu KHONG BAO GIO duoc hoi
@@ -245,6 +296,15 @@ def extract_model(tieu_de: str) -> list:
     # Bo tien to repo truoc khi tim.
     tieu_de = re.sub(r"^\s*[\w.-]+/(?=[A-Za-z])", "", tieu_de or "")
     m = _MODEL.search(tieu_de)
+    # Ten bang dung TRUOC ten regex bat duoc (hoac regex khong bat gi) thi ten bang
+    # la chu the. Khong rut gon: "…seedance-2.0-720p" rut ngan se khoanh nham hang
+    # "…seedance-2.5-720p". Regex bat tu dau tieu de (GPT/Claude...) thi giu y cu.
+    if not m or m.start() > 0:
+        pos, name = _board_name_in_title(
+            tieu_de, board_names() if known_names is None else known_names)
+        if name and (not m or pos < m.start()):
+            bare = _NAME_QUALIFIER.sub("", name).strip()
+            return list(dict.fromkeys([name, bare, model_name.display_name(bare) or bare]))
     if not m:
         return []
     ten = m.group(1).strip(" -:")
