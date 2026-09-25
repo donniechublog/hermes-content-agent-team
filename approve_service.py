@@ -63,6 +63,7 @@ from approve_chat import (  # noqa: E402
 from approve_command import (  # noqa: E402
     handle_command,
 )
+from route_missing_images import route_out_of_budget  # noqa: E402
 
 
 def _download_image_fixed_with(token, msg):
@@ -498,6 +499,10 @@ def loop():
             # getUpdates da cho toi 50 giay moi vong, nen goi moi vong la du
             # thua cho mot viec chi doc vai tep JSON.
             auto_schedule_silent_drafts(token, group)
+            # LOW-411: Dre het ngan sach HAI lan (gave_up) -> tu chuyen Kite, thay vi
+            # task nam blocked mai (3 bai dcgr chet 22–25/09). Dat TRUOC bang tien do:
+            # task cu dong trong vong nay thi bang tien do im lang (LOW-410).
+            route_out_of_budget(token, group)
             report_progress_kanban(token, group)
             loi_lien_tiep = 0
         except Exception as e:                              # noqa: BLE001

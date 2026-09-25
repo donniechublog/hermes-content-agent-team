@@ -36,9 +36,19 @@ T0 = 1_790_000_000                      # 2026-09-21 23:33:20 UTC
 TOPICS = {"dre": 11, "miles": 22, "ethan": 33}
 
 
-def _task(tid, who, status, title="Bài <chip> & AI", created=T0 - 3000, started=None, done=None):
-    return {"id": tid, "assignee": who, "status": status, "title": title,
+def _task(tid, who, status, title="Bài <chip> & AI", created=T0 - 3000, started=None, done=None,
+          result=None):
+    task = {"id": tid, "assignee": who, "status": status, "title": title,
             "created_at": created, "started_at": started, "completed_at": done}
+    if result is not None:
+        task["result"] = result
+    return task
+
+
+# LOW-410: ly do chan cua `create_pair` (LOW-382) va ket qua khi he thong dong task sang Kite.
+ENGINE_WAIT = {"summary": dispatch.ENGINE_WAIT_REASON + " (draft d1)", "status": "blocked",
+               "run_id": "r1", "metadata": {}}
+ROUTED = dispatch.ROUTED_TO_KITE_RESULT + " (task t9) — thieu anh that."
 
 
 def _tick(rows, at=0, **kw):
@@ -136,6 +146,40 @@ SCENARIOS = {
     "state_write_failure_is_logged_not_raised": [
         _tick([_task("t1", "dre", "running", started=T0 - 40 * 60)], write_error=True),
     ],
+    # LOW-410: chan cho engine dem anh (LOW-382) la buoc binh thuong — khong ⛔;
+    # vai bat dau thi van bao ▶️ nhu moi task.
+    "low410_engine_wait_is_silent_then_start_is_reported": [
+        _tick([_task("t1", "dre", "blocked", created=T0 - 60)], last_runs={"t1": ENGINE_WAIT}),
+        _tick([_task("t1", "dre", "blocked", created=T0 - 60)], at=50, last_runs={"t1": ENGINE_WAIT}),
+        _tick([_task("t1", "dre", "ready", created=T0 - 60)], at=300),
+        _tick([_task("t1", "dre", "running", created=T0 - 60, started=T0 + 340)], at=350),
+    ],
+    # Chan qua ENGINE_WAIT_ALERT_MINUTES = engine chet giua chung: bao, nhac lai sau 30 phut.
+    "low410_engine_wait_past_threshold_alerts_then_reminds": [
+        _tick([_task("t1", "ethan", "blocked", created=T0 - 19 * 60)], last_runs={"t1": ENGINE_WAIT}),
+        _tick([_task("t1", "ethan", "blocked", created=T0 - 19 * 60)], at=2 * 60,
+              last_runs={"t1": ENGINE_WAIT}),
+        _tick([_task("t1", "ethan", "blocked", created=T0 - 19 * 60)], at=20 * 60,
+              last_runs={"t1": ENGINE_WAIT}),
+        _tick([_task("t1", "ethan", "blocked", created=T0 - 19 * 60)], at=33 * 60,
+              last_runs={"t1": ENGINE_WAIT}),
+    ],
+    # Task Dre do he thong dong khi bai sang Kite: khong "⛔ khong co san pham", va
+    # khong dem vao "task #NN" cua Dre (t1 la #01, khong phai #02).
+    "low410_kite_transfer_close_is_silent_and_not_counted": [
+        _tick([_task("t0", "dre", "done", created=T0 - 200, done=T0 - 100, result=ROUTED),
+               _task("t1", "dre", "done", done=T0 - 10)],
+              sent_log={"dre": [{"ts": T0 - 2000}]}),
+    ],
+    # Chan THAT sau khi da qua buoc cho engine van phai bao ⛔ kem ly do.
+    "low410_real_block_after_engine_wait_is_reported": [
+        _tick([_task("t1", "dre", "blocked", created=T0 - 60)], last_runs={"t1": ENGINE_WAIT}),
+        _tick([_task("t1", "dre", "running", created=T0 - 60, started=T0 + 400)], at=420),
+        _tick([_task("t1", "dre", "blocked", created=T0 - 60)], at=900,
+              last_runs={"t1": {"summary": "thiếu ảnh thật: 3/6", "status": "blocked",
+                                "run_id": "r2", "metadata": {}}},
+              last_run={"t1": {"summary": "thiếu ảnh thật: 3/6", "metadata": {}}}),
+    ],
 }
 
 
@@ -220,8 +264,25 @@ def test_scenarios_actually_exercise_every_kind_of_message():
     texts = " ".join(d["text"] for ticks in json.loads(GOLDEN.read_text(encoding="utf-8")).values()
                      for t in ticks for _, d in t["tg"])
     for mark in ("▶️", "✅", "task #02", "không có sản phẩm", "dừng (blocked)", "dừng (failed)",
-                 "vẫn đang làm", "không phản hồi", "đã chết", "bị hermes dừng", "còn 2 việc"):
+                 "vẫn đang làm", "không phản hồi", "đã chết", "bị hermes dừng", "còn 2 việc",
+                 "chờ engine đếm ảnh"):
         assert mark in texts, mark
+
+
+def test_low410_engine_wait_and_kite_transfer_send_no_stop_sign():
+    """LOW-410: hai buoc binh thuong cua LOW-382 khong duoc sinh tin ⛔ nao.
+
+    Fail tren ma cu: moi lan chan cho engine ra "⛔ dừng (blocked)", moi task he
+    thong dong khi sang Kite ra "⛔ báo xong nhưng không có sản phẩm"."""
+    golden = json.loads(GOLDEN.read_text(encoding="utf-8"))
+    for name in ("low410_engine_wait_is_silent_then_start_is_reported",
+                 "low410_kite_transfer_close_is_silent_and_not_counted"):
+        for tick in _run_scenario(SCENARIOS[name]):
+            texts = [d["text"] for _, d in tick["tg"]]
+            assert not any("⛔" in t for t in texts), (name, texts)
+    real = golden["low410_real_block_after_engine_wait_is_reported"]
+    assert any("dừng (blocked)" in d["text"] and "thiếu ảnh thật" in d["text"]
+               for tick in real for _, d in tick["tg"]), "chan THAT phai van bao"
 
 
 if __name__ == "__main__":

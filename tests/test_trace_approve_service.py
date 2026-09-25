@@ -307,6 +307,7 @@ def _loop_harness():
     h.patch(svc, "load_secrets", lambda: (h.token, h.channel, h.group))
     h.patch(svc, "HERMES_HOME", str(h.tmp / "hermes_home"))
     h.patch(svc, "_redo_all_done_limit", h.spy("_redo_all_done_limit"))
+    h.patch(svc, "route_out_of_budget", h.spy("route_out_of_budget"))
     h.patch(svc, "report_progress_kanban", h.spy("report_progress_kanban"))
     return h
 
@@ -344,8 +345,11 @@ def test_loop_writes_offset_before_handling_and_survives_bad_update():
         assert _bg(h) == [("nut", "_process_button", (h.token, h.channel, cq))]
         assert h.trace.of("bg")[0][1]["thread_id"] == MILES
         assert any("update 10 hong" in t for t in h.logs("loi"))
-        # quet kanban + het han lam lai chay SAU khi xu ly lo, moi vong mot lan
-        assert h.trace.names("fn")[-2:] == ["_redo_all_done_limit", "report_progress_kanban"]
+        # quet kanban + het han lam lai chay SAU khi xu ly lo, moi vong mot lan.
+        # LOW-411: cuu bai het ngan sach chay TRUOC bang tien do — task cu dong trong
+        # vong nay thi bang tien do im lang (LOW-410), khong ⛔ lan nua.
+        assert h.trace.names("fn")[-3:] == ["_redo_all_done_limit", "route_out_of_budget",
+                                            "report_progress_kanban"]
         # vong hai xin dung offset moi
         assert h.tg.sent("getUpdates")[1]["offset"] == 13
     finally:

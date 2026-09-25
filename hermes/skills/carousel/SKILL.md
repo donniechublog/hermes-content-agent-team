@@ -36,10 +36,11 @@ cần nhớ cú pháp hay luật ảnh, đọc brief là đủ.
 
 ## Đếm ảnh trước khi chia slide (bài học 10/09/2026)
 
-Cổng chặn ảnh của `dre_submit.py` nghiêm hơn cột "dùng" trong brief, nên **đọc
-brief xong phải tự đếm trước khi viết spec**:
+Cổng nộp chặn ảnh nghiêm hơn cột "dùng" trong brief, nên **đọc brief xong phải
+tự đếm trước khi viết spec**. Đếm theo brief; đừng đọc mã cổng để học trước, mỗi
+dòng `[LOI]` đã nói cách sửa:
 
-- Ảnh ❌ KHÔNG LIÊN QUAN: brief đã chặn sẵn, `dre_submit.py` cũng chặn.
+- Ảnh ❌ KHÔNG LIÊN QUAN: brief đã chặn sẵn, cổng nộp cũng chặn.
 - Ảnh KHÁI NIỆM (cờ, bản đồ, ảnh minh họa theo từ khóa): brief ghi rõ "chỉ làm
   bìa, KHÔNG vào slide thân". Đừng tính vào số slide thân.
 - Ảnh có mặt người: brief in sẵn cột "mặt người" — có tên (từ chú thích nguồn
@@ -51,15 +52,16 @@ brief xong phải tự đếm trước khi viết spec**:
   thứ hai.
 - Ảnh NGANG chỉ có hai đường: `stack` với ảnh ngang **cùng tone**, hoặc
   `landscape_crop` khi là người/sản phẩm KHÔNG có chữ. Ảnh ngang nào cao dưới 700px
-  (`schema.HEIGHT_MIN_CROP_LANDSCAPE`) thì `landscape_crop` bị chặn luôn vì cắt 4:5
-  rồi phóng lên sẽ nhoè; chỉ còn `stack` hoặc bỏ.
-- Cặp ghép phải cùng tone: kiểm bằng `image_rules.tone_mismatch` trước, đừng
-  đoán theo mã; hai ảnh cùng nền tối vẫn có thể lệch (nền xanh đậm vs nền xám).
+  thì `landscape_crop` bị chặn luôn vì cắt 4:5 rồi phóng lên sẽ nhoè; chỉ còn
+  `stack` hoặc bỏ.
+- Cặp ghép phải cùng tone: nhìn `contact_sheet.png` mà chọn, đừng đoán theo mã
+  ảnh; hai ảnh cùng nền tối vẫn có thể lệch (nền xanh đậm vs nền xám). Lệch thì
+  cổng nộp báo `[LOI]`.
 
 Số slide thân khả dụng = số mã còn lại SAU khi trừ ảnh khái niệm, ảnh mặt không
 rõ ai, ảnh ❌, và sau khi gộp các cặp ghép. Thấp hơn `min_images - 1` thì dừng:
 `kanban_comment` bảng mã nào bị loại vì sao, `kanban_block(kind="needs_input")`,
-đừng viết spec rồi để `dre_submit.py` chặn hai lần.
+đừng viết spec rồi để cổng nộp chặn hai lần.
 
 ## Khung kể chuyện (không cứng, hầu hết tin AI hợp)
 

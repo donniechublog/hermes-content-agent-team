@@ -25,6 +25,7 @@ from approve_base import (  # noqa: E402
 )
 from approve_dispatch import (  # noqa: E402
     BLACKBOARD_MENTION, DEFAULT_IMAGE, NAME_BRIGHT_CAP, NAME_ROLE_IMAGE, ROLE_CAROUSEL, ROLE_EDU, _blackboard_root, _report_receive_job, standard_label, kanban_create, kanban_block,
+    ENGINE_WAIT_REASON,
 )
 from submit_common import _strip_diacritics                  # noqa: E402
 # Khuon body task (van ban dai) tach sang task_bodies.py — xem ghi chu o do.
@@ -504,8 +505,10 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
     # `transient` = tu mo bang `unblock`, khong goi nguoi. Engine chet giua chung
     # thi task nam `blocked` — HIEN RA tren kanban + bang tien do, thay vi bai
     # bien mat im lang; do la ly do chan chu khong phai hoan tao task.
+    # Ly do chan phai BAT DAU bang ENGINE_WAIT_REASON: bang tien do nhan ra lan chan
+    # binh thuong nay bang chinh chu do va im lang, chi bao khi chan qua lau (LOW-410).
     blocked_for_engine, _ = kanban_block(
-        illu_id, f"cho engine dem anh xong roi moi chot vai (draft {draft_id})")
+        illu_id, f"{ENGINE_WAIT_REASON} (draft {draft_id})")
     vai_viet = _crop_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu,
                             root_id, illu_id, vai_quet=vai_quet,
                             blocked_for_engine=blocked_for_engine)
