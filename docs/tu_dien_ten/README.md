@@ -163,9 +163,9 @@ lần sau tra:
 | `KIEN_TRUC.md` | `ARCHITECTURE.md` | |
 | `LUAT_ANH.md` | `IMAGE_RULES.md` | khớp module `image_rules.py`; tham chiếu mục `LUAT_ANH §1.2d` → `IMAGE_RULES §1.2d`, giữ số mục |
 | `KHUON_TICKET.md` | `TICKET_TEMPLATE.md` | LOW-148, 14/09/2026 |
-| `NHAT_KY_SU_CO.md` | `INCIDENT_LOG.md` | LOW-149, 14/09/2026. Chỉ đổi TÊN TỆP + đường dẫn tham chiếu; không đổi tên trong `nhat_ky/*.md` (thuần lịch sử) và không đụng câu đo commit cũ bên trong chính tệp nếu câu đó nhắc TÊN CŨ như một số đo lịch sử |
+| `NHAT_KY_SU_CO.md` | `INCIDENT_LOG.md` | LOW-149, 14/09/2026. Chỉ đổi TÊN TỆP + đường dẫn tham chiếu; không đổi tên trong `incident_journal/*.md` (thuần lịch sử) và không đụng câu đo commit cũ bên trong chính tệp nếu câu đó nhắc TÊN CŨ như một số đo lịch sử |
 
-Không đổi trong `nhat_ky/` (lịch sử) và trong chính thư mục này.
+Không đổi NỘI DUNG trong `incident_journal/` (lịch sử) và trong chính thư mục này.
 `skill_lesson_filter.SOURCE_OF_TRUTH` khớp **cả hai** tên vì bài học cũ vẫn ghi
 `LUAT_ANH`.
 
@@ -184,7 +184,7 @@ Cùng lý do trên — không phải mã, `rename.py`/`test_name_english.py` kh�
 | `hermes/scripts/nhat_ky_daily.sh` | `hermes/scripts/journal_daily.sh` | LOW-151, đợt 2. Tên nằm trong trường `"script"` của job cron `daily-log` (id `1d476e2f3a8f`, cùng id ở cả hai home) — **deploy phải kèm** `hermes cron edit <id> --script journal_daily.sh` cho CẢ HAI home, và chép tệp mới sang home trước (sync không tự tạo tệp mới) |
 | `hermes/systemd/nhat-ky-web.service` | `hermes/systemd/journal-web.service` | LOW-151, đợt 2. Unit đang chạy thật — deploy phải kèm: cp unit mới → `daemon-reload` → `disable --now nhat-ky-web` → `enable --now journal-web` → kiểm cổng 9130 → xoá unit cũ |
 
-**Không đổi** (ngoài phạm vi "tên tệp"): thư mục `nhat_ky/` ở gốc repo (lịch sử).
+Thư mục `nhat_ky/` ở gốc repo → **`incident_journal/`** (LOW-367, Ông Chủ 22/09/2026 đảo quyết định "không đổi" của đợt này), kèm tên 18 tệp bên trong → English; `tham_chieu.md` → `reference.md`. Không lấy `journal/` theo `cum.json` vì trùng tên `journal.py` (bẫy ở mục rope phía trên). Nội dung tệp giữ nguyên. Cổng: `tests/test_docs.py::test_incident_journal_names_english`.
 Đường dẫn `state/9router/nhat_ky` đã thành `state/9router/journal` ở LOW-231.
 
 Biến môi trường `NHAT_KY_URL`/`NHAT_KY_HOST`/`NHAT_KY_PORT` (`monitor_9router.py`,
