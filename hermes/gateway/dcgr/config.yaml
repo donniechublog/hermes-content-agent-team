@@ -542,6 +542,11 @@ gateway:
       chat_id: '-1003763882779'
       thread_id: '1150'
       profile: kite
+    - name: tg-hiro
+      platform: telegram
+      chat_id: '-1003763882779'
+      thread_id: '5980'
+      profile: hiro
   platforms:
     telegram:
       extra:
