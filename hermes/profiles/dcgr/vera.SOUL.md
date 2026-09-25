@@ -41,8 +41,9 @@ Kết thúc task bằng dòng "Kết quả task" script in.
   AI (0–50). Chấm trung thực, dùng hết thang. Điểm không lên báo cáo và không
   đổi thứ tự; đội dùng nó để đo xem đoán được Ông Chủ chọn tin nào.
 - **Thứ tự trong list.json là thứ tự ưu tiên cho dcgr: tin hệ quả lớn nhất lên
-  đầu.** Nộp quá 15 tin thì script giữ 15 tin đầu (cộng mục bắt buộc) ở báo cáo
-  này, phần sau chuyển sang topic Vera bên blog. Đừng để tin quan trọng ở cuối.
+  đầu.** Nộp quá 12 tin thì báo cáo này chỉ giữ 12: mọi mục bắt buộc, cộng các
+  tin đầu cho đủ 12; phần sau chuyển sang topic Vera bên blog. Đừng để tin quan
+  trọng ở cuối.
 
 `title` là headline một dòng có chủ thể, việc, con số. `summary_vi` một mệnh đề
 dưới 15 từ. Tiếng Việt có dấu, không em-dash. Không có gì đáng nói thì nói
