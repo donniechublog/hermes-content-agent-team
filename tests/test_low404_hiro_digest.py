@@ -170,6 +170,20 @@ def test_prepare_item_crops_photo_keeps_chart_full_width():
         assert im.size == (1600, 900), "chart giu full be ngang"
 
 
+def test_same_image_in_two_items_is_a_publisher_placeholder():
+    tmp = Path(tam.temp_dir(prefix="low404_"))
+    a = _photo(tmp / "a.png", seed=1)
+    b = _photo(tmp / "b.png", seed=2)
+    logo = _photo(tmp / "logo.png", seed=9)
+    images = {9: [{"code": "9A", "path": logo}, {"code": "9B", "path": a}],
+              12: [{"code": "12A", "path": logo}],
+              13: [{"code": "13A", "path": b}]}
+    got = hiro_prepare.drop_shared_placeholders(images)
+    assert [x["code"] for x in got[9]] == ["9B"] and got[12] == [] and len(got[13]) == 1
+    sheet = hiro_prepare.contact_sheet(got, tmp / "sheet.png")
+    assert sheet and sheet.exists()
+
+
 def _png_bytes(size):
     b = io.BytesIO()
     Image.new("RGB", size, (120, 30, 30)).save(b, "PNG")

@@ -148,10 +148,63 @@ def run(draft_id: str, refresh: bool = False) -> tuple[dict, dict, Path]:
     folder = wd / state_paths.HIRO_IMAGES_DIR
     with cf.ThreadPoolExecutor(max_workers=env_load.quantity(4)) as ex:
         lists = list(ex.map(lambda it: prepare_item(it, folder), job["items"]))
-    images = {it["index"]: ds for it, ds in zip(job["items"], lists)}
+    images = drop_shared_placeholders({it["index"]: ds for it, ds in zip(job["items"], lists)})
+    contact_sheet(images, wd / state_paths.CONTACT_SHEET_FILE)
     cache.write_text(json.dumps({str(k): v for k, v in images.items()}, ensure_ascii=False, indent=2),
                      encoding="utf-8")
     return job, images, wd
+
+
+def drop_shared_placeholders(images: dict) -> dict:
+    """Bo anh xuat hien o HAI tin KHAC NHAU trong cung bo — anh mac dinh cua nha bao.
+
+    Do that 25/09/2026 (bao cao Vera, may chu): tin #9 va #12 deu tu tradingview.com, ca hai
+    ra CUNG mot anh og "TradingView News" (logo trang, khong phai anh tin). Mot anh that cua
+    mot tin khong bao gio la anh dung cua mot tin khac trong cung ban tin."""
+    rules = role.active_rules()
+    from PIL import Image
+    hashes = {}
+    for n, ds in images.items():
+        for a in ds:
+            try:
+                with Image.open(a["path"]) as im:
+                    hashes[(n, a["code"])] = (rules.dhash(im), rules.dhash_threshold_for(im))
+            except OSError:
+                pass
+    shared = {k for k, (h, t) in hashes.items()
+              for k2, (h2, _) in hashes.items() if k2[0] != k[0] and rules.is_near_duplicate(h, h2, t)}
+    for n, code in sorted(shared):
+        print(f"[CANH BAO] #{n}: bo {code} — trung anh cua tin khac (anh mac dinh cua trang)",
+              file=sys.stderr)
+    return {n: [a for a in ds if (n, a["code"]) not in shared] for n, ds in images.items()}
+
+
+def contact_sheet(images: dict, out: Path, thumb=(240, 300)) -> Path | None:
+    """MOT tam luoi moi anh ung vien kem ma (3A, 3B...) — vai mo mot tam nay de xem anh co
+    dung chu de khong, thay vi mo tung anh (do 25/09: tin Microsoft vung Vinh ra anh mot
+    nhom nguoi khong lien quan, tin Surface ra anh can phong trong)."""
+    from PIL import Image, ImageDraw
+    items = [(a["code"], a["path"]) for n in sorted(images) for a in images[n]]
+    if not items:
+        return None
+    cols = 6
+    rows = (len(items) + cols - 1) // cols
+    w, h = thumb
+    sheet = Image.new("RGB", (cols * w, rows * (h + 34)), (250, 250, 250))
+    d = ImageDraw.Draw(sheet)
+    for i, (code, path) in enumerate(items):
+        x, y = (i % cols) * w, (i // cols) * (h + 34)
+        try:
+            with Image.open(path) as im:
+                im = im.convert("RGB")
+                im.thumbnail((w - 8, h - 8))
+                sheet.paste(im, (x + (w - im.width) // 2, y + 4))
+        except OSError:
+            continue
+        d.text((x + 8, y + h + 6), code, fill=(0, 0, 0))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    sheet.save(out, "PNG")
+    return out
 
 
 def spec_skeleton(job: dict, images: dict) -> dict:
@@ -165,6 +218,10 @@ def spec_skeleton(job: dict, images: dict) -> dict:
         slides.append({"index": it["index"], "image": ds[0]["code"],
                        "title": it.get("title", ""), "summary": it.get("summary_vi", "")})
     return {"background_tone": "dark", "slides": slides, "skipped": skipped}
+
+
+def wd_sheet(draft_id: str) -> Path:
+    return workdir(draft_id) / state_paths.CONTACT_SHEET_FILE
 
 
 def write_brief(draft_id: str, job: dict, images: dict, spec_path: Path) -> str:
@@ -193,7 +250,9 @@ def write_brief(draft_id: str, job: dict, images: dict, spec_path: Path) -> str:
           "tiêu đề tiếng Anh thì DỊCH.",
           "- `summary`: MỘT–HAI câu ý chính (~100–180 ký tự), không đào sâu (việc đó của bài riêng).",
           "- Không em-dash, không đuôi tên miền. Chữ dài quá khung thì script báo, rút gọn.",
-          "- Đổi ảnh khi ảnh mặc định sai chủ đề/mặt người lạ/logo trống — chọn mã khác CỦA CÙNG tin.",
+          f"- MỞ MỘT tấm {wd_sheet(draft_id)} (lưới mọi ảnh kèm mã) để xem ảnh mỗi tin có đúng chủ "
+          "đề không. Ảnh mặc định sai chủ đề/người lạ/phòng trống/logo trang thì đổi sang mã khác "
+          "CỦA CÙNG tin; tin không còn ảnh nào đúng thì chuyển sang `skipped` kèm lý do.",
           "",
           "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python hiro_submit.py {draft_id}",
