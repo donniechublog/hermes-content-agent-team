@@ -59,6 +59,19 @@ def test_text_block_stays_within_20_percent():
     assert lay.summary_font.size < lay.title_font.size, "tom tat phai nho hon tieu de"
 
 
+def test_summary_kept_readable_and_one_size_per_deck():
+    d = ImageDraw.Draw(Image.new("RGB", (digest_slide.W, digest_slide.H)))
+    # Ca bo 25/09: tieu de 2 dong o 50px ep tom tat xuong 26px — phai ha tieu de truoc.
+    lay = digest_slide.fit_text(d, "Microsoft khánh thành vùng đám mây thứ tư tại Telangana, Ấn Độ",
+                                "Microsoft mở rộng cụm trung tâm dữ liệu tại thị trường chiến lược Ấn Độ.")
+    assert lay.summary_font.size >= digest_slide.SUMMARY_PREFERRED, lay.summary_font.size
+    slides = [{"title": TITLE, "summary": SUMMARY}, {"title": "Ngắn", "summary": "Ngắn."}]
+    ts, ss = digest_slide.deck_sizes(slides)
+    for s in slides:
+        got = digest_slide.fit_text(d, s["title"], s["summary"], digest_slide.TEXT_MAX_H, ts, ss)
+        assert (got.title_font.size, got.summary_font.size) == (ts, ss), "ca bo mot co chu"
+
+
 def test_too_long_text_is_refused_not_cut():
     assert digest_slide.check_text(TITLE, SUMMARY) == ""
     assert "rut gon" in digest_slide.check_text(TITLE * 3, SUMMARY * 4)

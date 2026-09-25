@@ -32,6 +32,10 @@ TITLE_HI, TITLE_LO = 50, 34
 TITLE_WEIGHT = 700
 TITLE_MAX_LINES = 3
 SUMMARY_HI, SUMMARY_LO = 34, 26
+# Tom tat duoi co nay la doc khong ra tren dien thoai; chi xuong toi SUMMARY_LO khi ha tieu de
+# het muc van khong vua (do 25/09, bao cao Vera: tieu de 50px 2 dong ep tom tat xuong 26px
+# trong khi slide ben canh o 30px).
+SUMMARY_PREFERRED = 30
 SUMMARY_GAP_SIZE = 8                  # tom tat nho hon tieu de it nhat chung nay px
 TITLE_LEAD, SUMMARY_LEAD = 1.15, 1.3
 BLOCK_GAP = 0.55                      # khoang tieu de -> tom tat, theo chieu cao dong tom tat
@@ -54,24 +58,38 @@ class Layout:
     ink_over: int
 
 
-def fit_text(d, title: str, summary: str, max_h: int = TEXT_MAX_H) -> Layout:
-    """Co lon nhat cho tieu de (toi da TITLE_MAX_LINES dong) roi tom tat, ca khoi <= max_h."""
+def _layout(d, title, summary, ts, ss, max_h):
+    """Layout o dung co (ts, ss), hoac None neu khong vua."""
     max_w = W - 2 * PAD
-    for ts in range(TITLE_HI, TITLE_LO - 1, -2):
-        tf = _f(F_REG, ts, TITLE_WEIGHT)
-        tl = _wrap(d, title, tf, max_w)
-        if len(tl) > TITLE_MAX_LINES:
-            continue
-        tlh = carousel._line_h(tf, tl, TITLE_LEAD)
-        for ss in range(min(SUMMARY_HI, ts - SUMMARY_GAP_SIZE), SUMMARY_LO - 1, -2):
-            sf = _f(F_REG, ss)
-            sl = _wrap(d, summary, sf, max_w) if summary else []
-            slh = carousel._line_h(sf, sl or ["x"], SUMMARY_LEAD)
-            gap = int(slh * BLOCK_GAP) if sl else 0
-            total = len(tl) * tlh + gap + len(sl) * slh
-            if total <= max_h:
-                ink = carousel._ink_over(sf, [sl], slh) if sl else carousel._ink_over(tf, [tl], tlh)
-                return Layout(tf, tl, tlh, sf, sl, slh, gap, total, ink)
+    tf = _f(F_REG, ts, TITLE_WEIGHT)
+    tl = _wrap(d, title, tf, max_w)
+    if len(tl) > TITLE_MAX_LINES:
+        return None
+    tlh = carousel._line_h(tf, tl, TITLE_LEAD)
+    sf = _f(F_REG, ss)
+    sl = _wrap(d, summary, sf, max_w) if summary else []
+    slh = carousel._line_h(sf, sl or ["x"], SUMMARY_LEAD)
+    gap = int(slh * BLOCK_GAP) if sl else 0
+    total = len(tl) * tlh + gap + len(sl) * slh
+    if total > max_h:
+        return None
+    ink = carousel._ink_over(sf, [sl], slh) if sl else carousel._ink_over(tf, [tl], tlh)
+    return Layout(tf, tl, tlh, sf, sl, slh, gap, total, ink)
+
+
+def fit_text(d, title: str, summary: str, max_h: int = TEXT_MAX_H,
+             title_max: int = TITLE_HI, summary_max: int = SUMMARY_HI) -> Layout:
+    """Co lon nhat cho tieu de (toi da TITLE_MAX_LINES dong) roi tom tat, ca khoi <= max_h.
+
+    Hai luot: luot dau giu tom tat >= SUMMARY_PREFERRED (ha tieu de truoc), luot sau moi cho
+    tom tat xuong SUMMARY_LO. `title_max`/`summary_max`: tran co — build_all dung de ca bo
+    mot co chu (xem do)."""
+    for floor in (SUMMARY_PREFERRED, SUMMARY_LO):
+        for ts in range(title_max, TITLE_LO - 1, -2):
+            for ss in range(min(summary_max, ts - SUMMARY_GAP_SIZE), floor - 1, -2):
+                lay = _layout(d, title, summary, ts, ss, max_h)
+                if lay:
+                    return lay
     raise TextOverflow(f"tieu de + tom tat cao hon {max_h}px ngay o co nho nhat "
                        f"({TITLE_LO}/{SUMMARY_LO}px) — rut gon")
 
@@ -86,12 +104,23 @@ def check_text(title: str, summary: str) -> str:
     return ""
 
 
+def deck_sizes(slides: list) -> tuple[int, int]:
+    """(co tieu de, co tom tat) CHUNG cho ca bo = co nho nhat ma moi slide can.
+
+    Luot ngang mot bo ban tin, co chu nhay 50 -> 40 -> 50 giua cac slide doc ra lon xon
+    (do 25/09). Mot co cho ca bo; slide chu ngan chi rong hon, khong to hon."""
+    d = ImageDraw.Draw(Image.new("RGB", (W, H)))
+    lays = [fit_text(d, s["title"], s.get("summary", "")) for s in slides]
+    return (min(lay.title_font.size for lay in lays), min(lay.summary_font.size for lay in lays))
+
+
 def build(img_path, title: str, summary: str, handle: str, out, report=None,
-          cluttered: bool = False):
-    """Ve mot slide ra `out`. `report` (dict) nhan so do nen chu LOW-286/LOW-341."""
+          cluttered: bool = False, sizes: tuple | None = None):
+    """Ve mot slide ra `out`. `report` (dict) nhan so do nen chu LOW-286/LOW-341.
+    `sizes`: (tran co tieu de, tran co tom tat) chung ca bo — xem deck_sizes."""
     canvas = Image.new("RGBA", (W, H), (*carousel.BG, 255))
     d = ImageDraw.Draw(canvas)
-    lay = fit_text(d, title, summary)
+    lay = fit_text(d, title, summary, *((TEXT_MAX_H,) + tuple(sizes) if sizes else ()))
     text_top = carousel.TEXT_BASE - lay.total - lay.ink_over
     text_bottom = text_top + lay.total + lay.ink_over
 
@@ -131,12 +160,13 @@ def build_all(slides: list, out: Path, brand: str, tone: str = "dark") -> tuple[
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     stem = out.with_suffix("")
+    sizes = deck_sizes(slides)
     paths, errors = [], []
     for i, s in enumerate(slides, start=1):
         p = out if i == 1 else Path(f"{stem}_{i}.png")
         bao = {}
         build(s["image"], s["title"], s.get("summary", ""), handle, p, report=bao,
-              cluttered=bool(s.get("cluttered")))
+              cluttered=bool(s.get("cluttered")), sizes=sizes)
         paths.append(p)
         loi = carousel._gate_text_background(f"slide {i}", bao) or carousel._gate_flat(f"slide {i}", bao)
         if loi:
