@@ -115,9 +115,10 @@ def figure_hero(m: dict) -> dict | None:
     # gat "lien quan"; vision noi KHONG thi figure_real da loai roi.
     # Anh bi cong ANH TRONG chan (LOW-273/LOW-288) khong len bia duoc — ban va nong tren
     # may chu 22/09/2026 11:47, dua vao repo truoc khi deploy LOW-337.
+    # Anh da len BAI KHAC cung khong len bia duoc: cong nop chan trung o moi slide (LOW-415).
     ut = [a for a in figure_real(m)
           if (a.get("relevant") is True or a.get("paper_figure") or from_arena(a))
-          and not vai_mod.blocked_empty(a, "kite")]
+          and not vai_mod.blocked_empty(a, "kite") and not reused_elsewhere(a, m)]
     if not ut:
         return None
     # LOW-254 (18/09/2026): "khoi tit chup trang nguon" (`capture_kind ==
@@ -210,8 +211,43 @@ def _force_raw(m: dict) -> list:
     # doi Kite dung A12 (logo nen tron 85%) ma `check_empty_image` chan cung -> ket.
     hop_le = [a for a in figure_real(m)
               if a.get("relevant") is True and not a.get("concept")
-              and not a.get("capture_source") and not vai_mod.blocked_empty(a, "kite")]
+              and not a.get("capture_source") and not vai_mod.blocked_empty(a, "kite")
+              and not reused_elsewhere(a, m)]
     return [a["id"] for a in _drop_same_photo(hop_le)][:MAX_FORCE_FIGURE]
+
+
+_reused_cache: dict = {}
+
+
+def reused_elsewhere(a: dict, m: dict) -> str:
+    """Loi cua cong `image_rules_kite.check_not_reused` cho tam nay (da len BAI KHAC trong
+    cua so nho anh), hoac "" — cung duong dan ma `kite_submit._check_figure_slide` do.
+
+    LOW-415 (25/09/2026): bo ep doi A14 (chan dung Sam Altman, Commons) cho bai
+    OpenEvidence va A3 (toa nha ByteDance) cho bai tham phan ByteDance, trong khi cong
+    nop chan chinh hai tam do vi da len bai khac 21/09 va 22/09. Dung thi dinh trung,
+    bo thi thieu ma ep — Kite dung han. Anh thuc the (CEO, tru so) tu nhien lap lai
+    giua cac tin ve cung mot hang, nen bo ep va bia phai hoi CUNG cong nay.
+
+    Nho theo (duong dan, draft, link, dau thoi gian so anh da dung): brief va cong nop
+    goi `figure_right_use` nhieu lan, moi lan cong nay doc lai ca so + tinh dHash."""
+    import image_provenance
+    import image_rules_kite
+    path = a.get("unpadded_path") or a.get("original_path")
+    if not path:
+        return ""
+    log = image_provenance._used_images_log()
+    try:
+        st = log.stat()
+        stamp = (st.st_mtime_ns, st.st_size)
+    except OSError:
+        return ""
+    key = (str(log), str(path), str(m.get("draft_id", "")), str(m.get("link", "")), stamp)
+    if key not in _reused_cache:
+        errors, _ = image_rules_kite.check_not_reused(a["id"], path, m.get("draft_id", ""),
+                                                      m.get("link", ""))
+        _reused_cache[key] = errors[0] if errors else ""
+    return _reused_cache[key]
 
 
 def _drop_same_photo(anh: list) -> list:
@@ -400,7 +436,9 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                  + (f" | ảnh là: {a['description'][:90]}" if a.get("description") else (f" | alt: {vai_mod.real_alt(a)[:70]}" if vai_mod.real_alt(a) else ""))
                  + (" | có mặt người: khai \"subject\": \"<tên>\" vào slide dùng mã này (nếu xác minh "
                     "được qua chính bài/nguồn) — không xác minh được thì đổi mã khác, đừng đoán tên"
-                    if a.get("faces") else ""))
+                    if a.get("faces") else "")
+                 + (" | ⛔ ĐÃ LÊN BÀI KHÁC gần đây — KHÔNG dùng, `kite_submit.py` chặn trùng"
+                    if reused_elsewhere(a, m) else ""))
     L += line_hero(m)
     import story_type
     L += story_type.line_brief(m)
