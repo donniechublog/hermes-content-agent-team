@@ -38,6 +38,7 @@ cho người đang ít việc hơn. Vai **ảnh** do Ông Chủ chọn theo từ
 | Ethan | `ethan` | designer | Ảnh hero, mặc định thẻ **quote**; `--kieu full_bleed` cho ảnh phủ kín |
 | Dre | `dre` | carousel | Carousel nhiều slide, ảnh thật, chữ chìm vào ảnh |
 | Kite | `kite` | carousel.edu | Carousel EDU bằng **art vector gốc** (paper/nghiên cứu), tối thiểu 6 slide |
+| Hiro | `hiro` | carousel.digest | Gom cả danh sách một researcher vừa nộp thành MỘT carousel bản tin vắn (mỗi headline một slide: ảnh + tiêu đề + tóm tắt). Gọi bằng reply `Hiro` hoặc `Hiro 1-10` vào báo cáo |
 | Gin | `gin` | clean | Thay chữ Anh bằng chữ Việt trên thẻ/dải nền phẳng |
 | Itachi | `itachi` | carousel.rep | Thay chữ ở mọi chỗ trên ảnh (OCR + LaMa), hoặc dựng lại kiểu editorial-deck |
 | Miles | `miles` | writer | Viết caption tiếng Việt, chia việc với Jika |

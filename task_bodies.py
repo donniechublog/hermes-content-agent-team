@@ -153,3 +153,48 @@ duyet. Bao [LOI] thi sua DUNG cho do trong caption.txt roi chay lai DUNG lenh
 nay (toi da 2 lan). Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o
 dong "[metadata]" ma script in ra (ban giao len bang den kanban).
 KHONG tu dang len channel."""
+
+
+# LOW-403 (con cua LOW-401): MOT task Hiro = MOT carousel ban tin van, moi headline mot
+# slide (anh + tieu de + tom tat). Danh sach tin da ghi san trong {job} (hiro_pick.write_job);
+# hiro_prepare/hiro_submit la LOW-404.
+HIRO_BODY = """NHIEM VU: dung MOT carousel "ban tin van" {n} slide tu bao cao cua {scan_name}
+({brand}) — moi headline MOT slide: anh + tieu de + tom tat ngan. Danh sach tin, link, tom
+tat da ghi san o {job}. Lam dung BA BUOC, khong them lenh nao khac.
+
+BUOC 1 — doc ban chuan bi (anh da tim san cho tung tin, khung spec):
+cd {goc} && venv/bin/python hiro_prepare.py {draft_id}
+
+BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1 — moi tin mot
+slide, theo DUNG thu tu so. Chu tieng Viet co dau. KHONG tai anh, KHONG chay carousel.py tay.
+
+BUOC 3 — nop:
+cd {goc} && venv/bin/python hiro_submit.py {draft_id}
+Script dung slide, chay cong chan, gui album len topic cua ban kem nut Duyet. Bao [LOI] thi
+sua DUNG cho do trong spec roi chay lai DUNG lenh nay (toi da 2 lan). Xong: goi tool
+kanban_complete — summary = dong "Ket qua task", metadata = JSON o dong "[metadata]".
+KHONG tu dang len channel."""
+
+
+# LOW-404: task viet cho MOT bo Hiro (ban tin van N tin) — sinh khi Ong Chu bam Duyet album.
+# `{persona}_prepare/_submit` doc draft nay nhu mot bai; phan tu lieu + cong so lieu cho
+# NHIEU tin la LOW-405 — truoc do cot `digest_links` trong meta.json la danh sach day du.
+HIRO_WRITER_BODY = """Ban tin van: {title}
+{n} tin, theo DUNG thu tu slide:
+{headlines}
+
+NHIEM VU: viet MOT caption tieng Viet cho CA bo carousel ban tin van nay ({brand}) — mo bai
+mot cau chung cho ca ngay, roi moi tin MOT dong ngan (y chinh, khong dao sau: chi tiet la
+viec cua bai rieng Ethan/Dre/Kite). Giu dung thu tu so nhu slide.
+
+BUOC 1 — doc ban chuan bi:
+cd {goc} && venv/bin/python {persona}_prepare.py {draft_id}
+
+BUOC 2 — viet caption vao DUNG tep in o cuoi BUOC 1 (HTML Telegram <b> <i> <code>, tieng
+Viet co dau, moi tin mot dong).
+
+BUOC 3 — nop:
+cd {goc} && venv/bin/python {persona}_submit.py {draft_id}
+Bao [LOI] thi sua DUNG cho do roi chay lai DUNG lenh nay (toi da 2 lan). Xong: goi tool
+kanban_complete — summary = dong "Ket qua task", metadata = JSON o dong "[metadata]".
+KHONG tu dang len channel."""

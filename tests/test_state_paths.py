@@ -142,6 +142,7 @@ def test_constants_match_approved_table():
                    - set(_rows_auto_handoff())
                    - set(_rows_model_versions())
                    - set(_rows_repick())
+                   - set(_rows_hiro())
                    - {ten for _, ten in _rows_242().values()}
                    - {ten for _, ten in _rows_241().values()}
                    - {ten for _, ten in _rows_246().values()})
@@ -381,6 +382,19 @@ def _rows_repick() -> dict:
     tin da giao — sinh ra da English san, cung kieu `_rows_publish_schedule`."""
     return {"REPORT_HISTORY_FILE": ("report_history.{}.jsonl", "state/<brand>/report_history.<role>.jsonl"),
             "REPICK_PENDING_FILE": ("repick_pending.json", "state/<brand>/repick_pending.json")}
+
+
+def _rows_hiro() -> dict:
+    """LOW-403 (25/09/2026): danh sach headline Hiro gom thanh mot carousel — English san."""
+    return {"HIRO_JOB_FILE": ("hiro_job.json", "state/<brand>/prepare/<draft_id>/hiro_job.json"),
+            "HIRO_IMAGES_FILE": ("hiro_images.json", "state/<brand>/prepare/<draft_id>/hiro_images.json"),
+            "HIRO_IMAGES_DIR": ("hiro_images", "state/<brand>/prepare/<draft_id>/hiro_images/")}
+
+
+def test_hiro_constants_are_declared():
+    for const, (name, kept) in _rows_hiro().items():
+        assert getattr(state_paths, const) == name, (const, getattr(state_paths, const))
+        assert kept in TABLE_231["_kept"], f"{kept} khong co trong _kept cua state_files_v2.json"
 
 
 def test_repick_constants_are_declared():
