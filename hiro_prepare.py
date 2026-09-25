@@ -69,7 +69,7 @@ def _find(item: dict, link: str, wide: bool) -> list:
         return []
 
 
-def _candidate_urls(item: dict) -> list:
+def _candidate_urls(item: dict, wide_only: bool = False) -> list:
     """[(url, trang chua anh, ly do)] theo thu tu uu tien, khong trung.
 
     Trang bai truoc (`sau_rong=False`, re). Trang bai KHONG cho anh nao (do 25/09: stocktwits,
@@ -81,7 +81,8 @@ def _candidate_urls(item: dict) -> list:
         thay.add(item["image_url"])
     if item.get("link"):
         link = _real_link(item["link"])
-        found = _find(item, link, wide=False) or _find(item, link, wide=True)
+        found = (_find(item, link, wide=True) if wide_only
+                 else _find(item, link, wide=False) or _find(item, link, wide=True))
         for c in found:
             if c["image_url"] not in thay:
                 thay.add(c["image_url"])
@@ -121,11 +122,12 @@ def _save_candidate(url: str, out: Path, seen: list) -> dict | None:
     return {"path": str(out), "w": w, "h": h, "chart": chart}
 
 
-def prepare_item(item: dict, folder: Path) -> list:
-    """Toi da MAX_CANDIDATES anh da cat cho mot tin: [{code, path, w, h, chart, domain, why}]."""
+def prepare_item(item: dict, folder: Path, wide_only: bool = False, avoid: list = ()) -> list:
+    """Toi da MAX_CANDIDATES anh da cat cho mot tin: [{code, path, w, h, chart, domain, why}].
+    `avoid`: dhash anh KHONG lay (anh mac dinh cua trang, xem drop_shared_placeholders)."""
     n = item["index"]
-    ra, seen = [], []
-    for url, page, why in _candidate_urls(item):
+    ra, seen = [], list(avoid)
+    for url, page, why in _candidate_urls(item, wide_only):
         if len(ra) >= MAX_CANDIDATES:
             break
         code = f"{n}{LETTERS[len(ra)]}"
@@ -148,15 +150,21 @@ def run(draft_id: str, refresh: bool = False) -> tuple[dict, dict, Path]:
     folder = wd / state_paths.HIRO_IMAGES_DIR
     with cf.ThreadPoolExecutor(max_workers=env_load.quantity(4)) as ex:
         lists = list(ex.map(lambda it: prepare_item(it, folder), job["items"]))
-    images = drop_shared_placeholders({it["index"]: ds for it, ds in zip(job["items"], lists)})
+    found = {it["index"]: ds for it, ds in zip(job["items"], lists)}
+    images, placeholders = drop_shared_placeholders(found)
+    # Tin chi co anh mac dinh cua trang (do 25/09: hai tin tradingview) -> tim o bao khac.
+    for it in job["items"]:
+        if found.get(it["index"]) and not images.get(it["index"]):
+            images[it["index"]] = prepare_item(it, folder, wide_only=True, avoid=placeholders)
     contact_sheet(images, wd / state_paths.CONTACT_SHEET_FILE)
     cache.write_text(json.dumps({str(k): v for k, v in images.items()}, ensure_ascii=False, indent=2),
                      encoding="utf-8")
     return job, images, wd
 
 
-def drop_shared_placeholders(images: dict) -> dict:
+def drop_shared_placeholders(images: dict) -> tuple[dict, list]:
     """Bo anh xuat hien o HAI tin KHAC NHAU trong cung bo — anh mac dinh cua nha bao.
+    Tra (anh con lai, dhash cac anh bi bo — de vong tim lai tranh chung).
 
     Do that 25/09/2026 (bao cao Vera, may chu): tin #9 va #12 deu tu tradingview.com, ca hai
     ra CUNG mot anh og "TradingView News" (logo trang, khong phai anh tin). Mot anh that cua
@@ -176,7 +184,8 @@ def drop_shared_placeholders(images: dict) -> dict:
     for n, code in sorted(shared):
         print(f"[CANH BAO] #{n}: bo {code} — trung anh cua tin khac (anh mac dinh cua trang)",
               file=sys.stderr)
-    return {n: [a for a in ds if (n, a["code"]) not in shared] for n, ds in images.items()}
+    return ({n: [a for a in ds if (n, a["code"]) not in shared] for n, ds in images.items()},
+            [hashes[k][0] for k in shared])
 
 
 def contact_sheet(images: dict, out: Path, thumb=(240, 300)) -> Path | None:

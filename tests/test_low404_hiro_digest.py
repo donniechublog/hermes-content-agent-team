@@ -153,7 +153,7 @@ def test_prepare_item_crops_photo_keeps_chart_full_width():
             self.status_code, self.content = 200, b
     import article_images
     saved = (hiro_prepare._candidate_urls, article_images._download)
-    hiro_prepare._candidate_urls = lambda it: [(u, "https://a/page", "") for u in blobs]
+    hiro_prepare._candidate_urls = lambda it, wide_only=False: [(u, "https://a/page", "") for u in blobs]
     article_images._download = lambda u, timeout=15: R(blobs[u])
     try:
         got = hiro_prepare.prepare_item({"index": 4, "title": "t", "link": "https://a/page"}, tmp / "h")
@@ -178,8 +178,9 @@ def test_same_image_in_two_items_is_a_publisher_placeholder():
     images = {9: [{"code": "9A", "path": logo}, {"code": "9B", "path": a}],
               12: [{"code": "12A", "path": logo}],
               13: [{"code": "13A", "path": b}]}
-    got = hiro_prepare.drop_shared_placeholders(images)
+    got, avoid = hiro_prepare.drop_shared_placeholders(images)
     assert [x["code"] for x in got[9]] == ["9B"] and got[12] == [] and len(got[13]) == 1
+    assert len(avoid) == 2
     sheet = hiro_prepare.contact_sheet(got, tmp / "sheet.png")
     assert sheet and sheet.exists()
 
