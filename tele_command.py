@@ -40,6 +40,9 @@ COMMANDS = [
              "phải gõ riêng. /auto on|off, gõ trần để xem trạng thái. Bật thì thẻ nháp "
              "im lặng 20 phút là tự xếp lịch đăng (bấm ⛔ Giữ lại để chặn); 25% số bài "
              "vẫn phải bấm tay; tự tắt sau 24h."),
+    ("hiro", "Bật/tắt Hiro TỰ DỰNG bản tin vắn khi researcher nộp báo cáo — chỉ brand của NHÓM "
+             "NÀY. /hiro on|off, gõ trần để xem trạng thái. Trên 10 tin thì lấy 10 tin đầu. Dựng tay: "
+             "reply Hiro, Hiro 1-10 hoặc Hiro /3,5 (bỏ tin 3, 5) vào báo cáo."),
     ("vai", "Bảng vai trong container này: ai dựng ảnh kiểu gì, ai viết caption."),
     ("hd", "Danh sách lệnh của bot duyệt bài (kèm cú pháp)."),
 ]
