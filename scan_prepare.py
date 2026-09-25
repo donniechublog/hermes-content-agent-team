@@ -238,6 +238,10 @@ def brief_nova(wd: Path, lam_moi: bool, vai: str) -> str:
               "'hôm nay không có gì'. Nhắc đúng các nguồn này trong summary để Ông Chủ biết:",
               *(f"  {d}" for d in canh[:12])]
     L += ["Báo cáo của script (đọc ở đây, KHÔNG chạy lại, KHÔNG web_search):", "", _crop(bao_cao), ""]
+    # LOW-408 (Ông Chủ 25/09/2026): script đã lọc sẵn, câu này để Nova không tự
+    # thêm model ngoài top 5 lấy từ phần bối cảnh hay trí nhớ.
+    L.append("Chỉ báo model trong TOP 5: top 5 toàn cầu (hãng nào cũng được), top 5 Mỹ, top 5 Trung Quốc. "
+             "Ngoài ba nhóm đó KHÔNG liệt kê, kể cả model mới ra mắt. HuggingFace chỉ lấy top trending script in.")
     L.append("Model đội đã đo và đang chết/loại (không đề xuất lại như tin mới): "
              + (", ".join(chet) if chet else "không có") +
              ". Đã loại có lý do: gemini-3.7-flash (cache 0%, đắt 44 lần), kimi-k3 (không tắt suy luận), grok "

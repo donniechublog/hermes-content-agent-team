@@ -48,12 +48,21 @@ def _report_receive_job(token, group, vai, tu_vai, title, tid, ly_do=""):
     if truoc is None:              # khong doc duoc kanban != khong con viec nao
         log("route", f"khong doc duoc hang doi kanban khi bao {vai} nhan {tid}")
         truoc = 0
+    # LOW-410: task anh moi tao dang bi CHAN cho engine dem anh (LOW-382) — hua
+    # "≤ 1 phut" o day roi mot phut sau topic lai hien "dung (blocked)" la noi sai
+    # hai lan lien tiep (bai OpenEvidence 25/09 11:09 -> 11:10).
+    waiting_for_engine = hermes_adapter.status(tid) == "blocked"
+    if waiting_for_engine:
+        when = "Chờ engine đếm ảnh (thường 5–8 phút) rồi mới chốt vai"
+    elif truoc:
+        when = f"Đang xếp hàng sau {truoc} việc, tới lượt sẽ bắt đầu"
+    else:
+        when = "Bắt đầu ngay khi dispatcher nhận (≤ 1 phút)"
     ten = _TEN_HIEN.get(vai, vai)
     nguon = f" chuyển từ <b>{_TEN_HIEN.get(tu_vai, tu_vai)}</b>" if tu_vai else ""
     text = (f"📥 <b>{ten}</b> đã nhận task{nguon}: <i>{html_escape(title[:80])}</i>\n"
             + (f"Lý do: {html_escape(ly_do[:160])}\n" if ly_do else "")
-            + (f"Đang xếp hàng sau {truoc} việc, tới lượt sẽ bắt đầu" if truoc
-               else "Bắt đầu ngay khi dispatcher nhận (≤ 1 phút)") + f" · task {tid}")
+            + when + f" · task {tid}")
     call(token, "sendMessage", chat_id=group, message_thread_id=thread,
          text=text, parse_mode="HTML")
     log("route", f"bao {vai} nhan viec tu {tu_vai or 'Ong Chu'}: {tid} (truoc={truoc})")
@@ -151,6 +160,28 @@ def kanban_complete(tid, result=""):
         write_log.error("kanban", f"dong task {tid} LOI: {str(loi)[:200]}")
     return ok, loi
 
+
+# --- hai dau hieu cua luong chot vai LOW-382 (LOW-410) ----------------------
+# `create_pair` chan task anh voi ENGINE_WAIT_REASON; `route_missing_images` dong
+# task cua vai cu voi ROUTED_TO_KITE_RESULT khi bai sang Kite. Ca hai la buoc BINH
+# THUONG, khong phai vai hong — nhung truoc 25/09/2026 bang tien do bao ca hai
+# la ⛔: 65/71 tin ⛔ tren topic vai anh 23–25/09 la gia, va mot bai ket that
+# (Dre het luot) nam lan giua 21 tin gia cung buoi. Ben VIET va ben DOC dung
+# chung hai hang nay de khong lech chu.
+ENGINE_WAIT_REASON = "cho engine dem anh xong roi moi chot vai"
+ROUTED_TO_KITE_RESULT = "Bai chuyen sang Kite"
+# Engine dem xong trong 5–8 phut (do 56 lan chan 23–25/09: p90 8.3, max 11.7).
+# Chan lau hon nguong nay la engine chet giua chung — luc do moi bao, dung ly do
+# LOW-382 chon CHAN task chu khong hoan tao task: de bai ket HIEN RA.
+ENGINE_WAIT_ALERT_MINUTES = 20
+ENGINE_WAIT_MARK = "engine_wait"         # gia tri trong reported_progress: da ghi nhan, khong bao
+
+
+def routed_to_kite(task: dict) -> bool:
+    """Task do HE THONG dong khi bai sang Kite (khong phai vai lam xong)."""
+    return str(task.get("result") or "").startswith(ROUTED_TO_KITE_RESULT)
+
+
 # Kanban cua home container hien tai. Viec bi chan/that bai duoc bao qua
 # report_progress_kanban (kem ly do); ham bao_viec_bi_chan rieng truoc day trung
 # viec voi no va bo sot Kite, da bo 05/09/2026.
@@ -193,6 +224,13 @@ def killed_message(ten: str, title: str, tid: str, troi, tran, st: str) -> str:
     sau = "đang chạy lại" if st == "running" else "đã xếp lại hàng, sẽ chạy lại"
     return f"⏱ <b>{ten}</b> bị hermes dừng sau {phut}{tran_}, {sau}: {bai}"
 
+
+def engine_wait_message(name: str, title: str, tid: str, minutes: float) -> str:
+    """Cau bao khi task anh nam chan cho engine dem anh qua ENGINE_WAIT_ALERT_MINUTES (LOW-410)."""
+    story = f"<i>{html_escape(title[:80])}</i> (task {tid})"
+    return (f"⚠️ <b>{name}</b> chờ engine đếm ảnh đã {int(minutes)} phút (thường 5–8 phút): {story}\n"
+            "Engine có thể đã chết giữa chừng: task vẫn bị chặn, chưa vai nào làm bài này.")
+
 _TEN_HIEN = role.DISPLAY_NAME            # xem role.py
 
 # Gio VN (UTC+7, khong DST) — cung quy uoc voi journal.VN, dung rieng o day de
@@ -216,9 +254,11 @@ def _daily_task_ordinal(rows, ai, tid, completed_at):
     if not completed_at:
         return None
     ngay = datetime.fromtimestamp(completed_at, VN).strftime("%Y-%m-%d")
+    # LOW-410: task he thong dong khi bai sang Kite khong phai san pham cua vai —
+    # dem vao la "task #NN" cua Dre phong len theo so bai Dre KHONG lam.
     cung_ngay = sorted(
         (r for r in rows if r["assignee"] == ai and r["status"] == "done"
-         and r.get("completed_at")
+         and not routed_to_kite(r) and r.get("completed_at")
          and datetime.fromtimestamp(r["completed_at"], VN).strftime("%Y-%m-%d") == ngay),
         key=lambda r: (r["completed_at"], r["id"]))
     for i, r in enumerate(cung_ngay, start=1):
@@ -386,7 +426,7 @@ class ProgressRun:
         # -> coi nhu khong biet, roi ve cach cu, khong phai "da chet".
         self.run_start = hermes_adapter.run_start() or {}
         self.heartbeat = hermes_adapter.heartbeat([r["id"] for r in rows]) or {}
-        self._last_runs = None                   # doc luoi: chi khi co task ready/running
+        self._last_runs = None                   # doc luoi: chi khi co task ready/running/blocked
 
     def last_run(self, tid) -> dict:
         if self._last_runs is None:
@@ -423,9 +463,37 @@ def _report_stalled(run: ProgressRun, v: dict) -> None:
             run.stalled[tid] = run.now
             run.stalled_changed = True
             log("tiendo", f"{tid} {ai} chay {int(minutes)} phut, da bao: {text[:60]}")
+    elif _waiting_for_engine(run, v):
+        _report_engine_wait(run, v)
     elif tid in run.stalled:
         del run.stalled[tid]                 # roi running (hoac chuyen vai) -> het treo
         run.stalled_changed = True
+
+
+def _waiting_for_engine(run: ProgressRun, v: dict) -> bool:
+    """Task anh dang nam CHAN cho engine dem anh (LOW-382) — buoc binh thuong,
+    khong phai vai tu chan. Nhan theo ly do chan (tom tat cua lan chay cuoi);
+    `block_kind` khong dung duoc: hermes giu 'transient' ca sau khi mo chan, nen
+    mot task `gave_up` ve sau van mang no (t_bc52ed47, 25/09)."""
+    if v["status"] != "blocked" or v["assignee"] not in NAME_ROLE_IMAGE:
+        return False
+    return ENGINE_WAIT_REASON in (run.last_run(v["id"]).get("summary") or "")
+
+
+def _report_engine_wait(run: ProgressRun, v: dict) -> None:
+    """Chan cho engine qua ENGINE_WAIT_ALERT_MINUTES = engine chet giua chung
+    (LOW-410). Bao roi nhac lai moi AGAIN_REPORT_STALLED_MINUTES, nhu task treo."""
+    tid, ai = v["id"], v["assignee"]
+    # `create_pair` tao roi chan NGAY (cung giay, do 25/09), nen tuoi task la tuoi
+    # cua lan chan — khong can doc them moc nao.
+    minutes = (run.now - (v.get("created_at") or run.now)) / 60
+    if (minutes < ENGINE_WAIT_ALERT_MINUTES
+            or run.now - run.stalled.get(tid, 0) < AGAIN_REPORT_STALLED_MINUTES * 60):
+        return
+    run.send(ai, engine_wait_message(_TEN_HIEN.get(ai, ai), v["title"], tid, minutes))
+    run.stalled[tid] = run.now
+    run.stalled_changed = True
+    log("tiendo", f"{tid} {ai} cho engine {int(minutes)} phut, da bao")
 
 
 def _report_timed_out(run: ProgressRun, v: dict) -> None:
@@ -486,6 +554,18 @@ def _report_status_change(run: ProgressRun, v: dict) -> None:
         return
     if ai == BLACKBOARD_ASSIGNEE:            # the goc/bang den: khong phai viec cua ai
         run.mark(tid, st)
+        return
+    # LOW-410: hai buoc BINH THUONG cua luong chot vai LOW-382 — ghi nho, khong bao.
+    # Chan qua lau thi `_report_engine_wait` bao; bai sang Kite thi tang ghep noi
+    # da bao len topic cua vai ("🖼 … đã tự chuyển Kite").
+    if _waiting_for_engine(run, v):
+        if run.reported.get(tid) != ENGINE_WAIT_MARK:
+            run.mark(tid, ENGINE_WAIT_MARK)
+            log("tiendo", f"{tid} {ai} cho engine dem anh — khong bao")
+        return
+    if st == "done" and routed_to_kite(v):
+        run.mark(tid, st)
+        log("tiendo", f"{tid} {ai} he thong dong khi bai sang Kite — khong bao")
         return
     text = _status_text(run, v)
     if text is None:

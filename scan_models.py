@@ -1027,6 +1027,62 @@ def top_rows(rows: list, top: int) -> list:
     return rows[:top] + [r for r in rows[top:] if r.get("provisional") and r["rank"] <= top]
 
 
+# LOW-408 — luat Ong Chu 25/09/2026: "nova chi quan tam trong top 5, con lai ko
+# can liet ke". Hai phe doi trong: top 5 My + top 5 Trung Quoc; hang nuoc khac
+# (Mistral...) chi khi vao top 5 toan cau. Truoc do nguong la --top 10, nen
+# 24/09 bao cao ra 34 muc, 10 muc la model hang #6-#9.
+# Nguong BAO, khong phai nguong LAY: moc hang trong state van giu day du.
+REPORT_TOP = 5
+
+
+def report_rows(rows: list, n: int = REPORT_TOP) -> list:
+    """Dong cua mot bang duoc phep len bao cao Nova, giu thu tu bang: top n toan
+    cau (theo hang, ke ca hang TAM <= n) + n dong My dau tien + n dong Trung
+    Quoc dau tien. Bang khong gan vung (AA, HLE...) chi con top n toan cau."""
+    us_seen = cn_seen = 0
+    kept = []
+    for i, r in enumerate(rows):
+        rank = r.get("rank")
+        keep = i < n or (isinstance(rank, int) and rank <= n)
+        region = r.get("region")
+        if region == "my":
+            us_seen += 1
+            keep = keep or us_seen <= n
+        elif region == "tq":
+            cn_seen += 1
+            keep = keep or cn_seen <= n
+        if keep:
+            kept.append(r)
+    return kept
+
+
+def reported_keys(boards: dict) -> set:
+    """Ten (da quy ve `model_name.key`) cua moi model dang nam trong phan duoc
+    bao cua it nhat mot bang."""
+    return {model_name.key(r["name"]) for rows in boards.values()
+            for r in report_rows(rows or []) if r.get("name")}
+
+
+def keep_release(r: dict, keys: set) -> bool:
+    """Model ra mat theo bang cham diem chi len bao cao khi da vao top 5 (toan
+    cau / My / Trung Quoc) o it nhat mot bang. Ong Chu 25/09: ra mat ma hang
+    thap (#30 coding) thi khong can bao."""
+    rank = r.get("coding_rank")
+    if isinstance(rank, int) and rank <= REPORT_TOP:
+        return True
+    return model_name.key(r.get("original_name") or r.get("name") or "") in keys
+
+
+_TWEET_RANK = re.compile(r"(?:#|\btop\s?)(\d{1,3})\b", re.I)
+
+
+def tweet_in_top(text: str) -> bool:
+    """Tweet @arena noi ro hang (#24, "top 10") ma ngoai top 5 thi bo. Tweet
+    khong neu hang (ra mat, vao Arena) thi giu."""
+    ranks = [int(x) for x in _TWEET_RANK.findall(text or "")]
+    return not ranks or min(ranks) <= REPORT_TOP
+
+
 def count_rank(arena: dict, cu: dict) -> list:
     """So thu hang lan nay voi lan truoc — bat model VUA LEO HANG.
 
@@ -1173,7 +1229,8 @@ def main():
     ap.add_argument("--ngay", type=int, default=14,
                     help="Coi la moi neu ra mat trong N ngay (mac dinh 14)")
     ap.add_argument("--top", type=int, default=10,
-                    help="Chi lay top N moi bang xep hang (mac dinh 10)")
+                    help="Do sau LAY moi bang de so hang (mac dinh 10); BAO chi top "
+                         f"{REPORT_TOP} (LOW-408)")
     ap.add_argument("--out", help="Ghi JSON ra tep thay vi in ra man hinh")
     ap.add_argument("--khong-bat-buoc", action="store_true",
                     help="Van GIEO muc bat buoc, chi khong IN lai o cuoi bao cao. "
@@ -1318,13 +1375,25 @@ def main():
 
     # Moc trong state giu hang DAY DU (mot model tut xuong #40 roi leo lai #8
     # phai doc ra "leo 32 bac"), nhung chi BAO cai dang o top N.
-    leo_hang = count_rank({m: top_rows(r, a.top) for m, r in bang_so.items()}, rank_old())
+    # LOW-408: chi bao trong top 5 (toan cau / My / Trung Quoc), khong con top N.
+    leo_hang = count_rank({m: report_rows(r) for m, r in bang_so.items()}, rank_old())
+    keys_in_report = reported_keys(bang_so)
 
     # RA MAT THEO BANG CHAM DIEM: nguon "moi" thu hai, doc lap voi router.
     # Router-based `moi` bo sot model khong len router (GPT-6 Astra 03/09) va
     # chi bao MOT lan dung ngay id xuat hien — hom do Nova hong la mat luon.
     da_bao = aa_already_report()
     ra_mat_aa = [r for r in aa.get("releases_by_name", []) if r["original_name"] not in da_bao]
+    # LOW-408: ra mat ma chua vao top 5 bang nao thi khong bao, va KHONG danh
+    # dau da bao — mai no leo vao top 5 thi van len duoc.
+    ra_mat_aa = [r for r in ra_mat_aa if keep_release(r, keys_in_report)]
+    if isinstance(aa.get("new_open_weights"), list):
+        aa["new_open_weights"] = [r for r in aa["new_open_weights"]
+                                  if keep_release(r, keys_in_report)]
+    arena_tweets = [t for t in arena_tweets if tweet_in_top(t.get("text", ""))]
+    # HuggingFace: Ong Chu 25/09 "chi can top trending" — hf da sap theo
+    # trendingScore, giu dung phan dau cho ca bao cao, danh dau va bat buoc.
+    hf = hf[:CEILING_HF]
     # Cung model quet duoc o ca hai phia thi giu ban arena (LOW-383). Loc TRUOC
     # khi dung `ket`: bao cao cua Nova va danh sach BAT BUOC phai thay cung mot
     # danh sach, khong phai hai ban khac nhau cua cung mot lan quet.
@@ -1396,7 +1465,7 @@ LABEL_BOARD = model_boards.LABEL_BOARD
 # thay, va khong co dau hieu nao bao la da cut. Ba muc duoi day truoc do KHONG
 # CO CAN TREN, mot ngay xau la nuot sach phan duoi bao cao.
 CEILING_GH = 10           # ban phat hanh engine — truoc: vo han
-CEILING_HF = 10
+CEILING_HF = REPORT_TOP     # LOW-408: HF chi top trending — truoc: 10
 # TIN TU HANG: truoc LOW-375 la so 10 go thang trong vong in. Dat ten vi gio
 # no con la moc DANH DAU DA-THAY — hai cho phai dung CUNG mot con so, lech
 # nhau thi tin in ra ma khong duoc danh dau (bao lai hom sau), hoac nguoc
@@ -1404,7 +1473,7 @@ CEILING_HF = 10
 CEILING_STORY = 10
 # X @arena: cung ly do voi CEILING_STORY — vua la moc IN, vua la moc DANH DAU.
 CEILING_ARENA = 8
-CEILING_BOARD = 5          # moi bang xep hang — truoc: 8
+CEILING_BOARD = REPORT_TOP  # moi bang xep hang — truoc: 8, roi 5 go tay
 REGION_LABEL = {"my": "My", "tq": "TQ", "khac": "  "}
 # Ban ke khai bang xep hang. main() dung de kiem `bang_so` khong lech, va bao
 # cao dung de in con so. Go tay con so nay thi no lech ngay: ban dau ghi 20
@@ -1422,7 +1491,8 @@ def _in_board(nhan: str, rows, n: int = CEILING_BOARD, ngay=None, diem_hau: str 
     if not rows:
         return
     print(f"\n=== {nhan}{f' — {ngay}' if ngay else ''} ===")
-    for r in rows[:n]:
+    # LOW-408: top n toan cau + top n My + top n Trung Quoc (hai phe doi trong)
+    for r in report_rows(rows, n):
         vung = REGION_LABEL.get(r.get("region") or "khac", "  ")
         org = str(r.get("organization") or "")[:13]
         phu = (them(r) or "") if them else ""
@@ -1449,14 +1519,14 @@ def _in_report(k: dict):
     tc = aa.get("top_coding") or []
     if tc:
         print("\n=== TOP CODING (artificialanalysis) ===")
-        for r in tc[:10]:
+        for r in tc[:REPORT_TOP]:
             ca = f"cache ${r['cache_price']}" if r["cache_price"] is not None else "khong cache"
             print(f"  {str(r['coding']):>5s}  [{r['country']}] {str(r['name'])[:34]:<35s} "
                   f"{r['released']}  vao ${r['input_price']}  {ca}")
     nm = aa.get("new_open_weights") or []
     if nm:
         print(f"\n=== VUA MO NGUON ({len(nm)}) — bat duoc ca hang khong co RSS ===")
-        for r in nm[:8]:
+        for r in nm[:REPORT_TOP]:
             print(f"  {r['released']}  [{r['country']}] {str(r['name'])[:34]:<35s} "
                   f"{r['license']}  coding={r['coding']}")
 
