@@ -18,6 +18,7 @@ Dung:
     venv/bin/python miles_prepare.py <draft_id>
 """
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -117,8 +118,9 @@ def main() -> int:
     a = ap.parse_args()
     # BAN TIN VAN cua Hiro (LOW-405): KHONG goi engine — no chay tren link tin #1 ngay
     # trong thu muc cua Hiro, ghi de contact_sheet va 0 anh thi chuyen draft sang Kite.
-    meta0 = cb.load_meta(a.draft_id)
-    if digest_writer.is_digest(meta0):
+    p_meta = DRAFTS / f"{a.draft_id}.meta.json"
+    if p_meta.exists() and digest_writer.is_digest(json.loads(p_meta.read_text(encoding="utf-8"))):
+        meta0 = cb.load_meta(a.draft_id)                  # dat CT_BRAND theo brand cua draft
         import env_load
         wd = cb.workdir(env_load.state_dir(), a.draft_id)
         persona = nc.writer_persona_name(nc.writer_for_article(a.draft_id, cb._brand_of(meta0)))
