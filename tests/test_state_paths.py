@@ -388,7 +388,8 @@ def _rows_hiro() -> dict:
     """LOW-403 (25/09/2026): danh sach headline Hiro gom thanh mot carousel — English san."""
     return {"HIRO_JOB_FILE": ("hiro_job.json", "state/<brand>/prepare/<draft_id>/hiro_job.json"),
             "HIRO_IMAGES_FILE": ("hiro_images.json", "state/<brand>/prepare/<draft_id>/hiro_images.json"),
-            "HIRO_IMAGES_DIR": ("hiro_images", "state/<brand>/prepare/<draft_id>/hiro_images/")}
+            "HIRO_IMAGES_DIR": ("hiro_images", "state/<brand>/prepare/<draft_id>/hiro_images/"),
+            "HIRO_AUTO_FILE": ("hiro_auto.json", "state/<brand>/hiro_auto.json")}
 
 
 def test_hiro_constants_are_declared():

@@ -20,6 +20,7 @@ Tin da vao bo Hiro KHONG bi danh dau `assignments`: Ong Chu chot Hiro chi dua ti
 chinh, Ethan/Dre/Kite van nhan rieng tung tin de lam sau (khong chan trung giua hai tang).
 """
 import json
+import os
 import re
 import sys
 from collections import Counter
@@ -259,25 +260,27 @@ def _span(items: list) -> str:
     return numbers_label(it["index"] for it in items)
 
 
-def process_hiro(token, group, thread_id, scan_role: str, cmd: HiroCommand, manifest_path):
-    """Tao MOT task Hiro tu bao cao duoc reply. Chay nen (_run_background)."""
+def process_hiro(token, group, thread_id, scan_role: str, cmd: HiroCommand, manifest_path,
+                 auto: bool = False):
+    """Tao MOT task Hiro tu bao cao duoc reply (hoac vua nop, `auto`). Tra task id, None neu
+    khong tao. Duong reply chay nen (_run_background); duong tu dong goi dong bo tu scan_submit."""
     if not enabled():
         _send_text(token, group, "⚠️ Hiro chưa bật ở brand này (chưa có topic <code>hiro</code>) "
                                  "— chưa tạo gì.", thread=thread_id)
-        return
+        return None
     if cmd.error:
         _send_text(token, group, "⚠️ Chưa tạo bộ Hiro. " + cmd.error, thread=thread_id)
-        return
+        return None
     manifest_path = (manifest_path or approve_pick.manifest_already_send(scan_role)
                      or approve_pick.latest_manifest(scan_role))
     if not manifest_path:
         _send_text(token, group, f"⚠️ Chưa tạo bộ Hiro: {_role.display_name(scan_role)} chưa có "
                                  "báo cáo nào trong container này.", thread=thread_id)
-        return
+        return None
     items, err = select_items(_load_json(Path(manifest_path), {}).get("items", []), cmd)
     if err:
         _send_text(token, group, "⚠️ Chưa tạo bộ Hiro. " + err, thread=thread_id)
-        return
+        return None
 
     draft_id = make_draft_id(scan_role)
     job = write_job(draft_id, scan_role, Path(manifest_path), items, BRAND)
@@ -291,12 +294,47 @@ def process_hiro(token, group, thread_id, scan_role: str, cmd: HiroCommand, mani
     if loi:
         _send_text(token, group, f"⚠️ Chưa tạo bộ Hiro: lỗi tạo task — {html_escape(loi[:200])}",
                    thread=thread_id)
-        return
+        return None
     write_sidecars(draft_id, scan_role, items, BRAND, digest_title(scan_role, items), body, tid)
     dong = "\n".join(f"<b>#{it['index']}</b> <i>{html_escape((it.get('title') or '')[:70])}</i>"
                      for it in items)
     bo = f" — bỏ {numbers_label(cmd.exclude)}" if cmd.exclude else ""
+    dau = ("🤖 <b>Hiro</b> tự dựng (chế độ tự động, <code>/hiro off</code> để tắt) bản tin vắn"
+           if auto else "📨 Đã nhận — <b>Hiro</b> dựng bản tin vắn")
     _send_text(token, group,
-               f"📨 Đã nhận — <b>Hiro</b> dựng bản tin vắn <b>{len(items)} slide</b> "
-               f"từ báo cáo {scan_name} ({_span(items)}){bo}, task {tid}:\n{dong}",
+               f"{dau} <b>{len(items)} slide</b> từ báo cáo {scan_name} ({_span(items)}){bo}, "
+               f"task {tid}:\n{dong}",
                thread=thread_id)
+    return tid
+
+
+def first_items_command(items: list) -> HiroCommand:
+    """Che do tu dong (LOW-406, Ong Chu 25/09/2026: *"neu bat auto mode thi cu lay 10 tin dau
+    tien"*): loai moi tin sau tin thu MAX_SLIDES theo thu tu so. Bao cao <= 10 tin thi lay het."""
+    so = sorted(it["index"] for it in items if isinstance(it.get("index"), int))
+    return HiroCommand(exclude=tuple(so[MAX_SLIDES:]))
+
+
+def auto_from_report(scan_role: str, manifest_path) -> str:
+    """`/hiro on` -> dung bo Hiro tu bao cao VUA gui (scan_submit goi, SAU khi bao cao chinh da
+    len topic). Tra doan them vao dong "Ket qua task" cua researcher ("" = khong lam gi).
+
+    KHONG BAO GIO nem: bao cao da gui roi — loi o day ma lam scan_submit tra ma khac 0 thi vai
+    nop lai, tuc gui THEM mot ban bao cao (su co 12/09/2026, xem scan_submit.BLOCK_SEND)."""
+    try:
+        import hiro_auto
+        if not manifest_path or not hiro_auto.is_on() or not enabled():
+            return ""
+        env_load.load()
+        token, group = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_GROUP_ID")
+        thread = env_load.topics().get(scan_role)
+        if not (token and group and thread):
+            return " ⚠️ Hiro tự động: thiếu token/group/topic, chưa dựng bản tin."
+        items = _load_json(Path(manifest_path), {}).get("items", [])
+        tid = process_hiro(token, group, thread, scan_role, first_items_command(items),
+                           Path(manifest_path), auto=True)
+        return (f" Hiro tự dựng bản tin vắn (task {tid})." if tid
+                else " ⚠️ Hiro tự động chưa dựng được bản tin (xem topic).")
+    except Exception as e:                                   # noqa: BLE001 — xem docstring
+        log("hiro", f"tu dong {scan_role} loi: {type(e).__name__}: {e!r}")
+        return f" ⚠️ Hiro tự động lỗi ({type(e).__name__}), chưa dựng bản tin."

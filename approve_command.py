@@ -155,6 +155,8 @@ COMMAND_HELP = (
     "<code>/auto</code> [<code>on</code>|<code>off</code>] — công tắc tự duyệt bản nháp: bật thì thẻ "
     "nháp im lặng một lúc là TỰ xếp lịch đăng, bấm ⛔ Giữ lại để chặn. "
     "Gõ trần để xem trạng thái.\n"
+    "<code>/hiro</code> [<code>on</code>|<code>off</code>] — Hiro TỰ DỰNG bản tin vắn mỗi khi researcher "
+    "nộp báo cáo (trên 10 tin thì lấy 10 tin đầu). Gõ trần để xem trạng thái.\n"
     "<code>/help</code> — tin này.\n"
     "Reply <code>Hiro</code>, <code>Hiro 1-10</code> hoặc <code>Hiro /3,5</code> (bỏ tin 3 và 5; "
     "<code>Hiro 1-12 /4,6</code>) vào báo cáo của researcher — Hiro dựng MỘT carousel bản tin vắn, "
@@ -274,6 +276,26 @@ def _command_auto(reply, args, msg):
     reply(auto_handoff.status_line(gate))
 
 
+def _command_hiro(reply, args, msg):
+    """`/hiro` xem trang thai · `/hiro on|off` bat/tat Hiro tu dung ban tin (LOW-406).
+    Cung khuon `/auto`: co theo brand cua nhom nay, `is_boss` da chan o tren."""
+    import hiro_auto
+    import hiro_pick
+    if not args:
+        reply(hiro_auto.status_line())
+        return
+    chon = args[0].lower()
+    if chon not in ("on", "off"):
+        reply("Cú pháp: <code>/hiro on</code> hoặc <code>/hiro off</code> "
+              "(gõ trần để xem trạng thái). Không đổi gì.")
+        return
+    if chon == "on" and not hiro_pick.enabled():
+        reply("⚠️ Brand này chưa có topic <code>hiro</code> — chưa bật.")
+        return
+    hiro_auto.set_on(chon == "on", by=(msg.get("from") or {}).get("id"))
+    reply(hiro_auto.status_line())
+
+
 def handle_command(token, group, msg, thread_id, text):
     def reply(t):
         call(token, "sendMessage", chat_id=group,
@@ -302,7 +324,7 @@ def handle_command(token, group, msg, thread_id, text):
     if lenh == "/help" and qua_gateway and not goi_bot:
         log("route", "/help tran: de gateway tra loi; approve co /hd")
         return
-    if lenh not in ("/bai", "/vai", "/auto", "/hd", "/help") and qua_gateway:
+    if lenh not in ("/bai", "/vai", "/auto", "/hiro", "/hd", "/help") and qua_gateway:
         log("route", f"lenh {lenh}: cua Hermes/gateway, approve im")
         return
 
@@ -320,6 +342,8 @@ def handle_command(token, group, msg, thread_id, text):
         reply("\n".join(dong))
     elif lenh == "/auto":
         _command_auto(reply, phan[1:], msg)
+    elif lenh == "/hiro":
+        _command_hiro(reply, phan[1:], msg)
     elif lenh == "/bai":
         with _KHOA_DAT_BAI:
             _command_article(reply, phan[1:])

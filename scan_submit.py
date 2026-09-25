@@ -313,9 +313,22 @@ def main() -> int:
     n = _count_items(bao_cao)
     print(f"[xong] manifest + bao cao ({n} muc) da gui topic {qb.TOPIC[a.vai]}" + (" (thu)" if a.thu else ""))
     them = _send_overflow(a.vai, wd, a.thu, overflow_manifest_path(r.stdout))
+    hiro = "" if a.thu else _auto_hiro(a.vai, path_manifest(r.stdout))
     print(f"Ket qua task (dung dong nay de ket thuc task): {NAME[a.vai]} nộp {n} tin đánh số, đã gửi báo cáo, "
-          "Ông Chủ trả lời số để chọn." + them)
+          "Ông Chủ trả lời số để chọn." + them + hiro)
     return 0
+
+
+def _auto_hiro(vai: str, manifest) -> str:
+    """LOW-406: `/hiro on` -> Hiro tu dung ban tin tu bao cao VUA gui (tren 10 tin lay 10 tin
+    dau). Chi bao cao CHINH cua container nay; phan du sang brand khac (OVERFLOW) thi Ong Chu
+    reply `Hiro` ben do. KHONG BAO GIO nem: bao cao da len topic roi (xem _send_overflow)."""
+    try:
+        import hiro_pick                                     # tre: keo approve_*, chi khi can
+        return hiro_pick.auto_from_report(vai, manifest)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[CANH BAO] Hiro tu dong loi: {type(e).__name__}: {e}")
+        return f" ⚠️ Hiro tự động lỗi ({type(e).__name__}), chưa dựng bản tin."
 
 
 def _count_items(bao_cao: Path) -> int:

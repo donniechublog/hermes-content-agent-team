@@ -77,6 +77,7 @@ REPICK_PENDING_FILE = "repick_pending.json"            # cau hoi "lam lai tin da
 HIRO_JOB_FILE = "hiro_job.json"                        # prepare/<draft_id>/: cac headline Hiro gom thanh mot carousel, LOW-403
 HIRO_IMAGES_FILE = "hiro_images.json"                  # prepare/<draft_id>/: anh ung vien moi headline (ma 3A, 3B…), LOW-404
 HIRO_IMAGES_DIR = "hiro_images"                        # prepare/<draft_id>/hiro_images/<ma>.png, LOW-404
+HIRO_AUTO_FILE = "hiro_auto.json"                      # state/<brand>/: cong tac /hiro on|off, LOW-406
 REQUIRED_FILE = "required_{}.json"                      # .format(role)
 SCAN_DIR = "scan"                                       # state/<brand>/scan/<role>_<n>/
 DOWNLOADS_DIR = "downloads"
