@@ -156,6 +156,8 @@ COMMAND_HELP = (
     "nháp im lặng một lúc là TỰ xếp lịch đăng, bấm ⛔ Giữ lại để chặn. "
     "Gõ trần để xem trạng thái.\n"
     "<code>/help</code> — tin này.\n"
+    "Reply <code>Hiro</code> hoặc <code>Hiro 1-10</code> vào báo cáo của researcher — Hiro dựng "
+    "MỘT carousel bản tin vắn, mỗi headline một slide (tối đa 20).\n"
     "Sai cú pháp thì không làm gì — lệnh phải tường minh.")
 
 def _command_article(reply, args):

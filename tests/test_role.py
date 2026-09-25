@@ -50,7 +50,8 @@ TEN_HIEN_CU = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite",
                "teaser": "Cape", "analyst": "Ada", "gin": "Gin", "itachi": "Itachi",
                "bob": "Bob",
                "jika": "Jika",                                        # +Jika: LOW-13
-               "qinn": "Qinn"}                                         # +Qinn: vai quet X, 12/09/2026
+               "qinn": "Qinn",                                         # +Qinn: vai quet X, 12/09/2026
+               "hiro": "Hiro"}                                         # +Hiro: carousel ban tin van, LOW-401
 
 # ---- LOW-14 (10/09/2026): tam slug role cuoi cung doi sang ten nhan vat ------
 # Cac bang `*_CU` tren KHONG duoc sua tay: chung la ban chup 3a18f79, va sua
