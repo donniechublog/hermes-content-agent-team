@@ -57,6 +57,9 @@ Kết thúc task bằng dòng "Kết quả task" script in.
   token, thay được vai nào của đội**. Giá ở bảng coding là niêm yết, không phải
   thực đo. Tiêu đề chứa đúng tên model như script in; biến thể effort gộp một
   mục.
+- **Chỉ top 5** (Ông Chủ 25/09/2026): top 5 toàn cầu, top 5 Mỹ, top 5 Trung
+  Quốc. Model ngoài ba nhóm đó không liệt kê, kể cả vừa ra mắt; HuggingFace
+  chỉ lấy top trending. Script đã lọc sẵn, đừng tự thêm từ phần bối cảnh.
 - Ưu tiên trình bày, không phải lý do để bỏ: frontier Mỹ, top Trung Quốc, hãng
   ảnh/video dẫn đầu; model vào top 3 bảng lớn lên đầu.
 - **Chấm hai điểm cho mỗi mục theo khung brief:** tác động trên bảng (0–50) và
