@@ -42,6 +42,7 @@ import write_log                                              # noqa: E402
 import submit_common                                             # noqa: E402
 import state_paths                                               # noqa: E402
 import role as _vai                                           # noqa: E402
+import hiro_pick                                              # noqa: E402
 
 from approve_base import (  # noqa: E402
     DRAFTS, HERMES_HOME, OFFSET, STATE_DIR, TELEGRAM_INCOMING, _run_background, _write_json, _send_text, _reply_real, call, is_boss, load_secrets, log, rut,
@@ -139,6 +140,28 @@ def _pick_command_if_has(token, group, msg, thread_id, text, mid):
     return vai, lenh, manifest
 
 
+def _hiro_command_if_has(token, group, msg, thread_id, text, mid) -> bool:
+    """`Hiro` / `Hiro 1-10` trong topic researcher -> task Hiro chay nen; True = da xu ly.
+
+    Cung cong reply voi lenh chon so (LOW-362): phai reply DUNG mot bao cao da gui, va
+    dung ban manifest cua chinh bao cao do. Khong phai reply thi noi ro vi sao, KHONG roi
+    ve hoi thoai — "Hiro" tran khong phai cau hoi cho researcher."""
+    vai = role_of_topic(thread_id)
+    if vai not in MANIFEST_BY_TOPIC:
+        return False
+    cmd = hiro_pick.read_hiro_command(text)
+    if cmd is None:
+        return False
+    la_reply, manifest = reply_report_target(vai, msg)
+    log("route", f"msg={mid} lenh Hiro vai={vai} {cmd} la_reply_bao_cao={la_reply}")
+    if not la_reply:
+        _report_no_right_reply(token, group, thread_id, vai, _reply_real(msg))
+        return True
+    _run_background("hiro", hiro_pick.process_hiro, token, group, thread_id,
+                    token, group, thread_id, vai, cmd, manifest)
+    return True
+
+
 def _report_no_right_reply(token, group, thread_id, vai, rt_that):
     """Noi ro VI SAO lenh chon so khong chay, thay vi im lang.
 
@@ -229,6 +252,11 @@ def handle_message(token, group, msg):
     # du phong khi tin nut khong len vi mang loi. Chi an khi reply DUNG mot album
     # co trong so gui anh — con lai di tiep nhu cu.
     if handle_reply_approval(token, group, msg, thread_id, text):
+        return
+
+    # "Hiro" / "Hiro 1-10" reply vao bao cao researcher = MOT carousel ban tin van (LOW-403).
+    # Xet TRUOC lenh chon so: chu Hiro dung dau nen khong trung lenh chon nao dang co.
+    if _hiro_command_if_has(token, group, msg, thread_id, text, mid):
         return
 
     # So trong topic cua MOT VAI DI TIM TIN = lenh chon tin — NHUNG chi khi la

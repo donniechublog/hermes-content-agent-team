@@ -125,6 +125,16 @@ ROLE = {v.slug: v for v in [
     Role("kite", "Kite", go=("edu", "kites"), slug_cu=("carousel-edu",),
         renderer="render_edu", nhan_anh=True, anh_toi_thieu=1, rules="image_rules_kite",
         anh_muc_tieu_tim=6, anh_muc_tieu_tim_flagship=7),
+    # Hiro (LOW-401, Ong Chu 25/09/2026): gom CA danh sach mot researcher vua nop thanh
+    # MOT carousel "ban tin van" — moi headline mot slide (anh + tieu de + tom tat),
+    # roi writer viet mot caption cho ca bo. Goi bang reply "Hiro" / "Hiro 1-10" vao bao
+    # cao (approve_pick.read_hiro_command), KHONG qua lenh chon tung tin: nhan_anh=False
+    # giu "hiro" ngoai ROLE_IMAGE/NAME_BRIGHT_CAP, nen "1 - Hiro" van khong phai lenh
+    # chon va khong dung nghia lenh cu nao. Tin da vao bo Hiro van giao rieng duoc cho
+    # Ethan/Dre/Kite — Hiro chi dua tieu de + y chinh, cac vai kia lam sau.
+    # renderer "digest_slide" (LOW-404), KHONG phai "carousel": Hiro khong vao ROLE_CAROUSEL,
+    # nen cac nhanh rieng cua Dre (bia, quote, dem slide toi thieu) khong ap nham len Hiro.
+    Role("hiro", "Hiro", renderer="digest_slide", rules="image_rules_hiro"),
     # --- WRITER roles (LOW-13 2026-09-10, LOW-123/LOW-136 2026-09-14) ---
     # BOTH brands have Miles and Jika sharing work by queue (WRITERS_BY_BRAND),
     # differing only in writing voice. Readers of the two

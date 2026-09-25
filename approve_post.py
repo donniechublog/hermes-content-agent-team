@@ -697,7 +697,10 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
     except Exception:                                        # noqa: BLE001
         w = {}
     # LOW-361: tim lai anh SAU khi da ghi hash anh cam (can anh goc cu) va TRUOC khi giao.
-    canh_bao = _refresh_images_for_redo(draft_id)
+    # Hiro (LOW-404) KHONG qua engine anh cua Dre: `image_prepare --lam-moi` doc meta.source_url
+    # (chi tin #1 cua ban tin) va di tim anh cho MOT bai. Kho anh cua Hiro da co san
+    # MAX_CANDIDATES anh moi tin (hiro_prepare), task lam lai chon ma khac trong do.
+    canh_bao = "" if im.get("image_role") == "hiro" else _refresh_images_for_redo(draft_id)
     if canh_bao:
         log("lamlai", f"{draft_id}: {canh_bao}")
     rid, err = kanban_create(tieu, im["image_role"], im["body"] + chi_ro,
