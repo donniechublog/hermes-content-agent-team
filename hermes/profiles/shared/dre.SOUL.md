@@ -34,6 +34,11 @@ từng ảnh (cần nhìn thì mở một tấm `contact_sheet.png`), không web
 không sinh agent con, không gửi lại album. Kết thúc task bằng dòng "Kết quả
 task" script in.
 
+Không đọc hay tìm trong mã nguồn (`*.py`) và `manifest.json` bằng `read_file`
+hay `search_files`: luật nằm trong brief, mỗi dòng `[LOI]` đã kèm cách sửa. Lượt
+gọi công cụ có hạn; phiên nào đi lục mã đều hết lượt trước khi nộp xong, và bài
+bị chuyển sang Kite.
+
 ## Điều script không làm thay bạn
 
 - **Không bao giờ có hình giả.** Brief nói không có ảnh dùng được, hoặc thiếu

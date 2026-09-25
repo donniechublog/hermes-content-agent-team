@@ -22,7 +22,9 @@ brief IM LANG bao "du anh" trong khi tin dang cho chuyen Kite.
 """
 import json
 import os
+import re
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -93,23 +95,26 @@ def _unblock_image(draft_id: str, im: dict, reason: str) -> None:
             print(f"[route] khong ghi duoc img.json sau khi mo chan: {e!r}", file=sys.stderr)
 
 
-def _close_image_task(draft_id: str, old_tid: str, new_tid: str) -> None:
+def _close_image_task(draft_id: str, old_tid: str, new_tid: str, why: str = "thieu anh that") -> None:
     """Dong task cua vai CU sau khi viec da sang Kite (LOW-382).
 
     Chi dong khi task chua chay ('blocked'/'ready'): dang chay thi worker van
     chay tiep du co dong dong trong kanban.db hay khong, ma brief cua vai cu da
-    co cau "TIN NAY DA CHUYEN KITE — ket thuc task ngay", nen de no tu ket."""
+    co cau "TIN NAY DA CHUYEN KITE — ket thuc task ngay", nen de no tu ket.
+    Task `gave_up` (LOW-411) cung nam 'blocked' nen dong duoc."""
     if not old_tid:
         return
     import hermes_adapter
-    from approve_dispatch import kanban_complete
+    from approve_dispatch import ROUTED_TO_KITE_RESULT, kanban_complete
     tt = hermes_adapter.status(old_tid)
     if tt not in ("blocked", "ready"):
         # '' = khong ro, None = khong doc duoc kanban.db: ca hai deu KHONG dong,
         # dong nham mot task dang chay con te hon de no tu ket.
         print(f"[route] task cu {old_tid} o trang thai {tt!r} — khong dong", file=sys.stderr)
         return
-    kanban_complete(old_tid, f"Bai chuyen sang Kite (task {new_tid}) — thieu anh that.")
+    # Ket qua BAT DAU bang ROUTED_TO_KITE_RESULT: bang tien do nhan ra task do he
+    # thong dong bang chinh chu do, khong bao "vai dong sai cach" (LOW-410).
+    kanban_complete(old_tid, f"{ROUTED_TO_KITE_RESULT} (task {new_tid}) — {why}.")
     ip = DRAFTS / (draft_id + ".img.json")
     try:
         im = json.loads(ip.read_text(encoding="utf-8"))
@@ -212,3 +217,109 @@ def after_prepare(draft_id: str, m: dict) -> None:
                         f"<b>Kite</b> vẽ vector (task {rid}). {ten} không dựng bộ này."):
         m["route_error"] = f"da chuyen Kite (task {rid}) nhung khong bao duoc len topic {vai}"
     print(f"[route] {so}/{tt} anh -> Kite task {rid}", file=sys.stderr)
+
+
+# --- vai dung carousel het ngan sach HAI lan -> Kite (LOW-411) -----------------
+# Hermes cho chay lai MOT lan; hong lan hai thi `gave_up` va task nam `blocked`
+# mai — khong ai mo, bai chet im lang. Do dcgr 16–25/09/2026: 10 task Dre het
+# 90/90 luot, 7 chay lai thi xong, 3 chet (Microsoft 22/09, Alibaba 24/09,
+# ByteDance 25/09). Hai loi duoi day nghia la "vai khong xong trong ngan sach":
+# lan chay thu ba cung vay, nen di duong "thieu anh thi pass Kite" nhu `after_prepare`.
+# `pid ... not alive` (worker chet) thi KHONG chuyen — do la ha tang, chay lai la duoc.
+_OUT_OF_BUDGET = re.compile(r"Iteration budget exhausted|^elapsed \d+s > limit \d+s")
+# Task da THU chuyen trong tien trinh nay: tao Kite hong thi khong thu lai moi vong
+# poll (50 giay) — bang tien do van bao ⛔ kem ly do nhu cu, Ong Chu bam Gui Kite duoc.
+_ROUTE_TRIED = set()
+
+
+def _log(msg: str) -> None:
+    """Duong LOW-411 chay trong approve_service: ghi approve.log (noi doc log cua
+    vong poll); stderr chi la duong lui."""
+    try:
+        from approve_base import log
+        log("route", msg)
+    except Exception:                                        # noqa: BLE001
+        print(f"[route] {msg}", file=sys.stderr)
+
+
+def out_of_budget(run: dict) -> bool:
+    """Lan chay cuoi la `gave_up` vi het luot/het gio (khong phai vi worker chet)."""
+    return run.get("status") == "gave_up" and bool(_OUT_OF_BUDGET.search(str(run.get("error") or "")))
+
+
+def _draft_of_image_task(tid: str) -> tuple:
+    """(draft_id, img.json) cua task anh `tid` qua khoa `image_task` ma create_pair
+    ghi (LOW-382); (None, None) neu khong co — draft cu hon LOW-382 khong co khoa nay."""
+    for p in sorted(DRAFTS.glob("*.img.json")):
+        try:
+            im = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if im.get("image_task") == tid:
+            return p.name[:-len(".img.json")], im
+    return None, None
+
+
+def _route_one_out_of_budget(token, group, task: dict, run: dict):
+    """Chuyen MOT task het ngan sach sang Kite. Tra ve id task Kite, hoac None."""
+    tid = task["id"]
+    draft_id, im = _draft_of_image_task(tid)
+    if not draft_id:
+        _log(f"{tid} het ngan sach nhung khong thay draft nao co image_task nay — de nguyen")
+        return None
+    if im.get("kite_task_id"):                       # da sang Kite tu truoc
+        return None
+    from approve_dispatch import _report_receive_job, standard_assignee
+    from approve_post import create_task_kite
+    _, no_kite = standard_assignee("kite")
+    if no_kite:                                      # brand chua co Kite: de bang tien do bao ⛔
+        return None
+    role_slug = vai_mod.canonical_slug(task["assignee"]) or task["assignee"]
+    name = vai_mod.display_name(role_slug)
+    title = im.get("title") or draft_id
+    budget = str(run.get("error") or "").split(" — ")[0][:80]
+    reason = f"{name} het ngan sach hai lan ({budget}), chua nop duoc bo qua cong anh"
+    kite_tid, err = create_task_kite(draft_id, im, ly_do=reason)
+    if err:
+        _log(f"{tid} het ngan sach, chuyen Kite LOI: {err}")
+        _time_send(role_slug, f"🖼 <b>{title}</b>: {name} hết ngân sách hai lần, chuyển Kite <b>lỗi</b>: {err}")
+        return None
+    _close_image_task(draft_id, tid, kite_tid, why=f"{name} het ngan sach hai lan")
+    _time_send(role_slug, f"🖼 <b>{title}</b>: <b>{name}</b> hết ngân sách hai lần ({budget}) mà chưa "
+                          f"nộp được bộ qua cổng ảnh → đã tự chuyển <b>Kite</b> (task {kite_tid}).")
+    _report_receive_job(token, group, "kite", role_slug, title, kite_tid,
+                        ly_do=f"{name} hết ngân sách hai lần, chưa nộp được bộ qua cổng ảnh")
+    _log(f"{tid} het ngan sach ({budget}) -> Kite task {kite_tid}, draft {draft_id}")
+    return kite_tid
+
+
+def route_out_of_budget(token, group, rows=None) -> list:
+    """Task vai carousel `gave_up` vi het ngan sach -> chuyen Kite. Tra [(tid, kite_tid)].
+
+    approve_service goi MOI vong poll, TRUOC bang tien do: task cu dong trong vong
+    nay (ket qua ROUTED_TO_KITE_RESULT) thi bang tien do im lang (LOW-410), tin
+    "🖼 … đã tự chuyển Kite" o day la tin duy nhat. Khong bao gio nem: hong o day
+    ma de exception len vong poll thi vong poll hieu nham la mat ket noi Telegram."""
+    try:
+        import hermes_adapter
+        from approve_dispatch import ROLE_CAROUSEL
+        if rows is None:
+            rows = hermes_adapter.job(tu_ts=time.time() - 86400) or []
+        candidates = [r for r in rows if r["status"] == "blocked" and r["assignee"] in ROLE_CAROUSEL
+                      and r["id"] not in _ROUTE_TRIED]
+        if not candidates:
+            return []
+        runs = hermes_adapter.last_run_many([r["id"] for r in candidates]) or {}
+        routed = []
+        for task in candidates:
+            run = runs.get(task["id"]) or {}
+            if not out_of_budget(run):
+                continue
+            _ROUTE_TRIED.add(task["id"])
+            kite_tid = _route_one_out_of_budget(token, group, task, run)
+            if kite_tid:
+                routed.append((task["id"], kite_tid))
+        return routed
+    except Exception as e:                                   # noqa: BLE001
+        _log(f"chuyen Kite khi het ngan sach hong: {type(e).__name__}: {e!r}")
+        return []
