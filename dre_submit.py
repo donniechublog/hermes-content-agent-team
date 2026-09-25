@@ -214,7 +214,11 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
         bo.kiem_mat([ma], muc, nhan)
         bo.dung_anh.append((nhan, [ma]))
         return ra
-    if a["kind"] == "chart" and not a.get("ranking"):
+    # LOW-414: the logo hang (`role.is_brand_logo_card`) mang kind chart vi phang, nhung la
+    # anh hero dung MOT MINH (LOW-337, nhu can_be_hero va ethan_submit) — cho no xuong nhanh
+    # `logo_card` (slide logo LOW-295). Truoc day no bi chan lam bia "la CHART/screenshot":
+    # 28 lan 13–24/09. Ong Chu 25/09: logo hang tren nen tron khong thanh van de.
+    if a["kind"] == "chart" and not a.get("ranking") and not role.is_brand_logo_card(a):
         # Do hoa CLUTTERED lam bia duoc (LOW-47): carousel hien nguyen be ngang, nen chu
         # dac phu nua duoi — khong con "hook de len mat nua duoi" nua.
         if la_bia and a.get("cluttered"):
