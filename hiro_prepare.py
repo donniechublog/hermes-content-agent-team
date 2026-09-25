@@ -105,21 +105,25 @@ def _save_candidate(url: str, out: Path, seen: list) -> dict | None:
         img = img.convert("RGB")
     except Exception:                                        # noqa: BLE001 — anh hong thi bo, thu anh sau
         return None
-    w, h = img.size
-    if min(w, h) < MIN_SHORT_SIDE:
+    w, ht = img.size
+    if min(w, ht) < MIN_SHORT_SIDE:
         return None
     if rules.is_blank_image(img)[0]:
         return None
-    if any(rules.is_near_duplicate(rules.dhash(img), s, rules.dhash_threshold_for(img)) for s in seen):
+    # dHash tren anh GOC (chua cat): so sanh giua cac anh va voi anh mac dinh cua trang phai
+    # cung mot kieu — hash ban da cat 4:5 lech han ban goc (do 25/09: vong tim lai lay lai
+    # dung anh logo TradingView vi so hash ban cat voi hash ban goc).
+    h = rules.dhash(img)
+    if any(rules.is_near_duplicate(h, s, rules.dhash_threshold_for(img)) for s in seen):
         return None                                           # cung anh o URL khac (do 25/09: 3 ban 1200x686)
-    seen.append(rules.dhash(img))
+    seen.append(h)
     chart = bool(rules.is_chart(img)[0])
     out.parent.mkdir(parents=True, exist_ok=True)
     if chart:
         img.save(out, "PNG")                                  # full be ngang, carousel tu dat
     else:
         _save_crop(img, out, "4:5", cat_ngang=True)
-    return {"path": str(out), "w": w, "h": h, "chart": chart}
+    return {"path": str(out), "w": w, "h": ht, "chart": chart, "dhash": h}
 
 
 def prepare_item(item: dict, folder: Path, wide_only: bool = False, avoid: list = ()) -> list:
@@ -170,22 +174,14 @@ def drop_shared_placeholders(images: dict) -> tuple[dict, list]:
     ra CUNG mot anh og "TradingView News" (logo trang, khong phai anh tin). Mot anh that cua
     mot tin khong bao gio la anh dung cua mot tin khac trong cung ban tin."""
     rules = role.active_rules()
-    from PIL import Image
-    hashes = {}
-    for n, ds in images.items():
-        for a in ds:
-            try:
-                with Image.open(a["path"]) as im:
-                    hashes[(n, a["code"])] = (rules.dhash(im), rules.dhash_threshold_for(im))
-            except OSError:
-                pass
-    shared = {k for k, (h, t) in hashes.items()
-              for k2, (h2, _) in hashes.items() if k2[0] != k[0] and rules.is_near_duplicate(h, h2, t)}
+    hashes = {(n, a["code"]): a["dhash"] for n, ds in images.items() for a in ds if a.get("dhash") is not None}
+    shared = {k for k, h in hashes.items()
+              for k2, h2 in hashes.items() if k2[0] != k[0] and rules.is_near_duplicate(h, h2)}
     for n, code in sorted(shared):
         print(f"[CANH BAO] #{n}: bo {code} — trung anh cua tin khac (anh mac dinh cua trang)",
               file=sys.stderr)
     return ({n: [a for a in ds if (n, a["code"]) not in shared] for n, ds in images.items()},
-            [hashes[k][0] for k in shared])
+            [hashes[k] for k in shared])
 
 
 def contact_sheet(images: dict, out: Path, thumb=(240, 300)) -> Path | None:

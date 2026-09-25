@@ -162,6 +162,8 @@ def test_prepare_item_crops_photo_keeps_chart_full_width():
     by = {a["image_url"]: a for a in got}
     assert "https://a/tiny.png" not in by, "anh qua nho phai bi bo"
     assert "https://a/photo-copy.png" not in by, "cung mot anh o URL khac phai bi bo (dhash)"
+    with Image.open(io.BytesIO(photo.getvalue())) as goc:
+        assert by["https://a/photo.png"]["dhash"] == role.active_rules().dhash(goc),             "dhash phai tinh tren anh GOC, khong phai ban da cat 4:5"
     assert [a["code"] for a in got] == ["4A", "4B"]
     with Image.open(by["https://a/photo.png"]["path"]) as im:
         assert abs(im.size[0] / im.size[1] - 0.8) < 0.01, im.size
@@ -172,12 +174,13 @@ def test_prepare_item_crops_photo_keeps_chart_full_width():
 
 def test_same_image_in_two_items_is_a_publisher_placeholder():
     tmp = Path(tam.temp_dir(prefix="low404_"))
-    a = _photo(tmp / "a.png", seed=1)
-    b = _photo(tmp / "b.png", seed=2)
-    logo = _photo(tmp / "logo.png", seed=9)
-    images = {9: [{"code": "9A", "path": logo}, {"code": "9B", "path": a}],
-              12: [{"code": "12A", "path": logo}],
-              13: [{"code": "13A", "path": b}]}
+    rules = role.active_rules()
+
+    def cand(code, seed):
+        p = _photo(tmp / f"{code}.png", seed=seed)
+        with Image.open(p) as im:
+            return {"code": code, "path": p, "dhash": rules.dhash(im)}
+    images = {9: [cand("9A", 9), cand("9B", 1)], 12: [cand("12A", 9)], 13: [cand("13A", 2)]}
     got, avoid = hiro_prepare.drop_shared_placeholders(images)
     assert [x["code"] for x in got[9]] == ["9B"] and got[12] == [] and len(got[13]) == 1
     assert len(avoid) == 2
