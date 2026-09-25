@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""LOW-283 (19/09/2026): Vera quet ra hon 15 headline thi phan du sang blog.
+"""LOW-283 (19/09/2026): Vera quet ra qua tran headline thi phan du sang blog.
+Tran la `scan_submit.OVERFLOW["vera"]`: 15 luc LOW-283, 12 tu LOW-419 (25/09/2026).
 
 Ong Chu chot CHIA THEO THU TU Vera nop: dcgr giu moi muc BAT BUOC + cac tin
-dau cho du 15, phan con lai thanh mot bao cao danh so rieng o topic "vera" ben
+dau cho du tran, phan con lai thanh mot bao cao danh so rieng o topic "vera" ben
 blog. Tu buoc chon tro di khong doi gi — blog chon bang manifest cua chinh no.
 
 Cac cong o day, moi cong la mot cach tach nay co the hong ma khong ai thay:
+  - OVERFLOW["vera"]: tran dcgr la quyet dinh cua Ong Chu (LOW-419), va SOUL Vera
+    phai noi CUNG con so — Vera dua vao do de xep tin quan trong len dau.
   - split_overflow: muc bat buoc lot sang blog -> hom sau bi gieo lai, bao "vai bo sot".
   - manifest_write: manifest phan du phai nam trong state cua BLOG, danh so lai 1..n.
   - overflow_target: blog chua co topic thi KHONG tach (deploy truoc tao topic).
@@ -16,6 +19,7 @@ Chay:  venv/bin/python tests/test_scan_overflow.py
 """
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -51,6 +55,27 @@ def _with_env(values: dict, fn):
                 os.environ.pop(k, None)
             else:
                 os.environ[k] = v
+
+
+# ------------------------------------------------------------ tran dcgr (LOW-419)
+def test_vera_cap_is_12():
+    """Ong Chu 25/09/2026: "So luong tin o dcgr cat tin o 12 roi chuyen bot cho
+    blog, thay vi 15 nhu hien tai". Doi so nay la quyet dinh noi dung: di qua
+    ticket + commit, khong tu y."""
+    assert scan_submit.OVERFLOW["vera"] == ("blog", 12)
+
+
+def test_vera_soul_states_code_cap():
+    """Con so nam HAI noi: code (OVERFLOW) va prompt Vera (SOUL). Vera doc SOUL de
+    biet bao cao dcgr co bao nhieu cho ma xep tin quan trong len dau; doi mot ben
+    quen ben kia thi Vera xep theo so sai ma khong gi do. Moi so trong doan luat
+    tach ("Nop qua ... ben blog") phai bang tran trong code."""
+    soul = (ROOT / "hermes" / "profiles" / "dcgr" / "vera.SOUL.md").read_text(encoding="utf-8")
+    rule = re.search(r"Nộp\s+quá.*?bên\s+blog", soul, re.S)
+    assert rule, "SOUL Vera phai noi luat tach phan du sang blog (LOW-283)"
+    numbers = {int(n) for n in re.findall(r"\d+", rule.group(0))}
+    assert numbers == {scan_submit.OVERFLOW["vera"][1]}, \
+        f"SOUL ghi {sorted(numbers)}, code {scan_submit.OVERFLOW['vera'][1]}: {rule.group(0)!r}"
 
 
 # ------------------------------------------------------------ split_overflow
@@ -92,16 +117,20 @@ def test_split_overflow_auto_added_item_never_overflows():
 
 # ------------------------------------------------------------ manifest_write end-to-end
 def test_manifest_write_puts_overflow_in_target_brand_state_numbered_from_1():
+    # Tran THAT cua scan_submit (khong viet tay so): bao cao hai ben ra dung nhu
+    # Ong Chu se thay tren hai topic.
+    cap = scan_submit.OVERFLOW["vera"][1]
+    total = cap + 3
     with tempfile.TemporaryDirectory() as t:
         t = Path(t)
         ds = t / "list.json"
         ds.write_text(json.dumps([{"title": f"Tin số {i}", "link": f"https://a.vn/{i}",
-                                   "summary_vi": "Một mệnh đề ngắn"} for i in range(1, 19)],
+                                   "summary_vi": "Một mệnh đề ngắn"} for i in range(1, total + 1)],
                                  ensure_ascii=False), encoding="utf-8")
         env = dict(os.environ, CT_BRAND="dcgr", CT_STATE_DIR=str(t / "state"))
         r = subprocess.run(
             [sys.executable, str(ROOT / "manifest_write.py"), "--vai", "vera", "--in", str(ds),
-             "--bao-cao", str(t / "report.txt"), "--overflow-after", "15", "--overflow-brand", "blog",
+             "--bao-cao", str(t / "report.txt"), "--overflow-after", str(cap), "--overflow-brand", "blog",
              "--overflow-report", str(t / "overflow_report.txt")],
             cwd=str(ROOT), env=env, capture_output=True, text=True, timeout=60)
         assert r.returncode == 0, r.stderr[-800:]
@@ -110,13 +139,14 @@ def test_manifest_write_puts_overflow_in_target_brand_state_numbered_from_1():
         assert len(main) == 1 and len(over) == 1, (main, over)
         a = json.loads(main[0].read_text(encoding="utf-8"))["items"]
         b = json.loads(over[0].read_text(encoding="utf-8"))["items"]
-        assert [x["index"] for x in a] == list(range(1, 16))
+        assert [x["index"] for x in a] == list(range(1, cap + 1))
         assert [x["index"] for x in b] == [1, 2, 3], "phan du danh so lai tu 1"
-        assert [x["title"] for x in b] == ["Tin số 16", "Tin số 17", "Tin số 18"]
+        assert [x["title"] for x in b] == [f"Tin số {i}" for i in range(cap + 1, total + 1)]
         assert scan_submit.overflow_manifest_path(r.stdout) == over[0]
-        assert scan_submit._count_items(t / "report.txt") == 15, "dong phu khong duoc dem thanh tin"
+        assert scan_submit._count_items(t / "report.txt") == cap, "dong phu khong duoc dem thanh tin"
         assert scan_submit._count_items(t / "overflow_report.txt") == 3
         assert "blog" in (t / "report.txt").read_text(encoding="utf-8")
+        assert f"quá {cap} tin" in (t / "overflow_report.txt").read_text(encoding="utf-8")
 
 
 def test_manifest_write_without_overflow_flags_unchanged():
@@ -146,7 +176,8 @@ def test_overflow_target_needs_topic_in_target_brand():
             assert _with_env({"CT_BRAND": "dcgr"}, lambda: scan_submit.overflow_target("vera")) is None, \
                 "blog chua co topic vera -> khong tach"
             topics.write_text(json.dumps({"finn": 10, "vera": 99}), encoding="utf-8")
-            assert _with_env({"CT_BRAND": "dcgr"}, lambda: scan_submit.overflow_target("vera")) == ("blog", 15)
+            assert _with_env({"CT_BRAND": "dcgr"}, lambda: scan_submit.overflow_target("vera")) \
+                == scan_submit.OVERFLOW["vera"]
             assert _with_env({"CT_BRAND": "blog"}, lambda: scan_submit.overflow_target("vera")) is None, \
                 "khong bao gio chuyen sang chinh container dang chay"
             assert _with_env({"CT_BRAND": "dcgr"}, lambda: scan_submit.overflow_target("nova")) is None

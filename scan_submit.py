@@ -34,7 +34,10 @@ NAME = scan_common.NAME_ROLE       # mot ban duy nhat, xem scan_common
 # cao). Ong Chu: Vera quet ra hon 15 headline thi san bot qua blog, chia theo
 # thu tu Vera nop (manifest_write.split_overflow). Chi bat khi brand dich DA CO
 # topic cho vai nay (overflow_target) — chua tao topic thi giu hanh vi cu.
-OVERFLOW = {"vera": ("blog", 15)}
+# LOW-419 (25/09/2026): Ong Chu ha tran dcgr 15 -> 12 ("cat tin o 12 roi chuyen
+# bot cho blog"). SOUL Vera (hermes/profiles/dcgr/vera.SOUL.md) noi cung so nay
+# de Vera xep tin — doi o day thi doi ca o do (tests/test_scan_overflow.py chan).
+OVERFLOW = {"vera": ("blog", 12)}
 
 
 def overflow_target(vai: str):
