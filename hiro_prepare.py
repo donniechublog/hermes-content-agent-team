@@ -47,28 +47,50 @@ def load_job(draft_id: str) -> dict:
     return json.loads(p.read_text(encoding="utf-8"))
 
 
-def _candidate_urls(item: dict) -> list:
-    """[(url, trang chua anh, ly do)] theo thu tu uu tien, khong trung."""
+def _real_link(link: str) -> str:
+    """Link Google News (tin Vera doc RSS) -> URL bai that; khong giai duoc thi giu nguyen.
+
+    Do that 25/09/2026 (bao cao Vera 15 tin, may chu): 4/4 link news.google.com ra 0 anh —
+    trang do la trang chuyen huong chay JS. Dung lai bo giai cua article_sources (cung bo
+    ma create_pair dung cho Dre)."""
+    import article_sources
+    try:
+        return article_sources.resolve_code_gnews(link) or link
+    except Exception:                                        # noqa: BLE001
+        return link
+
+
+def _find(item: dict, link: str, wide: bool) -> list:
     import article_images
+    try:
+        return article_images.find(item.get("title", ""), link, sau_rong=wide)
+    except Exception as e:                                   # noqa: BLE001 — mot tin hong khong hong ca bo
+        print(f"[CANH BAO] #{item.get('index')}: tim anh loi {type(e).__name__}: {e}", file=sys.stderr)
+        return []
+
+
+def _candidate_urls(item: dict) -> list:
+    """[(url, trang chua anh, ly do)] theo thu tu uu tien, khong trung.
+
+    Trang bai truoc (`sau_rong=False`, re). Trang bai KHONG cho anh nao (do 25/09: stocktwits,
+    geekwire, mlex chan bot / render JS) thi moi tim them o bao khac dua cung tin
+    (`sau_rong=True`)."""
     ra, thay = [], set()
     if item.get("image_url"):
         ra.append((item["image_url"], item.get("link", ""), "ảnh researcher gắn"))
         thay.add(item["image_url"])
     if item.get("link"):
-        try:
-            found = article_images.find(item.get("title", ""), item["link"], sau_rong=False)
-        except Exception as e:                               # noqa: BLE001 — mot tin hong khong hong ca bo
-            print(f"[CANH BAO] #{item.get('index')}: tim anh loi {type(e).__name__}: {e}", file=sys.stderr)
-            found = []
+        link = _real_link(item["link"])
+        found = _find(item, link, wide=False) or _find(item, link, wide=True)
         for c in found:
             if c["image_url"] not in thay:
                 thay.add(c["image_url"])
-                ra.append((c["image_url"], c.get("page_url") or item["link"], c.get("score_reason", "")))
+                ra.append((c["image_url"], c.get("page_url") or link, c.get("score_reason", "")))
     return ra
 
 
-def _save_candidate(url: str, out: Path) -> dict | None:
-    """Tai + cat mot anh ra `out`. None neu khong dung duoc."""
+def _save_candidate(url: str, out: Path, seen: list) -> dict | None:
+    """Tai + cat mot anh ra `out`. None neu khong dung duoc hoac trung anh da giu (`seen`: dhash)."""
     import article_images
     from PIL import Image
     from prepare.download_filter import _save_crop
@@ -87,6 +109,9 @@ def _save_candidate(url: str, out: Path) -> dict | None:
         return None
     if rules.is_blank_image(img)[0]:
         return None
+    if any(rules.is_near_duplicate(rules.dhash(img), s, rules.dhash_threshold_for(img)) for s in seen):
+        return None                                           # cung anh o URL khac (do 25/09: 3 ban 1200x686)
+    seen.append(rules.dhash(img))
     chart = bool(rules.is_chart(img)[0])
     out.parent.mkdir(parents=True, exist_ok=True)
     if chart:
@@ -99,12 +124,12 @@ def _save_candidate(url: str, out: Path) -> dict | None:
 def prepare_item(item: dict, folder: Path) -> list:
     """Toi da MAX_CANDIDATES anh da cat cho mot tin: [{code, path, w, h, chart, domain, why}]."""
     n = item["index"]
-    ra = []
+    ra, seen = [], []
     for url, page, why in _candidate_urls(item):
         if len(ra) >= MAX_CANDIDATES:
             break
         code = f"{n}{LETTERS[len(ra)]}"
-        got = _save_candidate(url, folder / f"{code}.png")
+        got = _save_candidate(url, folder / f"{code}.png", seen)
         if got:
             ra.append({"code": code, **got, "image_url": url,
                        "domain": urlparse(page or url).netloc.removeprefix("www."), "why": why})

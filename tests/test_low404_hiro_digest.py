@@ -145,8 +145,8 @@ def test_prepare_item_crops_photo_keeps_chart_full_width():
         d.line((80, y, 1520, y), fill=(200, 200, 200))
     cb = io.BytesIO()
     chart.save(cb, "PNG")
-    blobs = {"https://a/photo.png": photo.getvalue(), "https://a/chart.png": cb.getvalue(),
-             "https://a/tiny.png": _png_bytes((200, 120))}
+    blobs = {"https://a/photo.png": photo.getvalue(), "https://a/photo-copy.png": photo.getvalue(),
+             "https://a/chart.png": cb.getvalue(), "https://a/tiny.png": _png_bytes((200, 120))}
 
     class R:
         def __init__(self, b):
@@ -161,6 +161,7 @@ def test_prepare_item_crops_photo_keeps_chart_full_width():
         hiro_prepare._candidate_urls, article_images._download = saved
     by = {a["image_url"]: a for a in got}
     assert "https://a/tiny.png" not in by, "anh qua nho phai bi bo"
+    assert "https://a/photo-copy.png" not in by, "cung mot anh o URL khac phai bi bo (dhash)"
     assert [a["code"] for a in got] == ["4A", "4B"]
     with Image.open(by["https://a/photo.png"]["path"]) as im:
         assert abs(im.size[0] / im.size[1] - 0.8) < 0.01, im.size
