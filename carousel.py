@@ -1232,8 +1232,11 @@ def _gate_stack_last_hidden(nhan, muc, touched):
     visible = max(0, min(touched, H, y0 + h) - max(0, y0))
     if h <= 0 or visible / h >= STACK_BOTTOM_VISIBLE_MIN:
         return ""
+    # LOW-411: phan tram lam tron XUONG. `round` in ra "268/772px (35% < 35%)" (34.7%)
+    # — cau vo ly lam Dre di lục ma nguon tim cong nay (21 dong nhu vay trong cac
+    # phien Dre dcgr het 90 luot, 16–25/09/2026). Nguong chan khong doi.
     head = (f"{nhan}: anh ghep duoi chi con ro {visible}/{h}px "
-            f"({round(visible / h * 100)}% < {round(STACK_BOTTOM_VISIBLE_MIN * 100)}%) — ")
+            f"({int(visible / h * 100)}% < {round(STACK_BOTTOM_VISIBLE_MIN * 100)}%) — ")
     if muc.get("cluttered"):
         return head + ("nền chữ của ảnh RỐI phủ gần hết. Đặt ảnh RỐI lên TRÊN trong \"stack\", "
                        "hoặc dùng một ảnh sạch thay cho cặp ghép.")
