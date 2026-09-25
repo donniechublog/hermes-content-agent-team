@@ -102,14 +102,16 @@ def _close_image_task(draft_id: str, old_tid: str, new_tid: str) -> None:
     if not old_tid:
         return
     import hermes_adapter
-    from approve_dispatch import kanban_complete
+    from approve_dispatch import ROUTED_TO_KITE_RESULT, kanban_complete
     tt = hermes_adapter.status(old_tid)
     if tt not in ("blocked", "ready"):
         # '' = khong ro, None = khong doc duoc kanban.db: ca hai deu KHONG dong,
         # dong nham mot task dang chay con te hon de no tu ket.
         print(f"[route] task cu {old_tid} o trang thai {tt!r} — khong dong", file=sys.stderr)
         return
-    kanban_complete(old_tid, f"Bai chuyen sang Kite (task {new_tid}) — thieu anh that.")
+    # Ket qua BAT DAU bang ROUTED_TO_KITE_RESULT: bang tien do nhan ra task do he
+    # thong dong bang chinh chu do, khong bao "vai dong sai cach" (LOW-410).
+    kanban_complete(old_tid, f"{ROUTED_TO_KITE_RESULT} (task {new_tid}) — thieu anh that.")
     ip = DRAFTS / (draft_id + ".img.json")
     try:
         im = json.loads(ip.read_text(encoding="utf-8"))

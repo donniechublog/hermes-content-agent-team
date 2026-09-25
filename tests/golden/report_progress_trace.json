@@ -960,5 +960,276 @@
    ],
    "state": {}
   }
+ ],
+ "low410_engine_wait_is_silent_then_start_is_reported": [
+  {
+   "tg": [],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre cho engine dem anh — khong bao"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "engine_wait"
+    },
+    "task_result_messages.json": {}
+   }
+  },
+  {
+   "tg": [],
+   "logs": [],
+   "state": {
+    "reported_progress.json": {
+     "t1": "engine_wait"
+    },
+    "task_result_messages.json": {}
+   }
+  },
+  {
+   "tg": [],
+   "logs": [],
+   "state": {
+    "reported_progress.json": {
+     "t1": "engine_wait"
+    },
+    "task_result_messages.json": {}
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "▶️ <b>Dre</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre -> running (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  }
+ ],
+ "low410_engine_wait_past_threshold_alerts_then_reminds": [
+  {
+   "tg": [],
+   "logs": [
+    [
+     "tiendo",
+     "t1 ethan cho engine dem anh — khong bao"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "engine_wait"
+    },
+    "task_result_messages.json": {}
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 33,
+      "text": "⚠️ <b>Ethan</b> chờ engine đếm ảnh đã 21 phút (thường 5–8 phút): <i>Bài &lt;chip&gt; &amp; AI</i> (task t1)\nEngine có thể đã chết giữa chừng: task vẫn bị chặn, chưa vai nào làm bài này.",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 ethan cho engine 21 phut, da bao"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "engine_wait"
+    },
+    "reported_stalled.json": {
+     "t1": 1790000120.0
+    },
+    "task_result_messages.json": {}
+   }
+  },
+  {
+   "tg": [],
+   "logs": [],
+   "state": {
+    "reported_progress.json": {
+     "t1": "engine_wait"
+    },
+    "reported_stalled.json": {
+     "t1": 1790000120.0
+    },
+    "task_result_messages.json": {}
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 33,
+      "text": "⚠️ <b>Ethan</b> chờ engine đếm ảnh đã 52 phút (thường 5–8 phút): <i>Bài &lt;chip&gt; &amp; AI</i> (task t1)\nEngine có thể đã chết giữa chừng: task vẫn bị chặn, chưa vai nào làm bài này.",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 ethan cho engine 52 phut, da bao"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "engine_wait"
+    },
+    "reported_stalled.json": {
+     "t1": 1790001980.0
+    },
+    "task_result_messages.json": {}
+   }
+  }
+ ],
+ "low410_kite_transfer_close_is_silent_and_not_counted": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "✅ <b>Dre</b> xong task #01: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t0 dre he thong dong khi bai sang Kite — khong bao"
+    ],
+    [
+     "tiendo",
+     "t1 dre -> done (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t0": "done",
+     "t1": "done"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  }
+ ],
+ "low410_real_block_after_engine_wait_is_reported": [
+  {
+   "tg": [],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre cho engine dem anh — khong bao"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "engine_wait"
+    },
+    "task_result_messages.json": {}
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "▶️ <b>Dre</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre -> running (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "⛔ <b>Dre</b> dừng (blocked): <i>Bài &lt;chip&gt; &amp; AI</i>\nthiếu ảnh thật: 3/6\nBài đi kèm đang chờ, sẽ không chạy tới khi việc ảnh được gỡ.",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre -> blocked (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "blocked"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1002
+     }
+    }
+   }
+  }
  ]
 }
