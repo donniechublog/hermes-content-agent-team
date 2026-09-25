@@ -5,8 +5,10 @@ LOW-403 (con cua LOW-401, Ong Chu 25/09/2026). Hiro gom CA danh sach mot researc
 (Finn/Nova/Vera/Qinn) vua nop thanh MOT carousel "ban tin van": moi headline mot slide.
 
 CU PHAP — chu `Hiro` DUNG DAU, nen khong dung lenh chon tin nao dang co:
-    Hiro          ca danh sach cua bao cao duoc reply
-    Hiro 1-10     headline 1 toi 10 (nhan ca `1 - 10`, `1–10`, `1..10`, `Hiro: 3-5`)
+    Hiro              ca danh sach cua bao cao duoc reply
+    Hiro 1-10         headline 1 toi 10 (nhan ca `1 - 10`, `1–10`, `1..10`, `Hiro: 3-5`)
+    Hiro /3,5         ca danh sach, BO tin 3 va 5 (LOW-418; phan sau dau `/` la tin bi loai)
+    Hiro 1-12 /4,6    tin 1..12, bo 4 va 6; loai ca khoang: `Hiro /11-15`
 
 Vi sao chu dung dau (Ong Chu: "thay doi cach nhap de ko bi xung dot"): `read_pick_command`
 doc `1 - 10` la HAI tin rieng (1 va 10) giao Ethan, con `1 - Ethan` la tin 1 cho Ethan —
@@ -37,9 +39,11 @@ from approve_dispatch import kanban_create, standard_label    # noqa: E402
 import approve_pick                                          # noqa: E402
 
 ROLE = "hiro"
-# Instagram nhan toi da 20 anh mot bai. Hiro KHONG co slide bia (Ong Chu: "10 headlines thi
-# tao 10 slide"), nen 20 headline = 20 slide. Vera da chan o 15 (LOW-283).
-MAX_SLIDES = 20
+# LOW-418 (Ong Chu 25/09/2026: "de Hiro dang 10 bai la duoc"): Telegram nhan toi da 10 anh
+# mot album (sendMediaGroup), moat toi da 10 anh mot bai (moat_publish.py:299) — bo 11-20
+# slide mat slide cuoi khi len kenh (LOW-413). Hiro KHONG co bia, nen 10 headline = 10 slide.
+# Bao cao dai hon (Vera toi 15, LOW-283) thi Ong Chu loai tin bang dau `/`.
+MAX_SLIDES = 10
 # Tin nhan tu Telegram: khong giai ma so dai hon the (so thu tu trong bao cao <= 99).
 _MAX_DIGITS = 2
 
@@ -47,18 +51,63 @@ _HEAD = re.compile(r"^\s*hiro\b\s*[:,]?\s*(.*?)\s*$", re.I | re.S)
 _RANGE = re.compile(r"^(\d{1,%d})\s*(?:-|–|—|\.\.)\s*(\d{1,%d})$" % (_MAX_DIGITS, _MAX_DIGITS))
 # Phan sau chu Hiro CHI co so/dau -> Ong Chu dang go lenh (sai cu phap thi bao loi).
 # Co chu cai ("Hiro oi lam gi day") -> hoi thoai, tra None.
-_LOOKS_LIKE_COMMAND = re.compile(r"^[\d\s,;.:\-–—]+$")
+_LOOKS_LIKE_COMMAND = re.compile(r"^[\d\s,;.:/\-–—]+$")
+_DASH = re.compile(r"\s*(?:-|–|—|\.\.)\s*")
+_EXCLUDE_TOKEN = re.compile(r"^(\d{1,%d})(?:-(\d{1,%d}))?$" % (_MAX_DIGITS, _MAX_DIGITS))
 
-USAGE = ("Cú pháp: <code>Hiro</code> (cả danh sách) hoặc <code>Hiro 1-10</code> "
-         f"(headline 1 tới 10, tối đa {MAX_SLIDES} tin một bộ).")
+USAGE = ("Cú pháp: <code>Hiro</code> (cả danh sách), <code>Hiro 1-10</code> (headline 1 tới 10), "
+         "<code>Hiro /3,5</code> (bỏ tin 3 và 5), <code>Hiro 1-12 /4,6</code>; "
+         f"tối đa {MAX_SLIDES} tin một bộ.")
 
 
 @dataclass(frozen=True)
 class HiroCommand:
-    """`start`/`end` None = ca danh sach. `error` khac rong = go sai cu phap, bao lai."""
+    """`start`/`end` None = ca danh sach. `exclude`: so tin bi loai (sau dau `/`).
+    `error` khac rong = go sai cu phap, bao lai."""
     start: int | None = None
     end: int | None = None
+    exclude: tuple = ()
     error: str = ""
+
+
+def _runs(nums) -> list:
+    """[3, 4, 5, 9] -> [(3, 5), (9, 9)]."""
+    ra = []
+    for n in sorted(set(nums)):
+        if ra and n == ra[-1][1] + 1:
+            ra[-1] = (ra[-1][0], n)
+        else:
+            ra.append((n, n))
+    return ra
+
+
+def numbers_label(nums) -> str:
+    """Chu hien cho Ong Chu: [1, 2, 4, 6, 7, 8] -> '#1–#2, #4, #6–#8'."""
+    return ", ".join(f"#{a}" if a == b else f"#{a}–#{b}" for a, b in _runs(nums))
+
+
+def numbers_command(nums) -> str:
+    """Chu go lai duoc sau dau `/`: [3, 5, 11, 12, 13] -> '3,5,11-13'."""
+    return ",".join(str(a) if a == b else f"{a}-{b}" for a, b in _runs(nums))
+
+
+def _read_exclude(text: str) -> tuple[tuple, str]:
+    """Phan sau dau `/`: '3, 5 11-15' -> ((3, 5, 11, 12, 13, 14, 15), ''); sai -> ((), loi)."""
+    ra = []
+    for tok in re.split(r"[,;\s/]+", _DASH.sub("-", text.strip())):
+        if not tok:
+            continue
+        m = _EXCLUDE_TOKEN.match(tok)
+        if not m:
+            return (), f"Không hiểu phần loại tin <code>/{html_escape(text.strip())}</code>. {USAGE}"
+        a = int(m.group(1))
+        b = int(m.group(2) or a)
+        if a < 1 or b < a:
+            return (), f"Khoảng loại <code>{a}-{b}</code> không hợp lệ. {USAGE}"
+        ra += range(a, b + 1)
+    if not ra:
+        return (), f"Sau dấu <code>/</code> phải có số tin cần loại, vd <code>Hiro /3,5</code>. {USAGE}"
+    return tuple(sorted(set(ra))), ""
 
 
 def read_hiro_command(text: str) -> HiroCommand | None:
@@ -67,21 +116,40 @@ def read_hiro_command(text: str) -> HiroCommand | None:
     if not m:
         return None
     rest = m.group(1)
-    if not rest:
-        return HiroCommand()
-    r = _RANGE.match(rest)
-    if r:
-        a, b = int(r.group(1)), int(r.group(2))
-        if a < 1 or b < a:
-            return HiroCommand(error=f"Khoảng <code>{a}-{b}</code> không hợp lệ — số đầu phải "
+    head, slash, tail = rest.partition("/")
+    head = head.strip()
+    start = end = None
+    if head:
+        r = _RANGE.match(head)
+        if not r:
+            if _LOOKS_LIKE_COMMAND.match(rest):
+                return HiroCommand(error=f"Không hiểu <code>Hiro {html_escape(rest)}</code>. {USAGE}")
+            return None                                      # "Hiro oi ..." -> hoi thoai
+        start, end = int(r.group(1)), int(r.group(2))
+        if start < 1 or end < start:
+            return HiroCommand(error=f"Khoảng <code>{start}-{end}</code> không hợp lệ — số đầu phải "
                                      f"từ 1 và không lớn hơn số cuối. {USAGE}")
-        if b - a + 1 > MAX_SLIDES:
-            return HiroCommand(error=f"Khoảng <code>{a}-{b}</code> là {b - a + 1} tin, quá "
-                                     f"{MAX_SLIDES} slide một bài. {USAGE}")
-        return HiroCommand(start=a, end=b)
-    if _LOOKS_LIKE_COMMAND.match(rest):
-        return HiroCommand(error=f"Không hiểu <code>Hiro {html_escape(rest)}</code>. {USAGE}")
-    return None
+    exclude = ()
+    if slash:
+        if not _LOOKS_LIKE_COMMAND.match(tail or "/"):
+            return None                                      # "Hiro / anh oi ..." -> hoi thoai
+        exclude, loi = _read_exclude(tail)
+        if loi:
+            return HiroCommand(error=loi)
+        if start is not None:
+            ngoai = [n for n in exclude if not start <= n <= end]
+            if ngoai:
+                return HiroCommand(error=f"Tin loại {numbers_label(ngoai)} không nằm trong khoảng "
+                                         f"<code>{start}-{end}</code>. {USAGE}")
+    if start is not None:
+        kept = end - start + 1 - len(exclude)
+        if kept < 1:
+            return HiroCommand(error=f"Đã loại hết các tin trong khoảng <code>{start}-{end}</code>. {USAGE}")
+        if kept > MAX_SLIDES:
+            return HiroCommand(error=f"Khoảng <code>{start}-{end}</code> còn {kept} tin, quá "
+                                     f"{MAX_SLIDES} slide một bài — loại thêm {kept - MAX_SLIDES} tin "
+                                     f"bằng dấu <code>/</code>. {USAGE}")
+    return HiroCommand(start=start, end=end, exclude=exclude)
 
 
 def select_items(items: list, cmd: HiroCommand) -> tuple[list, str]:
@@ -89,17 +157,27 @@ def select_items(items: list, cmd: HiroCommand) -> tuple[list, str]:
     by_index = {it.get("index"): it for it in items if isinstance(it.get("index"), int)}
     if not by_index:
         return [], "Báo cáo này không có tin nào để dựng."
-    if cmd.start is None:
-        chosen = [by_index[k] for k in sorted(by_index)]
-        if len(chosen) > MAX_SLIDES:
-            return [], (f"Báo cáo có {len(chosen)} tin, quá {MAX_SLIDES} slide một bài — "
-                        f"gõ khoảng, vd <code>Hiro 1-{MAX_SLIDES}</code>.")
-        return chosen, ""
-    missing = [k for k in range(cmd.start, cmd.end + 1) if k not in by_index]
+    co = f"(có {numbers_label(by_index)})"
+    pool = sorted(by_index) if cmd.start is None else list(range(cmd.start, cmd.end + 1))
+    missing = [k for k in pool if k not in by_index]
     if missing:
-        return [], (f"Báo cáo không có tin số {', '.join(map(str, missing))} "
-                    f"(có #{min(by_index)}–#{max(by_index)}).")
-    return [by_index[k] for k in range(cmd.start, cmd.end + 1)], ""
+        return [], f"Báo cáo không có tin số {', '.join(map(str, missing))} {co}."
+    # Loai mot so khong co trong bao cao = go nham so: bao, khong bo qua ngam (tin dinh loai
+    # van len slide ma Ong Chu tuong da bo).
+    lac = [k for k in cmd.exclude if k not in by_index]
+    if lac:
+        return [], f"Báo cáo không có tin số {', '.join(map(str, lac))} để loại {co}."
+    bo = set(cmd.exclude)
+    chosen = [k for k in pool if k not in bo]
+    if not chosen:
+        return [], "Đã loại hết tin trong báo cáo, không còn gì để dựng."
+    if len(chosen) > MAX_SLIDES:
+        over = len(chosen) - MAX_SLIDES
+        goi_y = sorted(bo | set(chosen[-over:]))
+        khoang = f"{cmd.start}-{cmd.end} " if cmd.start is not None else ""
+        return [], (f"Còn {len(chosen)} tin, quá {MAX_SLIDES} slide một bài — loại thêm {over} tin "
+                    f"bằng dấu <code>/</code>, vd <code>Hiro {khoang}/{numbers_command(goi_y)}</code>.")
+    return [by_index[k] for k in chosen], ""
 
 
 def make_draft_id(scan_role: str, now: datetime | None = None) -> str:
@@ -177,8 +255,8 @@ def write_sidecars(draft_id: str, scan_role: str, items: list, brand: str, title
 
 
 def _span(items: list) -> str:
-    first, last = items[0]["index"], items[-1]["index"]
-    return f"#{first}" if first == last else f"#{first}–#{last}"
+    """Cac tin cua bo: '#1–#10', hoac '#1–#2, #4, #6–#12' khi co tin bi loai giua chung."""
+    return numbers_label(it["index"] for it in items)
 
 
 def process_hiro(token, group, thread_id, scan_role: str, cmd: HiroCommand, manifest_path):
@@ -217,7 +295,8 @@ def process_hiro(token, group, thread_id, scan_role: str, cmd: HiroCommand, mani
     write_sidecars(draft_id, scan_role, items, BRAND, digest_title(scan_role, items), body, tid)
     dong = "\n".join(f"<b>#{it['index']}</b> <i>{html_escape((it.get('title') or '')[:70])}</i>"
                      for it in items)
+    bo = f" — bỏ {numbers_label(cmd.exclude)}" if cmd.exclude else ""
     _send_text(token, group,
                f"📨 Đã nhận — <b>Hiro</b> dựng bản tin vắn <b>{len(items)} slide</b> "
-               f"từ báo cáo {scan_name} ({_span(items)}), task {tid}:\n{dong}",
+               f"từ báo cáo {scan_name} ({_span(items)}){bo}, task {tid}:\n{dong}",
                thread=thread_id)

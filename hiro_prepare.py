@@ -231,7 +231,7 @@ def wd_sheet(draft_id: str) -> Path:
 
 def write_brief(draft_id: str, job: dict, images: dict, spec_path: Path) -> str:
     L = [f"# HIRO — bản tin vắn {len(job['items'])} tin từ {role.display_name(job['scan_role'])}",
-         f"Brand: {job['brand']} | draft: {draft_id} | mỗi headline MỘT slide, không bìa, tối đa 20",
+         f"Brand: {job['brand']} | draft: {draft_id} | mỗi headline MỘT slide, không bìa, tối đa 10",
          "",
          "## Tin và ảnh đã tải + cắt sẵn (chỉ dùng MÃ ẢNH, không tải/mở gì thêm)"]
     for it in job["items"]:

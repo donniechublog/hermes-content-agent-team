@@ -40,10 +40,10 @@ def test_hiro_range_forms():
 
 
 def test_hiro_bad_range_is_reported_not_silently_dropped():
-    for t in ("Hiro 10-1", "Hiro 0-5", "Hiro 1-21", "Hiro 5", "Hiro 1, 3", "Hiro 1-"):
+    for t in ("Hiro 10-1", "Hiro 0-5", "Hiro 1-11", "Hiro 5", "Hiro 1, 3", "Hiro 1-"):
         cmd = hiro_pick.read_hiro_command(t)
         assert cmd is not None and cmd.error and cmd.start is None, (t, cmd)
-    assert hiro_pick.read_hiro_command("Hiro 1-20") == H(1, 20)      # tran dung 20
+    assert hiro_pick.read_hiro_command("Hiro 1-10") == H(1, 10)      # tran dung 10 (LOW-418)
 
 
 def test_non_hiro_text_is_not_a_hiro_command():
@@ -88,9 +88,9 @@ def _items(n):
 
 
 def test_select_whole_and_range_in_index_order():
-    items = list(reversed(_items(12)))
+    items = list(reversed(_items(10)))                    # tran 10 slide (LOW-418)
     got, err = hiro_pick.select_items(items, H())
-    assert not err and [it["index"] for it in got] == list(range(1, 13))
+    assert not err and [it["index"] for it in got] == list(range(1, 11))
     got, err = hiro_pick.select_items(items, H(3, 5))
     assert not err and [it["index"] for it in got] == [3, 4, 5]
 
@@ -98,8 +98,8 @@ def test_select_whole_and_range_in_index_order():
 def test_select_rejects_missing_and_over_cap():
     got, err = hiro_pick.select_items(_items(8), H(5, 10))
     assert got == [] and "9, 10" in err
-    got, err = hiro_pick.select_items(_items(21), H())
-    assert got == [] and "Hiro 1-20" in err
+    got, err = hiro_pick.select_items(_items(11), H())
+    assert got == [] and "Hiro /11" in err, err
     got, err = hiro_pick.select_items([], H())
     assert got == [] and err
 
