@@ -113,6 +113,9 @@ def main():
         # donniechublog khi thieu: do la mac dinh cua ca day chuyen.
         "brand": a.brand or meta.get("brand", "donniechublog"),
         "status": "pending",
+        # Ban tin van Hiro (LOW-405): source_url chi la link tin #1 (cac cho can MOT link),
+        # danh sach day du di kem de buoc dang/nguoi doc sau biet day la bo nhieu tin.
+        **({"digest": True, "digest_links": meta.get("digest_links") or []} if meta.get("digest") else {}),
     }
 
     # Draft con pending: giu dau vet the dang song de push sau xoa the cu (LOW-296).
