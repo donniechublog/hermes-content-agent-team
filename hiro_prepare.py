@@ -167,8 +167,12 @@ def short_label(name: str) -> str:
 def logo_for_item(item: dict, folder: Path) -> dict | None:
     """The logo cua CHU THE tin cho slide bia (LOW-420): logo MODEL neu tieu de goi ten mot ho
     model co logo rieng (LOW-337: "khi nhac toi model, chi duoc phep dung logo cua model"), khong
-    thi logo HANG dau tien trong tin (`image_brand.vendors_in_story`). None = khong co -> slide
-    bia dung anh that cua tin. Mang; loi thi None, khong hong ca bo."""
+    thi logo HANG CHINH — hang dau tien trong tin (`image_brand.vendors_in_story`). None = khong
+    co -> slide bia dung anh that cua tin. Mang; loi thi None, khong hong ca bo.
+
+    CHI hang chinh, KHONG roi sang hang thu hai: do that 26/09/2026 (may chu, bao cao Vera) tin
+    "TSMC tinh doi Nvidia chia phan loi nhuan" ra logo NVIDIA vi luot tra Commons cua TSMC hong tam
+    thoi — logo hang khac tren tieu de cua TSMC la gan sai chu the. Hong thi thu lai MOT lan."""
     import image_brand
     n = item["index"]
     sub = folder / f"logo_{n}"
@@ -179,8 +183,12 @@ def logo_for_item(item: dict, folder: Path) -> dict | None:
                      "image_url": c["image_url"], "fill": c["brand_match"].get("logo_fill")}
             break
         if not found:
-            for v in image_brand.vendors_in_story(item.get("title", ""), item.get("summary_vi", "")):
-                found = _company_logo_card(v, sub)
+            chinh = image_brand.vendors_in_story(item.get("title", ""), item.get("summary_vi", ""))[:1]
+            for v in chinh * 2:                              # hang chinh, thu lai mot lan
+                try:
+                    found = _company_logo_card(v, sub)
+                except Exception as e:                       # noqa: BLE001 — loi mang tam thoi
+                    print(f"[CANH BAO] #{n}: logo {v['company']} loi {type(e).__name__}", file=sys.stderr)
                 if found:
                     break
     except Exception as e:                                   # noqa: BLE001 — mot tin hong khong hong ca bo

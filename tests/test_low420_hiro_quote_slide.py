@@ -169,6 +169,29 @@ def test_logo_label_drops_legal_suffix():
         assert hiro_prepare.short_label(goc) == want, (goc, hiro_prepare.short_label(goc))
 
 
+def test_logo_only_from_main_company_never_second_vendor():
+    """Do that 26/09: tin TSMC ra logo Nvidia vi logo TSMC tra hong tam thoi."""
+    import image_brand
+    tmp = Path(tam.temp_dir(prefix="low420e_"))
+    tried = []
+
+    def card(v, sub):
+        tried.append(v["key"])
+        if v["key"] == "nvidia":
+            return {"path": "n.png", "label": "Nvidia", "image_url": "u", "fill": 0.2}
+        raise OSError("commons tam thoi hong")
+    saved = (image_brand.model_logo_images, image_brand.vendors_in_story, hiro_prepare._company_logo_card)
+    image_brand.model_logo_images = lambda *a, **k: []
+    image_brand.vendors_in_story = lambda t, s="": [{"key": "tsmc", "company": "TSMC"},
+                                                    {"key": "nvidia", "company": "Nvidia"}]
+    hiro_prepare._company_logo_card = card
+    try:
+        got = hiro_prepare.logo_for_item({"index": 9, "title": "TSMC tính đòi Nvidia chia phần"}, tmp)
+    finally:
+        image_brand.model_logo_images, image_brand.vendors_in_story, hiro_prepare._company_logo_card = saved
+    assert got is None and tried == ["tsmc", "tsmc"], (got, tried)
+
+
 def test_prepare_item_adds_logo_card_code():
     tmp = Path(tam.temp_dir(prefix="low420d_"))
     saved = (hiro_prepare._candidate_urls, hiro_prepare.logo_for_item)
