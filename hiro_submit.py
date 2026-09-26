@@ -42,7 +42,8 @@ TITLE_MAX, SUMMARY_MAX = 110, 260  # ky tu — tran cung truoc khi do khung (dig
 
 
 def resolve(spec: dict, job: dict, images: dict, bo_qua_dau: bool = False) -> tuple[list, list]:
-    """(slide da giai [{index,image,title,summary,code}], loi). Loi rong moi dung."""
+    """(slide da giai [{index,image,title,summary,code,style,label,category}], loi). Loi rong moi dung.
+    Kieu slide theo VI TRI (hiro_prepare.style_at): le = bia logo, chan = quote (LOW-420)."""
     import carousel
     import digest_slide
     from card import drop_mark_forbid
@@ -75,13 +76,18 @@ def resolve(spec: dict, job: dict, images: dict, bo_qua_dau: bool = False) -> tu
             loi.append(f"{nhan}: title {len(title)}/{TITLE_MAX}, summary {len(summary)}/{SUMMARY_MAX} "
                        "ky tu — rut gon")
             continue
-        vua = digest_slide.check_text(title, summary)
-        if vua:
-            loi.append(f"{nhan}: {vua}")
+        style = hiro_prepare.style_at(pos)
+        if style == "quote":
+            vua = digest_slide.check_text(title, summary)
+            if vua:
+                loi.append(f"{nhan}: {vua}")
         chunks += [(f"{nhan}/title", title), (f"{nhan}/summary", summary)]
+        item = next((it for it in job["items"] if it["index"] == n), {})
+        label = drop_mark_forbid(str(s.get("label") or hiro_prepare.logo_label(images, n)).strip())[:24]
+        category = str(s.get("category") or item.get("category") or "BUSINESS").strip().upper()[:20]
         if a:
             ra.append({"index": n, "code": a["code"], "image": a["path"], "title": title,
-                       "summary": summary})
+                       "summary": summary, "style": style, "label": label, "category": category})
     for n, reason in skipped.items():
         if n not in order:
             loi.append(f"skipped: `index` {n!r} khong co trong danh sach tin")

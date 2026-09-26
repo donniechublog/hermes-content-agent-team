@@ -3,7 +3,12 @@
 
 Mot slide = mot headline cua researcher. KHONG co bia: bo 10 headline la 10 slide.
 
-KIEU SLIDE (LOW-420, Ong Chu 26/09/2026): *"Output cua Hiro nen la dang Quote cua Dre, nhung
+HAI KIEU XEN KE (LOW-420, Ong Chu 26/09/2026, gui ba bia logo Anthropic/OpenAI/Microsoft cua
+Dre: *"Day cung la style can cho Hiro, se dat xen ke voi style quote"*): slide le = BIA LOGO,
+dung nguyen `carousel.build_cover` (the logo nen phang, tieu de lon to mau ten hang, chip category
++ chip ten hang); slide chan = QUOTE (duoi day). Kieu theo vi tri: hiro_prepare.style_at.
+
+KIEU QUOTE (LOW-420, Ong Chu 26/09/2026): *"Output cua Hiro nen la dang Quote cua Dre, nhung
 thay vi dan mot cau trong noi dung thi phan text la tieu de tom tat. Sau do o ngoai the quote
 se la summary ngan gon."* Nen:
   - TRONG khung quote (khung + dau ngoac + chip ten kenh y het `carousel.build_body_quote`):
@@ -113,12 +118,15 @@ def check_text(title: str, summary: str) -> str:
 
 
 def deck_sizes(slides: list) -> tuple[int, int]:
-    """(co tieu de, co tom tat) CHUNG cho ca bo = co nho nhat ma moi slide can.
+    """(co tieu de, co tom tat) CHUNG cho moi slide QUOTE cua bo = co nho nhat ma moi slide can.
 
     Luot ngang mot bo ban tin, co chu nhay 50 -> 40 -> 50 giua cac slide doc ra lon xon
-    (do 25/09). Mot co cho ca bo; slide chu ngan chi rong hon, khong to hon."""
+    (do 25/09). Mot co cho ca bo; slide chu ngan chi rong hon, khong to hon. Slide bia logo co
+    co hook rieng cua `build_cover`, khong tinh o day."""
     d = ImageDraw.Draw(Image.new("RGB", (W, H)))
-    lays = [fit_text(d, s["title"], s.get("summary", "")) for s in slides]
+    lays = [fit_text(d, s["title"], s.get("summary", "")) for s in slides if s.get("style", "quote") == "quote"]
+    if not lays:
+        return TITLE_HI, SUMMARY_HI
     return (min(lay.title_font.size for lay in lays), min(lay.summary_font.size for lay in lays))
 
 
@@ -190,7 +198,8 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
 def build_all(slides: list, out: Path, brand: str, tone: str = "dark") -> tuple[list, list]:
     """Dung ca bo: slide 1 ra `out`, slide k ra `<stem>_k.png` (dung khuon album_secondary).
 
-    `slides`: [{"image", "title", "summary", "cluttered"?}]. Tra (duong dan, loi cong nen chu)."""
+    `slides`: [{"image", "title", "summary", "style"?, "label"?, "category"?, "cluttered"?}] — `style`
+    "cover" (bia logo, `carousel.build_cover`) hoac "quote" (mac dinh). Tra (duong dan, loi cong)."""
     handle = carousel.set_brand(brand)["handle"]
     carousel.set_background(tone)
     out = Path(out)
@@ -201,10 +210,20 @@ def build_all(slides: list, out: Path, brand: str, tone: str = "dark") -> tuple[
     for i, s in enumerate(slides, start=1):
         p = out if i == 1 else Path(f"{stem}_{i}.png")
         bao = {}
-        build(s["image"], s["title"], s.get("summary", ""), handle, p, report=bao,
-              cluttered=bool(s.get("cluttered")), sizes=sizes)
+        if s.get("style") == "cover":
+            # Bia logo: DUNG NGUYEN bia cua Dre — chip category + chip ten hang thay ten kenh,
+            # to mau ten hang tren tieu de (LOW-344), nen phang thi doi mau chu (LOW-341).
+            carousel.build_cover(s["image"], s["title"], s.get("label", ""), str(p), handle,
+                                 category=s.get("category") or "BUSINESS", cluttered=bool(s.get("cluttered")),
+                                 report=bao, plan=carousel._flat_plan({"image": str(s["image"])}))
+            max_share = carousel.TEXT_BG_MAX_SHARE_COVER
+        else:
+            build(s["image"], s["title"], s.get("summary", ""), handle, p, report=bao,
+                  cluttered=bool(s.get("cluttered")), sizes=sizes)
+            max_share = carousel.TEXT_BG_MAX_SHARE
         paths.append(p)
-        loi = carousel._gate_text_background(f"slide {i}", bao) or carousel._gate_flat(f"slide {i}", bao)
+        loi = (carousel._gate_text_background(f"slide {i}", bao, max_share=max_share)
+               or carousel._gate_flat(f"slide {i}", bao))
         if loi:
             errors.append(loi)
     return paths, errors
