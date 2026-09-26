@@ -85,6 +85,15 @@ def resolve(spec: dict, job: dict, images: dict, bo_qua_dau: bool = False) -> tu
         item = next((it for it in job["items"] if it["index"] == n), {})
         label = drop_mark_forbid(str(s.get("label") or hiro_prepare.logo_label(images, n)).strip())[:24]
         category = str(s.get("category") or item.get("category") or "BUSINESS").strip().upper()[:20]
+        # Bia dung THE LOGO thi tieu de phai noi ve CHINH hang do (do that 26/09: tin TSMC tren
+        # the logo NVIDIA — logo theo tieu de goc cua researcher "Nvidia om tron..." con tieu de
+        # bia viet lai quanh TSMC). So tu dau cua ten hang: "Meta Platforms" -> "meta".
+        if a and style == "cover" and a.get("kind") == "logo":
+            ten = (a.get("label") or label).split()[0].lower() if (a.get("label") or label) else ""
+            if ten and ten not in title.lower():
+                loi.append(f"{nhan}: slide bìa dùng thẻ logo {a.get('label') or label} nhưng tiêu đề không "
+                           "nhắc tới hãng đó — viết lại tiêu đề quanh chính hãng trên logo, hoặc đổi "
+                           f"`image` sang ảnh thật của tin #{n}")
         if a:
             ra.append({"index": n, "code": a["code"], "image": a["path"], "title": title,
                        "summary": summary, "style": style, "label": label, "category": category})

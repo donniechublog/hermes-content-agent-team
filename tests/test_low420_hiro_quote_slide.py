@@ -141,6 +141,21 @@ def test_resolve_assigns_style_by_position_and_default_label():
     assert ra[0]["label"] == "OpenAI" and ra[0]["category"] == "POLICY"
 
 
+def test_cover_logo_must_match_title_company():
+    """Do that 26/09: bia 'TSMC muon Nvidia chia them...' tren the logo NVIDIA."""
+    tmp = Path(tam.temp_dir(prefix="low420f_"))
+    img = _photo(tmp / "p.png")
+    job = {"items": [{"index": 9, "title": "Nvidia ôm trọn biên lợi nhuận AI"}]}
+    images = {9: [{"code": "9A", "path": img}, {"code": "9L", "path": img, "kind": "logo", "label": "Nvidia"}]}
+
+    def spec(title, code="9L"):
+        return {"slides": [{"index": 9, "image": code, "title": title, "summary": "Tóm tắt ngắn gọn."}]}
+    _, loi = hiro_submit.resolve(spec("TSMC muốn chia thêm phần lợi nhuận AI"), job, images)
+    assert loi and "không nhắc tới hãng đó" in loi[0], loi
+    assert hiro_submit.resolve(spec("Nvidia bị TSMC đòi chia thêm phần lợi nhuận AI"), job, images)[1] == []
+    assert hiro_submit.resolve(spec("TSMC muốn chia thêm phần lợi nhuận AI", "9A"), job, images)[1] == [],         "anh that (khong phai logo) thi khong xet"
+
+
 def test_cover_slide_renders_like_dre_cover_and_passes_gates():
     tmp = Path(tam.temp_dir(prefix="low420c_"))
     logo, img = _logo_card(tmp / "logo.png"), _photo(tmp / "p.png")

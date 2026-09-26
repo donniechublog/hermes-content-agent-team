@@ -366,7 +366,8 @@ def write_brief(draft_id: str, job: dict, images: dict, spec_path: Path) -> str:
           "`category` (FUNDING, POLICY, PRODUCT, MODEL RELEASE, RESEARCH, BUSINESS…) + chip `label` "
           "(tên hãng/model, đã điền sẵn từ logo). Slide 2, 4, 6… là QUOTE — ảnh thật, `title` trong "
           "khung quote, `summary` ngoài khung. Slide bìa: `title` nên là một câu giật (con số, nghịch "
-          "lý) vì nó đứng một mình.",
+          "lý) vì nó đứng một mình, và PHẢI nói về chính hãng trên thẻ logo (script chặn nếu tiêu đề "
+          "không nhắc tên hãng đó) — logo không khớp chủ thể tin thì đổi `image` sang ảnh thật.",
           "- `title`: tiếng Việt có dấu, ngắn gọn (~60–80 ký tự), giữ tên riêng/tên model/con số; "
           "tiêu đề tiếng Anh thì DỊCH.",
           "- `summary`: MỘT–HAI câu ý chính (~100–180 ký tự), không đào sâu (việc đó của bài riêng).",
