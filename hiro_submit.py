@@ -204,7 +204,8 @@ def main() -> int:
     print(f"[xong] {len(paths)} slide -> {out}"
           + (f"; da gui topic hiro (message_id={mid}) kem nut duyet" if mid else ""))
     print("[metadata] " + json.dumps(md, ensure_ascii=False))
-    bo = f", bỏ {len(skipped)} tin không có ảnh" if skipped else ""
+    # `skipped` khong con chi la "khong co anh": tran 10 slide (LOW-418) va tin vai tu bo cung vao day.
+    bo = f", bỏ {len(skipped)} tin (lý do trong spec)" if skipped else ""
     print("Ket qua task (dung dong nay de ket thuc task): "
           f"Dựng bản tin vắn {len(paths)} slide{bo}; "
           + ("đã gửi topic kèm nút duyệt." if mid else "chưa gửi (thử)."))
