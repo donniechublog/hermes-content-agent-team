@@ -163,6 +163,12 @@ def test_cover_slide_renders_like_dre_cover_and_passes_gates():
     assert [p.name for p in paths] == ["c.png", "c_2.png"]
 
 
+def test_logo_label_drops_legal_suffix():
+    for goc, want in (("Oracle Corporation", "Oracle"), ("Alibaba Group", "Alibaba"), ("Meta Platforms, Inc.", "Meta Platforms"),
+                      ("OpenAI", "OpenAI"), ("Microsoft", "Microsoft"), ("Group", "Group")):
+        assert hiro_prepare.short_label(goc) == want, (goc, hiro_prepare.short_label(goc))
+
+
 def test_prepare_item_adds_logo_card_code():
     tmp = Path(tam.temp_dir(prefix="low420d_"))
     saved = (hiro_prepare._candidate_urls, hiro_prepare.logo_for_item)

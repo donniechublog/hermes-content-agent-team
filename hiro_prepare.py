@@ -20,6 +20,7 @@ import argparse
 import concurrent.futures as cf
 import io
 import json
+import re
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
@@ -147,6 +148,22 @@ def _company_logo_card(vendor: dict, sub: Path) -> dict | None:
     return {"path": str(the), "label": vendor["company"], "image_url": u["url"], "fill": round(fill, 4)}
 
 
+# Duoi phap nhan bo khoi chip ten hang: bia mau cua Ong Chu ghi "ANTHROPIC", "OPENAI", "MICROSOFT"
+# (26/09/2026); Wikidata tra "Oracle Corporation" -> chip "ORACLE CORPORATION" dai gap doi.
+_LEGAL_SUFFIX = re.compile(r"[\s,]+(?:corporation|corp\.?|inc\.?|incorporated|ltd\.?|limited|llc|plc|"
+                           r"co\.|company|holdings|group|s\.?a\.?|ag|gmbh|n\.?v\.?)$", re.I)
+
+
+def short_label(name: str) -> str:
+    """'Oracle Corporation' -> 'Oracle', 'Alibaba Group' -> 'Alibaba'. Thuan."""
+    ten = (name or "").strip()
+    while True:
+        moi = _LEGAL_SUFFIX.sub("", ten).strip()
+        if moi == ten or not moi:
+            return ten
+        ten = moi
+
+
 def logo_for_item(item: dict, folder: Path) -> dict | None:
     """The logo cua CHU THE tin cho slide bia (LOW-420): logo MODEL neu tieu de goi ten mot ho
     model co logo rieng (LOW-337: "khi nhac toi model, chi duoc phep dung logo cua model"), khong
@@ -172,7 +189,7 @@ def logo_for_item(item: dict, folder: Path) -> dict | None:
     if not found:
         return None
     return {"code": f"{n}{LOGO_LETTER}", "path": found["path"], "w": 1200, "h": 1500, "chart": False,
-            "kind": "logo", "label": found["label"], "fill": found.get("fill"),
+            "kind": "logo", "label": short_label(found["label"]), "fill": found.get("fill"),
             "image_url": found["image_url"], "domain": "commons.wikimedia.org",
             "why": f"thẻ logo {found['label']} (dùng cho slide bìa)"}
 
