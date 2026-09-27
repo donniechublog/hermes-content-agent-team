@@ -54,7 +54,7 @@ def _photo(path, size=(1600, 900), seed=3):
 def test_text_block_stays_within_20_percent():
     d = ImageDraw.Draw(Image.new("RGB", (digest_slide.W, digest_slide.H)))
     lay = digest_slide.fit_text(d, TITLE, SUMMARY)
-    assert lay.total <= digest_slide.TEXT_MAX_H == round(digest_slide.H * 0.20)
+    assert lay.total <= digest_slide.TEXT_MAX_H <= round(digest_slide.H * 0.20)
     assert len(lay.title_lines) <= digest_slide.TITLE_MAX_LINES
     assert lay.summary_font.size < lay.title_font.size, "tom tat phai nho hon tieu de"
 

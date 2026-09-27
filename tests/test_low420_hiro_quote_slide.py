@@ -65,7 +65,7 @@ def test_frame_and_summary_inside_safe_zone_for_all_valid_lengths():
 def test_text_budget_twenty_percent():
     for title, summary in (SHORT, LONG):
         lay = _lay(title, summary)
-        assert lay.total <= ds.TEXT_MAX_H == round(ds.H * 0.20)
+        assert lay.total <= ds.TEXT_MAX_H <= round(ds.H * 0.20)
         assert len(lay.title_lines) <= ds.TITLE_MAX_LINES
         assert lay.summary_font.size < lay.title_font.size
 

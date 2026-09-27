@@ -17,7 +17,7 @@ se la summary ngan gon."* Nen:
 Truoc LOW-420 slide Hiro la kieu slide THAN cua Dre (tieu de dam + tom tat, khong khung).
 
 Dung lai DUNG cac khau cua Dre trong `carousel.py` — dan anh (`_place_image`: nen phang
-LOW-341 hoac anh chup + nen mo), overlay chi khi do tren pixel can (`_layer_if_can`, neo tu
+LOW-341 hoac anh chup + nen mo), nen chu = OVERLAY TRONG KHUNG cua the Ethan (xem build), neo tu
 dong chu DAU nhu slide quote, LOW-286), cong do nen chu tren pixel (`_text_bg_report` +
 `_gate_text_background`), vung an toan 1:1 (`safe_zone`, LOW-364).
 
@@ -42,7 +42,10 @@ from card import _f, _wrap, F_QUOTE, F_QUOTE_REG              # noqa: E402
 
 W, H = carousel.W, carousel.H
 FRAME_X, TEXT_X, TEXT_W = carousel.Q_FRAME_X, carousel.Q_TEXT_X, carousel.Q_AVAIL
-TEXT_MAX_H = round(H * 0.20)          # 270px — xem docstring
+# 19% (256px), khong phai tron 20%: tu 27/09 o phu (overlay trong khung) phu CA khung quote — ke
+# ca khoang dem BOX_PAD_Y tren/duoi chu — nen dinh vung doi anh la dinh khung. Voi 270px, tieu de
+# 3 dong day dinh khung len 43% khung, vuot tran LOW-286 (42%, `_gate_text_background`).
+TEXT_MAX_H = round(H * 0.19)
 TITLE_HI, TITLE_LO = 56, 36           # tieu de trong khung (quote Dre: 60/38)
 TITLE_MAX_LINES = 3
 SUMMARY_HI, SUMMARY_LO = 32, 26
@@ -52,9 +55,11 @@ SUMMARY_PREFERRED = 30
 SUMMARY_GAP_SIZE = 8                  # tom tat nho hon tieu de it nhat chung nay px
 TITLE_LEAD = carousel.Q_LEAD          # gian dong tieu de = gian dong quote Dre (px)
 SUMMARY_LEAD = 10                     # gian dong tom tat (px)
-BOX_PAD_Y = 62                        # khung cao hon chu (= build_body_quote)
-FRAME_SUMMARY_GAP = 26                # dau dong ngoac (Q_FRAME_DROP duoi khung) -> dong tom tat dau
+BOX_PAD_Y = 52                        # khung cao hon chu (Dre 62; 52 de o phu CA khung duoi tran LOW-286)
+FRAME_SUMMARY_GAP = 20                # dau dong ngoac (Q_FRAME_DROP duoi khung) -> dong tom tat dau
 CHIP_INSET = 24                       # chip ten kenh thut vao tu canh phai khung (= build_body_quote)
+BOX_RADIUS = 30                       # bo goc o phu = ban kinh goc cua card._quote_frame
+SUMMARY_BOX_PAD = 16                  # o phu tom tat rong hon chu tom tat chung nay px (tren/duoi)
 
 
 class TextOverflow(ValueError):
@@ -163,12 +168,20 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
     truoc_nen = canvas.copy() if report is not None else None
     if flat:
         pal = carousel._flat_palette(flat)
-        fg, net = pal["fg"], pal["net"]
+        fg = fg_sum = pal["fg"]
+        net = pal["net"]
     else:
-        # Overlay neo o DONG CHU DAU cua tieu de (LOW-286), tan ngay duoi dong tom tat cuoi.
-        carousel._layer_if_can(canvas, base, max(0, g["first_line_top"]), g["summary_bottom"],
-                               image_cluttered=cluttered, overlay_only=True)
-        fg, net = carousel.FG, carousel._net()
+        # NEN CHU = OVERLAY TRONG KHUNG cua the quote Ethan (LOW-336, Ong Chu chot A/B 12 the:
+        # "Overlay trong khung la style dat chuan"): MOT lop mot mau phang, bo goc, dung trong
+        # khung quote; ngoai khung anh giu sac. Ong Chu 27/09/2026 bac dai toi chay het be
+        # ngang cua slide than Dre (`_layer_if_can`) tren the Hiro: *"the quote ko duoc co lop
+        # nen nhin thieu tham my nhu vay"*. Tom tat (ngoai khung) mot o phu cung kieu, rieng.
+        fg = card._text_box_overlay(canvas, (FRAME_X, g["frame_top"], W - FRAME_X, g["frame_bottom"]),
+                                    BOX_RADIUS)
+        fg_sum = card._text_box_overlay(canvas, (FRAME_X, g["summary_top"] - SUMMARY_BOX_PAD,
+                                                 W - FRAME_X, g["summary_bottom"] + SUMMARY_BOX_PAD),
+                                        BOX_RADIUS)
+        net = carousel._net()
     if report is not None:
         report.update(carousel._text_bg_report(truoc_nen, canvas))
         carousel._note_flat(report, canvas, flat, hop)
@@ -190,7 +203,7 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
 
     y = g["summary_top"]
     for ln in lay.summary_lines:
-        d.text((TEXT_X, y - lay.summary_ink_top), ln, font=lay.summary_font, fill=fg)
+        d.text((TEXT_X, y - lay.summary_ink_top), ln, font=lay.summary_font, fill=fg_sum)
         y += lay.summary_step
     canvas.convert("RGB").save(out, "PNG")
 
