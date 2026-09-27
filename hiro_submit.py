@@ -42,7 +42,8 @@ TITLE_MAX, SUMMARY_MAX = 110, 260  # ky tu — tran cung truoc khi do khung (dig
 
 
 def resolve(spec: dict, job: dict, images: dict, bo_qua_dau: bool = False) -> tuple[list, list]:
-    """(slide da giai [{index,image,title,summary,code}], loi). Loi rong moi dung."""
+    """(slide da giai [{index,image,title,summary,code,style,label,category}], loi). Loi rong moi dung.
+    Kieu slide theo VI TRI (hiro_prepare.style_at): le = bia logo, chan = quote (LOW-420)."""
     import carousel
     import digest_slide
     from card import drop_mark_forbid
@@ -75,13 +76,27 @@ def resolve(spec: dict, job: dict, images: dict, bo_qua_dau: bool = False) -> tu
             loi.append(f"{nhan}: title {len(title)}/{TITLE_MAX}, summary {len(summary)}/{SUMMARY_MAX} "
                        "ky tu — rut gon")
             continue
-        vua = digest_slide.check_text(title, summary)
-        if vua:
-            loi.append(f"{nhan}: {vua}")
+        style = hiro_prepare.style_at(pos)
+        if style == "quote":
+            vua = digest_slide.check_text(title, summary)
+            if vua:
+                loi.append(f"{nhan}: {vua}")
         chunks += [(f"{nhan}/title", title), (f"{nhan}/summary", summary)]
+        item = next((it for it in job["items"] if it["index"] == n), {})
+        label = drop_mark_forbid(str(s.get("label") or hiro_prepare.logo_label(images, n)).strip())[:24]
+        category = str(s.get("category") or item.get("category") or "BUSINESS").strip().upper()[:20]
+        # Bia dung THE LOGO thi tieu de phai noi ve CHINH hang do (do that 26/09: tin TSMC tren
+        # the logo NVIDIA — logo theo tieu de goc cua researcher "Nvidia om tron..." con tieu de
+        # bia viet lai quanh TSMC). So tu dau cua ten hang: "Meta Platforms" -> "meta".
+        if a and style == "cover" and a.get("kind") == "logo":
+            ten = (a.get("label") or label).split()[0].lower() if (a.get("label") or label) else ""
+            if ten and ten not in title.lower():
+                loi.append(f"{nhan}: slide bìa dùng thẻ logo {a.get('label') or label} nhưng tiêu đề không "
+                           "nhắc tới hãng đó — viết lại tiêu đề quanh chính hãng trên logo, hoặc đổi "
+                           f"`image` sang ảnh thật của tin #{n}")
         if a:
             ra.append({"index": n, "code": a["code"], "image": a["path"], "title": title,
-                       "summary": summary})
+                       "summary": summary, "style": style, "label": label, "category": category})
     for n, reason in skipped.items():
         if n not in order:
             loi.append(f"skipped: `index` {n!r} khong co trong danh sach tin")
@@ -204,7 +219,8 @@ def main() -> int:
     print(f"[xong] {len(paths)} slide -> {out}"
           + (f"; da gui topic hiro (message_id={mid}) kem nut duyet" if mid else ""))
     print("[metadata] " + json.dumps(md, ensure_ascii=False))
-    bo = f", bỏ {len(skipped)} tin không có ảnh" if skipped else ""
+    # `skipped` khong con chi la "khong co anh": tran 10 slide (LOW-418) va tin vai tu bo cung vao day.
+    bo = f", bỏ {len(skipped)} tin (lý do trong spec)" if skipped else ""
     print("Ket qua task (dung dong nay de ket thuc task): "
           f"Dựng bản tin vắn {len(paths)} slide{bo}; "
           + ("đã gửi topic kèm nút duyệt." if mid else "chưa gửi (thử)."))
