@@ -23,6 +23,7 @@ Dung:
 """
 import argparse
 import json
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -119,12 +120,6 @@ def resolve(spec: dict, job: dict, images: dict, bo_qua_dau: bool = False) -> tu
     return ra, loi
 
 
-def clear_old_slides(stem: Path) -> None:
-    """Xoa <id>_2..N.png cua lan truoc: lan lam lai it slide hon se lot slide cu vao album."""
-    for p in env_load.album_secondary(stem.name, stem.parent):
-        p.unlink(missing_ok=True)
-
-
 def handoff(job: dict, slides: list, images: dict) -> str:
     L = [f"Bản tin vắn {len(slides)} tin từ {role.display_name(job['scan_role'])}", ""]
     by = {it["index"]: it for it in job["items"]}
@@ -190,14 +185,24 @@ def main() -> int:
 
     import digest_slide
     out = Path(a.out or DRAFTS / f"{a.draft_id}.png")
-    clear_old_slides(out.with_suffix(""))
+    env_load.exit_if_stale_worker("hiro_submit")
+    _lock = env_load.DraftLock(a.draft_id).hold()
+    # Dung vao CHO TAM roi install_album (27/09/2026): cong nen chu bao loi giua bo
+    # truoc day de lai bo slide nua moi nua cu trong drafts/.
+    staged = env_load.staging_out(out)
     tone = str(spec.get("background_tone") or "dark").strip().lower()
-    paths, gate = digest_slide.build_all(slides, out, job["brand"], tone)
+    staged_paths, gate = digest_slide.build_all(slides, staged, job["brand"], tone)
     if gate:
+        shutil.rmtree(staged.parent, ignore_errors=True)
         for e in gate:
             print(f"[LOI] {e}")
         print("Nen chu sai luat overlay (LOW-286) / nen phang (LOW-341) — loi code, bao Ong Chu.")
         return 1
+    try:
+        paths = env_load.install_album(staged, out, len(staged_paths))
+    except RuntimeError as e:
+        shutil.rmtree(staged.parent, ignore_errors=True)
+        sys.exit(f"[LOI] digest_slide {e}")
 
     meta = json.loads((DRAFTS / f"{a.draft_id}.meta.json").read_text(encoding="utf-8")) \
         if (DRAFTS / f"{a.draft_id}.meta.json").exists() else {}

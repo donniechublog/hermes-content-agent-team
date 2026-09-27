@@ -18,6 +18,7 @@ Dung:
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -672,6 +673,9 @@ def main() -> int:
     a = ap.parse_args()
     import role
     role.set_active_role("kite")
+    # Mot draft chi mot phien nop mot luc (27/09/2026: phien Kite thua xoa anh cua phien dung).
+    env_load.exit_if_stale_worker("kite_submit")
+    _lock = env_load.DraftLock(a.draft_id).hold()
 
     meta, brand, wd, m, spec, spec_path, da_dung = nc.load_draft_context(a.draft_id, a.spec, "kite_prepare.py", "kite_submit.py")
     spec = role_spec.kite_spec(spec)         # LOW-248: spec viet truoc deploy con ten cu
@@ -697,18 +701,20 @@ def main() -> int:
 
     out = Path(a.out or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png"))
     out.parent.mkdir(parents=True, exist_ok=True)
-    stem = out.with_suffix("")
-    for p in env_load.album_secondary(stem.name, stem.parent):
-        p.unlink(missing_ok=True)
-    theme_hero = _render(spec_r, spec, wd, out, brand, a, spec_path)
+    # Render vao CHO TAM, du tep moi thay bo cu (env_load.install_album) — khong
+    # con xoa <id>_2..N truoc khi render: chet giua chung tung de lai dung anh bia.
+    staged = env_load.staging_out(out)
+    theme_hero = _render(spec_r, spec, wd, staged, brand, a, spec_path)
     if theme_hero is None:
+        shutil.rmtree(staged.parent, ignore_errors=True)
         return 1
     theme, hero = theme_hero
     n = len(spec_r["slides"])
-    files = [out] + [Path(f"{stem}_{i}.png") for i in range(2, n + 1)]
-    thieu = [str(f) for f in files if not f.exists()]
-    if thieu:
-        sys.exit(f"[LOI] render_edu bao xong nhung thieu tep: {thieu}")
+    try:
+        files = env_load.install_album(staged, out, n)
+    except RuntimeError as e:
+        shutil.rmtree(staged.parent, ignore_errors=True)
+        sys.exit(f"[LOI] render_edu {e}")
 
     hinh = [s.get("image") for s in spec.get("slides") or [] if s.get("image")]
     bg_path = _write_handoff(m, hinh, n, theme, hero, hook, out,

@@ -375,6 +375,11 @@ def intake(draft_id, scheduled_at=None, platforms=None, external_id=None):
     images = images_payload(d)
     if not images:
         return False, "khong tim thay anh de day"
+    # images_payload bo qua IM LANG tep cuc bo khong con — bai len thieu anh ma
+    # khong ai hay. Chan ca so luong it hon bo slide da dung (27/09/2026).
+    loi_anh = env_load.album_problem(draft_id, d)
+    if loi_anh:
+        return False, "bo anh hong: " + loi_anh
 
     body = _body_intake(draft_id, d, cap, images, scheduled_at,
                         platforms, external_id)

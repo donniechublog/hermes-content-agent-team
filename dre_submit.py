@@ -28,6 +28,7 @@ Dung:
 """
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -457,14 +458,6 @@ def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
     return ra, loi, canh, bo.dung_anh
 
 
-def single_slide_old(stem: Path) -> None:
-    """Xoa <id>_2..10.png va *.ghep.png cua lan truoc: draft_write gom
-    thanh album, lan lam lai it slide hon se lot slide cu."""
-    for p in list(env_load.album_secondary(stem.name, stem.parent)) + \
-            list(stem.parent.glob(stem.name + "*.ghep.png")):
-        p.unlink(missing_ok=True)
-
-
 def use(spec_cs: dict, out: Path, brand: str, wd: Path, bo_qua_dau=False) -> tuple:
     """Chay carousel.py. Tra ve (ok, stdout, stderr)."""
     p = wd / "carousel.spec.json"
@@ -526,10 +519,14 @@ def main() -> int:
 
     out = Path(a.out or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png"))
     out.parent.mkdir(parents=True, exist_ok=True)
-    stem = out.with_suffix("")
-    single_slide_old(stem)
-    ok, so, se = use(spec_cs, out, brand, wd, a.bo_qua_dau)
+    # Phien thua (worker bi chan/giao lai) thi dung truoc khi dong vao anh (27/09/2026).
+    env_load.exit_if_stale_worker("dre_submit")
+    _lock = env_load.DraftLock(a.draft_id).hold()
+    # Render vao CHO TAM roi install_album (27/09/2026) — khong xoa bo cu truoc.
+    staged = env_load.staging_out(out)
+    ok, so, se = use(spec_cs, staged, brand, wd, a.bo_qua_dau)
     if not ok:
+        shutil.rmtree(staged.parent, ignore_errors=True)
         for dong in (se + "\n" + so).splitlines():
             if dong.startswith("[LOI]") or dong.startswith("[CANH BAO]"):
                 print(dong)
@@ -544,10 +541,14 @@ def main() -> int:
             print(dong)
 
     n = len(spec_cs["slides"]) + 1
-    files = [out] + [Path(f"{stem}_{i}.png") for i in range(2, n + 1)]
-    thieu = [str(f) for f in files if not f.exists()]
-    if thieu:
-        sys.exit(f"[LOI] carousel.py bao xong nhung thieu tep: {thieu}")
+    try:
+        files = env_load.install_album(staged, out, n)
+    except RuntimeError as e:
+        shutil.rmtree(staged.parent, ignore_errors=True)
+        sys.exit(f"[LOI] carousel.py {e}")
+    # *.ghep.png cua lan truoc (anh ghep doc) — lan nay ghi vao cho tam, da don cung no.
+    for p in out.parent.glob(out.with_suffix("").name + "*.ghep.png"):
+        p.unlink(missing_ok=True)
     hook = (spec.get("cover") or {}).get("hook", "")
     mo_ta = f"Carousel {n} slide: {hook}"[:1000]
 
