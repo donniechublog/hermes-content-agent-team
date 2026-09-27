@@ -89,21 +89,28 @@ def test_rendered_slide_has_quote_frame_and_passes_overlay_gate():
         assert any(max(abs(a - b) for a, b in zip(c, net)) <= 40 for c in found), (found, net)
 
 
-def test_summary_box_same_tone_as_quote_box():
-    """Dung that 27/09 slide TSMC: o quote SANG, o tom tat TOI. Anh tren sang, duoi toi."""
+def test_no_background_only_dre_softening_hugging_each_text_block():
+    """Ong Chu 27/09: "da bao la ko co nen, co xem duoc quote ben Dre lam the nao ko?". Nhu slide
+    quote Dre: chi lop lam diu om sat DONG CHU cua tung khoi (tieu de, tom tat) — khong mot dai
+    lien trum khoang giua, net khung duoi va dau dong ngoac; khong o phu."""
     tmp = Path(tam.temp_dir(prefix="low420g_"))
-    im = Image.new("RGB", (1080, 1350), (235, 235, 235))
-    ImageDraw.Draw(im).rectangle((0, 1050, 1080, 1350), fill=(150, 20, 20))
-    im.save(tmp / "split.png")
-    carousel.set_brand("dcgr")
-    carousel.set_background("dark")
-    ds.build(str(tmp / "split.png"), *SHORT, "dcgr.tech", str(tmp / "s.png"))
-    g = ds.geometry(_lay(*SHORT))
-    with Image.open(tmp / "s.png") as out:
-        px = out.convert("L")
-        quote_bg = px.getpixel((ds.FRAME_X + 20, g["frame_top"] + 50))
-        sum_bg = px.getpixel((ds.FRAME_X + 20, g["summary_top"] - ds.SUMMARY_BOX_PAD + 12))
-    assert (quote_bg > 128) == (sum_bg > 128), (quote_bg, sum_bg)
+    img = _photo(tmp / "p.png")
+    calls, real = [], carousel._layer_if_can
+    carousel._layer_if_can = lambda canvas, base, top, bottom, **k: calls.append((top, bottom)) or real(
+        canvas, base, top, bottom, **k)
+    try:
+        carousel.set_brand("dcgr")
+        carousel.set_background("dark")
+        ds.build(img, *LONG, "dcgr.tech", str(tmp / "s.png"))
+    finally:
+        carousel._layer_if_can = real
+    lay = _lay(*LONG)
+    g = ds.geometry(lay)
+    title_bottom = g["first_line_top"] + lay.title_step * len(lay.title_lines)
+    assert calls == [(g["first_line_top"], title_bottom), (g["summary_top"], g["summary_bottom"])], calls
+    assert title_bottom < g["frame_bottom"] < g["summary_top"], "khoang giua hai khoi phai la anh"
+    src = (ROOT / "digest_slide.py").read_text(encoding="utf-8")
+    assert "_text_box_overlay(" not in src, "khong o phu kieu the Ethan"
 
 
 # ---- vong 2: xen ke bia logo (le) / quote (chan) ---------------------------------------
