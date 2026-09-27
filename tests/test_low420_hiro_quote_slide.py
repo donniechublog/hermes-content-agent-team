@@ -89,6 +89,23 @@ def test_rendered_slide_has_quote_frame_and_passes_overlay_gate():
         assert any(max(abs(a - b) for a, b in zip(c, net)) <= 40 for c in found), (found, net)
 
 
+def test_summary_box_same_tone_as_quote_box():
+    """Dung that 27/09 slide TSMC: o quote SANG, o tom tat TOI. Anh tren sang, duoi toi."""
+    tmp = Path(tam.temp_dir(prefix="low420g_"))
+    im = Image.new("RGB", (1080, 1350), (235, 235, 235))
+    ImageDraw.Draw(im).rectangle((0, 1050, 1080, 1350), fill=(150, 20, 20))
+    im.save(tmp / "split.png")
+    carousel.set_brand("dcgr")
+    carousel.set_background("dark")
+    ds.build(str(tmp / "split.png"), *SHORT, "dcgr.tech", str(tmp / "s.png"))
+    g = ds.geometry(_lay(*SHORT))
+    with Image.open(tmp / "s.png") as out:
+        px = out.convert("L")
+        quote_bg = px.getpixel((ds.FRAME_X + 20, g["frame_top"] + 50))
+        sum_bg = px.getpixel((ds.FRAME_X + 20, g["summary_top"] - ds.SUMMARY_BOX_PAD + 12))
+    assert (quote_bg > 128) == (sum_bg > 128), (quote_bg, sum_bg)
+
+
 # ---- vong 2: xen ke bia logo (le) / quote (chan) ---------------------------------------
 # Ong Chu 26/09/2026 gui ba bia logo Anthropic/OpenAI/Microsoft: "Day cung la style can cho Hiro,
 # se dat xen ke voi style quote".

@@ -148,6 +148,21 @@ def geometry(lay: Layout) -> dict:
             "summary_top": summary_top, "summary_bottom": summary_bottom}
 
 
+def summary_box(canvas, box, dark: bool):
+    """O phu tom tat: cung cach ve voi `card._text_box_overlay` (mo trong o + mot lop mot mau
+    alpha TEXT_BOX_OPACITY, bo goc) nhung TONG do nguoi goi chon — lay theo o quote. Tra mau chu."""
+    from PIL import ImageFilter
+    x0, y0, x1, y1 = card._within_card(canvas, box)
+    mask = Image.new("L", canvas.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle([x0, y0, x1, y1], radius=BOX_RADIUS, fill=255)
+    canvas.paste(canvas.filter(ImageFilter.GaussianBlur(card.QUOTE_BLUR)), (0, 0), mask)
+    tone = tuple(card.BG[:3]) if dark else tuple(card.FG[:3])
+    mask = mask.point(lambda v: card.TEXT_BOX_OPACITY if v else 0)
+    canvas.paste(Image.new(canvas.mode, canvas.size, tone + ((255,) if canvas.mode == "RGBA" else ())),
+                 (0, 0), mask)
+    return card.FG if dark else card.BG
+
+
 def build(img_path, title: str, summary: str, handle: str, out, report=None,
           cluttered: bool = False, sizes: tuple | None = None):
     """Ve mot slide ra `out`. `report` (dict) nhan so do nen chu LOW-286/LOW-341.
@@ -178,9 +193,11 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
         # nen nhin thieu tham my nhu vay"*. Tom tat (ngoai khung) mot o phu cung kieu, rieng.
         fg = card._text_box_overlay(canvas, (FRAME_X, g["frame_top"], W - FRAME_X, g["frame_bottom"]),
                                     BOX_RADIUS)
-        fg_sum = card._text_box_overlay(canvas, (FRAME_X, g["summary_top"] - SUMMARY_BOX_PAD,
-                                                 W - FRAME_X, g["summary_bottom"] + SUMMARY_BOX_PAD),
-                                        BOX_RADIUS)
+        # O tom tat CUNG TONG voi o quote (dung lai lua chon sang/toi cua o quote), khong tu chon
+        # lai theo anh ben duoi: dung that 27/09 slide TSMC ra o quote SANG + o tom tat TOI.
+        fg_sum = summary_box(canvas, (FRAME_X, g["summary_top"] - SUMMARY_BOX_PAD,
+                                      W - FRAME_X, g["summary_bottom"] + SUMMARY_BOX_PAD),
+                             dark=fg == card.FG)
         net = carousel._net()
     if report is not None:
         report.update(carousel._text_bg_report(truoc_nen, canvas))
