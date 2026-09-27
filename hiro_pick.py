@@ -53,8 +53,6 @@ _RANGE = re.compile(r"^(\d{1,%d})\s*(?:-|–|—|\.\.)\s*(\d{1,%d})$" % (_MAX_DI
 # Phan sau chu Hiro CHI co so/dau -> Ong Chu dang go lenh (sai cu phap thi bao loi).
 # Co chu cai ("Hiro oi lam gi day") -> hoi thoai, tra None.
 _LOOKS_LIKE_COMMAND = re.compile(r"^[\d\s,;.:/\-–—]+$")
-_DASH = re.compile(r"\s*(?:-|–|—|\.\.)\s*")
-_EXCLUDE_TOKEN = re.compile(r"^(\d{1,%d})(?:-(\d{1,%d}))?$" % (_MAX_DIGITS, _MAX_DIGITS))
 
 USAGE = ("Cú pháp: <code>Hiro</code> (cả danh sách), <code>Hiro 1-10</code> (headline 1 tới 10), "
          "<code>Hiro /3,5</code> (bỏ tin 3 và 5), <code>Hiro 1-12 /4,6</code>; "
@@ -71,20 +69,9 @@ class HiroCommand:
     error: str = ""
 
 
-def _runs(nums) -> list:
-    """[3, 4, 5, 9] -> [(3, 5), (9, 9)]."""
-    ra = []
-    for n in sorted(set(nums)):
-        if ra and n == ra[-1][1] + 1:
-            ra[-1] = (ra[-1][0], n)
-        else:
-            ra.append((n, n))
-    return ra
-
-
-def numbers_label(nums) -> str:
-    """Chu hien cho Ong Chu: [1, 2, 4, 6, 7, 8] -> '#1–#2, #4, #6–#8'."""
-    return ", ".join(f"#{a}" if a == b else f"#{a}–#{b}" for a, b in _runs(nums))
+# `_runs` / `numbers_label` / cach doc so sau `/` dung chung voi `Dre /…` (LOW-421).
+_runs = approve_pick._runs
+numbers_label = approve_pick.numbers_label
 
 
 def numbers_command(nums) -> str:
@@ -94,21 +81,16 @@ def numbers_command(nums) -> str:
 
 def _read_exclude(text: str) -> tuple[tuple, str]:
     """Phan sau dau `/`: '3, 5 11-15' -> ((3, 5, 11, 12, 13, 14, 15), ''); sai -> ((), loi)."""
-    ra = []
-    for tok in re.split(r"[,;\s/]+", _DASH.sub("-", text.strip())):
-        if not tok:
-            continue
-        m = _EXCLUDE_TOKEN.match(tok)
-        if not m:
-            return (), f"Không hiểu phần loại tin <code>/{html_escape(text.strip())}</code>. {USAGE}"
-        a = int(m.group(1))
-        b = int(m.group(2) or a)
-        if a < 1 or b < a:
+    ra, sai = approve_pick.read_number_ranges(text)
+    if sai:
+        m = re.match(r"^(\d{1,2})-(\d{1,2})$", sai) or re.match(r"^(\d{1,2})()$", sai)
+        if m:
+            a, b = int(m.group(1)), int(m.group(2) or m.group(1))
             return (), f"Khoảng loại <code>{a}-{b}</code> không hợp lệ. {USAGE}"
-        ra += range(a, b + 1)
+        return (), f"Không hiểu phần loại tin <code>/{html_escape(text.strip())}</code>. {USAGE}"
     if not ra:
         return (), f"Sau dấu <code>/</code> phải có số tin cần loại, vd <code>Hiro /3,5</code>. {USAGE}"
-    return tuple(sorted(set(ra))), ""
+    return ra, ""
 
 
 def read_hiro_command(text: str) -> HiroCommand | None:

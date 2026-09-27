@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 import threading
+from dataclasses import dataclass
 from html import escape as html_escape
 from pathlib import Path
 
@@ -147,8 +148,115 @@ def reply_report_target(vai: str, msg: dict) -> tuple:
         return True, latest_manifest(vai)
     return False, None
 
+@dataclass(frozen=True)
+class PickAll:
+    """LOW-421: `Dre /1,2,10` — ten vai DUNG DAU = vai do lam MOI tin cua bao cao duoc reply,
+    tru cac so sau dau `/`. `role` la slug vai anh; `error` khac rong = go sai, bao lai.
+    Chua biet bao cao co bao nhieu tin nen chua thanh danh sach — `expand_pick_all` mo rong
+    theo manifest cua DUNG bao cao (LOW-362) trong `_process_pick`."""
+    role: str = ""
+    exclude: tuple = ()
+    error: str = ""
+
+
+# So thu tu trong bao cao <= 99 (Finn toi 27 tin): khong giai ma so dai hon.
+_NUMBER_TOKEN = re.compile(r"^(\d{1,2})(?:-(\d{1,2}))?$")
+_NUMBER_DASH = re.compile(r"\s*(?:-|–|—|\.\.)\s*")
+# Phan sau dau `/` CHI co so/dau -> Ong Chu dang go lenh; co chu cai -> hoi thoai.
+_NUMBERS_ONLY = re.compile(r"^[\d\s,;.:/\-–—]*$")
+PICK_ALL_USAGE = ("Cú pháp: <code>Dre</code> (Dre làm cả báo cáo), <code>Dre /1,2,10</code> "
+                  "(cả báo cáo trừ tin 1, 2, 10; nhận cả khoảng <code>/11-15</code>), hoặc "
+                  "<code>3, 4, 5 - Dre</code> (chỉ tin 3, 4, 5).")
+
+
+def read_number_ranges(text: str) -> tuple[tuple, str]:
+    """'3, 5 11-15' -> ((3, 5, 11, 12, 13, 14, 15), ''). Manh sai (`x`, `5-3`, `0`) ->
+    ((), manh do). Dung chung cho `Hiro /…` (LOW-418) va `Dre /…` (LOW-421)."""
+    ra = []
+    for tok in re.split(r"[,;\s/]+", _NUMBER_DASH.sub("-", text.strip())):
+        if not tok:
+            continue
+        m = _NUMBER_TOKEN.match(tok)
+        a = int(m.group(1)) if m else 0
+        b = int(m.group(2) or a) if m else 0
+        if not m or a < 1 or b < a:
+            return (), tok
+        ra += range(a, b + 1)
+    return tuple(sorted(set(ra))), ""
+
+
+def _runs(nums) -> list:
+    """[3, 4, 5, 9] -> [(3, 5), (9, 9)]."""
+    ra = []
+    for n in sorted(set(nums)):
+        if ra and n == ra[-1][1] + 1:
+            ra[-1] = (ra[-1][0], n)
+        else:
+            ra.append((n, n))
+    return ra
+
+
+def numbers_label(nums) -> str:
+    """Chu hien cho Ong Chu: [1, 2, 4, 6, 7, 8] -> '#1–#2, #4, #6–#8'."""
+    return ", ".join(f"#{a}" if a == b else f"#{a}–#{b}" for a, b in _runs(nums))
+
+
+def _read_pick_all(text: str) -> PickAll | None:
+    """Tin MO DAU bang ten vai -> PickAll; khong mo dau bang ten vai -> None (luat cu).
+
+    Ten dung dau truoc LOW-421 khong co nghia rieng: `Dre /1,2` bi bo ca lenh (dau `/`
+    la manh la), con `Dre 1, 2` giao 1 va 2 cho ETHAN (ten chi ap cho so dung TRUOC no,
+    ma truoc Dre khong co so nao) — sai im lang. Nay `Dre 1, 2` bao cu phap."""
+    head, slash, tail = text.strip().partition("/")
+    words = [w for w in re.split(r"[,\s;:\-–—]+", head) if w]
+    if not words or words[0].lower() not in NAME_BRIGHT_CAP:
+        return None
+    role, rest = NAME_BRIGHT_CAP[words[0].lower()], words[1:]
+    if any(not w.isdigit() and w.lower() not in NAME_BRIGHT_CAP for w in rest):
+        return None                                  # "Dre lam lai di" -> hoi thoai
+    if rest:
+        ten = html_escape(words[0])
+        if any(w.isdigit() for w in rest):
+            loi = (f"Tên đứng đầu = {ten} làm CẢ báo cáo; tin bỏ phải đứng sau dấu <code>/</code>. "
+                   f"Muốn chỉ vài tin thì đặt số trước tên: <code>{', '.join(rest)} - {ten}</code>.")
+        else:
+            loi = "Mỗi lệnh chỉ một tên vai đứng đầu."
+        return PickAll(error=f"⚠️ Chưa tạo bài. {loi}\n{PICK_ALL_USAGE}")
+    if not slash:
+        return PickAll(role=role)
+    if not _NUMBERS_ONLY.match(tail):
+        return None                                  # "Dre / anh oi ..." -> hoi thoai
+    exclude, sai = read_number_ranges(tail)
+    if sai or not exclude:
+        what = (f"không hiểu <code>{html_escape(sai)}</code> sau dấu <code>/</code>" if sai
+                else "sau dấu <code>/</code> phải có số tin bỏ")
+        return PickAll(error=f"⚠️ Chưa tạo bài: {what}.\n{PICK_ALL_USAGE}")
+    return PickAll(role=role, exclude=exclude)
+
+
+def expand_pick_all(cmd: PickAll, items: list) -> tuple[list, str]:
+    """PickAll -> ([(so, vai_anh, brand)] theo thu tu so, loi). Loi khac rong: khong tao gi.
+
+    So loai khong co trong bao cao = go nham so: bao, khong bo qua ngam (tin dinh bo van
+    thanh bai ma Ong Chu tuong da bo) — cung luat voi Hiro (LOW-418)."""
+    have = sorted(it["index"] for it in items if isinstance(it.get("index"), int))
+    if not have:
+        return [], "Báo cáo này không có tin nào để giao."
+    lac = [n for n in cmd.exclude if n not in have]
+    if lac:
+        return [], (f"⚠️ Chưa tạo bài: báo cáo không có tin số {', '.join(map(str, lac))} để bỏ "
+                    f"(có {numbers_label(have)}).")
+    chosen = [n for n in have if n not in set(cmd.exclude)]
+    if not chosen:
+        return [], "⚠️ Chưa tạo bài: đã bỏ hết tin trong báo cáo."
+    return [(n, cmd.role, BRAND) for n in chosen], ""
+
+
 def read_pick_command(text: str):
-    """Phan tich lenh chon tin. Tra ve [(so, vai_anh, thuong_hieu)] hoac None.
+    """Phan tich lenh chon tin. Tra ve [(so, vai_anh, thuong_hieu)], PickAll hoac None.
+
+    Ten vai DUNG DAU (LOW-421) -> PickAll: `Dre` = Dre lam ca bao cao, `Dre /1,2,10` = ca
+    bao cao tru tin 1, 2, 10. Con lai theo luat duoi.
 
     Quy tac: ten vai ap cho MOI SO dung truoc no, tinh tu ten vai gan nhat.
     So nao khong co ten vai nao phia sau thi ve mac dinh (Ethan).
@@ -167,6 +275,9 @@ def read_pick_command(text: str):
     """
     if not text or not text.strip():
         return None
+    pick_all = _read_pick_all(text)
+    if pick_all is not None:
+        return pick_all
 
     # Tach thanh cac manh: moi manh la mot SO hoac mot TEN VAI
     manh: list[tuple[str, int | str]] = []
@@ -533,7 +644,7 @@ def _lock_manifest(path):
     with _KHOA_KHOA_MANIFEST:
         return _KHOA_MANIFEST.setdefault(str(path), threading.Lock())
 
-def _report_already_label(token, group, thread_id, manifest_path, lenh):
+def _report_already_label(token, group, thread_id, manifest_path, lenh, excluded=()):
     """Bao NGAY vao chinh topic Ong Chu vua go, TRUOC khi bat tay vao viec.
 
     Vi sao (Ong Chu 12/09/2026: *"phai co phan hoi 'dang gui cho Dre' ngay sau
@@ -556,6 +667,7 @@ def _report_already_label(token, group, thread_id, manifest_path, lenh):
     _send_text(token, group,
              f"📨 Đã nhận — đang gửi cho <b>{', '.join(ten_vai)}</b>:\n"
              + "\n".join(dong)
+             + (f"\nBỏ: {numbers_label(excluded)}" if excluded else "")
              + "\n\nMỗi tin mất tới 3 phút tìm nguồn; xong sẽ báo lại ngay ở đây.",
              thread=thread_id)
 
@@ -563,6 +675,9 @@ def _report_already_label(token, group, thread_id, manifest_path, lenh):
 def _process_pick(token, group, thread_id, vai, lenh, manifest_path=None):
     """Tao cap task tu lenh chon so. Chay nen qua _run_background. `manifest_path`: ban
     cua DUNG bao cao duoc reply (LOW-362); None = bao cao moi nhat nhu cu."""
+    if isinstance(lenh, PickAll) and lenh.error:
+        _send_text(token, group, lenh.error, thread=thread_id)
+        return
     manifest_path = manifest_path or manifest_already_send(vai) or latest_manifest(vai)
     if not manifest_path:
         mau = MANIFEST_BY_TOPIC.get(vai, "?")
@@ -573,6 +688,16 @@ def _process_pick(token, group, thread_id, vai, lenh, manifest_path=None):
                   f"nào cho container {write_log.brand()}, hoặc báo cáo ghi sai thư mục)")
         return
     log("chon", f"manifest={manifest_path.name}")
+    excluded = ()
+    if isinstance(lenh, PickAll):
+        # LOW-421: `Dre /1,2` -> moi tin cua DUNG bao cao nay tru 1, 2; roi di tiep luong cu
+        # (bao da nhan, khoa manifest, hoi lai tin da giao vai do).
+        excluded = lenh.exclude
+        lenh, loi = expand_pick_all(lenh, _load_json(manifest_path, {}).get("items", []))
+        if loi:
+            _send_text(token, group, loi, thread=thread_id)
+            return
+        log("chon", f"ten dung dau -> {len(lenh)} tin, bo {list(excluded)}")
     # SAP THEO VAI, giu thu tu vai xuat hien lan dau: "1, 3 - Ethan, 2 - Dre"
     # -> [1 Ethan, 3 Ethan, 2 Dre]. Dispatcher chay FIFO theo created_at voi
     # kanban.max_in_progress=1, nen tao task theo thu tu nay = Ethan lam het
@@ -583,7 +708,7 @@ def _process_pick(token, group, thread_id, vai, lenh, manifest_path=None):
 
     # Bao da nhan TRUOC khi vao khoa va truoc create_pair (toi 180s moi tin):
     # dong nay phai toi Ong Chu ngay, khong xep sau viec. Xem _report_already_label.
-    _report_already_label(token, group, thread_id, manifest_path, lenh)
+    _report_already_label(token, group, thread_id, manifest_path, lenh, excluded)
 
     # KHOA THEO MANIFEST, om CA vong tao task. Vi sao 06/09/2026: moi lenh chon
     # chay mot thread rieng (_run_background), ma ca ba buoc "doc ca manifest ->
