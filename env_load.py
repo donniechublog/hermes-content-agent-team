@@ -350,6 +350,191 @@ def album_secondary(draft_id: str, thu_muc: Path = None) -> list:
     return sorted(ung_vien, key=_index_of)
 
 
+# --- bo anh album: dung vao cho tam, xong moi thay (27/09/2026) ---------------
+# Bai blog 27/09 09:51 len FB/IG chi CON 1 ANH du Kite dung du 8 slide: mot phien
+# Kite THUA (worker bi chan nhung khong bi giet, xem approve_pick.create_pair) chay
+# kite_submit lan nua, script XOA <id>_2..8.png truoc khi render roi bi giet giua
+# chung — con lai dung anh bia cua phien truoc. draft_write gom duoc 1 anh, moat
+# nhan 1 anh, extension dang dung 1 anh nen buoc kiem sau dang cung khong bat.
+# Ba ham duoi thay mau "xoa truoc, render sau" o kite/dre/hiro_submit.
+
+def staging_out(out: Path) -> Path:
+    """Duong dan de render bo anh vao CHO TAM canh `out` (cung filesystem, nen
+    install_album doi ten nguyen tu duoc). Thu muc tam rieng cho tung tien trinh."""
+    import shutil
+    import time
+    # Cho tam cua phien bi giet giua chung (khong toi duoc install_album) nam lai —
+    # khong lot vao album (album_secondary chi quet cap drafts/) nhung tich dan.
+    for cu in out.parent.glob(f".staging-{out.stem}-*"):
+        try:
+            if time.time() - cu.stat().st_mtime > 3600:
+                shutil.rmtree(cu, ignore_errors=True)
+        except OSError:
+            pass
+    d = out.parent / f".staging-{out.stem}-{os.getpid()}"
+    if d.exists():
+        shutil.rmtree(d, ignore_errors=True)
+    d.mkdir(parents=True)
+    return d / out.name
+
+
+def album_manifest(out: Path) -> Path:
+    """<stem>.album.json canh anh bia: so slide THAT cua bo anh da cai."""
+    return out.with_suffix(".album.json")
+
+
+def install_album(staged: Path, out: Path, n: int) -> list:
+    """Dua bo n anh da render XONG o `staged` (bia + <stem>_2..n) vao cho `out`.
+
+    Thu tu la cot loi: thay tung tep moi vao truoc (os.replace nguyen tu), ROI moi
+    xoa slide cu thua (so > n), roi ghi album.json. Chet o bat ky buoc nao thi bo
+    anh cu van nguyen hoac bo moi da du — khong bao gio con lai mot nua.
+    Thieu tep trong cho tam -> RuntimeError, khong dong gi toi `out`."""
+    import shutil
+    sstem, ostem = staged.with_suffix(""), out.with_suffix("")
+    moi = [staged] + [Path(f"{sstem}_{i}.png") for i in range(2, n + 1)]
+    thieu = [str(f) for f in moi if not f.exists()]
+    if thieu:
+        raise RuntimeError(f"render bao xong nhung thieu tep: {thieu}")
+    dich = [out] + [Path(f"{ostem}_{i}.png") for i in range(2, n + 1)]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    for src, dst in zip(moi, dich):
+        os.replace(src, dst)
+    for cu in album_secondary(ostem.name, out.parent):
+        try:
+            so = int(cu.stem.rsplit("_", 1)[-1])
+        except ValueError:
+            continue
+        if so > n:
+            cu.unlink(missing_ok=True)
+    album_manifest(out).write_text(json.dumps({"count": n}), encoding="utf-8")
+    shutil.rmtree(staged.parent, ignore_errors=True)
+    return dich
+
+
+def album_problem(draft_id: str, d: dict, check_missing: bool = True) -> str:
+    """Ly do bo anh cua draft KHONG dang duoc, hoac "" khi on.
+
+    Hai loi deu tung lam bai len thieu anh ma khong ai hay: tep cuc bo bien mat
+    (moat_publish tung bo qua im lang) va so anh it hon so slide da dung
+    (<id>.album.json). Draft cu chua co album.json thi chi kiem tep ton tai.
+    `check_missing=False` cho draft_write: vai viet duoc ghi draft TRUOC khi anh bia
+    xong (chi canh bao), chi so luong so voi album.json moi chan."""
+    srcs = [s for s in (d.get("images") or ([d["image"]] if d.get("image") else []))
+            if isinstance(s, str) and s]
+    mat = [s for s in srcs if not s.startswith("http") and not Path(s).exists()]
+    if mat and check_missing:
+        return f"mat {len(mat)}/{len(srcs)} tep anh: {', '.join(Path(s).name for s in mat[:3])}"
+    anh_bia = d.get("image") or ""
+    if not anh_bia or anh_bia.startswith("http"):
+        return ""
+    mf = album_manifest(Path(anh_bia))
+    if not mf.exists():
+        return ""
+    try:
+        can = int(json.loads(mf.read_text(encoding="utf-8")).get("count") or 0)
+    except (OSError, ValueError, TypeError):
+        return ""
+    if can > len(srcs):
+        return f"chi co {len(srcs)}/{can} anh cua bo slide ({draft_id})"
+    return ""
+
+
+def _ancestor_pids(pid: int = None) -> set:
+    """Tap pid to tien cua tien trinh nay (doc /proc/<pid>/stat), khong gom chinh no."""
+    ra, pid = set(), pid or os.getpid()
+    for _ in range(64):
+        try:
+            ppid = int(Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[1])
+        except (OSError, ValueError, IndexError):
+            break
+        if ppid <= 1:
+            break
+        ra.add(ppid)
+        pid = ppid
+    return ra
+
+
+def stale_worker_reason() -> str:
+    """Ly do phien nay la worker kanban THUA, hoac "" khi hop le / khong chay trong worker.
+
+    27/09/2026 (task t_1e834320): hermes phat worker Kite ngay giay task duoc tao,
+    TRUOC khi create_pair kip chan no; `block` chi doi trang thai, khong giet worker,
+    nen khi mo chan co hai phien cho cung draft. Phien thua chay lai kite_submit va
+    xoa mat 7/8 slide cua bai da duyet. Tao task "chan san" khong cuu duoc:
+    recompute_ready cua hermes tu nha task blocked khong co su kien chan.
+
+    Hermes xoa danh tinh worker (TASK/RUN_ID) khoi moi tien trinh con, chi de lai
+    HERMES_KANBAN_DB va dau HERMES_DELEGATED_CHILD_CONTEXT. Nen nhan dien bang cay
+    tien trinh: phien hop le co mot to tien la `worker_pid` cua mot task dang
+    `running`; task bi chan thi worker_pid = NULL, giao lai thi la pid phien moi."""
+    db = os.environ.get("HERMES_KANBAN_DB")
+    if not os.environ.get("HERMES_DELEGATED_CHILD_CONTEXT") or not db or not Path("/proc").is_dir():
+        return ""
+    import sqlite3
+    try:
+        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=5)
+        try:
+            pids = {int(r[0]) for r in con.execute(
+                "SELECT worker_pid FROM tasks WHERE status = 'running' AND worker_pid IS NOT NULL")}
+        finally:
+            con.close()
+    except (sqlite3.Error, ValueError, TypeError):
+        return ""                          # khong doc duoc kanban thi khong chan nham
+    if pids & _ancestor_pids():
+        return ""
+    return ("phien nay KHONG con la worker dang giu task nao trong kanban (task da bi chan "
+            "hoac da giao cho phien khac) — phien thua")
+
+
+def exit_if_stale_worker(script: str) -> None:
+    """Dung ngay neu la phien thua — truoc khi dong vao anh/spec cua draft."""
+    ly_do = stale_worker_reason()
+    if ly_do:
+        raise SystemExit(f"[DUNG] {script}: {ly_do}. KET THUC TASK NGAY, khong chay lai lenh nao — "
+                         "phien dang giu task se lam tiep.")
+
+
+_HELD_LOCKS = []
+
+
+class DraftLock:
+    """Khoa theo draft cho buoc NOP bo anh: hai phien cung nop mot draft thi phien
+    sau dung ngay thay vi ghi de/xoa anh cua phien truoc. Khoa tu nha khi tien
+    trinh chet (flock), khong de lai tep khoa mo coi."""
+
+    def __init__(self, draft_id: str, drafts_dir: Path = None):
+        d = (drafts_dir or (ROOT / "drafts")) / ".locks"
+        d.mkdir(parents=True, exist_ok=True)
+        self.path = d / f"{draft_id}.lock"
+        self._f = None
+
+    def __enter__(self):
+        import fcntl
+        self._f = open(self.path, "w")
+        try:
+            fcntl.flock(self._f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            self._f.close()
+            self._f = None
+            raise SystemExit(f"[LOI] dang co phien khac nop bo anh cho draft nay ({self.path.name}) "
+                             "— KHONG chay lai; phien kia se ban giao.") from None
+        return self
+
+    def hold(self):
+        """Giu khoa toi het tien trinh (flock tu nha khi thoat). Tham chieu nam o
+        _HELD_LOCKS de GC khong dong tep khoa som — nguoi goi khong can giu bien."""
+        _HELD_LOCKS.append(self.__enter__())
+        return self
+
+    def __exit__(self, *exc):
+        if self._f:
+            import fcntl
+            fcntl.flock(self._f, fcntl.LOCK_UN)
+            self._f.close()
+        return False
+
+
 def required(ten: str) -> str:
     """Nap roi lay mot bien bat buoc; thieu thi dung han voi loi ro rang."""
     load()

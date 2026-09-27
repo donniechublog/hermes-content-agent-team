@@ -252,6 +252,13 @@ def publish_one(draft_id):
             return False, "bo qua: trang thai da la " + str(d.get("status"))
 
         ap = _publisher()
+        # Bo anh hong (tep mat / it hon so slide da dung) thi KHONG dang dau ca Telegram:
+        # dang roi thi moat cung day dung bo thieu do (27/09/2026). Danh dau
+        # publish_failed de cron khong thu lai moi phut.
+        loi_anh = env_load.album_problem(draft_id, d)
+        if loi_anh:
+            ap.mark_draft(draft_id, "publish_failed")
+            return False, "⚠️ Không đăng: bộ ảnh hỏng — " + loi_anh
         try:
             token, channel = _secrets()
             res = ap.publish(token, channel, draft_id)

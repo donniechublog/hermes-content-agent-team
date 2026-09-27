@@ -102,6 +102,14 @@ def main():
     # slide thu 10 tro len — bug that lam mat slide 10 khoi album dang kenh.
     phu = env_load.album_secondary(a.draft_id, DRAFTS)
     images = [image] + [str(x) for x in phu] if phu else None
+    # Bo slide phai DU so vai dung anh da cai (<id>.album.json). 27/09/2026 bai blog
+    # len FB/IG 1 anh vi draft gom sau khi 7/8 slide bi xoa — thieu thi DUNG, khong
+    # tao draft thieu anh de roi dang im lang.
+    loi_anh = env_load.album_problem(a.draft_id, {"image": image, **({"images": images} if images else {})},
+                                     check_missing=False)
+    if loi_anh:
+        sys.exit(f"[LOI] Bo anh khong du: {loi_anh}. Vai dung anh phai nop lai bo anh "
+                 "(kite/dre/hiro_submit) — KHONG ghi draft thieu anh.")
     draft = {
         "caption": caption,
         "image": image,

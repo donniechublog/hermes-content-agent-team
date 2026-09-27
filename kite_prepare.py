@@ -22,6 +22,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
+import env_load                                              # noqa: E402
 import image_prepare as cb                                    # noqa: E402
 import role as vai_mod                                        # noqa: E402
 import route_missing_images                                       # noqa: E402
@@ -509,6 +510,8 @@ def main() -> int:
     ap.add_argument("--khong-browser", action="store_true")
     ap.add_argument("--cho", type=int, default=300)
     a = ap.parse_args()
+    # Phien thua cung ghi de spec/tu lieu cua phien dung (27/09/2026) — dung som.
+    env_load.exit_if_stale_worker("kite_prepare")
     m, wd, _ = cb.run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
                        sau_chuan_bi=route_missing_images.after_prepare)
     # Bia BAT BUOC co anh that (§1.2f) — thieu thi tim lai, dung bao hong.
