@@ -675,7 +675,7 @@ def main() -> int:
     role.set_active_role("kite")
     # Mot draft chi mot phien nop mot luc (27/09/2026: phien Kite thua xoa anh cua phien dung).
     env_load.exit_if_stale_worker("kite_submit")
-    _lock = env_load.DraftLock(a.draft_id).hold()
+    env_load.DraftLock(a.draft_id).hold()
 
     meta, brand, wd, m, spec, spec_path, da_dung = nc.load_draft_context(a.draft_id, a.spec, "kite_prepare.py", "kite_submit.py")
     spec = role_spec.kite_spec(spec)         # LOW-248: spec viet truoc deploy con ten cu

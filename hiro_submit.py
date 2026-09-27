@@ -186,7 +186,7 @@ def main() -> int:
     import digest_slide
     out = Path(a.out or DRAFTS / f"{a.draft_id}.png")
     env_load.exit_if_stale_worker("hiro_submit")
-    _lock = env_load.DraftLock(a.draft_id).hold()
+    env_load.DraftLock(a.draft_id).hold()
     # Dung vao CHO TAM roi install_album (27/09/2026): cong nen chu bao loi giua bo
     # truoc day de lai bo slide nua moi nua cu trong drafts/.
     staged = env_load.staging_out(out)

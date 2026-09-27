@@ -495,6 +495,9 @@ def exit_if_stale_worker(script: str) -> None:
                          "phien dang giu task se lam tiep.")
 
 
+_HELD_LOCKS = []
+
+
 class DraftLock:
     """Khoa theo draft cho buoc NOP bo anh: hai phien cung nop mot draft thi phien
     sau dung ngay thay vi ghi de/xoa anh cua phien truoc. Khoa tu nha khi tien
@@ -515,12 +518,14 @@ class DraftLock:
             self._f.close()
             self._f = None
             raise SystemExit(f"[LOI] dang co phien khac nop bo anh cho draft nay ({self.path.name}) "
-                             "— KHONG chay lai; phien kia se ban giao.")
+                             "— KHONG chay lai; phien kia se ban giao.") from None
         return self
 
     def hold(self):
-        """Giu khoa toi het tien trinh (flock tu nha khi thoat)."""
-        return self.__enter__()
+        """Giu khoa toi het tien trinh (flock tu nha khi thoat). Tham chieu nam o
+        _HELD_LOCKS de GC khong dong tep khoa som — nguoi goi khong can giu bien."""
+        _HELD_LOCKS.append(self.__enter__())
+        return self
 
     def __exit__(self, *exc):
         if self._f:

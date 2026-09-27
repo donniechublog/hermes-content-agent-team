@@ -521,7 +521,7 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     # Phien thua (worker bi chan/giao lai) thi dung truoc khi dong vao anh (27/09/2026).
     env_load.exit_if_stale_worker("dre_submit")
-    _lock = env_load.DraftLock(a.draft_id).hold()
+    env_load.DraftLock(a.draft_id).hold()
     # Render vao CHO TAM roi install_album (27/09/2026) — khong xoa bo cu truoc.
     staged = env_load.staging_out(out)
     ok, so, se = use(spec_cs, staged, brand, wd, a.bo_qua_dau)
