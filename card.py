@@ -30,6 +30,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 import brand_names
 import image_provenance
+import image_rules_common
 import image_rules_ethan
 import role_spec
 import safe_zone
@@ -651,7 +652,7 @@ def stack_read(paths, gap=0, nen=(0, 0, 0)):
     ra HAI VUNG rieng biet, dung thu ma luat carousel/hero cam. Hai anh ap sat
     nhau, cong `tone_mismatch` lo phan tone, moi ra mot mat phang lien. Chi truyen
     `gap` khac 0 khi co ly do rat cu the."""
-    ims = [Image.open(q).convert("RGB") for q in paths]
+    ims = [image_rules_common.open_rgb(q) for q in paths]          # LOW-445
     if len(ims) == 1:
         return ims[0]
     # Cong lech tone (`kiem_lech_tone`) da bo (Ong Chu 13/09/2026: bo
@@ -739,7 +740,7 @@ def _open_image(src):
     """src: mot duong dan, hoac danh sach duong dan (ghep doc)."""
     if isinstance(src, (list, tuple)):
         return stack_read(src)
-    return Image.open(src).convert("RGB")
+    return image_rules_common.open_rgb(src)                          # LOW-445: EXIF
 
 
 def _is_source_capture(src) -> bool:

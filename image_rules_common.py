@@ -321,3 +321,15 @@ def trim_flat_sides_until_clean(img, rounds: int = 3):
             break
         img = moi
     return img
+
+
+
+# ---- Mo anh dung chieu EXIF (LOW-445) ----------------------------------------------
+# Truoc 30/09/2026 moi renderer tu `Image.open(p).convert("RGB")`: EXIF orientation (anh
+# dien thoai: dieu 6/8) khong duoc ap -> anh NAM NGANG, trong khi cv2.imread (hop mat YuNet)
+# lai ap -> hop mat va khung cat PIL lech truc. Do 30/09 tren cv2 5.0: imread ap orientation
+# cho JPEG/PNG/WebP y nhu ImageOps.exif_transpose, nen chi can PIL xoay theo la hai ben cung truc.
+def open_rgb(src):
+    """Mo anh (duong dan / file-like) -> RGB DUNG CHIEU (EXIF orientation, LOW-445)."""
+    with Image.open(src) as im:
+        return ImageOps.exif_transpose(im).convert("RGB")

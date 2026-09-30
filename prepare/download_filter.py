@@ -15,6 +15,7 @@ from PIL import Image
 import role
 import scan_common
 import env_load                                              # noqa: E402
+import image_rules_common
 import state_paths
 
 from prepare import decision_log
@@ -175,9 +176,9 @@ def download_and_filter(cands: list, wd: Path, da_giu=()) -> list:
                 decision_log.drop_candidate(wd, c, "acquire_error", "no_bytes",
                                             "tai khong ra byte nao (HTTP/mang — xem dong [tai] cung URL)")
                 continue
-            im = Image.open(io.BytesIO(data))
-            im.load()
-            im = im.convert("RGB")
+            # LOW-445: xoay theo EXIF TRUOC khi luu PNG — PNG luu ra khong con tag
+            # orientation, sai o day thi sai ca pipeline.
+            im = image_rules_common.open_rgb(io.BytesIO(data))
             w, hh = im.size
             if min(w, hh) < short_side_drop:
                 decision_log.drop_candidate(wd, c, "too_small", "SHORT_SIDE_DOWNLOAD",

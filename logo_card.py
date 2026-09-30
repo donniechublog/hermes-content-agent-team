@@ -16,6 +16,8 @@ ve mot tam anh dung san o dung co khung cua renderer.
 """
 from PIL import Image
 
+import image_rules_common
+
 LOGO_WIDTH_SHARE = 0.90          # logo chiem 90% be ngang khung (Ong Chu chot)
 LOGO_MAX_HEIGHT_SHARE = 0.42     # ... nhung khong cao qua muc nay, con cho cho chu
 LOGO_CENTER_Y = 0.34             # tam logo o 34% chieu cao: nam gon phan tren, khong dinh chu
@@ -62,7 +64,7 @@ def build_card(path, box, w: int, h: int) -> tuple:
     """-> (anh khung w x h co logo 90% be ngang tren nen cua chinh no, mau nen).
 
     `box`: hop logo 0..1 (vision `subject_box`); thieu thi lay ca tam."""
-    im = Image.open(path).convert("RGB")
+    im = image_rules_common.open_rgb(path)            # LOW-445
     bg = background_color(im)
     lg = crop_logo(im, box) if box else im
     # Ti le tinh theo CHINH HOP LOGO, khong tinh le cat: Ong Chu doi logo hien het 90% be
