@@ -108,6 +108,10 @@ def test_no_band_under_text_lop_nen_khong_ton_tai():
         px = im.convert("L")
         for y in range(g["first_line_top"], g["summary_bottom"], 25):
             assert px.getpixel((ds.W - 10, y)) >= 110, (y, px.getpixel((ds.W - 10, y)))
+        # KHONG blur nen (Ong Chu 30/09: "ko blur nen"): soc 120/215 cua anh nguon van sac net o day slide
+        hang = [px.getpixel((x, 1320)) for x in range(0, ds.W)]
+        sac = sum(1 for v in hang if abs(v - 120) < 12 or abs(v - 215) < 12)
+        assert sac > 0.85 * len(hang), sac / len(hang)
         # nen sang -> chu MAU DEN, khong vien/quang (Ong Chu 30/09: "nen sang thi dung chu mau den")
         vung = px.crop((ds.TEXT_X, g["first_line_top"], ds.W - 100, g["first_line_top"] + lay.title_step))
         assert min(vung.getdata()) < 40 and max(vung.getdata()) >= 150, (min(vung.getdata()), max(vung.getdata()))

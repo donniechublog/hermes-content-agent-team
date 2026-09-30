@@ -32,7 +32,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageStat
+from PIL import Image, ImageDraw, ImageOps
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import card                                                   # noqa: E402
@@ -143,10 +143,18 @@ def geometry(lay: Layout) -> dict:
             "summary_top": summary_top, "summary_bottom": summary_bottom}
 
 
-def _region_mean(canvas, y0, y1):
-    """Mau trung binh cua vung anh se nam duoi chu (canvas hien tai, truoc khi ve chu)."""
+def _contrast_bg(canvas, y0, y1):
+    """Mau nen GIA de chon mau chu: (0,0,0) neu chu TRANG doc tot hon, (255,255,255) neu chu DEN.
+    So sanh theo pixel — ti le diem anh dat do tuong phan >= 4,5 voi trang va voi den — thay vi
+    lay trung binh (nen xanh dam lan chu trang nhat, trung binh ra "giua" nhung chu trang mat)."""
+    import numpy as np
     y0, y1 = max(0, int(y0)), min(H, int(y1))
-    return tuple(ImageStat.Stat(canvas.convert("RGB").crop((0, y0, W, y1))).mean[:3])
+    a = np.asarray(canvas.convert("RGB").crop((0, y0, W, y1)), dtype=np.float64) / 255.0
+    a = np.where(a <= 0.03928, a / 12.92, ((a + 0.055) / 1.055) ** 2.4)
+    lum = 0.2126 * a[..., 0] + 0.7152 * a[..., 1] + 0.0722 * a[..., 2]
+    ok_white = ((1.05) / (lum + 0.05) >= 4.5).mean()
+    ok_black = ((lum + 0.05) / 0.05 >= 4.5).mean()
+    return (0, 0, 0) if ok_white >= ok_black else (255, 255, 255)
 
 
 def build(img_path, title: str, summary: str, handle: str, out, report=None,
@@ -164,15 +172,22 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
     # Nhu build_body_quote: voi anh nen phang, "dinh vung chu" la dinh dau " + chip (tren net
     # ngang tren cua khung); day vung chu la day tom tat.
     plan = carousel._flat_plan({"image": str(img_path)})
-    base, flat, hop, _ = carousel._place_image(canvas, carousel._open(img_path), plan,
-                                               g["frame_top"] - carousel.Q_MARK_CLEAR, g["summary_bottom"])
+    img = carousel._open(img_path)
+    if plan and plan[0]:             # nen phang (LOW-341): giu duong cu, KHONG dung nen mau "zone"
+        _, flat, hop, _ = carousel._place_image(canvas, img, (plan[0], None),
+                                                g["frame_top"] - carousel.Q_MARK_CLEAR, g["summary_bottom"])
+    else:                            # LOW-422 (Ong Chu 30/09: "ko blur nen"): anh SAC NET phu kin khung
+        flat, hop = None, None
+        canvas.paste(ImageOps.fit(img.convert("RGB"), (W, H), Image.Resampling.LANCZOS), (0, 0))
     truoc_nen = canvas.copy() if report is not None else None
     # LOW-422 (Ong Chu 30/09/2026: *"khong co dai nen duoi text"*, *"nen sang thi dung chu mau den"*):
     # KHONG overlay, KHONG vien/quang. Chu doi mau theo do sang THAT cua anh duoi chu (sang -> den,
     # toi -> trang), y het cach anh nen phang doi mau chu (LOW-341).
-    ref = flat or _region_mean(canvas, g["first_line_top"], g["summary_bottom"])
+    # Tieu de (trong khung) va tom tat (ngoai khung) nam o hai vung anh khac nhau: moi khoi do mau rieng.
+    ref = flat or _contrast_bg(canvas, g["first_line_top"], g["frame_bottom"])
     pal = carousel._flat_palette(ref)
     fg, net = pal["fg"], pal["net"]
+    fg_sum = pal["fg"] if flat else carousel._flat_palette(_contrast_bg(canvas, g["summary_top"], g["summary_bottom"]))["fg"]
     if report is not None:
         report.update(carousel._text_bg_report(truoc_nen, canvas))
         carousel._note_flat(report, canvas, flat, hop)
@@ -194,7 +209,7 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
 
     y = g["summary_top"]
     for ln in lay.summary_lines:
-        d.text((TEXT_X, y - lay.summary_ink_top), ln, font=lay.summary_font, fill=fg)
+        d.text((TEXT_X, y - lay.summary_ink_top), ln, font=lay.summary_font, fill=fg_sum)
         y += lay.summary_step
     canvas.convert("RGB").save(out, "PNG")
 
