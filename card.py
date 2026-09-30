@@ -925,7 +925,10 @@ def _layer_image(canvas, src_img, H, top_anchor=False, cover_focus=None) -> int:
         shift = safe_zone.top(W, H)
         canvas.paste(top_color + ((255,) if canvas.mode == "RGBA" else ()), (0, 0, W, shift))
     if nat_h + shift > H:
-        top = 0 if top_anchor else (nat_h - H) // 2
+        # LOW-444: anh THAP hon the (nat_h <= H) ma bi day xuong `shift` thi cat DAY, khong cat
+        # giua: (nat_h - H) // 2 AM -> PIL dem DEN phan ngoai anh -> dai den giua dai mau keo
+        # dai va anh (do that: the 4:5 tu anh 1200x1440 den thuan o y=142..171).
+        top = 0 if (top_anchor or nat_h <= H) else (nat_h - H) // 2
         canvas.paste(sac.crop((0, top, W, top + H - shift)), (0, shift))
         return nat_h
     # LOW-336 (Ong Chu 21/09/2026: *"mot buc anh tot la ko can phai dung nhung bien phap
