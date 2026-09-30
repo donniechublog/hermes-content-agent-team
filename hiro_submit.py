@@ -68,6 +68,10 @@ def resolve(spec: dict, job: dict, images: dict, bo_qua_dau: bool = False) -> tu
         if not a:
             loi.append(f"{nhan}: ma anh {s.get('image')!r} khong phai anh cua tin #{n} "
                        f"(co: {', '.join(codes) or 'khong co anh nao — chuyen sang skipped'})")
+        elif a.get("relevant") is False:                      # LOW-429
+            loi.append(f"{nhan}: anh {a['code']} bi vision cham KHONG LIEN QUAN toi tin #{n} "
+                       f"({a.get('description') or 'khong ro'}) — doi sang anh khac cua tin, hoac skipped")
+            a = None
         title = drop_mark_forbid(str(s.get("title") or "").strip())
         summary = drop_mark_forbid(str(s.get("summary") or "").strip())
         if not title or not summary:
