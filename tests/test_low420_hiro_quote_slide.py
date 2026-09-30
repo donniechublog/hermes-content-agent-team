@@ -117,6 +117,35 @@ def test_no_band_under_text_lop_nen_khong_ton_tai():
         assert min(vung.getdata()) < 40 and max(vung.getdata()) >= 150, (min(vung.getdata()), max(vung.getdata()))
 
 
+def test_choose_window_avoids_mixed_bright_dark_under_title():
+    """LOW-422 (Ong Chu 30/09: "ne vung"): logo sang nam dung duoi tieu de tren nen toi -> khong mau
+    chu nao doc het. `choose_window` phai chon khung cat cho tuong phan chu cao hon khung goc."""
+    im = Image.new("RGB", (800, 1000), (15, 15, 15))
+    d = ImageDraw.Draw(im)
+    d.rectangle((100, 700, 700, 764), fill=(250, 250, 250))       # khoi trang phu NUA vung tieu de (goc)
+    lay = _lay(*SHORT)
+    g = ds.geometry(lay)
+
+    def cr(box):
+        x0, y0, ww, wh = box
+        c = im.crop((round(x0), round(y0), round(x0 + ww), round(y0 + wh))).resize((ds.W, ds.H))
+        return max(ds._contrast_p10(c, g["first_line_top"], g["frame_bottom"]))
+
+    goc = ds._windows(800, 1000, 1.0)[0]
+    chon = ds.choose_window(im, [], g)
+    assert cr(chon) > cr(goc) + 1.0, (cr(chon), cr(goc), chon)
+
+
+def test_choose_window_keeps_face_above_text():
+    """Mat nguoi phai nam TREN dong chu dau va con nguyen trong khung cat."""
+    im = Image.new("RGB", (800, 1000), (90, 90, 90))
+    g = ds.geometry(_lay(*SHORT))
+    face = [0.4, 0.05, 0.6, 0.2]
+    x0, y0, ww, wh = ds.choose_window(im, [face], g)
+    assert x0 <= face[0] * 800 and face[2] * 800 <= x0 + ww and y0 <= face[1] * 1000
+    assert (face[3] * 1000 - y0) / wh * ds.H <= g["first_line_top"], (x0, y0, ww, wh)
+
+
 # ---- vong 2: xen ke bia logo (le) / quote (chan) ---------------------------------------
 # Ong Chu 26/09/2026 gui ba bia logo Anthropic/OpenAI/Microsoft: "Day cung la style can cho Hiro,
 # se dat xen ke voi style quote".

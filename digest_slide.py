@@ -32,7 +32,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageOps
+from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import card                                                   # noqa: E402
@@ -143,19 +143,79 @@ def geometry(lay: Layout) -> dict:
             "summary_top": summary_top, "summary_bottom": summary_bottom}
 
 
+def _contrast_p10(canvas, y0, y1):
+    """(tuong phan chu TRANG, tuong phan chu DEN) o PHAN VI 10% (pixel te nhat) cua vung [y0, y1)."""
+    import numpy as np
+    y0, y1 = max(0, int(y0)), min(canvas.height, int(y1))
+    a = np.asarray(canvas.convert("RGB").crop((0, y0, canvas.width, max(y0 + 1, y1))), dtype=np.float64) / 255.0
+    a = np.where(a <= 0.03928, a / 12.92, ((a + 0.055) / 1.055) ** 2.4)
+    lum = 0.2126 * a[..., 0] + 0.7152 * a[..., 1] + 0.0722 * a[..., 2]
+    return float(np.percentile(1.05 / (lum + 0.05), 10)), float(np.percentile((lum + 0.05) / 0.05, 10))
+
+
 def _contrast_bg(canvas, y0, y1):
     """Mau nen GIA de chon mau chu: (0,0,0) neu chu TRANG doc tot hon, (255,255,255) neu chu DEN.
     Do THEO PIXEL, lay diem tuong phan tu te (phan vi 10%) cua moi mau chu va chon mau cao hon:
     nen xanh dam lan logo xanh nhat thi chu trang tot o nen nhung mat het tren logo (p10 1,35),
     chu den tren ca hai van >= 3,7 — dem ti le pixel >= 4,5 chon nham trang o ca nay."""
-    import numpy as np
-    y0, y1 = max(0, int(y0)), min(H, int(y1))
-    a = np.asarray(canvas.convert("RGB").crop((0, y0, W, y1)), dtype=np.float64) / 255.0
-    a = np.where(a <= 0.03928, a / 12.92, ((a + 0.055) / 1.055) ** 2.4)
-    lum = 0.2126 * a[..., 0] + 0.7152 * a[..., 1] + 0.0722 * a[..., 2]
-    white = np.percentile(1.05 / (lum + 0.05), 10)
-    black = np.percentile((lum + 0.05) / 0.05, 10)
+    white, black = _contrast_p10(canvas, y0, y1)
     return (0, 0, 0) if white >= black else (255, 255, 255)
+
+
+# NE VUNG ROI (LOW-422, Ong Chu 30/09/2026: "ne vung"): khong con dai nen, nen khi vung chu roi vao
+# cho vua sang vua toi (logo trang tren nen den) thi khong mau chu nao doc het. Thu nhieu KHUNG CAT
+# (phong nhe + dich) cua anh, chon khung ma CA HAI khoi chu doc duoc nhat.
+LEGIBLE_CR = 4.5             # tuong phan du doc — dat roi thi khong can phong/dich them
+ZOOMS = (1.0, 1.12, 1.25, 1.4)
+ZOOM_COST = 2.0              # phat tren moi 1.0 phong to (uu tien khung goc, cat it nhat)
+SHIFT_COST = 0.4             # phat theo do lech khoi tam
+FACE_TEXT_GAP = 12           # mat nguoi phai nam TREN dong chu dau it nhat bay nhieu px
+
+
+def _face_boxes(img_path):
+    """Hop mat nguoi 0..1 hoac [] (khong do duoc: thieu cv2/model thi bo qua rang buoc mat)."""
+    try:
+        import image_rules_dre
+        return image_rules_dre.face_boxes(img_path) or []
+    except Exception:                                   # noqa: BLE001
+        return []
+
+
+def _windows(sw, sh, z):
+    """Cac khung cat ty le W:H, phong z lan so voi khung phu kin toi thieu: [(x0, y0, w, h)]."""
+    ww, wh = (sh * W / H, sh) if sw / sh > W / H else (sw, sw * H / W)
+    ww, wh = ww / z, wh / z
+    xs = [0.0] if sw - ww < 1 else [(sw - ww) * k / 4 for k in range(5)]
+    ys = [0.0] if sh - wh < 1 else [(sh - wh) * k / 4 for k in range(5)]
+    return [(x, y, ww, wh) for x in xs for y in ys]
+
+
+def choose_window(img, faces, g):
+    """(x0, y0, w, h) khung cat toi uu (toa do anh nguon) — thuan, khong ve. `g`: geometry(lay)."""
+    src = img.convert("RGB")
+    ty = 1600 / max(src.size)
+    if ty < 1:
+        src = src.resize((max(1, round(src.width * ty)), max(1, round(src.height * ty))), Image.Resampling.BILINEAR)
+    sw, sh = src.size
+    k = 0.25                                                    # cham diem tren ban 1/4 cho nhanh
+    title = (g["first_line_top"] * k, g["frame_bottom"] * k)
+    summ = (g["summary_top"] * k, g["summary_bottom"] * k)
+    best, best_u = None, None
+    for z in ZOOMS:
+        for (x0, y0, ww, wh) in _windows(sw, sh, z):
+            if any(not (x0 <= f[0] * sw and f[2] * sw <= x0 + ww and y0 <= f[1] * sh
+                        and (f[3] * sh - y0) / wh * H <= g["first_line_top"] - FACE_TEXT_GAP)
+                   for f in faces):
+                continue                                        # mat bi cat hoac roi vao vung chu
+            small = src.crop((round(x0), round(y0), round(x0 + ww), round(y0 + wh))).resize(
+                (round(W * k), round(H * k)), Image.Resampling.BILINEAR)
+            cr = min(max(_contrast_p10(small, *title)), max(_contrast_p10(small, *summ)))
+            lech = (abs((x0 + ww / 2) / sw - 0.5) + abs((y0 + wh / 2) / sh - 0.5))
+            u = min(cr, LEGIBLE_CR) - ZOOM_COST * (z - 1) - SHIFT_COST * lech
+            if best_u is None or u > best_u:
+                best, best_u = (x0 / ty if ty < 1 else x0, y0 / ty if ty < 1 else y0,
+                                ww / ty if ty < 1 else ww, wh / ty if ty < 1 else wh), u
+    return best or _windows(*img.size, 1.0)[len(_windows(*img.size, 1.0)) // 2]
 
 
 def build(img_path, title: str, summary: str, handle: str, out, report=None,
@@ -179,7 +239,9 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
                                                 g["frame_top"] - carousel.Q_MARK_CLEAR, g["summary_bottom"])
     else:                            # LOW-422 (Ong Chu 30/09: "ko blur nen"): anh SAC NET phu kin khung
         flat, hop = None, None
-        canvas.paste(ImageOps.fit(img.convert("RGB"), (W, H), Image.Resampling.LANCZOS), (0, 0))
+        x0, y0, ww, wh = choose_window(img, _face_boxes(img_path), g)
+        canvas.paste(img.convert("RGB").crop((round(x0), round(y0), round(x0 + ww), round(y0 + wh)))
+                     .resize((W, H), Image.Resampling.LANCZOS), (0, 0))
     truoc_nen = canvas.copy() if report is not None else None
     # LOW-422 (Ong Chu 30/09/2026: *"khong co dai nen duoi text"*, *"nen sang thi dung chu mau den"*):
     # KHONG overlay, KHONG vien/quang. Chu doi mau theo do sang THAT cua anh duoi chu (sang -> den,
