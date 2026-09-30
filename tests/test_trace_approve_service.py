@@ -385,6 +385,73 @@ def test_loop_network_exception_backs_off_and_reports_recovery():
         h.__exit__()
 
 
+# LOW-435: bon buoc bao tri cuoi vong poll. Mot buoc nem loi TAT DINH (draft hong)
+# truoc day roi xuong except ngoai -> bi coi la mat ket noi: vong sau bao "Da ket
+# noi lai sau 0.0 phut" vao group, va ngu 5/10/15/20… giay lam nut bam qua TTL 60s.
+MAINTENANCE_STEPS = ("_redo_all_done_limit", "auto_schedule_silent_drafts",
+                     "route_out_of_budget", "report_progress_kanban")
+
+
+def _draft_broken(*a, **kw):
+    raise ValueError("draft hong")
+
+
+def _spy_maintenance(h, failing):
+    for name in MAINTENANCE_STEPS:
+        h.patch(svc, name, h.spy(name, side_effect=_draft_broken if name == failing else None))
+
+
+def _check_failing_step(failing):
+    h = _loop_harness()
+    try:
+        _spy_maintenance(h, failing)
+        seen = []
+        h.patch(svc, "handle_message",
+                lambda token, group, msg: seen.append(msg["message_id"]))
+        h.tg.script("getUpdates",
+                    {"ok": True, "result": [{"update_id": 1, "message": {"message_id": 1}}]},
+                    {"ok": True, "result": [{"update_id": 2, "message": {"message_id": 2}}]},
+                    {"ok": True, "result": []}, StopLoop())
+        _run_loop(h)
+        assert seen == [1, 2], (failing, seen)
+        # khong "Da ket noi lai", khong gui gi ngoai getUpdates
+        assert h.tg.methods() == ["getUpdates"] * 4, (failing, h.tg.methods())
+        # khong ngu lui buoc: nut bam van kip TTL 60s
+        assert [d["seconds"] for _, d in h.trace.of("clock")] == [], failing
+        # buoc hong KHONG chan cac buoc sau no: ca bon buoc chay du 3 vong
+        assert h.trace.names("fn") == list(MAINTENANCE_STEPS) * 3, (failing, h.trace.names("fn"))
+        loi = [(t, lv) for t, lv in h.log_levels() if failing in t]
+        assert len(loi) == 3 and all(lv == "ERROR" for _, lv in loi), (failing, loi)
+        assert "draft hong" in loi[0][0], loi
+        assert not any("vong poll" in t for t in h.logs("loi")), failing
+    finally:
+        h.__exit__()
+
+
+def test_low435_failing_maintenance_step_is_not_a_disconnect():
+    for failing in MAINTENANCE_STEPS:
+        _check_failing_step(failing)
+
+
+def test_low435_real_disconnect_still_reported_once_despite_failing_step():
+    """Mat ket noi THAT (getUpdates nem) van bao "Da ket noi lai" dung MOT lan, va
+    bo dem lui buoc ve 0 ngay khi getUpdates goi duoc — buoc bao tri hong o vong
+    do khong day lan mat ket noi sau len 15s."""
+    h = _loop_harness()
+    try:
+        _spy_maintenance(h, "route_out_of_budget")
+        h.tg.script("getUpdates", ConnectionError("dns"), ConnectionError("dns"),
+                    {"ok": True, "result": []}, {"ok": True, "result": []},
+                    ConnectionError("dns"), {"ok": True, "result": []}, StopLoop())
+        _run_loop(h)
+        assert [d["seconds"] for _, d in h.trace.of("clock")] == [5, 10, 5]
+        lai = [t for t in h.tg.texts() if "Đã kết nối lại" in t]
+        assert len(lai) == 2, h.tg.texts()      # moi chuoi mat ket noi that bao mot lan
+        assert sum("vong poll" in t for t in h.logs("loi")) == 3
+    finally:
+        h.__exit__()
+
+
 def test_corrupt_offset_file_restarts_from_zero_instead_of_crash_loop():
     h = _loop_harness()
     try:
