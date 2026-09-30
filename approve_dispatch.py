@@ -20,6 +20,7 @@ import env_load                                              # noqa: E402
 import blackboard                                              # noqa: E402
 import write_log                                              # noqa: E402
 import hermes_adapter                                        # noqa: E402
+import receive_number                                            # noqa: E402
 import role                                                   # noqa: E402
 import state_paths                                           # noqa: E402
 
@@ -52,17 +53,24 @@ def _report_receive_job(token, group, vai, tu_vai, title, tid, ly_do=""):
     # "≤ 1 phut" o day roi mot phut sau topic lai hien "dung (blocked)" la noi sai
     # hai lan lien tiep (bai OpenEvidence 25/09 11:09 -> 11:10).
     waiting_for_engine = hermes_adapter.status(tid) == "blocked"
+    # Dong "Chờ engine đếm ảnh…" lap y het o moi tin (Ong Chu 30/09/2026) -> bo han;
+    # van KHONG hua "≤ 1 phút" cho task dang cho engine.
     if waiting_for_engine:
-        when = "Chờ engine đếm ảnh (thường 5–8 phút) rồi mới chốt vai"
+        when = ""
     elif truoc:
         when = f"Đang xếp hàng sau {truoc} việc, tới lượt sẽ bắt đầu"
     else:
         when = "Bắt đầu ngay khi dispatcher nhận (≤ 1 phút)"
     ten = _TEN_HIEN.get(vai, vai)
     nguon = f" chuyển từ <b>{_TEN_HIEN.get(tu_vai, tu_vai)}</b>" if tu_vai else ""
-    text = (f"📥 <b>{ten}</b> đã nhận task{nguon}: <i>{html_escape(title[:80])}</i>\n"
+    try:                                   # LOI dem so khong duoc chan tin bao (LOW-424)
+        so = f" {receive_number.label(receive_number.next_number(STATE_DIR, vai, tid))}"
+    except Exception as e:                                   # noqa: BLE001
+        log("route", f"khong cap duoc so thu tu cho {vai} {tid}: {type(e).__name__}: {e}")
+        so = ""
+    text = (f"📥 <b>{ten}</b> đã nhận task{so}{nguon}: <i>{html_escape(title[:80])}</i>\n"
             + (f"Lý do: {html_escape(ly_do[:160])}\n" if ly_do else "")
-            + when + f" · task {tid}")
+            + (f"{when} · " if when else "") + f"task {tid}")
     call(token, "sendMessage", chat_id=group, message_thread_id=thread,
          text=text, parse_mode="HTML")
     log("route", f"bao {vai} nhan viec tu {tu_vai or 'Ong Chu'}: {tid} (truoc={truoc})")
