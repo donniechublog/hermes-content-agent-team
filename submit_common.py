@@ -142,7 +142,7 @@ def count_round_error(wd, loi: list, lenh: str, toi_da: int = MAX_ROUND) -> int:
     import json as _j
     import time as _t
     p = Path(wd) / state_paths.SUBMIT_COUNT_FILE
-    ky = hashlib.md5("\n".join(sorted(str(x) for x in loi)).encode()).hexdigest()
+    ky = hashlib.md5("\n".join(sorted(str(x) for x in loi)).encode(), usedforsecurity=False).hexdigest()
     cu = {}
     try:
         cu = _j.loads(p.read_text(encoding="utf-8"))

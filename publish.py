@@ -17,6 +17,7 @@ import env_load  # LOW-159: phai nap TRUOC httpx de dat OPENSSL_CONF kip
 import httpx
 
 import tele_util
+import write_log
 API = "https://api.telegram.org/bot{token}/{method}"
 CAPTION_LIMIT = 1024          # gioi han caption cua Telegram
 
@@ -222,7 +223,7 @@ def send_topic_with_keyboard(text: str, vai: str, keyboard: dict) -> dict | None
             r = c.post(API.format(token=tok, method="sendMessage"), json=payload)
         return _check(r)
     except Exception as e:                                   # noqa: BLE001
-        print(f"[canh bao] khong gui duoc Telegram: {type(e).__name__}: {e}")
+        print(f"[canh bao] khong gui duoc Telegram: {type(e).__name__}: {write_log.redact(e)}")
         return None
 
 
@@ -242,7 +243,7 @@ def send_topic(text: str, vai: str) -> bool:
         send_text(tok, chat, text, thread=env_load.topics().get(vai))
         return True
     except Exception as e:                                   # noqa: BLE001
-        print(f"[canh bao] khong gui duoc Telegram: {type(e).__name__}: {e}")
+        print(f"[canh bao] khong gui duoc Telegram: {type(e).__name__}: {write_log.redact(e)}")
         return False
 
 
@@ -298,9 +299,13 @@ def _main():
 
     body = a.file.read_text(encoding="utf-8") if a.file else None
 
-    cac_manh = []                 # result cua TUNG manh — chi nhanh text moi > 1
+    cac_manh = []                 # result cua TUNG manh — nhanh text (>1 manh) va album
     if a.album:
-        res = send_media_group(token, chat, a.album, body or a.caption, thread=thread)
+        # sendMediaGroup tra LIST message (moi anh mot cai), khong phai dict nhu
+        # cac ham khac: xu ly nhu cac manh text — `message_id` = cai cuoi,
+        # `message_ids` = ca album (Ong Chu co the reply vao bat ky anh nao).
+        cac_manh = send_media_group(token, chat, a.album, body or a.caption, thread=thread)
+        res = cac_manh[-1] if cac_manh else {}
     elif a.document:
         res = send_document(token, chat, a.document, body or a.caption, thread=thread)
     elif a.photo:
