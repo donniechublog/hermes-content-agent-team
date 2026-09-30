@@ -345,19 +345,38 @@ def write_meta(draft_id, item, out_png, brand="donniechublog"):
     p_meta = DRAFTS / (draft_id + ".meta.json")
     _write_json(p_meta, schema.merge_meta(_load_json(p_meta, {}), meta))
 
-def _draft_id(item, brand, vai_anh):
+def _link_hash(item) -> str:
+    """6 hex sha1 cua link GOC cua tin (LOW-433). `gnews_url` truoc: `_research_source`
+    doi `item["link"]` tu link Google News sang link that va cat link cu vao `gnews_url`
+    — bam link hien tai thi goi lai `_draft_id` SAU create_pair (approve_command, nut
+    lam lai LOW-362) ra id khac id da tao."""
+    import hashlib
+    goc = _link_key(item.get("gnews_url") or item.get("link") or "")
+    return hashlib.sha1(goc.encode(), usedforsecurity=False).hexdigest()[:6]
+
+
+def _draft_id(item, brand, vai_anh, legacy=False):
     """Khoa draft DUY NHAT theo (tin, brand, role lam anh).
 
     Mot tin hot co the giao cho NHIEU role lam anh (dang nhieu noi, nhieu cach
     dien dat) -> moi lan giao phai co draft_id rieng, neu khong hai san pham
     song song dung chung file png/meta/sidecar va nut Duyet -> de len nhau.
 
+    HAI TIN KHAC NHAU cung phai khac khoa (LOW-433): truoc day chi co tieu de cat
+    con 37 ky tu, nen "Claude Opus 5.5 now available in Amazon Bedrock" va "... in
+    Google Vertex AI" ra CUNG mot id — tin sau ghi de png/img.json/writer.json cua
+    tin truoc. Nay chen 6 hex cua link goc truoc khoa vai. `legacy=True` = cong thuc
+    cu, CHI de tim lai draft tao truoc LOW-433 (xem `_repick`).
+
     GIOI HAN DO DAI: draft_id di vao callback_data cua nut Duyet/Lam lai/Bo
     ("imgredo:" + draft_id). Telegram chan callback_data > 64 byte va lang le
     tu choi ca ban phim -> anh dang len KHONG co nut. Giu draft_id <= 55 ky tu
-    (ASCII) de "imgredo:" + draft_id <= 63 byte. Dat `vai` truoc trong khoa de
-    role luon con nguyen; phan tieu de bi cat bot khi thieu cho."""
+    (ASCII) de tien to dai nhat ("imgredo:", "imgtiep:", "imgkite:", "pcancel:"
+    — 8 byte) + draft_id <= 63 byte. Dat `vai` truoc trong khoa de role luon con
+    nguyen; phan tieu de bi cat bot khi thieu cho."""
     khoa = slugify(f"{vai_anh}-{brand}", "x")[:20]           # vai truoc -> luon con
+    if not legacy:
+        khoa = f"{_link_hash(item)}-{khoa}"
     base = slugify(item["title"], "item-" + str(item["index"]))[: 55 - 1 - len(khoa)]
     base = base.strip("-") or ("item-" + str(item["index"]))
     return f"{base}-{khoa}"
@@ -882,6 +901,15 @@ def _repick(rec: dict, vai_anh: str) -> str:
         if it is None:
             return f"⚠️ Không thấy tin #{rec['index']} trong báo cáo"
         draft_id = _draft_id(it, rec["brand"], vai_anh)
+        if not (DRAFTS / (draft_id + ".img.json")).exists():
+            # Draft tao truoc LOW-433 mang id cong thuc cu: van lam lai dung draft do,
+            # nhung chi khi no dung la tin nay (cung link) — id cu co the da bi tin
+            # khac cung dau tieu de ghi de.
+            cu = _draft_id(it, rec["brand"], vai_anh, legacy=True)
+            img_cu = _load_json(DRAFTS / (cu + ".img.json"), None)
+            if isinstance(img_cu, dict) and _link_key(img_cu.get("link", "")) in {
+                    _link_key(it.get("link", "")), _link_key(it.get("gnews_url", ""))} - {""}:
+                draft_id = cu
         if not (DRAFTS / (draft_id + ".img.json")).exists():
             tid, err = create_pair(it, vai_anh=vai_anh, brand=rec["brand"], vai_quet=rec.get("scan_role"))
             if err:

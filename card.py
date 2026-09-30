@@ -30,6 +30,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 import brand_names
 import image_provenance
+import image_rules_common
 import image_rules_ethan
 import role_spec
 import safe_zone
@@ -651,7 +652,7 @@ def stack_read(paths, gap=0, nen=(0, 0, 0)):
     ra HAI VUNG rieng biet, dung thu ma luat carousel/hero cam. Hai anh ap sat
     nhau, cong `tone_mismatch` lo phan tone, moi ra mot mat phang lien. Chi truyen
     `gap` khac 0 khi co ly do rat cu the."""
-    ims = [Image.open(q).convert("RGB") for q in paths]
+    ims = [image_rules_common.open_rgb(q) for q in paths]          # LOW-445/446
     if len(ims) == 1:
         return ims[0]
     # Cong lech tone (`kiem_lech_tone`) da bo (Ong Chu 13/09/2026: bo
@@ -739,7 +740,7 @@ def _open_image(src):
     """src: mot duong dan, hoac danh sach duong dan (ghep doc)."""
     if isinstance(src, (list, tuple)):
         return stack_read(src)
-    return Image.open(src).convert("RGB")
+    return image_rules_common.open_rgb(src)                          # LOW-445/446: EXIF + alpha
 
 
 def _is_source_capture(src) -> bool:
@@ -804,6 +805,8 @@ def _densest_center(img, fw, fh):
     nho = img.convert("L").resize((200, max(1, round(200 * img.height / img.width))),
                                   Image.Resampling.BOX).filter(ImageFilter.FIND_EDGES)
     w, h = nho.size
+    if h < 3:            # anh cuc mong (vd 3000x1): khong con hang de do canh, crop se ValueError (B24)
+        return 0.5, 0.5
     nho = nho.crop((1, 1, w - 1, h - 1))
     w, h = nho.size
 

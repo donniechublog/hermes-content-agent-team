@@ -115,6 +115,35 @@ def test_main_refuses_to_write_a_partial_lock():
     assert "no-such-package-lock-test" in err
 
 
+def test_hermes_agent_commit_read_git_or_return_empty():
+    import subprocess
+    with tempfile.TemporaryDirectory() as tmp:
+        assert lr.hermes_agent_commit(Path(tmp) / "no-such-dir") == ""
+        assert lr.hermes_agent_commit(Path(tmp)) == "", "khong phai checkout -> rong"
+        env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+               "GIT_COMMITTER_EMAIL": "t@t", "PATH": __import__("os").environ["PATH"]}
+        for cmd in (["init", "-q"], ["commit", "-q", "--allow-empty", "-m", "x"]):
+            subprocess.run(["git", "-C", tmp, *cmd], check=True, env=env, capture_output=True)
+        want = subprocess.run(["git", "-C", tmp, "rev-parse", "HEAD"], capture_output=True,
+                              text=True, check=True).stdout.strip()
+        assert lr.hermes_agent_commit(Path(tmp)) == want
+
+
+def test_setup_sh_install_from_lock_and_lock_missing_fall_back():
+    """LOW-430 D15: setup.sh cai tu requirements.lock, khong tu requirements.txt."""
+    sh = (ROOT / "setup.sh").read_text(encoding="utf-8")
+    assert 'REQ=requirements.lock' in sh and '-r "$REQ"' in sh
+    assert "pip install -q -r requirements.txt" not in sh, "setup.sh lai cai tu requirements.txt"
+    import subprocess
+    r = subprocess.run(["bash", "-n", str(ROOT / "setup.sh")], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    # `--thu` chi in, khong cai: phai chon lock khi co lock
+    r = subprocess.run(["bash", str(ROOT / "setup.sh"), "--thu"], capture_output=True, text=True)
+    assert "requirements.lock" in r.stdout and "requirements.txt" not in r.stdout, r.stdout
+    r = subprocess.run(["bash", str(ROOT / "setup.sh"), "--thu", "--txt"], capture_output=True, text=True)
+    assert "-r requirements.txt" in r.stdout, r.stdout
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bắt cả Exception, luôn in N/M
     chay_tat_ca(globals())

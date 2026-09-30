@@ -95,9 +95,14 @@ mot lan lam dung the: \`--vai qinn\` bao exit 2, vai tu chay \`--vai finn\` roi 
 \`--vai scout\` — ghi de manifest cua Finn va gui bao cao thu hai vao topic Finn,
 con Ong Chu thi khong thay tin nao o topic cua minh."
 
+# stderr TACH RIENG (B19): gop `2>&1` thi moi warning hermes in SAU dong JSON
+# (deprecation, mang cham...) lam json.loads hong -> created_at=0 -> bao "task
+# CU" gia, exit 1, audit-cron gui "hong" du task da tao that. stdout chi con JSON.
+ERR=$(mktemp)
+trap 'rm -f "$ERR"' EXIT
 OUT=$($H -m hermes_cli.main kanban create "$TIEU_DE $DAY" \
   --assignee "$VAI" --max-runtime 20m \
-  --idempotency-key "$KEY" --body "$BODY" --json 2>&1)
+  --idempotency-key "$KEY" --body "$BODY" --json 2>"$ERR")
 
 # Kiem tra HAI muc, khong chi mot:
 #  1. co tao duoc task khong
@@ -108,19 +113,31 @@ OUT=$($H -m hermes_cli.main kanban create "$TIEU_DE $DAY" \
 #     nen hai luot cung ngay VN co cung tieu de. 21/09/2026 (LOW-353) lich trot
 #     sang 22:00 VN, luot 22:00 trung khoa voi luot 05:00 cung ngay, cong so
 #     tieu de cho qua -> exit 0, khong tao task, sang 22/09 khong ai quet.
+# raw_decode: doc DUNG mot doi tuong JSON tu dau `{`, bo qua rac phia sau (neu
+# hermes in them dong nao ra stdout). Khong doc duoc -> -1 (KHONG phai 0: 0 la
+# "tao tu 1970" = task CU, se bao sai la trung khoa).
 created_at=$(echo "$OUT" | $H -c '
 import json, sys
 s = sys.stdin.read()
 try:
-    print(int(float(json.loads(s[s.index("{"):]).get("created_at") or 0)))
+    obj, _ = json.JSONDecoder().raw_decode(s[s.index("{"):])
+    print(int(float(obj.get("created_at") or 0)))
 except Exception:
-    print(0)' 2>/dev/null)
-task_age=$(( $(date +%s) - ${created_at:-0} ))
+    print(-1)' 2>/dev/null)
+created_at=${created_at:--1}
 if ! echo "$OUT" | grep -q '"id"'; then
   echo "${VAI}_daily_scan LOI: khong tao duoc task"
-  echo "$OUT" | head -5
+  { echo "$OUT"; cat "$ERR"; } | head -5
   exit 1
-elif [ "$task_age" -gt 600 ]; then
+elif [ "$created_at" -lt 0 ]; then
+  # Co "id" (task da tao hoac trung khoa) nhung khong doc duoc created_at nen
+  # KHONG phan biet duoc task moi/cu. Bao dung nguyen nhan, khong gia vo "task CU".
+  echo "${VAI}_daily_scan CANH BAO: khong doc duoc JSON tra ve cua kanban — khong biet task moi hay cu. Kiem tra khoa: $KEY"
+  { echo "$OUT"; cat "$ERR"; } | head -5
+  exit 1
+fi
+task_age=$(( $(date +%s) - created_at ))
+if [ "$task_age" -gt 600 ]; then
   echo "${VAI}_daily_scan CANH BAO: kanban tra ve task CU (trung idempotency-key, tao ${task_age}s truoc)."
   echo "  Task luot nay KHONG duoc tao. Kiem tra khoa: $KEY"
   echo "$OUT" | grep '"title"' | head -2

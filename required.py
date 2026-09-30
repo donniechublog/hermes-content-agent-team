@@ -84,7 +84,7 @@ def read(vai: str) -> dict:
 def _write(vai: str, bb: dict) -> None:
     p = file(vai)
     p.parent.mkdir(parents=True, exist_ok=True)
-    # Qua env_load.ghi_json: ten tep tam mang pid. Ban cu dung `.json.tmp` co
+    # Qua env_load.write_json: ten tep tam mang pid. Ban cu dung `.json.tmp` co
     # dinh, ma tep nay co it nhat hai nguoi ghi (script quet gieo muc,
     # manifest_* xoa muc da dua) — hai tien trinh trung thoi diem thi ghi lan
     # vao cung mot tep tam va `replace` ban cut cua nhau.

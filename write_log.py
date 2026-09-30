@@ -16,6 +16,7 @@ nao la loi thi khai o MOT cho (`ERROR_LABELS`) thay vi sua rai rac tung cho goi.
 """
 import logging
 import os
+import re
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -44,6 +45,19 @@ class JournalLevelPrefix(logging.Formatter):
 
     def format(self, record):
         return f"<{_SYSLOG_BY_LEVEL.get(record.levelno, 6)}>" + super().format(record)
+
+
+# Token bot nam TRONG URL Telegram (`/bot<id>:<secret>/sendMessage`), nen ngoai le cua
+# httpx/urllib (`{e!r}`) kem theo ca URL la kem luon token vao journal + approve.log.
+# Che o DAY vi moi `log/warn/error` di qua `log()` (mot cho, khong phai va 6 client
+# gui Telegram). Cho in thang ra stderr/print (publish, route_missing_images,
+# moat_publish) goi `redact()` cho phan ngoai le.
+_BOT_TOKEN = re.compile(r"bot\d+:[\w-]+")
+
+
+def redact(text) -> str:
+    """Che token bot Telegram trong chuoi: `bot123:AAB-c` -> `bot<redacted>`."""
+    return _BOT_TOKEN.sub("bot<redacted>", str(text))
 
 
 _LOG = None
@@ -98,7 +112,7 @@ def log(nhan: str, noi_dung: str, level: int | None = None) -> None:
     INFO — nen moi cho goi cu giu nguyen hanh vi, tru `log("loi", ...)` nay len ERROR.
     """
     lv = (logging.ERROR if nhan in ERROR_LABELS else logging.INFO) if level is None else level
-    _block_create().log(lv, "[%s] %s", nhan, noi_dung.replace("\n", " ⏎ "))
+    _block_create().log(lv, "[%s] %s", nhan, redact(noi_dung).replace("\n", " ⏎ "))
 
 
 def warn(nhan: str, noi_dung: str) -> None:
@@ -109,6 +123,28 @@ def warn(nhan: str, noi_dung: str) -> None:
 def error(nhan: str, noi_dung: str) -> None:
     """Dung khi nhan KHONG phai `loi` ma dong nay van la loi."""
     log(nhan, noi_dung, logging.ERROR)
+
+
+def run_cli(main, *args) -> int:
+    """Diem vao chung cua cac script vai (`*_submit.py`): `sys.exit(write_log.run_cli(main))`.
+
+    Vi sao (D17, audit 30/09/2026): loi cua vai nop bai di ra bang `sys.exit("[LOI] ...")`
+    — chi la chuoi tren stderr cho vai doc, khong dong nao vao log nen `grep`/`journalctl -p
+    err` khong thay vai nao dang tac (LOW-305 moi phu approve). Boc MOT cho o day thay vi
+    ~50 cho goi: moi `sys.exit(<chuoi>)` (chuoi la loi, con 0/None/so la ket qua binh
+    thuong) ghi mot dong ERROR muc `[submit]` roi thoat NGUYEN chuoi + ma nhu cu, nen
+    vai va test van doc dung thong bao. Khong loc theo nhan "[LOI]" — nhan doi English la
+    LOW-297, loc theo do se im lang ngay hom do.
+
+    Ghi vao `state/<brand>/approve.log` khi co CT_BRAND (worker kanban co bien nay);
+    stdout cua vai do worker bat nen khong tu vao journal cua systemd.
+    """
+    try:
+        return main(*args)
+    except SystemExit as e:
+        if isinstance(e.code, str) and e.code.strip():
+            error("submit", f"{Path(sys.argv[0]).name}: {e.code}")
+        raise
 
 
 def shorten(text, n: int = 90) -> str:

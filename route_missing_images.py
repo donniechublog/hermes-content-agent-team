@@ -13,10 +13,10 @@ nhan mot ham `sau_chuan_bi` de goi. Tep nay la noi DUY NHAT biet ca hai phia,
 nen mui ten phu thuoc chi con mot chieu: ghep noi -> engine, ghep noi -> dich vu.
 
 QUAN TRONG — vi sao van goi DONG BO trong khoa cua engine chu khong doi ra
-ngoai: `chay()` giu `running.pid` va chi ghi `manifest.json` SAU khi ham nay
+ngoai: `run()` giu `running.pid` va chi ghi `manifest.json` SAU khi ham nay
 xong, nen moi nguoi doc `manifest.json` deu thay quyet dinh da chot (co
 `kite_task_id`/`kite_asked`/`kite_unavailable` hay khong). Neu day viec nay ra sau
-`chay()` — hoac sang mot vong poll khac — thi co khe: `dre_prepare.py:41,46`
+`run()` — hoac sang mot vong poll khac — thi co khe: `dre_prepare.py:41,46`
 va `kite_prepare.py:54` doc `manifest.json` de dung brief, doc trung khe do la
 brief IM LANG bao "du anh" trong khi tin dang cho chuyen Kite.
 """
@@ -33,6 +33,7 @@ import env_load                                              # noqa: E402 — LO
 import httpx                                                  # noqa: E402
 
 import role as vai_mod                                        # noqa: E402
+import write_log                                              # noqa: E402
 
 DRAFTS = env_load.ROOT / "drafts"
 
@@ -61,7 +62,7 @@ def _time_send(vai: str, text: str, kb: dict | None = None) -> bool:
         r = httpx.post(f"https://api.telegram.org/bot{token}/sendMessage", json=body, timeout=30)
         kq = r.json()
     except Exception as e:                                   # noqa: BLE001
-        print(f"[route] gui Telegram topic '{vai}' hong: {type(e).__name__}: {e!r}", file=sys.stderr)
+        print(f"[route] gui Telegram topic '{vai}' hong: {type(e).__name__}: {write_log.redact(repr(e))}", file=sys.stderr)
         return False
     if not kq.get("ok"):
         print(f"[route] Telegram tu choi (topic '{vai}', HTTP {r.status_code}): "

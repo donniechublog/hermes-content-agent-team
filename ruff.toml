@@ -13,6 +13,9 @@
 #        ham bi hoan lai (ThreadPoolExecutor, callback, list ham).
 #   B904 `raise` trong `except` khong kem `from` -> mat dau vet loi goc.
 #   B033 gia tri trung trong set -> thuong la go nham mot tu khac.
+#   PLE2510 byte backspace 0x08 THAT trong chuoi. Go `"\b"` (thay vi r"\b") trong regex
+#        ra mot byte 0x08 vo hinh: regex im lang khong bao gio khop (LOW-434:
+#        `llms?`, `firm` trong image_brand.py; ca hai cong pyflakes/test deu khong thay).
 #
 # KHONG bat `ruff format`: no se sua 260/342 tep, de len moi nhanh dang mo cua
 # cac phien khac. Dinh dang van la viec cua nguoi viet.
@@ -24,4 +27,4 @@
 line-length = 120
 
 [lint]
-select = ["F", "E9", "B023", "B904", "B033"]
+select = ["F", "E9", "B023", "B904", "B033", "PLE2510"]

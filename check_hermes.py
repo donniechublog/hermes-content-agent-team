@@ -25,8 +25,16 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
 import hermes_adapter                                        # noqa: E402
+import kanban_plugin_build                                   # noqa: E402
 
-HERMES_PY = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
+
+def _hermes_py() -> Path:
+    """Python cua venv hermes-agent. Thu muc hermes-agent lay tu MOT nguon la
+    `kanban_plugin_build.HERMES_AGENT` (ton trong HERMES_AGENT_DIR); truoc D16
+    day cung `~/hermes-agent` — dat HERMES_AGENT_DIR o cho khac thi mot nua kiem
+    cua tep nay tro vao ban cai khong ton tai roi bao HONG (hoac kiem nham ban cu)."""
+    return kanban_plugin_build.HERMES_AGENT / "venv" / "bin" / "python"
+
 
 # Cot ta doc bang SQL THO. Thieu mot cot la nhat ky/bang dieu phoi chet cham.
 COLUMN_CAN = {
@@ -59,9 +67,11 @@ HAS_CHAT = ["-c", "--create-if-missing", "--no-restore-cwd", "-Q", "-q"]
 
 
 def _home_kanban() -> list:
+    # Danh sach brand/home lay tu env_load.hermes_homes() — nguon duy nhat (them
+    # brand la sua MOT cho o do), khong chep cung ("blog", "dcgr") o day nua (D16).
     ra = []
-    for ten in ("blog", "dcgr"):
-        db = Path.home() / f".hermes-{ten}" / "kanban.db"
+    for ten, home in env_load.hermes_homes().items():
+        db = home / "kanban.db"
         if db.exists():
             ra.append((ten, db))
     return ra
@@ -106,10 +116,11 @@ def check_column() -> list:
 
 def check_has_chat() -> list:
     """Cac co CLI ta truyen co con trong `hermes chat --help` khong."""
-    if not HERMES_PY.exists():
-        return [f"khong thay python cua hermes: {HERMES_PY}"]
+    py = _hermes_py()
+    if not py.exists():
+        return [f"khong thay python cua hermes: {py}"]
     try:
-        r = subprocess.run([str(HERMES_PY), "-m", "hermes_cli.main", "chat", "--help"],
+        r = subprocess.run([str(py), "-m", "hermes_cli.main", "chat", "--help"],
                            capture_output=True, text=True, timeout=120)
     except (OSError, subprocess.SubprocessError) as e:
         return [f"khong chay duoc `hermes chat --help`: {type(e).__name__}: {e}"]
@@ -122,13 +133,14 @@ def check_has_chat() -> list:
 
 def check_swarm() -> list:
     """Ham private cua kanban_swarm ma blackboard goi."""
-    if not HERMES_PY.exists():
-        return [f"khong thay python cua hermes: {HERMES_PY}"]
+    py = _hermes_py()
+    if not py.exists():
+        return [f"khong thay python cua hermes: {py}"]
     ma = ("import hermes_cli.kanban_swarm as ks\n"
           "thieu = [t for t in ('_activate_root_inline',) if not hasattr(ks, t)]\n"
           "print('THIEU:' + ','.join(thieu) if thieu else 'OK')\n")
     try:
-        r = subprocess.run([str(HERMES_PY), "-c", ma], capture_output=True,
+        r = subprocess.run([str(py), "-c", ma], capture_output=True,
                            text=True, timeout=120)
     except (OSError, subprocess.SubprocessError) as e:
         return [f"khong import duoc kanban_swarm: {type(e).__name__}: {e}"]
@@ -169,7 +181,7 @@ def main() -> int:
 
     if a.day_du:
         print("\n--- day du: mot luot chat that ---")
-        r = subprocess.run([str(HERMES_PY), "-m", "hermes_cli.main", "chat",
+        r = subprocess.run([str(_hermes_py()), "-m", "hermes_cli.main", "chat",
                             "-c", "kiem-hermes", "--create-if-missing",
                             "--no-restore-cwd", "-Q", "-q", "Tra loi dung mot tu: OK"],
                            capture_output=True, text=True, timeout=600)
