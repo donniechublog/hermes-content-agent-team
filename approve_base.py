@@ -178,7 +178,7 @@ def _write_json(path, data, indent=2):
     Ten tmp mang pid + thread id vi nhieu thread nen cung ghi mot tep state
     (nut chay nen, vong poll): dung chung mot ten tmp thi hai ban ghi lai lan
     vao nhau roi ban lai lan do moi la cai duoc replace."""
-    # ADF-r2-11: pid+thread va don tmp khi hong nay nam trong env_load.ghi_json
+    # ADF-r2-11: pid+thread va don tmp khi hong nay nam trong env_load.write_json
     # (mot ban cho 4 cho tung tu viet). Giu ten ham cho ho duyet_*.
     env_load.write_json(path, data, indent=indent)
 

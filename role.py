@@ -9,7 +9,7 @@ thi hong CAM: su co 06/09/2026 "kites" khong khop NAME_BRIGHT_CAP nen lenh chon 
 ve hoi thoai va gui nham cho Finn, con su co 01/09/2026 sidecar ghi slug cu
 ("dre") lam task nam 'ready' hai ngay vi khong profile nao ten vay.
 
-Nay moi bang cu deu la VIEW dan xuat tu `VAI` o duoi. Them mot vai = them MOT
+Nay moi bang cu deu la VIEW dan xuat tu `ROLE` o duoi. Them mot vai = them MOT
 dong o day (+ mot cap <vai>_prepare/_submit + mot SOUL), khong phai tam cho.
 
 HAI LOAI ALIAS, co y tach doi — chung khong trung nhau:
@@ -21,7 +21,7 @@ Vd "chad"/"heller" chi la slug_cu (khong ai go nua), con "img"/"cr"/"kites" chi
 la `go` (chua bao gio la ten thu muc profile).
 
 TEN VAI MOI: dat theo TEN NHAN VAT, khong theo role — xem luat trong docstring
-cua lop `Vai` ngay duoi.
+cua lop `Role` ngay duoi.
 """
 import re
 from dataclasses import dataclass
