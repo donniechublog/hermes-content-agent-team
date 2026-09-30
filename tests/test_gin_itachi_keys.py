@@ -282,13 +282,13 @@ def test_itachi_brief_and_layout_help_new_names():
 def test_prompts_name_new_tokens():
     texts = {p: (ROOT / p).read_text(encoding="utf-8") for p in (
         "hermes/profiles/shared/gin.SOUL.md", "hermes/profiles/shared/itachi.SOUL.md",
-        "hermes/skills/inplace-translate/SKILL.md", "hermes/skills/ai-background/SKILL.md")}
+        "hermes/skills/inplace-translate/SKILL.md", "hermes/skills_parked/ai-background/SKILL.md")}
     for p, s in texts.items():
         for old in ("`gop`", "tai_cho", "bg_anh", "ep_phang"):
             assert old not in s, (p, old)
     assert '"force_flat": [stt]' in texts["hermes/skills/inplace-translate/SKILL.md"]
     assert "`use_clean_background: true`" in texts["hermes/skills/inplace-translate/SKILL.md"]
-    assert '`"bg_image"`' in texts["hermes/skills/ai-background/SKILL.md"]
+    assert '`"bg_image"`' in texts["hermes/skills_parked/ai-background/SKILL.md"]
 
 
 # ------------------------------------------------------------------ Gin: old spec == new spec == before
