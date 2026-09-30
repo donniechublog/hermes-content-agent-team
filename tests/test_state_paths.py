@@ -143,6 +143,7 @@ def test_constants_match_approved_table():
                    - set(_rows_model_versions())
                    - set(_rows_repick())
                    - set(_rows_hiro())
+                   - set(_rows_receive_number())
                    - {ten for _, ten in _rows_242().values()}
                    - {ten for _, ten in _rows_241().values()}
                    - {ten for _, ten in _rows_246().values()})
@@ -390,6 +391,18 @@ def _rows_hiro() -> dict:
             "HIRO_IMAGES_FILE": ("hiro_images.json", "state/<brand>/prepare/<draft_id>/hiro_images.json"),
             "HIRO_IMAGES_DIR": ("hiro_images", "state/<brand>/prepare/<draft_id>/hiro_images/"),
             "HIRO_AUTO_FILE": ("hiro_auto.json", "state/<brand>/hiro_auto.json")}
+
+
+def _rows_receive_number() -> dict:
+    """LOW-424 (30/09/2026): so "#NN" cua tin "da nhan task" theo vai/ngay — English san."""
+    return {"RECEIVE_NUMBER_FILE": ("receive_number.json", "state/<brand>/receive_number.json"),
+            "RECEIVE_NUMBER_LOCK": ("receive_number.lock", "state/<brand>/receive_number.lock")}
+
+
+def test_receive_number_constants_are_declared():
+    for const, (name, kept) in _rows_receive_number().items():
+        assert getattr(state_paths, const) == name, (const, getattr(state_paths, const))
+        assert kept in TABLE_231["_kept"], f"{kept} khong co trong _kept cua state_files_v2.json"
 
 
 def test_hiro_constants_are_declared():

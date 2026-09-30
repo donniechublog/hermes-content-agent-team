@@ -37,6 +37,7 @@ def _receive_job_text(status):
     with tempfile.TemporaryDirectory() as tmp:
         topics = Path(tmp) / "topics.json"
         topics.write_text(json.dumps({"dre": 11}), encoding="utf-8")
+        saved_state = dispatch.STATE_DIR
         saved = (dispatch.env_load.topics_path, hermes_adapter.status,
                  hermes_adapter.count_form_run, dispatch.call, dispatch.log)
         dispatch.env_load.topics_path = lambda: topics
@@ -45,10 +46,12 @@ def _receive_job_text(status):
         dispatch.call = lambda token, method, **kw: sent.append(kw) or {"ok": True}
         dispatch.log = lambda *a, **k: None
         try:
+            dispatch.STATE_DIR = Path(tmp)
             dispatch._report_receive_job("TOK", "-100", "dre", None, "Tin A", "t_1")
         finally:
             (dispatch.env_load.topics_path, hermes_adapter.status,
              hermes_adapter.count_form_run, dispatch.call, dispatch.log) = saved
+            dispatch.STATE_DIR = saved_state
     assert len(sent) == 1, sent
     return sent[0]["text"]
 
@@ -59,7 +62,8 @@ def test_receive_job_while_waiting_for_engine_does_not_promise_one_minute():
     11:10 topic hien "dừng (blocked)"."""
     text = _receive_job_text("blocked")
     assert "≤ 1 phút" not in text, text
-    assert "Chờ engine đếm ảnh" in text, text
+    # LOW-424: dong "Chờ engine đếm ảnh…" lap y het o moi tin -> bo (Ong Chu 30/09/2026)
+    assert "Chờ engine" not in text, text
 
 
 def test_receive_job_for_ready_task_keeps_start_promise():
