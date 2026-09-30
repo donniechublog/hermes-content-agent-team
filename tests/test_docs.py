@@ -165,6 +165,34 @@ def test_item_model_match_with_profile_real():
     assert not la, ("muc Model nhac model KHONG profile nao dang chay: "
                     + ", ".join(la) + f" (dang chay: {sorted(dang_chay)})")
 
+# Chi ARCHITECTURE.md + README.md: hai tai lieu nay la ban do de nguoi/vai doc de
+# di tim ham. IMAGE_RULES_*.md con nhac ten cu (`image_rules.count_faces`,
+# `get_source.*`...) — la no doi rieng, khong gom vao day.
+TEN_HAM_TAI_LIEU = ["README.md", "ARCHITECTURE.md"]
+TEN_HAM = re.compile(r"`([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)(?:\(\))?`")
+
+
+def test_docs_no_mention_name_module_not_exist():
+    """`mod.name` trong ARCHITECTURE/README phai la ten CON SONG cua module trong
+    repo. Trôi tài liệu ở chỗ này tung xay ra: README ghi `Vai(...)` khi lop la
+    `Role`, `env_load.ghi_json` khi ham la `env_load.write_json`, ARCHITECTURE
+    ghi `SidecarAnh/SidecarViet` khi schema.py da doi sang `SidecarImage/SidecarWrite`
+    — nguoi doc grep ra rong va tuong tinh nang da mat.
+
+    Chi xet `mod` la module o goc repo (`mod.py` co that); `os.replace`,
+    `kanban.db`, `dcgr.tech`... khong phai module cua ta nen bo qua."""
+    import importlib
+    mods = {p.stem for p in ROOT.glob("*.py")}
+    loi = []
+    for ten in TEN_HAM_TAI_LIEU:
+        for mod, name in sorted(set(TEN_HAM.findall((ROOT / ten).read_text(encoding="utf-8")))):
+            if mod not in mods or name in ("py", "md", "json", "sh", "yaml", "js", "css"):
+                continue                     # `deck.py` la ten tep, khong phai thuoc tinh
+            if not hasattr(importlib.import_module(mod), name):
+                loi.append(f"{ten}: `{mod}.{name}`")
+    assert not loi, "tai lieu nhac ten khong con trong module:\n  " + "\n  ".join(loi)
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())

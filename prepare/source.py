@@ -58,7 +58,7 @@ def load_source(draft_id: str, meta: dict, state: Path, phien=None) -> tuple:
                 # the da cu di so voi luc goi ham nay — pipeline chay lau, va
                 # `.meta.json` la tep BA TIEN TRINH cung ghi khong khoa chung:
                 # approve_service, engine nen, va blackboard cua hermes ghi
-                # `root_task` rieng, xem docstring env_load.ghi_json). Ghi de ca
+                # `root_task` rieng, xem docstring env_load.write_json). Ghi de ca
                 # dict y het loi merge_meta da sua cho approve_pick.py —
                 # ghi de mat `root_task` neu blackboard vua ghi xong trong luc
                 # tien trinh nay con dang giai ma Google News.

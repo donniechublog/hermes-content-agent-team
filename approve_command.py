@@ -222,7 +222,7 @@ def _command_article(reply, args):
     item = {
         # index vao fallback cua slugify — bam theo URL de hai bai tieng Viet
         # (slug rong) khong de len nhau
-        "index": "b" + hashlib.sha1(url_chuan.encode()).hexdigest()[:8],
+        "index": "b" + hashlib.sha1(url_chuan.encode(), usedforsecurity=False).hexdigest()[:8],
         "title": title, "link": url,
         "summary_vi": summary,
         "source_note": source_note,

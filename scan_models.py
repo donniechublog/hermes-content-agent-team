@@ -969,7 +969,7 @@ def write_timestamp(ids: set, xep_hang: dict, da_bao: dict | None = None):
             print(f"[canh bao] bang '{k}' tra rong — giu moc cu {len(cu[k])} muc",
                   file=sys.stderr)
     STATE.parent.mkdir(parents=True, exist_ok=True)
-    # Ghi nguyen tu qua env_load.ghi_json (tmp mang PID + os.replace):
+    # Ghi nguyen tu qua env_load.write_json (tmp mang PID + os.replace):
     # write_text thang ma chet giua chung se de lai tep hong, mat sach bo nho
     # da-thay; con ten tep tam CO DINH (`.json.tmp`, ban truoc 06/09/2026) thi
     # cron va mot lan chay tay `--lam-moi` trung thoi diem se ghi lan vao cung
@@ -1150,8 +1150,8 @@ def fetch_arena_tweets(ngay: int, now=None) -> list:
         if t["handle"] not in arena_x.HANDLES or t["url"] in seen:
             continue                      # retweet cua hang (XiaomiMiMo, SpaceXAI)
         seen.add(t["url"])
-        luc = datetime.fromisoformat(t["created"].replace("Z", "+00:00"))
-        if luc < moc:
+        luc = scan_common.parse_time_utc(t["created"])
+        if luc is None or luc < moc:
             continue                      # tweet ghim cu
         ra.append({"date": t["created"][:10], "url": t["url"], "text": t["text"],
                    "model": arena_tweet_model(t["text"])})
