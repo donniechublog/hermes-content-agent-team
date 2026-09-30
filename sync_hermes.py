@@ -28,6 +28,7 @@ Dung:
     venv/bin/python sync_hermes.py --kiem-upstream  # hermes-agent doi gi o kanban ke tu UPSTREAM
     venv/bin/python sync_hermes.py --chot-upstream  # da port xong: ghi HEAD hermes-agent vao UPSTREAM
     venv/bin/python sync_hermes.py --refresh-patches  # sua plugin trong home xong: lam lai ban va tu home
+    venv/bin/python sync_hermes.py --compare-runtime  # CHI DOC: config.yaml gateway + unit systemd + openssl.cnf that vs ban chup
 """
 import argparse
 import os
@@ -35,6 +36,8 @@ import shutil
 import subprocess
 import sys
 import time
+import difflib
+import re
 from pathlib import Path
 
 import env_load
@@ -666,6 +669,108 @@ def capture_config() -> int:
     return 0
 
 
+# ---- SO SANH cau hinh chay that NGOAI phan dong bo (D18) --------------------------
+# Unit systemd va config.yaml cua gateway quyet dinh hanh vi that (CT_BRAND,
+# HERMES_HOME, OPENSSL_CONF, CT_CHAT_VIA_GATEWAY, multiplex_profiles...) ma
+# `sync_hermes` khong dong bo: doi chung la viec can nguoi xac nhan (xem
+# hermes/systemd/README.md). Nhung "khong ghi de" khong co nghia la "khong can
+# biet lech": sua tren may chu ma quen chup lai, hoac repo doi ma chua ap, chi lo
+# ra khi da hong. Che do nay CHI DOC — khong ghi gi o dau ca — chi in ra cho lech.
+USER_CONFIG = Path.home() / ".config"
+GATEWAY_REPO = REPO / "gateway"
+SYSTEMD_REPO = REPO / "systemd"
+# Ban chup che token dashboard (README systemd): che ca hai ben truoc khi so.
+_SESSION_TOKEN = re.compile(rb"(?m)^(Environment=HERMES_DASHBOARD_SESSION_TOKEN=).*$")
+
+
+def runtime_pairs(homes: dict | None = None, user_config: Path | None = None) -> list:
+    """[(ten, duong tren may, duong trong repo)] cho cau hinh chay that ngoai git.
+
+    - `hermes/gateway/<brand>/config.yaml` <-> `<home cua brand>/config.yaml`
+    - moi tep duoi `hermes/systemd/` (tru README) <-> `~/.config/systemd/user/<cung duong>`;
+      rieng `openssl/` <-> `~/.config/openssl/` (dung cac lenh cp trong hermes/systemd/README.md)
+    Bien duoc truyen vao de test khong cham home that."""
+    homes = HOMES if homes is None else homes
+    cfg = USER_CONFIG if user_config is None else user_config
+    ra = []
+    if GATEWAY_REPO.is_dir():
+        for d in sorted(p for p in GATEWAY_REPO.iterdir() if p.is_dir()):
+            if d.name in homes and (d / "config.yaml").is_file():
+                ra.append((f"gateway {d.name}/config.yaml", homes[d.name] / "config.yaml",
+                           d / "config.yaml"))
+    if SYSTEMD_REPO.is_dir():
+        for f in sorted(p for p in SYSTEMD_REPO.rglob("*") if p.is_file() and p.name != "README.md"):
+            rel = f.relative_to(SYSTEMD_REPO)
+            if rel.parts[0] == "openssl":
+                that = cfg / "openssl" / Path(*rel.parts[1:])
+            else:
+                that = cfg / "systemd" / "user" / rel
+            ra.append((f"systemd {rel.as_posix()}", that, f))
+    return ra
+
+
+def _runtime_norm(b: bytes | None) -> bytes | None:
+    b = standard(b)
+    return None if b is None else _SESSION_TOKEN.sub(rb"\1<che>", b)
+
+
+def compare_runtime(homes: dict | None = None, user_config: Path | None = None,
+                    chi: str | None = None) -> tuple:
+    """Tra `(lech, ghi_chu)`; `lech` = [(muc, ten, chi_tiet)] voi muc KHAC | THIEU |
+    CHI_CO_TREN_MAY. `ghi_chu` chi de doc (vd brand chua co ban chup gateway).
+    KHONG ghi tep nao."""
+    homes = HOMES if homes is None else homes
+    cfg = USER_CONFIG if user_config is None else user_config
+    lech, ghi_chu = [], []
+    biet = set()
+    for ten, that, repo in runtime_pairs(homes, cfg):
+        biet.add(that)
+        if chi and chi not in ten:
+            continue
+        a, b = _runtime_norm(read(that)), _runtime_norm(read(repo))
+        if a is None:
+            lech.append(("THIEU", ten, f"khong co tren may ({that})"))
+        elif a != b:
+            dong = list(difflib.unified_diff(
+                b.decode("utf-8", "replace").splitlines(), a.decode("utf-8", "replace").splitlines(),
+                "repo", "may", lineterm="", n=0))
+            chi_tiet = "\n".join(dong[:14]) + (f"\n... (con {len(dong) - 14} dong)" if len(dong) > 14 else "")
+            lech.append(("KHAC", ten, chi_tiet))
+    # Thu tren may ma repo khong co: chi xet `hermes-*` (cua doi), bo symlink `enable` tao ra.
+    dir_user = cfg / "systemd" / "user"
+    if dir_user.is_dir():
+        for p in sorted(dir_user.glob("hermes-*")):
+            if p.is_symlink():
+                continue
+            for f in ([p] if p.is_file() else sorted(x for x in p.rglob("*") if x.is_file() and not x.is_symlink())):
+                ten = f"systemd {f.relative_to(dir_user).as_posix()}"
+                if f not in biet and (not chi or chi in ten):
+                    lech.append(("CHI_CO_TREN_MAY", ten, f"co tren may ({f}) ma khong co ban chup trong hermes/systemd/"))
+    if not dir_user.is_dir():
+        ghi_chu.append(f"khong co {dir_user} — may nay khong chay systemd user (chay tren may chu?)")
+    for hk, H in homes.items():
+        if (H / "config.yaml").is_file() and not (GATEWAY_REPO / hk / "config.yaml").is_file():
+            ghi_chu.append(f"gateway {hk}: chua co ban chup config.yaml trong hermes/gateway/{hk}/ (khong so sanh)")
+    return lech, ghi_chu
+
+
+def compare_runtime_main(chi: str | None = None) -> int:
+    lech, ghi_chu = compare_runtime(chi=chi)
+    for muc, ten, chi_tiet in lech:
+        print(f"  [{muc}] {ten}")
+        for d in chi_tiet.splitlines():
+            print(f"        {d}")
+    for g in ghi_chu:
+        print(f"  [ghi chu] {g}")
+    if lech:
+        print(f"\n{len(lech)} muc lech. Che do nay CHI DOC. Sua tren may xong thi chup lai vao "
+              "hermes/systemd/ hoac hermes/gateway/<brand>/ trong cung mot commit; repo doi truoc "
+              "thi ap tay theo hermes/systemd/README.md.")
+        return 1
+    print("Unit systemd + config gateway tren may khop ban chup trong repo.")
+    return 0
+
+
 def _sync_pair(a) -> tuple:
     """Vong dong bo chinh: duyet tung cap (ban that o home, ban trong repo).
 
@@ -786,6 +891,9 @@ def main():
                    help="chup cac khoa cau hinh quyet dinh prompt cua moi profile vao git")
     g.add_argument("--chot-upstream", action="store_true",
                    help="Da port xong upstream: ghi HEAD hermes-agent vao UPSTREAM")
+    g.add_argument("--compare-runtime", action="store_true",
+                   help="CHI DOC: so config.yaml gateway + unit systemd + openssl.cnf tren may "
+                        "voi ban chup trong hermes/ va in cho lech (khong ghi gi)")
     g.add_argument("--refresh-patches", action="store_true",
                    help="Lam lai hermes/plugins/kanban/patches/ tu plugin dang o home "
                         "(hai home phai giong nhau, hoac chon mot bang --chi 'kanban <home>')")
@@ -808,6 +916,8 @@ def main():
 
     if a.refresh_patches:
         return refresh_patches(a.chi)
+    if a.compare_runtime:
+        return compare_runtime_main(a.chi)
 
     khac, thieu, bo_qua, da_chep = _sync_pair(a)
 
