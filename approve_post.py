@@ -39,7 +39,7 @@ import role_spec                                             # noqa: E402
 
 import approve_base                                          # noqa: E402
 from approve_base import (  # noqa: E402
-    API, DRAFTS, BOSS_IDS, ROOT, STATE_DIR, _extract_line, _run_background, _write_json, _send_text, _lock_of, _load_json, _reply_real, call, call_upload, is_boss, log,
+    API, DRAFTS, ROOT, STATE_DIR, _extract_line, _run_background, _write_json, _send_text, _lock_of, _load_json, _reply_real, boss_allowlist, call, call_upload, is_boss, log,
 )
 from approve_dispatch import (  # noqa: E402
     BLACKBOARD_MENTION, NAME_ROLE_IMAGE, NAME_ROLE_WRITE, _blackboard_write, _report_receive_job, _status_task,
@@ -777,8 +777,8 @@ def _label_reason_redo(token, group, msg, thread_id, text):
         if not ds:
             return False
         uid = msg.get("from", {}).get("id")
-        cho_phep = _load_json(BOSS_IDS, [])
-        if cho_phep and uid not in cho_phep:
+        cho_phep = boss_allowlist()      # LOW-432: chung logic voi is_boss (tep hong = tu choi)
+        if cho_phep is not None and uid not in cho_phep:
             return False                  # nguoi khac go, khong phai tra loi cua Ong Chu
         # CHI nhan khi la REPLY toi dung tin hoi (Ong Chu 05/09/2026). Truoc day moi
         # chu go trong topic suot 10 phut deu bi nuot lam ly do — hoi Dre chuyen khac
