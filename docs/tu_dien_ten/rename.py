@@ -27,11 +27,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tudien import TuDien, bang_doi_ten                      # noqa: E402
 
-# Tệp ngoài .py được vá `<cũ>.py` -> `<mới>.py`. KHÔNG vá lịch sử (nhat_ky/,
+# Tệp ngoài .py được vá `<cũ>.py` -> `<mới>.py`. KHÔNG vá lịch sử (incident_journal/,
 # INCIDENT_LOG.md) và không vá chính từ điển.
 DUOI_VAN_BAN = ("*.md", "*.json", "*.sh", "*.yml", "*.yaml", "*.txt",
                 "*.service", "*.timer")        # systemd trong repo (lô 4: duyet_giao_viec.service)
-BO_VA = ("nhat_ky/", "INCIDENT_LOG.md", "docs/tu_dien_ten/", "hermes-agent/", ".git/", "venv/")
+BO_VA = ("incident_journal/", "INCIDENT_LOG.md", "docs/tu_dien_ten/", "hermes-agent/", ".git/", "venv/")
 
 SHIM = '''"""SHIM tạm (LOW-50): tên cũ của `{new}.py`. Mọi thứ nằm ở `{new}.py`.
 

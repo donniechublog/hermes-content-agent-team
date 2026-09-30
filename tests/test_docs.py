@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT))
 TAI_LIEU = ["README.md", "IMAGE_RULES_ETHAN.md", "IMAGE_RULES_DRE.md", "IMAGE_RULES_KITE.md",
           "STYLE_TEXT_SPEC.md", "ARCHITECTURE.md", "hermes/README.md"]
 
-# INCIDENT_LOG.md va nhat_ky/*.md CO CHU DICH nam ngoai cong nay: chung la NHAT
+# INCIDENT_LOG.md va incident_journal/*.md CO CHU DICH nam ngoai cong nay: chung la NHAT
 # KY, nen viec chung nhac toi script da xoa (`usage_audit.py`, `doi_model_combo.py`)
 # hay tep cua repo khac (`hermes_cli/env_loader.py`) chinh la noi dung cua chung.
 # Bat chung phai tro toi tep con song la bat chung noi doi ve qua khu.
@@ -164,6 +164,33 @@ def test_item_model_match_with_profile_real():
     la = sorted(t for t in ten_model if t not in dang_chay)
     assert not la, ("muc Model nhac model KHONG profile nao dang chay: "
                     + ", ".join(la) + f" (dang chay: {sorted(dang_chay)})")
+
+def _vietnamese_tokens(stem: str) -> list:
+    """Tu/cum Viet khong dau trong mot ten tep, theo chinh tu dien docs/tu_dien_ten
+    (cum.json + don.json, tru PASS). Tu English la chua co trong tu dien -> khong bat."""
+    sys.path.insert(0, str(ROOT / "docs" / "tu_dien_ten"))
+    from tudien import TuDien
+    td = TuDien(ROOT / "docs" / "tu_dien_ten")
+    parts = [p for p in re.split(r"[-_.]", stem.lower()) if p and not p.isdigit()]
+    hits = ["_".join(parts[i:i + n]) for n in (4, 3, 2) for i in range(len(parts) - n + 1)
+            if "_".join(parts[i:i + n]) in td.cum]
+    return hits + [p for p in parts if p in td.don and p not in td.pass_]
+
+
+def test_incident_journal_names_english():
+    """LOW-367 (Ong Chu 22/09/2026: "tat ca folder Nhat_ky bo het tieng viet ko dau").
+    Thu muc `nhat_ky/` -> `incident_journal/`, ten tep -> English; NOI DUNG giu tieng
+    Viet co dau. Cong nay chan hai duong quay lai: nhanh cu tao tep o `nhat_ky/`, va
+    tep moi dat ten kieu `2026-09-22-cron-troi-7-tieng...`. Bao nham (tu English
+    trung tu Viet trong tu dien, vd `the`) -> them PASS vao docs/tu_dien_ten/them.json."""
+    assert not (ROOT / "nhat_ky").exists(), \
+        "thu muc nhat_ky/ quay lai o goc repo — chuyen tep sang incident_journal/ (LOW-367)"
+    d = ROOT / "incident_journal"
+    assert d.is_dir(), "khong thay incident_journal/"
+    sai = {f.name: _vietnamese_tokens(f.stem) for f in d.iterdir() if f.is_file()}
+    sai = {k: v for k, v in sai.items() if v}
+    assert not sai, f"ten tep nhat ky con tieng Viet khong dau (dat ten English): {sai}"
+
 
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
