@@ -110,7 +110,6 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
     """Engine anh cho MOT bai: nguon -> browser -> (xep hang) -> tai anh -> nhin
     -> tim rong neu thieu -> anh khai niem neu van thieu/khong co bia -> tu lieu -> manifest. Tach 07/09/2026 tu mot ham 231
     dong; doi chieu bang vet voi moi ham anh em thay bang ban gia (13 kich ban)."""
-    import carousel
     t_start = time.time()           # LOW-225: moc gom ban ghi anh bi bo cua CHINH lan chay nay
     title = meta.get("title", draft_id)
     # `tom`/`vai_anh` doc SOM, TRUOC ca browser (doi cho tu duoi len 16/09/2026,
@@ -165,7 +164,7 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
                                            khong_browser, phien=phien)
         anh = _gather_and_download_image(title, link, nguon_path, nguon, source_pages, bp, wd, xhs)
         anh, dung_duoc, chua_nhin = _seen_image(anh, nguon, title, wd)
-        flagship = bool(carousel._FLAGSHIP_RE.search(title + " " + tom.get("summary", "")))
+        flagship = role.is_flagship_text(title + " " + tom.get("summary", ""))
         toi_thieu = role.min_images(vai_anh, flagship)
         # HAI CAU HOI KHAC NHAU, dung lan nhau la hong ca hai chieu:
         #   `toi_thieu`             — nguong CHAN: duoi no thi bai bi coi la

@@ -289,7 +289,7 @@ def _file_md5(duong_dan) -> str:
     """md5 cua TEP — bat chinh xac ca truong hop tai lai cung mot tap tin."""
     import hashlib
     try:
-        return hashlib.md5(Path(duong_dan).read_bytes()).hexdigest()
+        return hashlib.md5(Path(duong_dan).read_bytes(), usedforsecurity=False).hexdigest()
     except OSError:
         return ""
 
@@ -598,7 +598,7 @@ def check_duplicate(nhan, path, da_thay):
     vi doan qua pixel.
     """
     import hashlib
-    h = hashlib.md5(Path(path).read_bytes()).hexdigest()
+    h = hashlib.md5(Path(path).read_bytes(), usedforsecurity=False).hexdigest()
     if h in da_thay:
         return [f"{nhan}: trung anh voi {da_thay[h]} — moi slide phai mot hinh "
                 "DUY NHAT, tim anh khac"], []

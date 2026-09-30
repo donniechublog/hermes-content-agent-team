@@ -10,6 +10,7 @@ dung.
 Chay:  venv/bin/python tests/test_audit_cron.py
 """
 import json
+import os
 import sys
 import tempfile
 import time
@@ -156,6 +157,42 @@ def test_le_hen_it_hon_15_phut_khong_tinh():
     with tempfile.TemporaryDirectory() as t:
         homes = {"blog": _home(Path(t), "blog", [_job("x", next_run_at=_iso(-600))])}
         assert sc.audit(homes, BAY_GIO)[0] == []
+
+
+def _voi_mui_gio(tz):
+    """Dat TZ cua tien trinh (POSIX) cho mot khoi test; tra ham don ve cu."""
+    cu = os.environ.get("TZ")
+    os.environ["TZ"] = tz
+    time.tzset()
+
+    def don():
+        if cu is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = cu
+        time.tzset()
+    return don
+
+
+def test_next_run_at_khong_mui_gio_la_gio_may_khong_phai_UTC():
+    """B21: hermes ghi next_run_at bang gio MAY (+07), khong kem mui gio. Coi la UTC
+    thi moc lech 7 gio: job dung hen bi bao KET sai, job ket that lai im."""
+    if not hasattr(time, "tzset"):
+        print("  (bo qua: khong co time.tzset)")
+        return
+    import audit_cron as sc
+    don = _voi_mui_gio("Asia/Ho_Chi_Minh")
+    try:
+        def naive(lech_giay):   # gio treo tuong tren dong ho may, khong kem mui gio
+            return datetime.fromtimestamp(BAY_GIO + lech_giay).isoformat()
+        with tempfile.TemporaryDirectory() as t:
+            homes = {"blog": _home(Path(t), "blog", [
+                _job("sap-toi", next_run_at=naive(600)),        # 10 phut nua: khoe
+                _job("ket-that", next_run_at=naive(-3600))])}   # 1 gio truoc: KET
+            van_de, _, _ = sc.audit(homes, BAY_GIO)
+            assert _ten(van_de) == {"blog/ket-that": "STUCK"}, _ten(van_de)
+    finally:
+        don()
 
 
 # ---------------------------------------------------------------- kho theo profile

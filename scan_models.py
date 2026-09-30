@@ -1150,8 +1150,8 @@ def fetch_arena_tweets(ngay: int, now=None) -> list:
         if t["handle"] not in arena_x.HANDLES or t["url"] in seen:
             continue                      # retweet cua hang (XiaomiMiMo, SpaceXAI)
         seen.add(t["url"])
-        luc = datetime.fromisoformat(t["created"].replace("Z", "+00:00"))
-        if luc < moc:
+        luc = scan_common.parse_time_utc(t["created"])
+        if luc is None or luc < moc:
             continue                      # tweet ghim cu
         ra.append({"date": t["created"][:10], "url": t["url"], "text": t["text"],
                    "model": arena_tweet_model(t["text"])})

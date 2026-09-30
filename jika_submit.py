@@ -17,4 +17,5 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from miles_submit import main                                   # noqa: E402
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import write_log                  # D17: str exit vao muc ERROR, xem write_log.run_cli
+    sys.exit(write_log.run_cli(main))

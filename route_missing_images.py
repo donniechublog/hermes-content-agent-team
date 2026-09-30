@@ -33,6 +33,7 @@ import env_load                                              # noqa: E402 — LO
 import httpx                                                  # noqa: E402
 
 import role as vai_mod                                        # noqa: E402
+import write_log                                              # noqa: E402
 
 DRAFTS = env_load.ROOT / "drafts"
 
@@ -61,7 +62,7 @@ def _time_send(vai: str, text: str, kb: dict | None = None) -> bool:
         r = httpx.post(f"https://api.telegram.org/bot{token}/sendMessage", json=body, timeout=30)
         kq = r.json()
     except Exception as e:                                   # noqa: BLE001
-        print(f"[route] gui Telegram topic '{vai}' hong: {type(e).__name__}: {e!r}", file=sys.stderr)
+        print(f"[route] gui Telegram topic '{vai}' hong: {type(e).__name__}: {write_log.redact(repr(e))}", file=sys.stderr)
         return False
     if not kq.get("ok"):
         print(f"[route] Telegram tu choi (topic '{vai}', HTTP {r.status_code}): "

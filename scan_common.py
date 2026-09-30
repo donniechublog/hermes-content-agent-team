@@ -46,7 +46,13 @@ SCORE_PASS = 50
 
 
 # ---------------------------------------------------------------- host noi bo
-_HOST_CAM_TEN = re.compile(r"^localhost$|\.(local|internal|netbird\.mated)$", re.I)
+# `.localhost`: Chromium va systemd-resolved deu tra moi `*.localhost` ve 127.0.0.1
+# (LOW-438) — chi chan `localhost` tran la de `x.localhost` lot.
+_HOST_CAM_TEN = re.compile(r"^localhost$|\.(localhost|local|internal|netbird\.mated)$", re.I)
+# Dai CGNAT cua mang netbird/tailscale (may chu 100.87.212.236, journal_web
+# 100.87.121.46:9130). `ipaddress` KHONG coi dai nay la private (is_private=False,
+# do 30/09/2026 tren Python 3.12) nen truoc LOW-438 mot URL vao thang 100.87.x lot cong.
+_CGNAT = ipaddress.ip_network("100.64.0.0/10")
 
 
 def host_say_drop(host: str) -> bool:
@@ -80,7 +86,8 @@ def host_say_drop(host: str) -> bool:
         except (OSError, ValueError):
             return False           # ten mien binh thuong
     return (ip.is_loopback or ip.is_private or ip.is_link_local
-            or ip.is_reserved or ip.is_multicast or ip.is_unspecified)
+            or ip.is_reserved or ip.is_multicast or ip.is_unspecified
+            or ip in _CGNAT)
 
 
 def check_url(url, cho: str = "URL") -> None:
@@ -180,19 +187,46 @@ import env_load                                              # noqa: E402
 ghi_json = env_load.write_json
 
 
-def timestamp_time(txt: str) -> float:
-    """Chuoi ngay cua RSS/Atom -> epoch. 0 neu khong doc duoc.
+def parse_time_utc(txt) -> datetime | None:
+    """Chuoi ngay cua RSS/Atom/API -> datetime CO mui gio; None neu khong doc duoc.
 
     Hai dinh dang deu gap that: RFC 2822 (`Tue, 02 Sep 2026 10:00:00 GMT`) cua
-    RSS va ISO 8601 cua Atom.
+    RSS va ISO 8601 cua Atom/API.
+
+    Chuoi khong ghi mui gio (ISO tran, hoac RFC 2822 `-0000`/khong mui gio) duoc
+    hieu la UTC. Truoc LOW-443 (30/09/2026) `.timestamp()` tren datetime naive
+    lay mui gio cua MAY: may chu gio VN thay moi tin gia 7 tieng, con phep tru
+    naive - aware thi ra TypeError.
     """
-    for f in (lambda t: parsedate_to_datetime(t).timestamp(),
-              lambda t: datetime.fromisoformat(t.replace("Z", "+00:00")).timestamp()):
+    if not txt:
+        return None
+    txt = str(txt).strip()
+    for f in (parsedate_to_datetime,
+              lambda t: datetime.fromisoformat(t.replace("Z", "+00:00"))):
         try:
-            return f(txt)
+            dt = f(txt)
         except Exception:                                    # noqa: BLE001
             continue
-    return 0.0
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    return None
+
+
+def timestamp_time(txt) -> float:
+    """Nhu `parse_time_utc` nhung ra epoch; 0.0 neu khong doc duoc."""
+    dt = parse_time_utc(txt)
+    return dt.timestamp() if dt else 0.0
+
+
+def pubdate_epoch(item) -> float | None:
+    """`<pubDate>` cua mot <item> RSS -> epoch; None neu thieu/khong doc duoc.
+
+    Cho cac cho can PHAN BIET "khong co ngay" voi moc 0 (giu tin khi khong biet).
+    """
+    dt = parse_time_utc(item.findtext("pubDate") or "")
+    return dt.timestamp() if dt else None
+
 
 # Tu qua chung, bo khi so "hai tieu de co noi cung mot chuyen khong". Truoc
 # 06/09/2026 co hai ban: `article_sources.FROM_EMPTY` va mot bo go tay trong

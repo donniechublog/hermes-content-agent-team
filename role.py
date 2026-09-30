@@ -333,6 +333,20 @@ def max_runtime_for(slug: str) -> str:
     return MAX_RUNTIME_IMAGE if v and v.nhan_anh else MAX_RUNTIME
 
 
+# Ho model cua cac hang frontier (My + top Trung Quoc, theo scan_models.py). Tin nhac
+# toi ho nay la tin "flagship": carousel doi them slide (`anh_toi_thieu_flagship`).
+# O day chu khong o carousel.py de engine anh dung chung hoi duoc ma khong phai
+# import carousel (1.4k dong + PIL) — cung ly do `min_images` nam o day (D3, LOW-430).
+_FLAGSHIP_RE = re.compile(
+    r"\b(GPT-?\d|GPT-?[0-9.]+|o[3-9](?:-pro|-mini)?|Claude|Opus|Sonnet|Gemini|Llama|"
+    r"Grok|DeepSeek|Qwen|Kimi|GLM|MiniMax|Doubao|Mistral Large|Nova Premier)\b", re.I)
+
+
+def is_flagship_text(text: str) -> bool:
+    """Chu (tieu de + tom tat, hay hook/label/slide) co nhac ho model frontier khong."""
+    return bool(_FLAGSHIP_RE.search(text or ""))
+
+
 def min_images(slug: str, flagship: bool = False) -> int:
     """So ANH THAT toi thieu de vai `slug` dung duoc san pham cua no.
 

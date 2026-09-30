@@ -1,0 +1,17 @@
+# Bao khi mot unit chinh THAT BAI HAN (D17, audit 30/09/2026). Goi tu `OnFailure=` cua
+# hermes-approve@.service: instance `%i` la TEN UNIT bi hong, vd
+# `notify-fail@hermes-approve@blog.service` -> %i = `hermes-approve@blog.service`.
+#
+# Lam gi: (1) ghi mot dong muc ERR vao journal de `journalctl --user -p err` thay;
+# (2) neu bao duoc thi gui Telegram vao topic ada cua brand qua publish.py (co san
+# cua repo). Logic o notify-fail.sh de khong phai escape `$` trong ExecStart.
+#
+# Chi la BAN MAU trong git — cai tay: xem hermes/systemd/README.md. Khong go nao
+# dat unit nay len may.
+[Unit]
+Description=Hermes Content Team - bao unit %i that bai
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/content-team
+ExecStart=/bin/sh %h/content-team/hermes/systemd/notify-fail.sh %i
