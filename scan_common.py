@@ -46,7 +46,13 @@ SCORE_PASS = 50
 
 
 # ---------------------------------------------------------------- host noi bo
-_HOST_CAM_TEN = re.compile(r"^localhost$|\.(local|internal|netbird\.mated)$", re.I)
+# `.localhost`: Chromium va systemd-resolved deu tra moi `*.localhost` ve 127.0.0.1
+# (LOW-438) — chi chan `localhost` tran la de `x.localhost` lot.
+_HOST_CAM_TEN = re.compile(r"^localhost$|\.(localhost|local|internal|netbird\.mated)$", re.I)
+# Dai CGNAT cua mang netbird/tailscale (may chu 100.87.212.236, journal_web
+# 100.87.121.46:9130). `ipaddress` KHONG coi dai nay la private (is_private=False,
+# do 30/09/2026 tren Python 3.12) nen truoc LOW-438 mot URL vao thang 100.87.x lot cong.
+_CGNAT = ipaddress.ip_network("100.64.0.0/10")
 
 
 def host_say_drop(host: str) -> bool:
@@ -80,7 +86,8 @@ def host_say_drop(host: str) -> bool:
         except (OSError, ValueError):
             return False           # ten mien binh thuong
     return (ip.is_loopback or ip.is_private or ip.is_link_local
-            or ip.is_reserved or ip.is_multicast or ip.is_unspecified)
+            or ip.is_reserved or ip.is_multicast or ip.is_unspecified
+            or ip in _CGNAT)
 
 
 def check_url(url, cho: str = "URL") -> None:

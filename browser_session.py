@@ -55,8 +55,66 @@ import contextlib
 import re
 import sys
 import threading
+from urllib.parse import urlsplit
+
+import scan_common
 
 ARGS_DEFAULT = ("--no-sandbox", "--disable-dev-shm-usage")
+
+# CONG SSRF (LOW-438). Trang mo qua phien nay di theo URL KHONG tin duoc: Bob nop
+# URL cho `capture_page`, `prepare/browser` di theo link Google News sang bat ky
+# dau. Ma Chromium chay ngay tren may chu, canh journal_web (9130, khong xac thuc)
+# va 9router (20128). Hai lop, vi mot lop khong du (ca hai do that 30/09/2026):
+#
+#   1. `_route_gate` tren MOI context: huy request co host bi
+#      `scan_common.host_say_drop` hoac scheme khong phai http/https (`file://`
+#      di qua route that). Phu page.goto, iframe, anh con, dieu huong bang JS.
+#   2. `ARG_BLOCK_INTERNAL` luc launch: Playwright KHONG goi route cho buoc
+#      chuyen huong HTTP — 302 tu host cong khai ve 127.0.0.1 van toi server.
+#      `--host-resolver-rules` ap ca cho IP viet thang (Chromium chuan hoa
+#      "127.1"/"2130706433" ve 127.0.0.1 truoc khi so) nen chan duoc buoc do.
+#      Ban mau o day la cac dai chinh cua host_say_drop, khong day du bang no:
+#      lop 1 moi la luat, lop 2 chi bit lo chuyen huong.
+#
+# Gioi han chung voi host_say_drop: KHONG resolve DNS — mot ten mien cong khai tro
+# ve 127.0.0.1 van lot ca hai lop.
+_RESOLVER_BLOCK = (
+    ["localhost", "*.localhost", "*.local", "*.internal", "*.netbird.mated",
+     "0.*.*.*", "10.*.*.*", "127.*.*.*", "169.254.*.*", "192.168.*.*"]
+    + [f"172.{i}.*.*" for i in range(16, 32)]
+    + [f"100.{i}.*.*" for i in range(64, 128)]           # CGNAT netbird
+    # IPv6: mau phai co dau ':' de khong khop nham ten mien (fdic.gov, fcbarcelona.com)
+    + ["::", "::1", "::ffff:*", "fc??:*", "fd??:*", "fe8?:*", "fe9?:*", "fea?:*", "feb?:*"])
+ARG_BLOCK_INTERNAL = "--host-resolver-rules=" + ", ".join(f"MAP {m} ~NOTFOUND" for m in _RESOLVER_BLOCK)
+
+
+def request_allowed(url: str) -> bool:
+    """Request nay co duoc di khong. Thuan, test duoc.
+
+    data:/blob: la noi bo trang (anh nhung, video MSE), khong ra mang."""
+    try:
+        p = urlsplit(url)
+        host = p.hostname or ""
+    except ValueError:
+        return False
+    if p.scheme in ("data", "blob"):
+        return True
+    return p.scheme in ("http", "https") and not scan_common.host_say_drop(host)
+
+
+def _route_gate(route):
+    url = route.request.url
+    if request_allowed(url):
+        route.fallback()
+    else:
+        print(f"[phien] chan request noi bo (LOW-438): {url[:120]}", file=sys.stderr)
+        route.abort("blockedbyclient")
+
+
+def guard_context(c):
+    """Gan cong SSRF vao mot context Playwright. Tra lai chinh context."""
+    c.route("**/*", _route_gate)
+    return c
 
 # KHUNG MOBILE — mot ban duy nhat cho ca doi (Ong Chu 06/09/2026, nhac lai
 # 12/09/2026): "vao trang nao chup thi cung hay duyet theo kich thuoc mobile, vi
@@ -134,7 +192,8 @@ class BrowserSession:
                 if self._pw is None:
                     from playwright.sync_api import sync_playwright
                     self._pw = sync_playwright().start()
-                b = self._browser[khoa] = self._pw.chromium.launch(args=list(khoa))
+                b = self._browser[khoa] = self._pw.chromium.launch(
+                    args=list(khoa) + [ARG_BLOCK_INTERNAL])
         return b
 
     @contextlib.contextmanager
@@ -142,6 +201,7 @@ class BrowserSession:
         """Mot context+page rieng, dong ngay sau khi dung (cach ly loi)."""
         c = self.browser(args).new_context(**ctx)
         try:
+            guard_context(c)
             yield c.new_page()
         finally:
             with contextlib.suppress(Exception):

@@ -59,6 +59,7 @@ from PIL import Image, ImageDraw, ImageFilter
 # nap font co truc bien thien, wrap chu, contain/cover anh, cong chan tieng Viet.
 import card
 import image_provenance
+import image_rules_common
 import image_rules_dre
 import logo_card
 import role
@@ -297,8 +298,8 @@ def _watermark(canvas, handle, x=None, y=None):
 
 # ---- Anh ------------------------------------------------------------------
 def _open(path):
-    img = Image.open(path).convert("RGB")
-    return img
+    """RGB dung chieu EXIF, vung trong suot dan len nen (LOW-445/446)."""
+    return image_rules_common.open_rgb(path)
 
 
 def _stack_if_can(muc, nhan, stem):
