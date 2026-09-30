@@ -172,6 +172,31 @@ SHIFT_COST = 0.4             # phat theo do lech khoi tam
 FACE_TEXT_GAP = 12           # mat nguoi phai nam TREN dong chu dau it nhat bay nhieu px
 
 
+EXT_MAX = 0.30               # keo dai day anh toi da bay nhieu phan chieu cao (de day chu the len cao)
+EXT_SIMPLE_STD = 22          # chi keo dai khi day anh DON GIAN: do lech xam cua 8% hang cuoi <= muc nay
+EXT_FADE = 0.06              # phan chieu cao cuoi anh chuyen dan sang mau keo dai (het moi noi)
+
+
+def extend_bottom(img):
+    """(anh, he so cao) — keo dai DAY anh bang chinh mau mep day cua no (khong blur, khong dai nen):
+    day chu the len cao de duoi con cho cho chu (Ong Chu 30/09/2026). Chi khi day anh don gian
+    (nen toi/phang); anh nhieu chi tiet o day thi giu nguyen (he so 1.0) vi keo dai se lo vet."""
+    import numpy as np
+    a = np.asarray(img.convert("RGB"), dtype=np.float64)
+    h, w = a.shape[:2]
+    if h < 20 or a[int(h * 0.92):].mean(axis=2).std() > EXT_SIMPLE_STD:
+        return img, 1.0
+    col = a[int(h * 0.96):].reshape(-1, 3).mean(axis=0)
+    ext = round(h * EXT_MAX)
+    out = np.empty((h + ext, w, 3))
+    out[:h] = a
+    out[h:] = col
+    fade = max(2, round(h * EXT_FADE))
+    ramp = np.linspace(0.0, 1.0, fade)[:, None, None]
+    out[h - fade:h] = a[h - fade:h] * (1 - ramp) + col * ramp
+    return Image.fromarray(out.round().astype("uint8"), "RGB"), (h + ext) / h
+
+
 def _face_boxes(img_path):
     """Hop mat nguoi 0..1 hoac [] (khong do duoc: thieu cv2/model thi bo qua rang buoc mat)."""
     try:
@@ -239,7 +264,9 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
                                                 g["frame_top"] - carousel.Q_MARK_CLEAR, g["summary_bottom"])
     else:                            # LOW-422 (Ong Chu 30/09: "ko blur nen"): anh SAC NET phu kin khung
         flat, hop = None, None
-        x0, y0, ww, wh = choose_window(img, _face_boxes(img_path), g)
+        img, kdai = extend_bottom(img)
+        faces = [[f[0], f[1] / kdai, f[2], f[3] / kdai] for f in _face_boxes(img_path)]
+        x0, y0, ww, wh = choose_window(img, faces, g)
         canvas.paste(img.convert("RGB").crop((round(x0), round(y0), round(x0 + ww), round(y0 + wh)))
                      .resize((W, H), Image.Resampling.LANCZOS), (0, 0))
     truoc_nen = canvas.copy() if report is not None else None

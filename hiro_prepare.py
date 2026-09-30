@@ -124,7 +124,10 @@ def _save_candidate(url: str, out: Path, seen: list) -> dict | None:
     if chart:
         img.save(out, "PNG")                                  # full be ngang, carousel tu dat
     else:
-        _save_crop(img, out, "4:5", cat_ngang=True)
+        import crop_ratio
+        import subject_focus
+        cx, cy = subject_focus.crop_center(img, crop_ratio.RATIO["4:5"])   # LOW-422: chu the o nua tren
+        _save_crop(img, out, "4:5", cx, cy, cat_ngang=True)
     return {"path": str(out), "w": w, "h": ht, "chart": chart, "dhash": h}
 
 
