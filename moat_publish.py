@@ -442,17 +442,36 @@ def _read_queue():
     try:
         d = json.loads(QUEUE.read_text(encoding="utf-8"))
         return d if isinstance(d, dict) else {}
-    except Exception:                                        # noqa: BLE001
+    except FileNotFoundError:
+        return {}                                   # chua co bai nao truot: binh thuong
+    except Exception as e:                                   # noqa: BLE001
+        # Van tra {} nhu cu, nhung KHONG im: nguoi goi ghi lai tu {} la xoa ca
+        # hang doi (LOW-437), it nhat phai de lai dau vet trong log cron.
+        print("hang doi day lai hong, doc nhu rong: " + type(e).__name__ + ": " + str(e))
         return {}
 
 
 def _write_queue(d):
     try:
-        QUEUE.parent.mkdir(parents=True, exist_ok=True)
-        QUEUE.write_text(json.dumps(d, ensure_ascii=False, indent=2),
-                            encoding="utf-8")
+        # Tmp + rename: write_text CAT NGAN tep truoc khi ghi, tien trinh khac doc
+        # dung luc do thay JSON hong -> {} -> ghi de mat ca hang doi (LOW-437).
+        env_load.write_json(QUEUE, d)
     except Exception as e:                                   # noqa: BLE001
         print("khong ghi duoc hang doi day lai: " + str(e))
+
+
+def _queue_locked():
+    """Khoa doc-sua-ghi hang doi (LOW-437). BA tien trinh cung sua tep nay: cron
+    publish-due, cron moat-publish-watch va nut `mlai` cua approve (thread nen).
+    Khong khoa thi hai ben cung doc ban cu, ben ghi sau xoa muc cua ben truoc.
+
+    CHI boc mot lan doc-sua-ghi ngan, KHONG boc quanh intake(): intake tu goi
+    cac ham co khoa nay, ma flock mo lai cung tep trong cung tien trinh (fd
+    khac) la tu khoa chinh minh.
+
+    Import tre: publish_schedule import moat_publish o cap module."""
+    import publish_schedule                                  # noqa: PLC0415
+    return publish_schedule._locked(state_paths.MOAT_QUEUE_LOCK)
 
 
 def _form_try_again(loi):
@@ -474,39 +493,42 @@ def _form_try_again(loi):
 def _list_mark_form_bottom(draft_id, brand, scheduled_at):
     """Ghi mot muc "dang day" truoc khi POST. KHONG tang so lan: day la dau vet
     de song sot qua mot cu kill, khong phai mot lan that bai."""
-    d = _read_queue()
-    muc = d.get(draft_id) or {"attempts": 0}
-    muc["brand"] = brand
-    muc["scheduled_at"] = scheduled_at
-    muc["last_attempt_at"] = int(time.time())
-    muc["error"] = muc.get("error") or "dang day, chua co ket qua"
-    d[draft_id] = muc
-    _write_queue(d)
+    with _queue_locked():
+        d = _read_queue()
+        muc = d.get(draft_id) or {"attempts": 0}
+        muc["brand"] = brand
+        muc["scheduled_at"] = scheduled_at
+        muc["last_attempt_at"] = int(time.time())
+        muc["error"] = muc.get("error") or "dang day, chua co ket qua"
+        d[draft_id] = muc
+        _write_queue(d)
 
 
 def refill(draft_id, brand, scheduled_at, loi):
     """Ghi mot bai truot vao hang doi (hoac tang so lan da thu)."""
     if not _form_try_again(loi):
         return False
-    d = _read_queue()
-    muc = d.get(draft_id) or {"attempts": 0, "brand": brand,
-                              "scheduled_at": scheduled_at}
-    muc["attempts"] = int(muc.get("attempts", 0)) + 1
-    muc["brand"] = brand
-    muc["scheduled_at"] = scheduled_at
-    muc["last_attempt_at"] = int(time.time())
-    muc["error"] = loi[:200]
-    d[draft_id] = muc
-    _write_queue(d)
+    with _queue_locked():
+        d = _read_queue()
+        muc = d.get(draft_id) or {"attempts": 0, "brand": brand,
+                                  "scheduled_at": scheduled_at}
+        muc["attempts"] = int(muc.get("attempts", 0)) + 1
+        muc["brand"] = brand
+        muc["scheduled_at"] = scheduled_at
+        muc["last_attempt_at"] = int(time.time())
+        muc["error"] = loi[:200]
+        d[draft_id] = muc
+        _write_queue(d)
     return True
 
 
 def _drop_block_queue(draft_id):
     """Doc-sua-ghi ngay lap tuc: intake() cung ghi vao file nay giua chung,
     nen giu mot ban `d` trong bo nho roi ghi de o cuoi la mat cap nhat cua no."""
-    d = _read_queue()
-    if d.pop(draft_id, None) is not None:
-        _write_queue(d)
+    with _queue_locked():
+        d = _read_queue()
+        if d.pop(draft_id, None) is not None:
+            _write_queue(d)
 
 
 def bottom_again():
@@ -813,8 +835,7 @@ def _notify(lines):
     except Exception as e:                                   # noqa: BLE001
         print("khong bao duoc Telegram, de danh " + str(len(lines))
               + " dong bao lai lan sau: " + str(e))
-        SPOOL.write_text(json.dumps(lines[-40:], ensure_ascii=False, indent=2),
-                         encoding="utf-8")
+        env_load.write_json(SPOOL, lines[-40:])     # tmp + rename (LOW-437)
 
 
 if __name__ == "__main__":
