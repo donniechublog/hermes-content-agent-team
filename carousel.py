@@ -49,7 +49,6 @@ Cong chan giong card.py: tieng Viet mat dau bi chan (tru --bo-qua-dau), em-dash
 tu thay bang dau phay.
 """
 import argparse
-import re
 import json
 import sys
 from pathlib import Path
@@ -60,8 +59,10 @@ from PIL import Image, ImageDraw, ImageFilter
 # nap font co truc bien thien, wrap chu, contain/cover anh, cong chan tieng Viet.
 import card
 import image_provenance
+import image_rules_common
 import image_rules_dre
 import logo_card
+import role
 import role_spec
 import safe_zone
 import text_bg
@@ -297,8 +298,8 @@ def _watermark(canvas, handle, x=None, y=None):
 
 # ---- Anh ------------------------------------------------------------------
 def _open(path):
-    img = Image.open(path).convert("RGB")
-    return img
+    """RGB dung chieu EXIF, vung trong suot dan len nen (LOW-445/446)."""
+    return image_rules_common.open_rgb(path)
 
 
 def _stack_if_can(muc, nhan, stem):
@@ -524,6 +525,11 @@ def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False, ov
 
     `overlay_only`: slide than/quote LUON di duong overlay LOW-286. Anh roi cung vay,
     o moi cho ke ca bia (LOW-330) — khong con duong nen dac nao."""
+    if min(H, int(text_bottom)) <= max(0, int(text_top)):
+        # Vung chu RONG (slide `"text": " "` lot `_standard_text`): khong co chu de bao ve thi
+        # khong co gi de overlay. `_measure_region_text` tra 255 cho vung rong = "qua sang" ->
+        # overlay dam nhat phu len slide khong chu (B24).
+        return
     sang, variance = _measure_region_text(canvas, text_top, text_bottom)
     if FG == (255, 255, 255):
         thieu = max(0.0, sang - THRESHOLD_BRIGHT_DARK)          # nen "dark": qua sang la thieu
@@ -1082,10 +1088,9 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
 # anh khi mot carousel 6 la dat. Truoc do 5 / 8 (8 tu loi GPT-6 Astra 03/09).
 MIN_SLIDE = 6
 FLAGSHIP_MIN = 7
-# Ho model cua cac hang frontier (My + top Trung Quoc, theo scan_models.py).
-_FLAGSHIP_RE = re.compile(
-    r"\b(GPT-?\d|GPT-?[0-9.]+|o[3-9](?:-pro|-mini)?|Claude|Opus|Sonnet|Gemini|Llama|"
-    r"Grok|DeepSeek|Qwen|Kimi|GLM|MiniMax|Doubao|Mistral Large|Nova Premier)\b", re.I)
+# Luat "tin flagship" (regex ho model frontier) nam o `role.is_flagship_text`, canh
+# `role.min_images` dung no: engine anh (image_prepare) hoi o do, khong phai import
+# carousel chi de lay mot regex.
 
 
 def _is_flagship(spec, cover, slides):
@@ -1099,7 +1104,7 @@ def _is_flagship(spec, cover, slides):
         return False
     chu = " ".join([cover.get("hook", ""), cover.get("label", "")] +
                    [s.get("text", "") + " " + s.get("quote", "") for s in slides])
-    return bool(_FLAGSHIP_RE.search(chu))
+    return role.is_flagship_text(chu)
 
 
 # ---- Cong chan tieng Viet -------------------------------------------------

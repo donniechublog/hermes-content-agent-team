@@ -53,7 +53,45 @@ def twimg_orig(url: str) -> str:
     return urlunparse(u._replace(path=path, query=urlencode({"format": fmt, "name": "orig"})))
 
 
+def check_url(url: str) -> None:
+    """ValueError neu URL khong phai http/https hoac tro vao mang noi bo (LOW-438).
+
+    URL toi day do vai Bob nop, og:image thi do trang nguon tu khai — ma urlopen
+    nhan ca `file://` va script chay tren may chu canh journal_web (9130) va
+    9router (20128). Dung cong chung `scan_common.check_url` khi chay tu repo
+    (bob_submit goi ban trong repo). Ban chep skill trong Hermes home khong co
+    repo canh ben (parents[4] la thu muc home) nen roi ve ban kiem toi thieu tai
+    cho: scheme + IP noi bo viet thang + localhost."""
+    try:
+        if str(GOC_REPO) not in sys.path:
+            sys.path.insert(0, str(GOC_REPO))
+        import scan_common
+    except Exception:                                        # noqa: BLE001
+        scan_common = None
+    if scan_common is not None:
+        scan_common.check_url(url)
+        return
+    import ipaddress
+    import socket
+    p = urlparse(str(url))
+    host = (p.hostname or "").lower()
+    if p.scheme not in ("http", "https") or not host:
+        raise ValueError(f"URL phai la http/https day du: {str(url)[:120]!r}")
+    if host == "localhost" or host.endswith((".localhost", ".local", ".internal")):
+        raise ValueError(f"URL tro vao host noi bo ({host}) — khong tai.")
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        try:                        # "127.1", "2130706433": libc van hieu
+            ip = ipaddress.IPv4Address(socket.inet_aton(host))
+        except (OSError, ValueError):
+            return                  # ten mien binh thuong
+    if not ip.is_global:
+        raise ValueError(f"URL tro vao host noi bo ({host}) — khong tai.")
+
+
 def download(url: str, out: str, ua: str = UA) -> int:
+    check_url(url)
     req = urllib.request.Request(url, headers={"User-Agent": ua})
     with urllib.request.urlopen(req, timeout=60) as r:
         data = r.read()
@@ -297,6 +335,13 @@ def main():
         sys.exit("usage: get_source.py <url> <out-path>")
     url, out = sys.argv[1], sys.argv[2]
     url = unwrap_fb_link(url)
+    # Cong truoc MOI lan tai (LOW-438): cac buoc duoi urlopen thang `url`.
+    # Thoat 1 chu khong 3: 3 la "trang khong co anh don" va bob_submit se chup
+    # man hinh chinh URL do.
+    try:
+        check_url(url)
+    except ValueError as e:
+        sys.exit(f"khong tai {url[:120]}: {e}")
     host = urlparse(url).netloc.lower().removeprefix("www.")
 
     # 1) direct twitter image → original resolution

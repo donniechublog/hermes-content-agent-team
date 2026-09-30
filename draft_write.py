@@ -132,6 +132,13 @@ def main():
     prev = _read_prev(a.draft_id)
     if prev.get("status") == "pending":
         draft.update({k: prev[k] for k in PUSH_KEYS if k in prev})
+    # Dau "da len channel" giu BAT KE trang thai (LOW-431). Album len roi ma phan chu
+    # hong -> publish_failed -> writer nop lai caption la duong hoi phuc duy nhat (the
+    # da bi go ban phim). Truoc day draft dung lai tu dau nen mat channel_album_mid,
+    # lan duyet ke tiep (hoac cong draft_to_publish tu xep lich) gui album LAN THU HAI.
+    # publish() thay dau nay thi chi gui phan chu con thieu.
+    from approve_base import MARK_LEN_CHANNEL
+    draft.update({k: prev[k] for k in MARK_LEN_CHANNEL if prev.get(k)})
 
     missing = [k for k in ("source_url", "category") if not draft[k]]
     if missing:

@@ -16,6 +16,7 @@ nao la loi thi khai o MOT cho (`ERROR_LABELS`) thay vi sua rai rac tung cho goi.
 """
 import logging
 import os
+import re
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -44,6 +45,19 @@ class JournalLevelPrefix(logging.Formatter):
 
     def format(self, record):
         return f"<{_SYSLOG_BY_LEVEL.get(record.levelno, 6)}>" + super().format(record)
+
+
+# Token bot nam TRONG URL Telegram (`/bot<id>:<secret>/sendMessage`), nen ngoai le cua
+# httpx/urllib (`{e!r}`) kem theo ca URL la kem luon token vao journal + approve.log.
+# Che o DAY vi moi `log/warn/error` di qua `log()` (mot cho, khong phai va 6 client
+# gui Telegram). Cho in thang ra stderr/print (publish, route_missing_images,
+# moat_publish) goi `redact()` cho phan ngoai le.
+_BOT_TOKEN = re.compile(r"bot\d+:[\w-]+")
+
+
+def redact(text) -> str:
+    """Che token bot Telegram trong chuoi: `bot123:AAB-c` -> `bot<redacted>`."""
+    return _BOT_TOKEN.sub("bot<redacted>", str(text))
 
 
 _LOG = None
@@ -98,7 +112,7 @@ def log(nhan: str, noi_dung: str, level: int | None = None) -> None:
     INFO — nen moi cho goi cu giu nguyen hanh vi, tru `log("loi", ...)` nay len ERROR.
     """
     lv = (logging.ERROR if nhan in ERROR_LABELS else logging.INFO) if level is None else level
-    _block_create().log(lv, "[%s] %s", nhan, noi_dung.replace("\n", " ⏎ "))
+    _block_create().log(lv, "[%s] %s", nhan, redact(noi_dung).replace("\n", " ⏎ "))
 
 
 def warn(nhan: str, noi_dung: str) -> None:
