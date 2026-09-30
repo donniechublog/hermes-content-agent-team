@@ -279,9 +279,13 @@ def download_and_filter(cands: list, wd: Path, da_giu=()) -> list:
                                                  or article_images.RULE_MODEL.search(c.get("alt", "") or "")))
                     or c.get("html_tag") in ("table", "canvas", "svg")
                     or c.get("source") == "arxiv_figure")
+        # LOW-442: og:image bao chi (press_entity_images) de `page_url` = chinh anh
+        # cho qua cong ben thu ba o tren; trang bao that nam o `article_url`.
+        # Manifest ghi trang bao, khong ghi CDN anh ("via image.cnbcfm.com").
+        page = c.get("article_url") or c.get("page_url", "")
         ra.append({"id": ma, "original_path": str(out), "url": c.get("image_url", ""),
                    "alt": (c.get("alt") or c.get("capture_alt") or "")[:120], "source": c.get("source", ""),
-                   "page_url": c.get("page_url", ""), "domain": _domain(c.get("page_url") or c.get("image_url")),
+                   "page_url": page, "domain": _domain(page or c.get("image_url")),
                    "score": c.get("score", 0), "score_reason": c.get("score_reason", ""), "chart_hint": hint,
                    # Ten hinh trong paper ("Figure 1") — Kite doc de biet tam nao
                    # la hinh mo dau bai, va de viet caption cho dung.
