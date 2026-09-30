@@ -16,8 +16,13 @@
 # output cua finn/nova/vera/daily-log sau 3 ngay — ma theo cach cron bao loi
 # hien nay (khong deliver di dau), may tep .md do la BANG CHUNG DUY NHAT khi
 # mot job quet hong. Don nham chinh cho de tra loi "sang nay Nova co chay khong".
-JOB=a4a246946091
-if [ -d "$HERMES_HOME/cron/output/$JOB" ]; then
+#
+# Id job tra tu jobs.json (cung cach voi publish_due.sh), khong go cung: hermes
+# sinh id luc tao job nen moi HERMES_HOME co the co id khac, go cung mot so la
+# don nham thu muc cua home kia (B21).
+JOB=$(grep -B1 '"name": "moat-publish-watch"' "$HERMES_HOME/cron/jobs.json" 2>/dev/null \
+      | grep '"id"' | head -1 | cut -d'"' -f4)
+if [ -n "$JOB" ] && [ -d "$HERMES_HOME/cron/output/$JOB" ]; then
   find "$HERMES_HOME/cron/output/$JOB" -maxdepth 1 -name "*.md" -mtime +3 -delete 2>/dev/null
 fi
 

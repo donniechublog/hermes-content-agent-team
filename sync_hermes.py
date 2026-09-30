@@ -30,6 +30,8 @@ Dung:
     venv/bin/python sync_hermes.py --refresh-patches  # sua plugin trong home xong: lam lai ban va tu home
 """
 import argparse
+import os
+import shutil
 import subprocess
 import sys
 import time
@@ -113,6 +115,26 @@ def plugin_home(H: Path) -> Path:
 ALL_GATE_OLD = REPO / "profiles" / "disabled_toolsets.json"
 
 
+def write_atomic(p: Path, data: bytes) -> None:
+    """Ghi vao tep LIVE cua home ma khong de ai doc phai ban cut (B20).
+
+    `write_bytes` cat tep ve 0 byte roi moi ghi; `publish_due.sh` chay MOI PHUT
+    co the mo dung luc do va chay ban cut. Ghi ra tep tam CUNG thu muc (cung
+    filesystem) roi `os.replace` — nguyen tu tren POSIX. Giu quyen thuc thi cua
+    tep cu (script cron can +x); tep chua co thi mac dinh nhu write_bytes.
+    Neu `p` la symlink thi ghi vao tep dich, khong thay chinh symlink."""
+    dich = Path(os.path.realpath(p))
+    tam = dich.with_name(f".{dich.name}.tmp{os.getpid()}")
+    try:
+        tam.write_bytes(data)
+        if dich.exists():
+            shutil.copymode(dich, tam)
+        os.replace(tam, dich)
+    except BaseException:
+        tam.unlink(missing_ok=True)
+        raise
+
+
 def _config_profile(H, slug):
     return H / "profiles" / slug / "config.yaml"
 
@@ -171,7 +193,7 @@ def _write_all(p, gia_tri):
         return False, f"sua xong YAML hong: {e}"
     if ((c.get("agent") or {}).get("disabled_toolsets") or []) != list(gia_tri):
         return False, "sua xong doc lai khong ra dung gia tri (khoa trung?)"
-    p.write_text(chu, encoding="utf-8")
+    write_atomic(p, chu.encode("utf-8"))                   # config.yaml LIVE: khong de doc phai ban cut
     return True, ""
 
 
@@ -695,7 +717,7 @@ def _sync_pair(a) -> tuple:
                 bo_qua.append((ten, ly_do))
                 continue
             that.parent.mkdir(parents=True, exist_ok=True)
-            that.write_bytes(standard(b_b))          # ghi LF vao home
+            write_atomic(that, standard(b_b))        # ghi LF vao home (nguyen tu, giu +x)
             da_chep += 1
     return khac, thieu, bo_qua, da_chep
 
@@ -716,7 +738,7 @@ def _make_plugin_home(a) -> int:
             dich, nguon = plugin_home(H) / f, read_repo_side(f"kanban {hk} {f}", PLUGIN_REPO / f)
             if not dich.exists() and nguon is not None and (not a.chi or a.chi in f"kanban {hk} {f}"):
                 dich.parent.mkdir(parents=True, exist_ok=True)
-                dich.write_bytes(standard(nguon))
+                write_atomic(dich, standard(nguon))
                 da_chep += 1
                 print(f"  TAO   kanban {hk} {f} -> home")
     return da_chep
