@@ -43,6 +43,7 @@ import submit_common                                             # noqa: E402
 import state_paths                                               # noqa: E402
 import role as _vai                                           # noqa: E402
 import hiro_pick                                              # noqa: E402
+import schedule_board                                         # noqa: E402
 
 from approve_base import (  # noqa: E402
     DRAFTS, HERMES_HOME, OFFSET, STATE_DIR, TELEGRAM_INCOMING, _run_background, _write_json, _send_text, _reply_real, call, is_boss, load_secrets, log, rut,
@@ -499,6 +500,15 @@ def loop():
             # getUpdates da cho toi 50 giay moi vong, nen goi moi vong la du
             # thua cho mot viec chi doc vai tep JSON.
             auto_schedule_silent_drafts(token, group)
+            # LOW-428: bang lich dang cua Ada — mot tin tu sua trong topic Ada.
+            # Dat SAU dong tren de bai vua tu xep lich hien ngay trong vong nay.
+            # Boc rieng: bang hong khong duoc chan hai buoc ben duoi.
+            try:
+                kq = schedule_board.refresh(call, token, group)
+                if kq.startswith("error"):
+                    log("lich", "bang lich dang: " + kq)
+            except Exception as e:                          # noqa: BLE001
+                log("lich", f"bang lich dang hong: {type(e).__name__}: {e}")
             # LOW-411: Dre het ngan sach HAI lan (gave_up) -> tu chuyen Kite, thay vi
             # task nam blocked mai (3 bai dcgr chet 22–25/09). Dat TRUOC bang tien do:
             # task cu dong trong vong nay thi bang tien do im lang (LOW-410).
