@@ -134,6 +134,8 @@ trong repo chỉ là **bản chụp**, sửa nó không tạo được job.
 | `model-watch` | `*/30` trừ 08–10h và 13–16h VN | Dò sức khoẻ model |
 | `moat-publish-watch` | 5 phút | Hỏi moat bài đã lên social chưa |
 | `skill-lesson-filter` | mỗi giờ | Chấm bài học skill vai tự ghi |
+| `publish-due` | mỗi phút | Đăng bài đã tới giờ trong hàng đợi xếp lịch (`hermes/scripts/publish_due.sh`) |
+| `skill-lesson-commit` | chạy sau `skill-lesson-filter` (lịch theo job live; chưa có trong bản chụp) | Bài học đã lọc → commit + PR (`hermes/scripts/skill_lesson_commit.sh`) |
 
 ## State
 
