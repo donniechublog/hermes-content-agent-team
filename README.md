@@ -105,7 +105,7 @@ giữ các bảng khớp nhau.
 
 **Khác**
 - `assets/` — font và model YuNet, nguồn/giấy phép ở `assets/README.md`.
-- `hermes/skills/` — skill dùng chung; `hermes/profiles/` — SOUL/MEMORY, đồng bộ bằng `sync_hermes.py`.
+- `hermes/skills/` — skill dùng chung (nạp qua `skills.external_dirs`); `hermes/skills_parked/` — skill chờ điều kiện (vd `ai-background` chờ GPU), KHÔNG nạp; `hermes/profiles/` — SOUL/MEMORY, đồng bộ bằng `sync_hermes.py`.
 - `setup.sh` — dựng máy mới (chạy lại được), kết thúc bằng `check_env.py`.
 - `requirements.txt` / `requirements.lock` — lock làm mới bằng `lock_requirements.py`.
 - `tests/` — chạy `tests/run.sh` (offline).
