@@ -27,6 +27,7 @@ import sys
 import urllib.request
 
 import env_load
+from typing import Any
 
 # Wikimedia doi UA co ten cong cu + duong lien he, khong nhan UA kieu trinh
 # duyet (403, do 09/09/2026) -> dung chung mot cho: env_load.UA_WIKI.
@@ -274,7 +275,7 @@ def read_return_error_llm(txt: str) -> list:
     Bỏ luôn từ khoá NGUYÊN VĂN trùng một ví dụ minh hoạ trong prompt của
     `keyword_llm` (`_PROMPT_ECHO`) — dấu hiệu model nhại lại ví dụ chứ không
     suy ra từ bài (LOW-191)."""
-    ra = []
+    ra: list[Any] = []
     for m in re.finditer(r"KEYWORD\s*:\s*([^|\n]{3,60})(?:\|\s*([^\n]{0,80}))?", txt or ""):
         tk = re.sub(r"[^A-Za-z0-9 \-]", "", m.group(1)).strip().lower()
         if tk in _PROMPT_ECHO:

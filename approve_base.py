@@ -15,6 +15,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -182,7 +183,7 @@ def _write_json(path, data, indent=2):
     # (mot ban cho 4 cho tung tu viet). Giu ten ham cho ho duyet_*.
     env_load.write_json(path, data, indent=indent)
 
-_KHOA_DRAFT = {}                       # draft_id -> Lock: hai nut cua CUNG mot bai chay lan luot
+_KHOA_DRAFT: dict[Any, Any] = {}                       # draft_id -> Lock: hai nut cua CUNG mot bai chay lan luot
 
 _KHOA_KHOA_DRAFT = threading.Lock()
 

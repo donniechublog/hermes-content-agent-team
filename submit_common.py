@@ -12,6 +12,7 @@ import sys
 import time
 import unicodedata
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -583,7 +584,7 @@ def check_same_photo(anh: dict, dung_anh: list) -> list:
     va 6, trang chu o slide 2 va 6). `dung_anh`: [(nhan slide, [ma...])]. Chi xet anh
     CHUP (chart/bang xep hang cung khuon van khop nhieu diem) — xem same_photo.py."""
     import same_photo
-    dung = []                                   # [(nhan, ma)] theo thu tu slide, khong lap ma
+    dung: list[Any] = []                                   # [(nhan, ma)] theo thu tu slide, khong lap ma
     for nhan, ds in dung_anh:
         for ma in ds:
             a = anh.get(ma) or {}

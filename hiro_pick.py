@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from html import escape as html_escape
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                               # noqa: E402
@@ -112,7 +113,7 @@ def read_hiro_command(text: str) -> HiroCommand | None:
         if start < 1 or end < start:
             return HiroCommand(error=f"Khoảng <code>{start}-{end}</code> không hợp lệ — số đầu phải "
                                      f"từ 1 và không lớn hơn số cuối. {USAGE}")
-    exclude = ()
+    exclude: tuple[Any, ...] = ()
     if slash:
         if not _LOOKS_LIKE_COMMAND.match(tail or "/"):
             return None                                      # "Hiro / anh oi ..." -> hoi thoai

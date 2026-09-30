@@ -22,6 +22,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from scan_sources import source_original                          # noqa: E402
@@ -80,7 +81,8 @@ def role_score(it: dict, i: int) -> tuple:
         print(f"[canh bao] muc {i} thieu diem ({', '.join(k for k, _ in SCORE_PARTS)}) — "
               "manifest ghi score null", file=sys.stderr)
         return None, reason, {}
-    problems, parts = [], {}
+    problems: list[Any] = []
+    parts: dict[Any, Any] = {}
     for key, high in SCORE_PARTS:
         parts[key], _ = mc.score_part(it.get(key), key, high, problems, str(it.get("title") or ""))
     for p in problems:

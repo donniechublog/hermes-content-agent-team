@@ -44,6 +44,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from html import escape as html_escape
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -121,7 +122,7 @@ def story_key(item: dict) -> str:
 def gather_stories(scans: list) -> list:
     """Gộp mọi lần một tin xuất hiện thành MỘT tin: đặc trưng lấy từ lần đầu,
     được chọn nếu được chọn ở bất kỳ bản nào."""
-    stories = {}
+    stories: dict[Any, Any] = {}
     for s in scans:
         for it in s["items"]:
             k = story_key(it)
@@ -164,8 +165,8 @@ def outcome(st: dict, reviewed: set, now: datetime) -> str:
 def learn(stories: list, before: datetime, reviewed: set, now: datetime) -> dict:
     """Tỉ lệ chọn từ các tin quét TRƯỚC `before` (trong LEARN_WINDOW_DAYS) đã có quyết định."""
     since = before - timedelta(days=LEARN_WINDOW_DAYS)
-    by_cell = collections.defaultdict(lambda: [0, 0])      # (loại tin, bậc) -> [đã quyết, được chọn]
-    by_tier = collections.defaultdict(lambda: [0, 0])
+    by_cell: collections.defaultdict[Any, list[int]] = collections.defaultdict(lambda: [0, 0])      # (loại tin, bậc) -> [đã quyết, được chọn]
+    by_tier: collections.defaultdict[Any, list[int]] = collections.defaultdict(lambda: [0, 0])
     for st in stories:
         if not since <= st["scanned_at"] < before:
             continue
@@ -193,7 +194,7 @@ def suggest(st: dict, table: dict) -> dict:
 
 def load_log(path: Path) -> dict:
     """{story key: dòng gợi ý}. Dòng ĐẦU của mỗi tin thắng — gợi ý đã đóng băng."""
-    out = {}
+    out: dict[Any, Any] = {}
     if not path.exists():
         return out
     for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
@@ -224,7 +225,7 @@ def score_new(stories: list, logged: dict, reviewed: set, now: datetime) -> list
 
 
 def _tally(rows: list) -> collections.Counter:
-    t = collections.Counter()
+    t: collections.Counter[Any] = collections.Counter()
     for r in rows:
         if r["outcome"] not in DECIDED:
             continue

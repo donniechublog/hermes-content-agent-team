@@ -72,6 +72,7 @@ from card import (
     FONTS,                       # thu muc font
     F_QUOTE, F_QUOTE_REG,        # kieu quote — cung dinh nghia font voi card.py
 )
+from typing import Any
 
 # ---- Khung so -------------------------------------------------------------
 W, H = 1080, 1350                # kho dang chuan Instagram/Facebook 4:5
@@ -1356,7 +1357,7 @@ def _build_slide(cover: dict, slides: list, out: Path, stem, handle: str) -> lis
 
     Tu LOW-330 BIA cung bi do nhu slide than (`report=bao_bia`), chi khac tran dien tich.
     """
-    bao_bia = {}
+    bao_bia: dict[Any, Any] = {}
     build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out), handle,
                 category=cover["category"], cluttered=bool(cover.get("cluttered")), report=bao_bia,
                 plan=_flat_plan(cover))
@@ -1367,7 +1368,7 @@ def _build_slide(cover: dict, slides: list, out: Path, stem, handle: str) -> lis
         loi_nen.append(loi)
     for i, s in enumerate(slides, start=2):
         p = f"{stem}_{i}.png"
-        bao = {}
+        bao: dict[Any, Any] = {}
         plan = None if s.get("logo_bg") else _flat_plan(s)
         if s.get("quote"):
             touched = build_body_quote(s["image"], s["quote"], s.get("attrib", ""), handle, p,

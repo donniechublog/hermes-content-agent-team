@@ -18,6 +18,7 @@ from html import escape as html_escape
 
 import httpx
 from PIL import Image
+from typing import Any
 
 # Tach rieng khoi ten `httpx` o duoi: test_dang_idempotent.py thay `db.httpx`
 # bang mot doi tuong gia CHI co .Client (de dem so lan goi that), nen tra qua
@@ -744,7 +745,7 @@ def _load_redo_wait() -> dict:
     thread_id, chua co truong thread_id) van doc duoc de bai dang cho luc
     restart khong mat."""
     tho = _load_json(REDO_WAIT, {})
-    ra = {}
+    ra: dict[Any, Any] = {}
     if not isinstance(tho, dict):
         return ra
     for k, v in tho.items():

@@ -15,6 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 from urllib.parse import urlsplit
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 SCRIPT = ROOT / "hermes" / "skills" / "social-crawl" / "scripts" / "social_fetch.py"
@@ -106,7 +107,7 @@ def read(url: str, tai_ve: Path | None = None, tries: int = 3, cho: int = 300,
     if isinstance(tac_gia, dict):                 # X/Instagram tra object, Facebook tra chuoi
         tac_gia = tac_gia.get("name") or tac_gia.get("handle") or ""
 
-    media = []
+    media: list[Any] = []
     for m in (d.get("media") or tw.get("media") or []):
         if not m.get("url"):
             continue

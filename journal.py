@@ -36,6 +36,7 @@ from pathlib import Path
 import env_load
 import hermes_adapter
 import state_paths
+from typing import Any
 
 ROOT = env_load.ROOT
 HERMES = env_load.hermes_home()
@@ -76,7 +77,7 @@ def _open(db: Path):
 
 # Cac loi doc DB gap trong lan dung trang nay — in ra CUOI trang thay vi lam
 # hong ca trang.
-ERROR_READ = []
+ERROR_READ: list[Any] = []
 
 
 def _bear_error_db(khi_loi):
@@ -118,7 +119,7 @@ EXCESS = 6
 
 def _gather_by_job(c: list) -> list:
     """Gom cac luot theo ten viec, giu thu tu luot dau tien xuat hien."""
-    nhom = {}
+    nhom: dict[Any, Any] = {}
     for x in c:
         nhom.setdefault(x["name"], []).append(x)
     return list(nhom.items())
@@ -207,7 +208,7 @@ def part_finn(ngay: str) -> dict | None:
 
 
 def part_draft(ngay: str) -> list:
-    ra = []
+    ra: list[Any] = []
     d = ROOT / "drafts"
     if not d.exists():
         return ra

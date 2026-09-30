@@ -25,6 +25,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 # KHONG co gioi han do dai theo chu thich anh Telegram (Ong Chu 20/09, LOW-296):
 # caption dai thi approve_post/publish() tu tach thanh chu thich anh + tin nhan
@@ -154,7 +155,7 @@ def _words(t: str) -> list:
 def repeat_phrase(t: str, n=6) -> list:
     """Cum n tu xuat hien tu hai lan tro len."""
     tu = _words(t)
-    dem = {}
+    dem: dict[Any, Any] = {}
     for i in range(len(tu) - n + 1):
         k = " ".join(tu[i:i + n])
         dem[k] = dem.get(k, 0) + 1
@@ -189,7 +190,8 @@ def _check_measure_long(caption: str) -> tuple:
     ngan hay dai khong quan trong, quan trong la du thong tin/khach quan/cap nhat
     (do bang cong RONG SO, SO LA, tu cong bo, khong bang so ky tu). Khong con
     nguong 1024 (dai thi publish() tu tach) va khong con muc nen dat 700."""
-    loi, canh = [], []
+    loi: list[Any] = []
+    canh: list[Any] = []
     if len(caption) > CEILING_BACKGROUND_LAYER:
         loi.append(f"Dài {len(caption)} ký tự, vượt trần {CEILING_BACKGROUND_LAYER} của "
                    "Instagram và TikTok. Bài sẽ bị cắt hoặc từ chối khi moat đẩy đi.")
@@ -401,7 +403,9 @@ def check_jika_voice(caption: str) -> list:
     # VAN THUONG giua bai, khong noi ve danh sach. Emoji dau gach dau dong la
     # "phan them" Ong Chu cho phep, nen chan no la chan oan — va truoc 23/09
     # cong nay chan that: Jika co viet dung khuon liet ke thi cung bi da ve.
-    lines, cat, rong = [], set(), False
+    lines: list[Any] = []
+    cat: set[Any] = set()
+    rong = False
     for l in caption.splitlines():
         if not l.strip():
             rong = True

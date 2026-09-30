@@ -35,6 +35,7 @@ import urllib.request
 from pathlib import Path
 
 import httpx
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scan_common                                            # noqa: E402
@@ -779,7 +780,7 @@ def other_outlets_gnews(title_en: str, items: list, count: int = 3, skip_domains
         seen_domains.add(domain)
         candidates.append((len(story & story_tokens(title)), gnews_link, title, outlet))
     candidates.sort(key=lambda c: -c[0])
-    pages = []
+    pages: list[Any] = []
     if not candidates:
         return pages
     from browser_session import session_or_new
@@ -814,7 +815,8 @@ def _gnews_item(ten: str, so: int) -> list:
 
     Tach khoi `find` o LOW-309.
     """
-    its, co_link_gn = [], set()
+    its: list[Any] = []
+    co_link_gn: set[Any] = set()
     if not ten:
         return its
     for q in [ten] + _query_bing(ten):
@@ -835,7 +837,7 @@ def _gnews_item(ten: str, so: int) -> list:
 
 def _outlet_of_item(its: list, so: int) -> list:
     """[(mien toa soan, tieu de)] theo THU TU Google News tra ve, khong trung mien."""
-    mien = []
+    mien: list[Any] = []
     for it in its[: so * 6]:
         src = it.find("source")
         u = (src.get("url") if src is not None else "") or ""

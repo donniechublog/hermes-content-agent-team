@@ -27,6 +27,7 @@ import shutil
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -87,7 +88,7 @@ def resolve(spec: dict, job: dict, images: dict, bo_qua_dau: bool = False) -> tu
             if vua:
                 loi.append(f"{nhan}: {vua}")
         chunks += [(f"{nhan}/title", title), (f"{nhan}/summary", summary)]
-        item = next((it for it in job["items"] if it["index"] == n), {})
+        item: dict[str, Any] = next((it for it in job["items"] if it["index"] == n), {})
         label = drop_mark_forbid(str(s.get("label") or hiro_prepare.logo_label(images, n)).strip())[:24]
         category = str(s.get("category") or item.get("category") or "BUSINESS").strip().upper()[:20]
         # Bia dung THE LOGO thi tieu de phai noi ve CHINH hang do (do that 26/09: tin TSMC tren

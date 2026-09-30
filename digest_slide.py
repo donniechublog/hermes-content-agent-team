@@ -33,6 +33,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image, ImageDraw
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import card                                                   # noqa: E402
@@ -321,7 +322,7 @@ def build_all(slides: list, out: Path, brand: str, tone: str = "dark") -> tuple[
     paths, errors = [], []
     for i, s in enumerate(slides, start=1):
         p = out if i == 1 else Path(f"{stem}_{i}.png")
-        bao = {}
+        bao: dict[Any, Any] = {}
         if s.get("style") == "cover":
             # Bia logo: DUNG NGUYEN bia cua Dre — chip category + chip ten hang thay ten kenh,
             # to mau ten hang tren tieu de (LOW-344), nen phang thi doi mau chu (LOW-341).

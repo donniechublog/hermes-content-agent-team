@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 
 
@@ -48,7 +49,7 @@ _SO_SONG_SONG = max(1, int(os.environ.get("CT_CHAT_PARALLEL", "4") or 4))
 
 _CHO_CHAT = threading.BoundedSemaphore(_SO_SONG_SONG)
 
-_DANG_CHAY = {}                                # who -> t0, cac vai dang goi agent
+_DANG_CHAY: dict[Any, Any] = {}                                # who -> t0, cac vai dang goi agent
 
 _KHOA_DANG_CHAY = threading.Lock()
 
@@ -79,7 +80,7 @@ class RankFIFCell:
             self._phuc_vu += 1
             self._cv.notify_all()
 
-_HANG_PHIEN = {}                               # session -> _HangFIFO
+_HANG_PHIEN: dict[Any, Any] = {}                               # session -> _HangFIFO
 
 _KHOA_HANG_PHIEN = threading.Lock()
 

@@ -28,6 +28,7 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -73,9 +74,9 @@ def gather_manifest(ngay: int) -> dict:
                           "category": it.get("category", ""), "image_roles": ",".join(g.get("image_role", "")
                                                                                    for g in it.get("assignments", [])),
                           "date": p.name.rsplit("_", 1)[-1][:10]})
-    theo_bac = collections.defaultdict(lambda: [0, 0])
-    theo_nguon = collections.defaultdict(lambda: [0, 0])
-    theo_cat = collections.defaultdict(lambda: [0, 0])
+    theo_bac: collections.defaultdict[Any, list[int]] = collections.defaultdict(lambda: [0, 0])
+    theo_nguon: collections.defaultdict[Any, list[int]] = collections.defaultdict(lambda: [0, 0])
+    theo_cat: collections.defaultdict[Any, list[int]] = collections.defaultdict(lambda: [0, 0])
     for it in items:
         for k, d in ((_tier(it["score"]), theo_bac), (it["source"] or "?", theo_nguon), (it["category"] or "?", theo_cat)):
             d[k][0] += 1
@@ -91,7 +92,7 @@ def gather_manifest(ngay: int) -> dict:
 
 def gather_draft(ngay: int) -> dict:
     moc = time.time() - ngay * 86400
-    ra = collections.Counter()
+    ra: collections.Counter[Any] = collections.Counter()
     ds = []
     for p in DRAFTS.glob("*.json"):
         if p.name.endswith((".meta.json", ".img.json", ".writer.json")) or p.stat().st_mtime < moc:
@@ -119,7 +120,7 @@ def gather_kanban(ngay: int) -> dict:
     viec = hermes_adapter.job(tu_ts=int(time.time() - ngay * 86400))
     if viec is None:
         return {}
-    theo_vai = collections.defaultdict(collections.Counter)
+    theo_vai: collections.defaultdict[Any, collections.Counter[Any]] = collections.defaultdict(collections.Counter)
     thoi_gian = collections.defaultdict(list)
     loi = []
     for v in viec:
@@ -163,8 +164,15 @@ def gather_9router(ngay: int) -> dict:
     except Exception:                                        # noqa: BLE001
         return {}
     hom_nay = datetime.now(VN).date()
-    theo_ngay, lat, loi, khoa = [], collections.Counter(), collections.Counter(), collections.Counter()
-    vai, brand, rong, loi_kn, chi_phi = {}, {}, collections.Counter(), [], {}
+    theo_ngay: list[Any] = []
+    lat: collections.Counter[Any] = collections.Counter()
+    loi: collections.Counter[Any] = collections.Counter()
+    khoa: collections.Counter[Any] = collections.Counter()
+    vai: dict[Any, Any] = {}
+    brand: dict[Any, Any] = {}
+    rong: collections.Counter[Any] = collections.Counter()
+    loi_kn: list[Any] = []
+    chi_phi: dict[Any, Any] = {}
     # Doc khoa English cua nhat ky 9router (LOW-239); khoa dump Ada: docs/tu_dien_ten/ada_keys_v2.json (LOW-246).
     for i in range(ngay, -1, -1):
         d = (hom_nay - timedelta(days=i)).strftime("%Y-%m-%d")

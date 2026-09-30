@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -316,7 +317,7 @@ def check_subject_above_text(spec_r: dict, m: dict, text_tops: dict) -> list:
     chu), anh chup trang nguon da dem vien (hop vision do tren ban dem, Kite ve ban chua
     dem), va anh chua do (manifest cu)."""
     import subject_fit
-    by_path = {}
+    by_path: dict[Any, Any] = {}
     for a in m.get("images") or []:
         for k in ("unpadded_path", "original_path"):
             if a.get(k):
@@ -411,10 +412,11 @@ def _frame_spec(spec: dict, m: dict, slides: list, loi: list, canh: list) -> dic
 
 
 def resolve_spec(spec: dict, m: dict, wd) -> tuple:
-    loi, canh = [], []
+    loi: list[Any] = []
+    canh: list[Any] = []
     slides = spec.get("slides") or []
     hinh = {a["id"]: a for a in kb.figure_real(m)}
-    da_thay = {}                    # hash anh -> nhan slide, TRONG BO nay (check_duplicate)
+    da_thay: dict[Any, Any] = {}                    # hash anh -> nhan slide, TRONG BO nay (check_duplicate)
     ra = _frame_spec(spec, m, slides, loi, canh)
     for i, sl in enumerate(slides, 1):
         s2 = _resolve_slide(i, sl, hinh, m, da_thay, loi, canh)

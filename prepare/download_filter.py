@@ -19,6 +19,7 @@ import state_paths
 
 from prepare import decision_log
 from prepare.common import MAX_IMAGE, _original_domain, _hdr, _domain
+from typing import Any
 
 # `url_junk`/`short_side_drop` KHONG con la hang so module-level (LOW-182,
 # 16/09/2026): tieu chi gio di theo vai (`role.active_rules()`), ma vai chi
@@ -159,7 +160,7 @@ def download_and_filter(cands: list, wd: Path, da_giu=()) -> list:
     ung_vien = cands[:MAX_DOWNLOAD + 6]
     with ThreadPoolExecutor(max_workers=env_load.quantity(6)) as ex:
         tai_truoc = list(ex.map(_download_candidate, ung_vien))
-    da_tai = []                       # [(dhash, im, c, data_len)] — de khu trung gan giong
+    da_tai: list[Any] = []                       # [(dhash, im, c, data_len)] — de khu trung gan giong
     da_giu_h = kept_hashes(da_giu)    # LOW-337: hash anh vong TRUOC, chi de BO ban moi
     for i_uv, (c, (data, loi)) in enumerate(zip(ung_vien, tai_truoc)):
         if len(da_tai) >= MAX_IMAGE + 4:

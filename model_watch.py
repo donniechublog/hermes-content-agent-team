@@ -21,6 +21,7 @@ import yaml
 
 import env_load
 import publish
+from typing import Any
 
 ROUTER = env_load.ROUTER_URL
 hermes_home = env_load.hermes_home      # per-brand: ~/.hermes-<brand>, roi ve ~/.hermes
@@ -44,7 +45,7 @@ REASONS = {
 
 def models_in_use() -> dict:
     """Tra ve {model: [mo ta vai tro]} — chi nhung model that su duoc cau hinh."""
-    used = {}
+    used: dict[Any, Any] = {}
     home = hermes_home()
     # Glob thay vi liet ke tay: tung thieu nova + market — model cua hai vai do
     # hong khong ai thu, usage bi bao "LA" — canh bao gia dung loai script nay

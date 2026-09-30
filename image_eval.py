@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 import role
+from typing import Any
 
 
 def system_kept(a: dict) -> bool:
@@ -64,9 +65,9 @@ def evaluate(samples: list, labels: list) -> dict:
     """Ghép nhãn với mẫu theo `id`, trả bảng đếm. Mẫu chưa có nhãn (hoặc nhãn
     `usable` không phải yes/no) không tính — in riêng để biết còn thiếu bao nhiêu."""
     by_id = {s["id"]: s for s in samples}
-    total = collections.Counter()
-    by_source = collections.defaultdict(collections.Counter)
-    by_reason = collections.defaultdict(collections.Counter)
+    total: collections.Counter[Any] = collections.Counter()
+    by_source: collections.defaultdict[Any, collections.Counter[Any]] = collections.defaultdict(collections.Counter)
+    by_reason: collections.defaultdict[Any, collections.Counter[Any]] = collections.defaultdict(collections.Counter)
     wrongly_dropped, junk_kept, unlabeled = [], [], 0
     labeled_ids = set()
     for lab in labels:

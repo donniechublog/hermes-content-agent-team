@@ -19,6 +19,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -144,7 +145,9 @@ def _box_translate(d: dict, spec: dict) -> tuple:
     if not khai and not spec.get("merges"):
         return [], ['spec.json chưa có `merges` lẫn `region_texts` — chưa khai bản dịch nào. Xem brief.md.']
     ep = {str(x) for x in (spec.get("force_flat") or [])}
-    loi, khoi, da_gop = [], [], set()
+    loi: list[Any] = []
+    khoi: list[Any] = []
+    da_gop: set[Any] = set()
     # GOP: cau tieng Viet hiem khi ngat dong giong cau tieng Anh. OCR tra MOT
     # hop moi DONG, nen dich tung hop thi ban dich dai hon bi ep vao be ngang
     # cua dong goc va co nho lai — do that 07/09/2026: mot dong thu bai ra chu

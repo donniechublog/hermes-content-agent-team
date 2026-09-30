@@ -26,6 +26,7 @@ import re
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402 — LOW-159: truoc httpx de dat OPENSSL_CONF kip
@@ -229,7 +230,7 @@ def after_prepare(draft_id: str, m: dict) -> None:
 _OUT_OF_BUDGET = re.compile(r"Iteration budget exhausted|^elapsed \d+s > limit \d+s")
 # Task da THU chuyen trong tien trinh nay: tao Kite hong thi khong thu lai moi vong
 # poll (50 giay) — bang tien do van bao ⛔ kem ly do nhu cu, Ong Chu bam Gui Kite duoc.
-_ROUTE_TRIED = set()
+_ROUTE_TRIED: set[Any] = set()
 
 # LOW-425: vai anh NHIN ANH roi tu kanban_block("Thieu anh that ...") — engine dem "du anh"
 # nhung anh lac de (ca 30/09: kinh thien van PROMPT cho bai PDF "Prompt like a butterfly").

@@ -19,6 +19,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -289,7 +290,7 @@ def _drop_same_photo(anh: list) -> list:
     Chi xet anh CHUP: chart/bang xep hang cung khuon khop nhieu diem (same_photo.py).
     Thieu cv2 -> `is_same_photo` False, bo ep giu nguyen nhu truoc."""
     import same_photo
-    giu = []
+    giu: list[Any] = []
     for a in sorted(anh, key=lambda x: -(x.get("w") or 0) * (x.get("h") or 0)):
         if a.get("original_path") and a.get("kind") != "chart" and not a.get("ranking") and any(
                 b.get("original_path") and same_photo.is_same_photo(a["original_path"], b["original_path"])

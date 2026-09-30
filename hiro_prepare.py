@@ -24,6 +24,7 @@ import re
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -257,7 +258,9 @@ def prepare_item(item: dict, folder: Path, wide_only: bool = False, avoid: list 
     `relevant: False`, brief hien '❌ KHONG DUNG', hiro_submit chan) nhung khong chiem cho trong
     MAX_CANDIDATES — ba anh lac de khong duoc lam het luot."""
     n = item["index"]
-    ra, bad, seen = [], [], list(avoid)
+    ra: list[Any] = []
+    bad: list[Any] = []
+    seen = list(avoid)
     for url, page, why in _candidate_urls(item, wide_only):
         if len(ra) >= MAX_CANDIDATES or len(bad) >= MAX_REJECTED:
             break
@@ -372,7 +375,8 @@ def logo_label(images: dict, n: int) -> str:
 def spec_skeleton(job: dict, images: dict) -> dict:
     """Khung spec dien san tu manifest: vai sua chu (tieng Viet, ngan) va doi ma anh neu can.
     Slide bia (le) mac dinh dung the logo, slide quote (chan) mac dinh dung anh that."""
-    slides, skipped = [], []
+    slides: list[Any] = []
+    skipped: list[Any] = []
     for it in job["items"]:
         n = it["index"]
         ds = usable(images.get(n))
