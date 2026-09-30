@@ -30,6 +30,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 import brand_names
 import image_provenance
+import image_rules_common
 import image_rules_ethan
 import role_spec
 import safe_zone
@@ -651,7 +652,7 @@ def stack_read(paths, gap=0, nen=(0, 0, 0)):
     ra HAI VUNG rieng biet, dung thu ma luat carousel/hero cam. Hai anh ap sat
     nhau, cong `tone_mismatch` lo phan tone, moi ra mot mat phang lien. Chi truyen
     `gap` khac 0 khi co ly do rat cu the."""
-    ims = [Image.open(q).convert("RGB") for q in paths]
+    ims = [image_rules_common.open_rgb(q) for q in paths]          # LOW-445/446
     if len(ims) == 1:
         return ims[0]
     # Cong lech tone (`kiem_lech_tone`) da bo (Ong Chu 13/09/2026: bo
@@ -739,7 +740,7 @@ def _open_image(src):
     """src: mot duong dan, hoac danh sach duong dan (ghep doc)."""
     if isinstance(src, (list, tuple)):
         return stack_read(src)
-    return Image.open(src).convert("RGB")
+    return image_rules_common.open_rgb(src)                          # LOW-445/446: EXIF + alpha
 
 
 def _is_source_capture(src) -> bool:
@@ -922,7 +923,14 @@ def _layer_image(canvas, src_img, H, top_anchor=False, cover_focus=None) -> int:
     shift = 0
     top_color = _flat_top_color(sac) if (top_anchor or nat_h <= H) else None
     if top_color is not None:
-        shift = safe_zone.top(W, H)
+        # LOW-444: anh THAP HON the nhung khong du cho de ha het (nat_h trong (H-142, H],
+        # tuc ti le 0,80-0,88 tren the 4:5) thi chi ha VUA DU — day anh cham day the, dai
+        # mau keo dai ngan lai tuong ung. Truoc day van ha het 142px roi cat tu toa do
+        # AM ((nat_h - H)//2 < 0), PIL dem DEN: mot dai den toi 142px nam giua dai mau
+        # keo dai va anh — dung "vung thu hai" ma §7 cam, do thay tren the ceiling that
+        # (30 hang den y=142..171). Anh chup trang (top_anchor) van ha het va cat DAY
+        # de giu tit trang nhu cu.
+        shift = safe_zone.top(W, H) if top_anchor else min(safe_zone.top(W, H), H - nat_h)
         canvas.paste(top_color + ((255,) if canvas.mode == "RGBA" else ()), (0, 0, W, shift))
     if nat_h + shift > H:
         top = 0 if top_anchor else (nat_h - H) // 2

@@ -170,8 +170,10 @@ def test_approve_service_routes_before_the_progress_board():
 
     import approve_service
     src = inspect.getsource(approve_service.loop)
-    assert "route_out_of_budget(token, group)" in src, "vong poll khong goi duong cuu bai"
-    assert src.index("route_out_of_budget(") < src.index("report_progress_kanban("), \
+    # LOW-435: cac buoc bao tri goi qua `_run_maintenance_step(fn, token, group)`.
+    assert "_run_maintenance_step(route_out_of_budget, token, group)" in src, \
+        "vong poll khong goi duong cuu bai"
+    assert src.index("route_out_of_budget,") < src.index("report_progress_kanban,"), \
         "cuu bai phai chay TRUOC bang tien do, khong thi task gave_up bi bao ⛔ truoc"
 
 
