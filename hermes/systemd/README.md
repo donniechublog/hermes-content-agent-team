@@ -11,6 +11,12 @@ hay `hermes update` xong là phải dựng lại từ trí nhớ. Đúng cái s�
 `sync_hermes.py` không ghi đè systemd (đổi unit là việc cần người xác nhận).
 Sửa trên máy chủ xong thì chụp lại vào đây trong cùng một commit.
 
+Để biết máy chủ có đang lệch bản chụp không (kể cả `hermes/gateway/<brand>/config.yaml`
+và `~/.config/openssl/hermes-groups.cnf`), chạy chế độ **chỉ đọc**:
+`venv/bin/python sync_hermes.py --compare-runtime` (`--chi <chuỗi>` để lọc). Nó in
+`[KHAC]` / `[THIEU]` / `[CHI_CO_TREN_MAY]` cho từng tệp và thoát 1 nếu có lệch; token
+dashboard được che ở cả hai bên trước khi so. Không ghi gì.
+
 ## Cài lại từ bản chụp
 
 ```bash
