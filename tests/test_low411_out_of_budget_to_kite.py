@@ -83,6 +83,28 @@ def test_dre_gave_up_out_of_iterations_is_routed_to_kite():
     assert calls["received"] and calls["received"][0][0][2] == "kite", calls["received"]
 
 
+def _blocked_thieu_anh(summary):
+    return {"status": "blocked", "error": None, "summary": summary, "metadata": {}, "run_id": 706}
+
+
+def test_dre_self_block_for_missing_images_is_routed_to_kite():
+    """LOW-425 (ca 30/09 t_1c042dc2): engine dem "du anh", Dre nhin thay lac de roi TU
+    kanban_block("Thieu anh that ...") — truoc day khong nhanh nao nhan, task nam blocked mai."""
+    out, calls = _route([_task()], {"t_1": _blocked_thieu_anh("Thiếu ảnh thật: A1/A2 là kính thiên văn, chỉ còn A6")})
+    assert out == [("t_1", "t_7")], (out, calls)
+    assert "thieu anh" in calls["create"][0][1].lower() or "thiếu ảnh" in calls["create"][0][1], calls["create"]
+    (vai, text), = calls["sent"]
+    assert vai == "dre" and "Kite" in text and "t_7" in text and "thiếu ảnh" in text, calls["sent"]
+    assert "sau vẫn chạy" in text, "phai noi ro cac bai sau khong bi anh huong"
+
+
+def test_engine_wait_block_and_other_blocks_are_not_routed():
+    """Buoc binh thuong LOW-382 ("cho engine dem anh") va block khac ly do khong duoc chuyen Kite."""
+    for tx in ("cho engine dem anh xong roi moi chot vai (draft d1)", "Cần Ông Chủ chọn góc bài"):
+        out, calls = _route([_task()], {"t_1": _blocked_thieu_anh(tx)})
+        assert out == [] and calls["create"] == [], (tx, calls)
+
+
 def test_gave_up_over_max_runtime_is_routed_too():
     out, calls = _route([_task()], {"t_1": _gave_up(error="elapsed 2407s > limit 2400s")})
     assert out == [("t_1", "t_7")], (out, calls)

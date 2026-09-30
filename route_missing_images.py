@@ -231,6 +231,13 @@ _OUT_OF_BUDGET = re.compile(r"Iteration budget exhausted|^elapsed \d+s > limit \
 # poll (50 giay) — bang tien do van bao ⛔ kem ly do nhu cu, Ong Chu bam Gui Kite duoc.
 _ROUTE_TRIED = set()
 
+# LOW-425: vai anh NHIN ANH roi tu kanban_block("Thieu anh that ...") — engine dem "du anh"
+# nhung anh lac de (ca 30/09: kinh thien van PROMPT cho bai PDF "Prompt like a butterfly").
+# Khong co nhanh nay thi task nam blocked/needs_input mai, chi co mot dong tren topic. Luat
+# LOW-382 van la "thieu anh thi Kite" — chi khac cho nguoi phat hien la vai, khong phai engine.
+# Khong khop dong "cho engine dem anh" (buoc binh thuong cua luong chot vai).
+_SHORT_OF_IMAGES = re.compile(r"thiếu ảnh|thieu anh|không đủ ảnh|khong du anh", re.IGNORECASE)
+
 
 def _log(msg: str) -> None:
     """Duong LOW-411 chay trong approve_service: ghi approve.log (noi doc log cua
@@ -247,6 +254,13 @@ def out_of_budget(run: dict) -> bool:
     return run.get("status") == "gave_up" and bool(_OUT_OF_BUDGET.search(str(run.get("error") or "")))
 
 
+def image_shortage_block(run: dict) -> bool:
+    """Lan chay cuoi la vai TU block vi thieu anh (sau khi da nhin anh va tim them)."""
+    tx = str(run.get("summary") or "")
+    return (run.get("status") == "blocked" and bool(_SHORT_OF_IMAGES.search(tx))
+            and "engine" not in tx.lower())
+
+
 def _draft_of_image_task(tid: str) -> tuple:
     """(draft_id, img.json) cua task anh `tid` qua khoa `image_task` ma create_pair
     ghi (LOW-382); (None, None) neu khong co — draft cu hon LOW-382 khong co khoa nay."""
@@ -261,11 +275,13 @@ def _draft_of_image_task(tid: str) -> tuple:
 
 
 def _route_one_out_of_budget(token, group, task: dict, run: dict):
-    """Chuyen MOT task het ngan sach sang Kite. Tra ve id task Kite, hoac None."""
+    """Chuyen MOT task het ngan sach (hoac vai tu block vi thieu anh) sang Kite.
+    Tra ve id task Kite, hoac None."""
     tid = task["id"]
+    thieu_anh = image_shortage_block(run)
     draft_id, im = _draft_of_image_task(tid)
     if not draft_id:
-        _log(f"{tid} het ngan sach nhung khong thay draft nao co image_task nay — de nguyen")
+        _log(f"{tid} bi chan nhung khong thay draft nao co image_task nay — de nguyen")
         return None
     if im.get("kite_task_id"):                       # da sang Kite tu truoc
         return None
@@ -277,19 +293,26 @@ def _route_one_out_of_budget(token, group, task: dict, run: dict):
     role_slug = vai_mod.canonical_slug(task["assignee"]) or task["assignee"]
     name = vai_mod.display_name(role_slug)
     title = im.get("title") or draft_id
-    budget = str(run.get("error") or "").split(" — ")[0][:80]
-    reason = f"{name} het ngan sach hai lan ({budget}), chua nop duoc bo qua cong anh"
+    if thieu_anh:
+        budget = str(run.get("summary") or "").strip().replace("\n", " ")[:160]
+        reason = f"{name} xem ảnh xong thấy thiếu ảnh thật dùng được: {budget}"
+        vi_sao = f"tự chặn vì thiếu ảnh thật: {budget}"
+        why = f"{name} tu chan vi thieu anh that"
+    else:
+        budget = str(run.get("error") or "").split(" — ")[0][:80]
+        reason = f"{name} het ngan sach hai lan ({budget}), chua nop duoc bo qua cong anh"
+        vi_sao = f"hết ngân sách hai lần ({budget}) mà chưa nộp được bộ qua cổng ảnh"
+        why = f"{name} het ngan sach hai lan"
     kite_tid, err = create_task_kite(draft_id, im, ly_do=reason)
     if err:
-        _log(f"{tid} het ngan sach, chuyen Kite LOI: {err}")
-        _time_send(role_slug, f"🖼 <b>{title}</b>: {name} hết ngân sách hai lần, chuyển Kite <b>lỗi</b>: {err}")
+        _log(f"{tid} bi chan ({why}), chuyen Kite LOI: {err}")
+        _time_send(role_slug, f"🖼 <b>{title}</b>: {name} {vi_sao}; chuyển Kite <b>lỗi</b>: {err}")
         return None
-    _close_image_task(draft_id, tid, kite_tid, why=f"{name} het ngan sach hai lan")
-    _time_send(role_slug, f"🖼 <b>{title}</b>: <b>{name}</b> hết ngân sách hai lần ({budget}) mà chưa "
-                          f"nộp được bộ qua cổng ảnh → đã tự chuyển <b>Kite</b> (task {kite_tid}).")
-    _report_receive_job(token, group, "kite", role_slug, title, kite_tid,
-                        ly_do=f"{name} hết ngân sách hai lần, chưa nộp được bộ qua cổng ảnh")
-    _log(f"{tid} het ngan sach ({budget}) -> Kite task {kite_tid}, draft {draft_id}")
+    _close_image_task(draft_id, tid, kite_tid, why=why)
+    _time_send(role_slug, f"🖼 <b>{title}</b>: <b>{name}</b> {vi_sao} → đã tự chuyển <b>Kite</b> "
+                          f"(task {kite_tid}). Các bài sau vẫn chạy bình thường.")
+    _report_receive_job(token, group, "kite", role_slug, title, kite_tid, ly_do=f"{name} {vi_sao}")
+    _log(f"{tid} {why} -> Kite task {kite_tid}, draft {draft_id}")
     return kite_tid
 
 
@@ -313,7 +336,7 @@ def route_out_of_budget(token, group, rows=None) -> list:
         routed = []
         for task in candidates:
             run = runs.get(task["id"]) or {}
-            if not out_of_budget(run):
+            if not (out_of_budget(run) or image_shortage_block(run)):
                 continue
             _ROUTE_TRIED.add(task["id"])
             kite_tid = _route_one_out_of_budget(token, group, task, run)
