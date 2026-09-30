@@ -32,7 +32,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageStat
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import card                                                   # noqa: E402
@@ -143,19 +143,10 @@ def geometry(lay: Layout) -> dict:
             "summary_top": summary_top, "summary_bottom": summary_bottom}
 
 
-GLOW_BLUR = 7                          # do mo quang toi quanh net chu (px)
-GLOW_ALPHA = 0.85                      # do dam quang toi (0..1)
-
-
-def _text(canvas, d, xy, ln, font, fill, glow: bool):
-    """Ve mot dong chu. `glow`: co quang toi om SAT net chu (khong phai dai nen) de doc tren anh."""
-    if glow:
-        mask = Image.new("L", canvas.size, 0)
-        ImageDraw.Draw(mask).text(xy, ln, font=font, fill=255, stroke_width=2)
-        mask = mask.filter(ImageFilter.GaussianBlur(GLOW_BLUR)).point(lambda v: min(255, int(v * 2 * GLOW_ALPHA)))
-        canvas.paste(Image.new("RGBA", canvas.size, (0, 0, 0, 255)), (0, 0), mask)
-    d.text(xy, ln, font=font, fill=fill)
-
+def _region_mean(canvas, y0, y1):
+    """Mau trung binh cua vung anh se nam duoi chu (canvas hien tai, truoc khi ve chu)."""
+    y0, y1 = max(0, int(y0)), min(H, int(y1))
+    return tuple(ImageStat.Stat(canvas.convert("RGB").crop((0, y0, W, y1))).mean[:3])
 
 
 def build(img_path, title: str, summary: str, handle: str, out, report=None,
@@ -176,23 +167,22 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
     base, flat, hop, _ = carousel._place_image(canvas, carousel._open(img_path), plan,
                                                g["frame_top"] - carousel.Q_MARK_CLEAR, g["summary_bottom"])
     truoc_nen = canvas.copy() if report is not None else None
-    if flat:
-        pal = carousel._flat_palette(flat)
-        fg, net = pal["fg"], pal["net"]
-    else:
-        # LOW-422 (Ong Chu 30/09/2026: *"khong co dai nen duoi text"*): KHONG phu overlay/dai nao
-        # duoi chu. Chu doc nho quang toi om SAT net chu (`_glow_text`), anh giu nguyen.
-        fg, net = carousel.FG, carousel._net()
+    # LOW-422 (Ong Chu 30/09/2026: *"khong co dai nen duoi text"*, *"nen sang thi dung chu mau den"*):
+    # KHONG overlay, KHONG vien/quang. Chu doi mau theo do sang THAT cua anh duoi chu (sang -> den,
+    # toi -> trang), y het cach anh nen phang doi mau chu (LOW-341).
+    ref = flat or _region_mean(canvas, g["first_line_top"], g["summary_bottom"])
+    pal = carousel._flat_palette(ref)
+    fg, net = pal["fg"], pal["net"]
     if report is not None:
         report.update(carousel._text_bg_report(truoc_nen, canvas))
         carousel._note_flat(report, canvas, flat, hop)
 
     y = g["first_line_top"]
     for ln in lay.title_lines:
-        _text(canvas, d, (TEXT_X, y - lay.title_ink_top), ln, lay.title_font, fg, not flat)
+        d.text((TEXT_X, y - lay.title_ink_top), ln, font=lay.title_font, fill=fg)
         y += lay.title_step
     mau_hang = card._color_rank_within(title)
-    mark_col = carousel._flat_mark(mau_hang, pal) if flat else carousel._color_mark(mau_hang)
+    mark_col = carousel._flat_mark(mau_hang, pal)
     card._quote_frame(d, FRAME_X, g["frame_top"], W - FRAME_X, g["frame_bottom"], net, mark_col)
 
     if handle:                       # chip ten kenh goc TREN-PHAI khung, nhu slide quote Dre
@@ -204,7 +194,7 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
 
     y = g["summary_top"]
     for ln in lay.summary_lines:
-        _text(canvas, d, (TEXT_X, y - lay.summary_ink_top), ln, lay.summary_font, fg, not flat)
+        d.text((TEXT_X, y - lay.summary_ink_top), ln, font=lay.summary_font, fill=fg)
         y += lay.summary_step
     canvas.convert("RGB").save(out, "PNG")
 

@@ -91,8 +91,8 @@ def test_rendered_slide_has_quote_frame_and_passes_overlay_gate():
 
 def test_no_band_under_text_lop_nen_khong_ton_tai():
     """LOW-422 (Ong Chu 30/09/2026: "khong co dai nen duoi text"): tren anh that KHONG co dai
-    toi/overlay nao duoi chu. Anh sang co chi tiet: cot pixel xa net chu (mep phai) khong bi
-    lam toi; chi co quang om sat net chu."""
+    toi/overlay nao duoi chu. Anh sang co chi tiet: cot pixel xa net chu khong bi lam toi, chu
+    doi sang MAU DEN, khong vien/quang."""
     tmp = Path(tam.temp_dir(prefix="low422_"))
     p = tmp / "bright.png"
     im0 = Image.new("RGB", (1600, 900), (215, 215, 215))       # anh CHI TIET (khong phang) -> duong overlay cu
@@ -108,6 +108,9 @@ def test_no_band_under_text_lop_nen_khong_ton_tai():
         px = im.convert("L")
         for y in range(g["first_line_top"], g["summary_bottom"], 25):
             assert px.getpixel((ds.W - 10, y)) >= 110, (y, px.getpixel((ds.W - 10, y)))
+        # nen sang -> chu MAU DEN, khong vien/quang (Ong Chu 30/09: "nen sang thi dung chu mau den")
+        vung = px.crop((ds.TEXT_X, g["first_line_top"], ds.W - 100, g["first_line_top"] + lay.title_step))
+        assert min(vung.getdata()) < 40 and max(vung.getdata()) >= 150, (min(vung.getdata()), max(vung.getdata()))
 
 
 # ---- vong 2: xen ke bia logo (le) / quote (chan) ---------------------------------------
