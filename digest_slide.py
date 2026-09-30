@@ -32,7 +32,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import card                                                   # noqa: E402
@@ -143,6 +143,21 @@ def geometry(lay: Layout) -> dict:
             "summary_top": summary_top, "summary_bottom": summary_bottom}
 
 
+GLOW_BLUR = 7                          # do mo quang toi quanh net chu (px)
+GLOW_ALPHA = 0.85                      # do dam quang toi (0..1)
+
+
+def _text(canvas, d, xy, ln, font, fill, glow: bool):
+    """Ve mot dong chu. `glow`: co quang toi om SAT net chu (khong phai dai nen) de doc tren anh."""
+    if glow:
+        mask = Image.new("L", canvas.size, 0)
+        ImageDraw.Draw(mask).text(xy, ln, font=font, fill=255, stroke_width=2)
+        mask = mask.filter(ImageFilter.GaussianBlur(GLOW_BLUR)).point(lambda v: min(255, int(v * 2 * GLOW_ALPHA)))
+        canvas.paste(Image.new("RGBA", canvas.size, (0, 0, 0, 255)), (0, 0), mask)
+    d.text(xy, ln, font=font, fill=fill)
+
+
+
 def build(img_path, title: str, summary: str, handle: str, out, report=None,
           cluttered: bool = False, sizes: tuple | None = None):
     """Ve mot slide ra `out`. `report` (dict) nhan so do nen chu LOW-286/LOW-341.
@@ -165,9 +180,8 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
         pal = carousel._flat_palette(flat)
         fg, net = pal["fg"], pal["net"]
     else:
-        # Overlay neo o DONG CHU DAU cua tieu de (LOW-286), tan ngay duoi dong tom tat cuoi.
-        carousel._layer_if_can(canvas, base, max(0, g["first_line_top"]), g["summary_bottom"],
-                               image_cluttered=cluttered, overlay_only=True)
+        # LOW-422 (Ong Chu 30/09/2026: *"khong co dai nen duoi text"*): KHONG phu overlay/dai nao
+        # duoi chu. Chu doc nho quang toi om SAT net chu (`_glow_text`), anh giu nguyen.
         fg, net = carousel.FG, carousel._net()
     if report is not None:
         report.update(carousel._text_bg_report(truoc_nen, canvas))
@@ -175,7 +189,7 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
 
     y = g["first_line_top"]
     for ln in lay.title_lines:
-        d.text((TEXT_X, y - lay.title_ink_top), ln, font=lay.title_font, fill=fg)
+        _text(canvas, d, (TEXT_X, y - lay.title_ink_top), ln, lay.title_font, fg, not flat)
         y += lay.title_step
     mau_hang = card._color_rank_within(title)
     mark_col = carousel._flat_mark(mau_hang, pal) if flat else carousel._color_mark(mau_hang)
@@ -190,7 +204,7 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
 
     y = g["summary_top"]
     for ln in lay.summary_lines:
-        d.text((TEXT_X, y - lay.summary_ink_top), ln, font=lay.summary_font, fill=fg)
+        _text(canvas, d, (TEXT_X, y - lay.summary_ink_top), ln, lay.summary_font, fg, not flat)
         y += lay.summary_step
     canvas.convert("RGB").save(out, "PNG")
 

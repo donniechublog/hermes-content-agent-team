@@ -89,6 +89,27 @@ def test_rendered_slide_has_quote_frame_and_passes_overlay_gate():
         assert any(max(abs(a - b) for a, b in zip(c, net)) <= 40 for c in found), (found, net)
 
 
+def test_no_band_under_text_lop_nen_khong_ton_tai():
+    """LOW-422 (Ong Chu 30/09/2026: "khong co dai nen duoi text"): tren anh that KHONG co dai
+    toi/overlay nao duoi chu. Anh sang co chi tiet: cot pixel xa net chu (mep phai) khong bi
+    lam toi; chi co quang om sat net chu."""
+    tmp = Path(tam.temp_dir(prefix="low422_"))
+    p = tmp / "bright.png"
+    im0 = Image.new("RGB", (1600, 900), (215, 215, 215))       # anh CHI TIET (khong phang) -> duong overlay cu
+    d0 = ImageDraw.Draw(im0)
+    for k in range(0, 1600, 40):
+        d0.rectangle((k, 0, k + 19, 900), fill=(120, 130, 140))
+    im0.save(p)
+    paths, errors = ds.build_all([{"image": str(p), "title": LONG[0], "summary": LONG[1]}], tmp / "q.png", "dcgr")
+    assert errors == [], errors
+    lay = _lay(*LONG)
+    g = ds.geometry(lay)
+    with Image.open(paths[0]) as im:
+        px = im.convert("L")
+        for y in range(g["first_line_top"], g["summary_bottom"], 25):
+            assert px.getpixel((ds.W - 10, y)) >= 110, (y, px.getpixel((ds.W - 10, y)))
+
+
 # ---- vong 2: xen ke bia logo (le) / quote (chan) ---------------------------------------
 # Ong Chu 26/09/2026 gui ba bia logo Anthropic/OpenAI/Microsoft: "Day cung la style can cho Hiro,
 # se dat xen ke voi style quote".
