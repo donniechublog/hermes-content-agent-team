@@ -16,6 +16,7 @@ is not installed.
 import importlib.metadata as metadata
 import platform
 import re
+import subprocess
 import sys
 from datetime import date
 from pathlib import Path
@@ -90,6 +91,21 @@ def _marker_applies():
     return lambda marker: Marker(marker).evaluate({"extra": ""})
 
 
+def hermes_agent_commit(home: Path | None = None) -> str:
+    """Commit of the hermes-agent checkout whose venv this lock describes, or "" when it
+    cannot be read (not a git checkout, git missing). The lock only pins packages, but
+    blackboard.py and cost_squeeze.py also import hermes code (`hermes_cli.kanban_db`,
+    `hermes_constants`), so "the versions that work" is really (lock + this commit)."""
+    home = home or Path.home() / "hermes-agent"
+    try:
+        out = subprocess.run(["git", "-C", str(home), "rev-parse", "HEAD"],
+                             capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    sha = out.stdout.strip()
+    return sha if out.returncode == 0 and re.fullmatch(r"[0-9a-f]{40}", sha) else ""
+
+
 def main(argv: list | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     path = Path(argv[0]) if argv else Path(__file__).resolve().parent / "requirements.txt"
@@ -103,6 +119,9 @@ def main(argv: list | None = None) -> int:
     print(f"# Nguon: Python {platform.python_version()} tren {platform.node()}, ngay {date.today().isoformat()}.")
     print(f"# {len(found)} goi = cac goi khai trong requirements.txt + phu thuoc bac cau; khong phai ca")
     print("# venv dung chung voi hermes. Cach lam moi: xem dau requirements.txt.")
+    sha = hermes_agent_commit()
+    if sha:
+        print(f"# hermes-agent: {sha}")
     for name in sorted(found):
         display, version = found[name]
         print(f"{display}=={version}")
