@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                             # noqa: E402
 import scan_seen                                              # noqa: E402
 import state_paths                                           # noqa: E402
+import scan_common                                           # noqa: E402
 from scan_common import VN, UA                                # noqa: E402
 
 env_load.load()
@@ -150,8 +151,8 @@ def out_story(t: dict) -> dict:
     manifest_write --nguon chon duoc bang so thu tu k."""
     ts = t.get("timestamp") or t.get("crawledAt") or ""
     try:
-        ngay = datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone(VN).strftime("%Y-%m-%d")
-    except ValueError:
+        ngay = scan_common.parse_time_utc(ts).astimezone(VN).strftime("%Y-%m-%d")
+    except (AttributeError, ValueError):                 # None: khong doc duoc
         ngay = ""
     handle = (t.get("author") or {}).get("handle") or ""
     handle = handle if handle.startswith("@") else f"@{handle}" if handle else ""
@@ -212,8 +213,8 @@ def main() -> int:
     if moc:
         try:
             tre_gio = (datetime.now(timezone.utc)
-                       - datetime.fromisoformat(moc.replace("Z", "+00:00"))).total_seconds() / 3600
-        except ValueError:
+                       - scan_common.parse_time_utc(moc)).total_seconds() / 3600
+        except (TypeError, ValueError):                  # TypeError: None hoac naive - aware
             tre_gio = None
     if tre_gio is None:
         canh_bao.append("Server khong tra moc crawl nao — DB tin X co the rong.")
