@@ -131,48 +131,12 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             canh += c
 
-            try:
-
-                from PIL import Image as _Im
-
-                with _Im.open(img_path) as _im:
-
-                    l, c = image_rules_kite.check_blank_image(nhan, _im)
-
-                    loi += l
-
-                    canh += c
-
-                    l, c = image_rules_kite.check_resolution(nhan, _im.width, _im.height)
-
-                    loi += l
-
-                    canh += c
-
-                    l, c = image_rules_kite.check_side_bars(nhan, _im)
-
-                    loi += l
-
-                    canh += c
-
-            except OSError as e:
-
-                loi.append(f"{nhan}: khong mo duoc anh ({type(e).__name__})")
-
-            # Mat nguoi (LOW-186, 16/09/2026): Kite gio CO truong `subject`
-
-            # trong slide, giong Dre/Ethan — khai duoc thi chi CANH BAO (nguoi
-
-            # duyet tu soi dung sai), khong khai duoc thi CHAN cung nhu hai vai
-
-            # kia. `kite_prepare.figure_real` khong con loai anh mat vo danh tu
-
-            # buoc chuan bi nen ung vien nay phai doi hoi giong het Dre/Ethan.
-
-            l, c = image_rules_kite.check_unnamed_face(nhan, img_path, sl.get("subject"))
-
+            # Blank/resolution/side_bars/mat nguoi: MOT ham chung voi bo chon anh ep
+            # (`image_rules_kite.gate_errors`, LOW-426). Mat nguoi (LOW-186, 16/09/2026):
+            # Kite CO truong `subject` trong slide — khai duoc thi chi CANH BAO (nguoi duyet
+            # tu soi dung sai), khong khai duoc thi CHAN cung nhu Dre/Ethan.
+            l, c = image_rules_kite.gate_errors(nhan, img_path, sl.get("subject"))
             loi += l
-
             canh += c
 
             # Truoc LOW-292 (20/09/2026) o day co cong "co image thi phai co
