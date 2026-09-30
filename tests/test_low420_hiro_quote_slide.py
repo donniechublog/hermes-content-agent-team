@@ -80,13 +80,70 @@ def test_rendered_slide_has_quote_frame_and_passes_overlay_gate():
     sizes = ds.deck_sizes(slides)
     g = ds.geometry(ds.fit_text(ImageDraw.Draw(Image.new("RGB", (ds.W, ds.H))),
                                 LONG[0], LONG[1], ds.TEXT_MAX_H, *sizes))
-    net = carousel._net()
+    nets = [carousel._flat_palette(b)["net"] for b in ((0, 0, 0), (255, 255, 255))]   # net theo mau chu (LOW-422)
     with Image.open(paths[0]) as im:
         px = im.convert("RGB")
         # net doc TRAI cua khung (goc tren-trai: r=30, net doc tu y0+r xuong 1/2 khung)
         y = g["frame_top"] + 30 + 20
         found = [px.getpixel((ds.FRAME_X + dx, y)) for dx in range(-3, 4)]
-        assert any(max(abs(a - b) for a, b in zip(c, net)) <= 40 for c in found), (found, net)
+        assert any(max(abs(a - b) for a, b in zip(c, net)) <= 40 for c in found for net in nets), (found, nets)
+
+
+def test_no_band_under_text_lop_nen_khong_ton_tai():
+    """LOW-422 (Ong Chu 30/09/2026: "khong co dai nen duoi text"): tren anh that KHONG co dai
+    toi/overlay nao duoi chu. Anh sang co chi tiet: cot pixel xa net chu khong bi lam toi, chu
+    doi sang MAU DEN, khong vien/quang."""
+    tmp = Path(tam.temp_dir(prefix="low422_"))
+    p = tmp / "bright.png"
+    im0 = Image.new("RGB", (1600, 900), (215, 215, 215))       # anh CHI TIET (khong phang) -> duong overlay cu
+    d0 = ImageDraw.Draw(im0)
+    for k in range(0, 1600, 40):
+        d0.rectangle((k, 0, k + 19, 900), fill=(120, 130, 140))
+    im0.save(p)
+    paths, errors = ds.build_all([{"image": str(p), "title": LONG[0], "summary": LONG[1]}], tmp / "q.png", "dcgr")
+    assert errors == [], errors
+    lay = _lay(*LONG)
+    g = ds.geometry(lay)
+    with Image.open(paths[0]) as im:
+        px = im.convert("L")
+        for y in range(g["first_line_top"], g["summary_bottom"], 25):
+            assert px.getpixel((ds.W - 10, y)) >= 110, (y, px.getpixel((ds.W - 10, y)))
+        # KHONG blur nen (Ong Chu 30/09: "ko blur nen"): soc 120/215 cua anh nguon van sac net o day slide
+        hang = [px.getpixel((x, 1320)) for x in range(0, ds.W)]
+        sac = sum(1 for v in hang if abs(v - 120) < 12 or abs(v - 215) < 12)
+        assert sac > 0.85 * len(hang), sac / len(hang)
+        # nen sang -> chu MAU DEN, khong vien/quang (Ong Chu 30/09: "nen sang thi dung chu mau den")
+        vung = px.crop((ds.TEXT_X, g["first_line_top"], ds.W - 100, g["first_line_top"] + lay.title_step))
+        assert min(vung.getdata()) < 40 and max(vung.getdata()) >= 150, (min(vung.getdata()), max(vung.getdata()))
+
+
+def test_choose_window_avoids_mixed_bright_dark_under_title():
+    """LOW-422 (Ong Chu 30/09: "ne vung"): logo sang nam dung duoi tieu de tren nen toi -> khong mau
+    chu nao doc het. `choose_window` phai chon khung cat cho tuong phan chu cao hon khung goc."""
+    im = Image.new("RGB", (800, 1000), (15, 15, 15))
+    d = ImageDraw.Draw(im)
+    d.rectangle((100, 700, 700, 764), fill=(250, 250, 250))       # khoi trang phu NUA vung tieu de (goc)
+    lay = _lay(*SHORT)
+    g = ds.geometry(lay)
+
+    def cr(box):
+        x0, y0, ww, wh = box
+        c = im.crop((round(x0), round(y0), round(x0 + ww), round(y0 + wh))).resize((ds.W, ds.H))
+        return max(ds._contrast_p10(c, g["first_line_top"], g["frame_bottom"]))
+
+    goc = ds._windows(800, 1000, 1.0)[0]
+    chon = ds.choose_window(im, [], g)
+    assert cr(chon) > cr(goc) + 1.0, (cr(chon), cr(goc), chon)
+
+
+def test_choose_window_keeps_face_above_text():
+    """Mat nguoi phai nam TREN dong chu dau va con nguyen trong khung cat."""
+    im = Image.new("RGB", (800, 1000), (90, 90, 90))
+    g = ds.geometry(_lay(*SHORT))
+    face = [0.4, 0.05, 0.6, 0.2]
+    x0, y0, ww, wh = ds.choose_window(im, [face], g)
+    assert x0 <= face[0] * 800 and face[2] * 800 <= x0 + ww and y0 <= face[1] * 1000
+    assert (face[3] * 1000 - y0) / wh * ds.H <= g["first_line_top"], (x0, y0, ww, wh)
 
 
 # ---- vong 2: xen ke bia logo (le) / quote (chan) ---------------------------------------

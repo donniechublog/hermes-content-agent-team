@@ -50,17 +50,27 @@ def is_arxiv(link: str) -> str | None:
     return f"https://arxiv.org/pdf/{m.group(1)}"
 
 
+PDF_MAX_BYTES = 30_000_000          # paper arXiv thuong < 10 MB; tran chi de chan tep khong lo
+
+
 def download_pdf(url: str, timeout=40) -> bytes | None:
     try:
-        r = httpx.get(url, follow_redirects=True, timeout=timeout,
-                      headers={"user-agent": UA})
+        # Doc theo dong de vuot tran thi bo, khong nap het vao RAM (B23).
+        with httpx.stream("GET", url, follow_redirects=True, timeout=timeout,
+                          headers={"user-agent": UA}) as r:
+            if r.status_code != 200:
+                return None
+            buf = b""
+            for chunk in r.iter_bytes(65536):
+                buf += chunk
+                if len(buf) > PDF_MAX_BYTES:
+                    return None
+            ctype = r.headers.get("content-type", "")
     except Exception:                                        # noqa: BLE001
         return None
-    if r.status_code != 200:
+    if "pdf" not in ctype and not buf[:5] == b"%PDF-":
         return None
-    if "pdf" not in r.headers.get("content-type", "") and not r.content[:5] == b"%PDF-":
-        return None
-    return r.content
+    return buf
 
 
 def capture_cover(pdf_bytes: bytes) -> Image.Image | None:

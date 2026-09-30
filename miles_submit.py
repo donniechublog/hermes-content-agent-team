@@ -81,6 +81,7 @@ def main() -> int:
     loi, canh, tin = caption_check.check(cap, tl)
     if digest_writer.is_digest(meta):                     # ban tin van Hiro (LOW-405)
         loi += digest_writer.check_caption(cap, wd)
+        loi += digest_writer.check_frame(cap, wd)
     if persona == "jika":
         loi += caption_check.check_jika_voice(cap)
     print(f"[do] {tin.get('char_count', 0)} ký tự | {tin.get('sentence_count', 0)} câu | {tin.get('number_count', 0)} chỗ có số"
@@ -147,4 +148,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import write_log                  # D17: str exit vao muc ERROR, xem write_log.run_cli
+    sys.exit(write_log.run_cli(main))

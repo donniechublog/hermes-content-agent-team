@@ -143,6 +143,7 @@ def test_constants_match_approved_table():
                    - set(_rows_model_versions())
                    - set(_rows_repick())
                    - set(_rows_hiro())
+                   - set(_rows_schedule_board())
                    - {ten for _, ten in _rows_242().values()}
                    - {ten for _, ten in _rows_241().values()}
                    - {ten for _, ten in _rows_246().values()})
@@ -341,7 +342,10 @@ def _rows_publish_schedule() -> dict:
             "PUBLISH_SLOT_LOCK": ("publish_slot.lock",
                                   "state/<brand>/publish_slot.lock"),
             "PUBLISH_DUE_LOCK": ("publish_due.lock",
-                                 "state/<brand>/publish_due.lock")}
+                                 "state/<brand>/publish_due.lock"),
+            # LOW-437: khoa hang doi day lai moat, cung di qua publish_schedule._locked
+            "MOAT_QUEUE_LOCK": ("moat_queue.lock",
+                                "state/<brand>/moat_queue.lock")}
 
 
 def _rows_scan_overflow() -> dict:
@@ -390,6 +394,17 @@ def _rows_hiro() -> dict:
             "HIRO_IMAGES_FILE": ("hiro_images.json", "state/<brand>/prepare/<draft_id>/hiro_images.json"),
             "HIRO_IMAGES_DIR": ("hiro_images", "state/<brand>/prepare/<draft_id>/hiro_images/"),
             "HIRO_AUTO_FILE": ("hiro_auto.json", "state/<brand>/hiro_auto.json")}
+
+
+def _rows_schedule_board() -> dict:
+    """LOW-428 (30/09/2026): bang lich dang cua Ada — English san."""
+    return {"SCHEDULE_BOARD_FILE": ("schedule_board.json", "state/<brand>/schedule_board.json")}
+
+
+def test_schedule_board_constants_are_declared():
+    for const, (name, kept) in _rows_schedule_board().items():
+        assert getattr(state_paths, const) == name, (const, getattr(state_paths, const))
+        assert kept in TABLE_231["_kept"], f"{kept} khong co trong _kept cua state_files_v2.json"
 
 
 def test_hiro_constants_are_declared():

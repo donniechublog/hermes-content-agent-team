@@ -34,6 +34,7 @@ import state_paths                                            # noqa: E402
 ROLE = "hiro"
 MAX_CANDIDATES = 3                 # anh ung vien moi tin — du de Lam lai co anh khac
 LOGO_LETTER = "L"                  # ma the logo cua tin: `3L` (LOW-420)
+MAX_REJECTED = 4                   # anh bi vision loai toi da moi tin (moi anh ~2s vision)
 MIN_SHORT_SIDE = 400               # duoi nua khung 1080 thi phong len vo han
 LETTERS = "ABCDEFGH"
 
@@ -95,16 +96,14 @@ def _candidate_urls(item: dict, wide_only: bool = False) -> list:
 def _save_candidate(url: str, out: Path, seen: list) -> dict | None:
     """Tai + cat mot anh ra `out`. None neu khong dung duoc hoac trung anh da giu (`seen`: dhash)."""
     import article_images
-    from PIL import Image
+    import image_rules_common
     from prepare.download_filter import _save_crop
     rules = role.active_rules()
     try:
         r = article_images._download(url)
         if r.status_code != 200:
             return None
-        img = Image.open(io.BytesIO(r.content))
-        img.load()
-        img = img.convert("RGB")
+        img = image_rules_common.open_rgb(io.BytesIO(r.content))   # LOW-445/446: EXIF + alpha
     except Exception:                                        # noqa: BLE001 — anh hong thi bo, thu anh sau
         return None
     w, ht = img.size
@@ -124,7 +123,10 @@ def _save_candidate(url: str, out: Path, seen: list) -> dict | None:
     if chart:
         img.save(out, "PNG")                                  # full be ngang, carousel tu dat
     else:
-        _save_crop(img, out, "4:5", cat_ngang=True)
+        import crop_ratio
+        import main_subject
+        cx, cy = main_subject.crop_center(img, crop_ratio.RATIO["4:5"])   # LOW-422: chu the o nua tren
+        _save_crop(img, out, "4:5", cx, cy, cat_ngang=True)
     return {"path": str(out), "w": w, "h": ht, "chart": chart, "dhash": h}
 
 
@@ -202,20 +204,74 @@ def logo_for_item(item: dict, folder: Path) -> dict | None:
             "why": f"thẻ logo {found['label']} (dùng cho slide bìa)"}
 
 
+def _judge(path: str, title: str) -> dict:
+    """Vision nhin anh so voi TIEU DE tin -> {"relevant": True/False/None, "description": str}.
+    None = khong hoi duoc (thieu key, router hong): giu anh nhung brief ghi 'chua ai nhin'.
+
+    LOW-429 (30/09/2026, ban tin Vera dcgr): tin 'AMD thau tom World Labs' nhan anh logo Meta tren
+    toa nha kinh — ung vien chi duoc xep theo do net/ty le, khong ai kiem anh co noi ve tin.
+    Dung lai `prepare.vision.description_image` cua Dre (cung cau hoi LIEN_QUAN, ~2s/anh)."""
+    try:
+        from prepare import source, vision
+        cum = list(dict.fromkeys(source.all_proper_nouns(title, body="") + _title_names(title)))
+        got = vision.description_image(path, title, ", ".join(cum))
+        mo_ta, lq = str(got[0] or "")[:160], got[1]
+        # Con mat hay cham 'khong' cho mot tam LA CHINH hang trong tin (do 30/09: bien logo AMD o
+        # su kien, tin AMD mua World Labs) — mo ta noi ro ten hang/nguoi cua tieu de thi giu.
+        # Ten hang KHAC (Meta, OpenAI) khong nam trong tieu de nen van bi loai.
+        thay = next((c for c in cum if len(c) >= 3 and vision._names_in(mo_ta, c)), "")
+        if lq is False and thay:
+            return {"relevant": True, "description": f"{mo_ta} (giữ: mô tả nhắc “{thay}” trong tiêu đề)"}
+        if lq is False:
+            # Vision khong on dinh giua cac lan (do 30/09: bieu tuong ChatGPT tren tin OpenAI ra
+            # 'lien quan' lan dau, 'khong' lan sau) — chi LOAI khi hai lan cung 'khong'.
+            got2 = vision.description_image(path, title, ", ".join(cum))
+            if got2[1] is not False:
+                return {"relevant": got2[1], "description": str(got2[0] or "")[:160]}
+        return {"relevant": lq, "description": mo_ta}
+    except (Exception, SystemExit) as e:                     # noqa: BLE001 — vision hong khong duoc chan ca bo
+        print(f"[CANH BAO] vision khong nhin duoc {Path(path).name}: {type(e).__name__}: {e}", file=sys.stderr)
+        return {"relevant": None, "description": ""}
+
+
+def _title_names(title: str) -> list:
+    """Ten rieng DANG VIET TAT/GHEP tren tieu de (AMD, NVIDIA, OpenAI, xAI): `all_proper_nouns` bo sot
+    tu viet tat nhu AMD (do 30/09). Chi lay dang de nhan ra — tu viet hoa thuong (World, Labs) do
+    `all_proper_nouns` lo, de khong cuu nham mot anh chi vi mo ta co chu 'World'."""
+    return re.findall(r"(?<!\w)(?:[A-Z]{2,}\w*|[a-z]+[A-Z]\w*|[A-Z][a-z]+[A-Z]\w*)", title or "")
+
+
+def usable(images: list) -> list:
+    """Anh CON DUNG DUOC cua mot tin: bo anh vision cham KHONG LIEN QUAN (the logo khong bi xet)."""
+    return [a for a in images or [] if a.get("relevant") is not False]
+
+
 def prepare_item(item: dict, folder: Path, wide_only: bool = False, avoid: list = ()) -> list:
     """Toi da MAX_CANDIDATES anh da cat cho mot tin (+ the logo `nL` neu co, LOW-420):
-    [{code, path, w, h, chart, domain, why}]. `avoid`: dhash anh KHONG lay (anh mac dinh cua
-    trang, xem drop_shared_placeholders)."""
+    [{code, path, w, h, chart, domain, why, relevant, description}]. `avoid`: dhash anh KHONG lay
+    (anh mac dinh cua trang, xem drop_shared_placeholders).
+
+    LOW-429: moi anh qua vision (`_judge`). Anh KHONG LIEN QUAN van duoc giu trong danh sach (co
+    `relevant: False`, brief hien '❌ KHONG DUNG', hiro_submit chan) nhung khong chiem cho trong
+    MAX_CANDIDATES — ba anh lac de khong duoc lam het luot."""
     n = item["index"]
-    ra, seen = [], list(avoid)
+    ra, bad, seen = [], [], list(avoid)
     for url, page, why in _candidate_urls(item, wide_only):
-        if len(ra) >= MAX_CANDIDATES:
+        if len(ra) >= MAX_CANDIDATES or len(bad) >= MAX_REJECTED:
             break
-        code = f"{n}{LETTERS[len(ra)]}"
+        code = f"{n}{LETTERS[(len(ra) + len(bad)) % len(LETTERS)]}"
         got = _save_candidate(url, folder / f"{code}.png", seen)
         if got:
-            ra.append({"code": code, **got, "image_url": url,
-                       "domain": urlparse(page or url).netloc.removeprefix("www."), "why": why})
+            a = {"code": code, **got, "image_url": url,
+                 "domain": urlparse(page or url).netloc.removeprefix("www."), "why": why,
+                 **_judge(got["path"], item.get("title", ""))}
+            if a["relevant"] is False:
+                print(f"[CANH BAO] #{n}: {code} khong lien quan tin — {a['description'] or 'khong ro'}",
+                      file=sys.stderr)
+                bad.append(a)
+            else:
+                ra.append(a)
+    ra += bad
     if not wide_only:
         logo = logo_for_item(item, folder)
         if logo:
@@ -241,7 +297,7 @@ def run(draft_id: str, refresh: bool = False) -> tuple[dict, dict, Path]:
     # The logo khong tinh la "anh" o day: tin chi con logo van can anh that cho slide quote.
     for it in job["items"]:
         n = it["index"]
-        if found.get(n) and not [a for a in images.get(n) or [] if a.get("kind") != "logo"]:
+        if found.get(n) and not [a for a in usable(images.get(n)) if a.get("kind") != "logo"]:
             images[n] = prepare_item(it, folder, wide_only=True, avoid=placeholders) + \
                 [a for a in images.get(n) or [] if a.get("kind") == "logo"]
     contact_sheet(images, wd / state_paths.CONTACT_SHEET_FILE)
@@ -317,9 +373,10 @@ def spec_skeleton(job: dict, images: dict) -> dict:
     slides, skipped = [], []
     for it in job["items"]:
         n = it["index"]
-        ds = images.get(n) or []
+        ds = usable(images.get(n))
         if not ds:
-            skipped.append({"index": n, "reason": "không tìm được ảnh thật"})
+            skipped.append({"index": n, "reason": "không tìm được ảnh thật liên quan tới tin"
+                            if images.get(n) else "không tìm được ảnh thật"})
             continue
         style = style_at(len(slides) + 1)
         anh = [a for a in ds if a.get("kind") != "logo"]
@@ -349,13 +406,20 @@ def write_brief(draft_id: str, job: dict, images: dict, spec_path: Path) -> str:
             L.append(f"Tóm tắt researcher: {it['summary_vi']}")
         L.append(f"Link: {it.get('link', '')}")
         ds = images.get(it["index"]) or []
-        if not ds:
+        if not usable(ds):
             L.append("⚠️ KHÔNG có ảnh thật dùng được — để tin này trong `skipped` kèm lý do.")
         for a in ds:
+            if a.get("relevant") is False:
+                L.append(f"- `{a['code']}` ❌ KHÔNG LIÊN QUAN tới tin — {a.get('description') or 'không rõ'} "
+                         f"→ KHÔNG DÙNG (← {a['domain']})")
+                continue
             kieu = ("THẺ LOGO (cho slide bìa)" if a.get("kind") == "logo"
                     else "chart/bảng (giữ full bề ngang)" if a["chart"] else "ảnh chụp (đã cắt 4:5)")
             L.append(f"- `{a['code']}` {a['w']}x{a['h']} {kieu} ← {a['domain']}"
-                     + (f" — {a['why']}" if a.get("why") else ""))
+                     + (f" — {a['why']}" if a.get("why") else "")
+                     + (f" | ảnh là: {a['description']}" if a.get("description") else "")
+                     + (" | ⚠️ CHƯA AI NHÌN (vision không chạy)" if a.get("kind") != "logo" and a.get("relevant") is None
+                        else ""))
     L += ["",
           f"## Spec: SỬA tệp {spec_path} (đã điền sẵn từ danh sách, ảnh mặc định = ảnh đầu mỗi tin)",
           "Mỗi phần tử `slides`: `index` (số tin, giữ ĐÚNG thứ tự), `image` (mã ảnh CỦA CHÍNH tin đó), "

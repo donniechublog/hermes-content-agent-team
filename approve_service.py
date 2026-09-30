@@ -43,6 +43,7 @@ import submit_common                                             # noqa: E402
 import state_paths                                               # noqa: E402
 import role as _vai                                           # noqa: E402
 import hiro_pick                                              # noqa: E402
+import schedule_board                                         # noqa: E402
 
 from approve_base import (  # noqa: E402
     DRAFTS, HERMES_HOME, OFFSET, STATE_DIR, TELEGRAM_INCOMING, _run_background, _write_json, _send_text, _reply_real, call, is_boss, load_secrets, log, rut,
@@ -412,6 +413,19 @@ def _rescue_article_end_publishing(token, group):
          parse_mode="HTML")
 
 
+def _run_maintenance_step(fn, token, group):
+    """Mot buoc bao tri cuoi vong poll (LOW-435). Boc rieng: truoc day loi o day
+    roi xuong except ngoai cua vong poll, bi coi la MAT KET NOI — mot draft hong
+    lam buoc nem loi moi vong thi vong sau gui "Da ket noi lai sau 0.0 phut" vao
+    group, va ngu lui buoc toi 60s lam nut bam qua TTL 60s cua callback_query."""
+    try:
+        fn(token, group)
+    except Exception as e:                                  # noqa: BLE001
+        import traceback
+        log("loi", f"buoc bao tri {getattr(fn, '__name__', fn)} hong: "
+                   f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
 def loop():
     token, channel, group = load_secrets()
     offset = _read_offset()
@@ -425,6 +439,7 @@ def loop():
     mat_ket_noi_tu = None       # epoch luc bat dau chuoi loi hien tai, None = dang on
     loai_loi_dang_bao = None    # loai loi (409/429/ten exception) da bao — chi bao 1 lan/loai
     while True:
+        r = None        # van None trong except = chinh getUpdates nem (LOW-435)
         try:
             r = call(token, "getUpdates", offset=offset, timeout=50,
                      allowed_updates=["callback_query", "message"])
@@ -450,6 +465,9 @@ def loop():
                         log("loi", "bao mat/hoi ket noi hong: " + repr(e))
                 time.sleep(5)
                 continue
+            # LOW-435: goi duoc getUpdates la het chuoi loi — ve 0 NGAY, khong doi
+            # toi cuoi vong (loi o buoc sau khong duoc day lan lui buoc sau len).
+            loi_lien_tiep = 0
             if mat_ket_noi_tu is not None:
                 # Vong nay goi duoc: het chuoi loi (409/429 tu choi hoac exception
                 # ket noi ben duoi).
@@ -493,18 +511,26 @@ def loop():
                                f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
             # getUpdates cho toi 50 giay moi luot, nen goi moi vong la du thua
             # cho viec nay: no chi doc mot cau SQL va thuong khong gui gi.
-            _redo_all_done_limit(token, group)
+            _run_maintenance_step(_redo_all_done_limit, token, group)
             # Cong tu duyet ban nhap (LOW-382): the im lang qua cua so cho thi
             # tu xep lich dang. Cung ly do dat o day voi hai dong tren —
             # getUpdates da cho toi 50 giay moi vong, nen goi moi vong la du
             # thua cho mot viec chi doc vai tep JSON.
-            auto_schedule_silent_drafts(token, group)
+            _run_maintenance_step(auto_schedule_silent_drafts, token, group)
+            # LOW-428: bang lich dang cua Ada — mot tin tu sua trong topic Ada.
+            # Dat SAU dong tren de bai vua tu xep lich hien ngay trong vong nay.
+            # Boc rieng: bang hong khong duoc chan hai buoc ben duoi.
+            try:
+                kq = schedule_board.refresh(call, token, group)
+                if kq.startswith("error"):
+                    log("lich", "bang lich dang: " + kq)
+            except Exception as e:                          # noqa: BLE001
+                log("lich", f"bang lich dang hong: {type(e).__name__}: {e}")
             # LOW-411: Dre het ngan sach HAI lan (gave_up) -> tu chuyen Kite, thay vi
             # task nam blocked mai (3 bai dcgr chet 22–25/09). Dat TRUOC bang tien do:
             # task cu dong trong vong nay thi bang tien do im lang (LOW-410).
-            route_out_of_budget(token, group)
-            report_progress_kanban(token, group)
-            loi_lien_tiep = 0
+            _run_maintenance_step(route_out_of_budget, token, group)
+            _run_maintenance_step(report_progress_kanban, token, group)
         except Exception as e:                              # noqa: BLE001
             loi_lien_tiep += 1
             log("loi", "vong poll: " + type(e).__name__ + ": " + repr(e))
@@ -512,9 +538,11 @@ def loop():
             # tren chi bat 409/429 la API con tra loi duoc. Khong gui duoc gi luc
             # nay, nhung DAT MOC de vong sau goi duoc thi bao "da ket noi lai sau
             # N phut"; truoc day moc khong bao gio dat nen khong bao gio bao.
-            if mat_ket_noi_tu is None:
+            # LOW-435: CHI khi chinh getUpdates nem — loi sau do (ghi offset...) la
+            # loi cua ta, khong phai mang; dat moc thi group nhan "da ket noi lai".
+            if r is None and mat_ket_noi_tu is None:
                 mat_ket_noi_tu = time.time()
-            if loai_loi_dang_bao is None:
+            if r is None and loai_loi_dang_bao is None:
                 loai_loi_dang_bao = type(e).__name__
             time.sleep(min(60, 5 * loi_lien_tiep))
 

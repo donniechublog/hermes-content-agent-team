@@ -15,6 +15,7 @@ thu tu, cong nop dem dong liet ke. Khong mang, khong engine: moi thu Hiro da co.
 """
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 
 import caption_check
@@ -24,6 +25,19 @@ import state_paths
 # (MAX_PROSE_BLOCK) khong tinh chung — N tin thanh N dong van xuoi thi bi chan cung.
 LIST_LINE = caption_check.BULLET_LINE
 INTRO_BUDGET = 300                        # ky tu cho mo bai + ket
+
+
+OPEN_TITLE = "Điểm tin chuyển động AI ngày"   # LOW-423: mở bài cố định, không viết luận điểm
+
+
+def issue_date(wd: Path) -> str:
+    """dd/mm/yy của bản tin: ngày tạo job Hiro (không có thì hôm nay)."""
+    try:
+        job = json.loads((wd / state_paths.HIRO_JOB_FILE).read_text(encoding="utf-8"))
+        dt = datetime.fromisoformat(job["created_at"])
+    except (OSError, ValueError, KeyError, TypeError):
+        dt = datetime.now()
+    return f"{dt:%d/%m/%y}"
 
 
 def is_digest(meta: dict) -> bool:
@@ -73,19 +87,21 @@ def write_brief(meta: dict, wd: Path, draft_id: str, persona: str, voice: str, r
             L.append(f"   (researcher: {s['source_summary']})")
     L += ["", f"## Viết caption vào: {wd}/caption.txt  (CHỈ caption, HTML Telegram)",
           "Đây là BẢN TIN VẮN, không phải bài về một tin. Khuôn:",
-          "  1. Mở bài 1–2 câu chung cho cả bản tin (xu hướng/điểm nổi bật nhất trong các tin), "
-          "kết thúc bằng một câu dẫn có dấu hai chấm.",
+          f"  1. Mở bài CHỈ MỘT dòng tiêu đề cố định: “{OPEN_TITLE} {issue_date(wd)}:” "
+          "(giữ nguyên chữ và ngày, kết thúc bằng dấu hai chấm; không viết luận điểm/nhận định ở đây).",
           f"  2. Đúng {n} dòng liệt kê, MỖI SLIDE MỘT DÒNG, theo ĐÚNG thứ tự slide ở trên, mở bằng "
           "“• ” (emoji đầu dòng tuỳ chọn). Các dòng dính nhau, không chèn dòng trống giữa chúng.",
           f"     Mỗi dòng ≤ {line_budget(n)} ký tự: ý chính + con số quan trọng nhất của tin đó. "
           "Không đào sâu — chi tiết là việc của bài riêng.",
-          "  3. Một dòng trống rồi 1 câu kết (câu hỏi cho người đọc hoặc điều cần theo dõi).",
+          "  3. Một dòng trống rồi 1 câu kết BAO QUÁT CẢ BẢN TIN (câu hỏi cho người đọc hoặc điều cần theo dõi "
+          "về bức tranh chung của các tin), KHÔNG chọn riêng một hai tin để hỏi, không tên hãng/sản phẩm, "
+          "không con số.",
           "Không dòng \"Nguồn:\" (tin đến từ nhiều báo). Không URL/tên miền sống. Chỉ dùng số có trong "
           "danh sách trên; không cộng dồn, không suy ra số mới. Thẻ HTML chỉ <b> <i> <code>. Không em-dash (— –). "
           f"Cấm cụm: {', '.join(caption_check.STAR_EMPTY)}. Tiếng Việt có dấu.",
           *(["GIỌNG JIKA vẫn giữ (script chặn): câu mở đầu và câu kết BẮT ĐẦU bằng một emoji, "
              "không emoji ở câu văn giữa bài (dòng liệt kê được miễn); gọi người đọc \"quý đạo hữu\", "
-             "không \"bạn\"; câu hỏi kết đi thẳng vào nội dung."] if persona == "jika" else []),
+             "không \"bạn\"; câu kết hỏi về bức tranh chung của cả bản tin."] if persona == "jika" else []),
           "", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {root} && venv/bin/python {persona}_submit.py {draft_id}",
           "Script đếm dòng liệt kê (phải đúng số slide), chạy cổng chặn, ghép draft, đẩy vào hàng duyệt. "
@@ -119,4 +135,29 @@ def check_caption(cap: str, wd: Path) -> list:
     dai = [k for k, ln in enumerate(got, start=1) if len(_plain(ln)) > line_budget(n) + 40]
     if dai:
         loi.append(f"dong liet ke {', '.join(map(str, dai))} qua dai (tran ~{line_budget(n)} ky tu) — rut gon")
+    return loi
+
+
+def check_frame(cap: str, wd: Path) -> list:
+    """LOW-423: dòng đầu là tiêu đề cố định + ngày; câu kết bao quát cả bản tin (không số,
+    không tên riêng giữa câu, tức không xoáy vào một hai tin)."""
+    loi = []
+    lines = [ln for ln in cap.splitlines() if ln.strip()]
+    if not lines:
+        return ["caption rỗng"]
+    want = f"{OPEN_TITLE} {issue_date(wd)}:"
+    head = re.sub(r"^[^\w<]+", "", _plain(lines[0])).strip()
+    if head != want:
+        loi.append(f"dòng mở bài phải đúng “{want}” (emoji đầu dòng tuỳ chọn), không viết luận điểm")
+    last = _plain(lines[-1])
+    if LIST_LINE.match(lines[-1]) or len(lines) < 3:
+        loi.append("thiếu câu kết sau dòng liệt kê cuối")
+    else:
+        if re.search(r"\d", last):
+            loi.append("câu kết có con số: nó phải bao quát cả bản tin, không xoáy vào một tin")
+        words = re.findall(r"[^\W\d_]+", last)
+        rieng = [w for w in words[1:] if w[0].isupper() and w != "AI"]
+        if rieng:
+            loi.append(f"câu kết nêu tên riêng ({', '.join(rieng[:3])}): hỏi về bức tranh chung của cả "
+                       "bản tin, không chọn riêng một hai tin")
     return loi

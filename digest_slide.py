@@ -143,6 +143,139 @@ def geometry(lay: Layout) -> dict:
             "summary_top": summary_top, "summary_bottom": summary_bottom}
 
 
+def _contrast_p10(canvas, y0, y1):
+    """(tuong phan chu TRANG, tuong phan chu DEN) o PHAN VI 10% (pixel te nhat) cua vung [y0, y1)."""
+    import numpy as np
+    y0, y1 = max(0, int(y0)), min(canvas.height, int(y1))
+    a = np.asarray(canvas.convert("RGB").crop((0, y0, canvas.width, max(y0 + 1, y1))), dtype=np.float64) / 255.0
+    a = np.where(a <= 0.03928, a / 12.92, ((a + 0.055) / 1.055) ** 2.4)
+    lum = 0.2126 * a[..., 0] + 0.7152 * a[..., 1] + 0.0722 * a[..., 2]
+    return float(np.percentile(1.05 / (lum + 0.05), 10)), float(np.percentile((lum + 0.05) / 0.05, 10))
+
+
+def _contrast_bg(canvas, y0, y1):
+    """Mau nen GIA de chon mau chu: (0,0,0) neu chu TRANG doc tot hon, (255,255,255) neu chu DEN.
+    Do THEO PIXEL, lay diem tuong phan tu te (phan vi 10%) cua moi mau chu va chon mau cao hon:
+    nen xanh dam lan logo xanh nhat thi chu trang tot o nen nhung mat het tren logo (p10 1,35),
+    chu den tren ca hai van >= 3,7 — dem ti le pixel >= 4,5 chon nham trang o ca nay."""
+    white, black = _contrast_p10(canvas, y0, y1)
+    return (0, 0, 0) if white >= black else (255, 255, 255)
+
+
+# NE VUNG ROI (LOW-422, Ong Chu 30/09/2026: "ne vung"): khong con dai nen, nen khi vung chu roi vao
+# cho vua sang vua toi (logo trang tren nen den) thi khong mau chu nao doc het. Thu nhieu KHUNG CAT
+# (phong nhe + dich) cua anh, chon khung ma CA HAI khoi chu doc duoc nhat.
+LEGIBLE_CR = 4.5             # tuong phan du doc — dat roi thi khong can phong/dich them
+ZOOMS = (1.0, 1.12, 1.25, 1.4)
+ZOOM_COST = 2.0              # phat tren moi 1.0 phong to (uu tien khung goc, cat it nhat)
+SHIFT_COST = 0.4             # phat theo do lech khoi tam
+FACE_TEXT_GAP = 12           # mat nguoi phai nam TREN dong chu dau it nhat bay nhieu px
+
+
+EXT_MAX = 0.30               # keo dai day anh toi da bay nhieu phan chieu cao (de day chu the len cao)
+EXT_SIMPLE_STD = 22          # chi keo dai khi day anh DON GIAN: do lech xam cua 8% hang cuoi <= muc nay
+EXT_FADE = 0.06              # phan chieu cao cuoi anh chuyen dan sang mau keo dai (het moi noi)
+
+
+def extend_bottom(img):
+    """(anh, he so cao) — keo dai DAY anh bang chinh mau mep day cua no (khong blur, khong dai nen):
+    day chu the len cao de duoi con cho cho chu (Ong Chu 30/09/2026). Chi khi day anh don gian
+    (nen toi/phang); anh nhieu chi tiet o day thi giu nguyen (he so 1.0) vi keo dai se lo vet."""
+    import numpy as np
+    a = np.asarray(img.convert("RGB"), dtype=np.float64)
+    h, w = a.shape[:2]
+    if h < 20 or a[int(h * 0.92):].mean(axis=2).std() > EXT_SIMPLE_STD:
+        return img, 1.0
+    col = a[int(h * 0.96):].reshape(-1, 3).mean(axis=0)
+    ext = round(h * EXT_MAX)
+    out = np.empty((h + ext, w, 3))
+    out[:h] = a
+    out[h:] = col
+    fade = max(2, round(h * EXT_FADE))
+    ramp = np.linspace(0.0, 1.0, fade)[:, None, None]
+    out[h - fade:h] = a[h - fade:h] * (1 - ramp) + col * ramp
+    return Image.fromarray(out.round().astype("uint8"), "RGB"), (h + ext) / h
+
+
+def _face_boxes(img_path):
+    """Hop mat nguoi 0..1 hoac [] (khong do duoc: thieu cv2/model thi bo qua rang buoc mat)."""
+    try:
+        import image_rules_dre
+        return image_rules_dre.face_boxes(img_path) or []
+    except Exception:                                   # noqa: BLE001
+        return []
+
+
+def _windows(sw, sh, z):
+    """Cac khung cat ty le W:H, phong z lan so voi khung phu kin toi thieu: [(x0, y0, w, h)]."""
+    ww, wh = (sh * W / H, sh) if sw / sh > W / H else (sw, sw * H / W)
+    ww, wh = ww / z, wh / z
+    xs = [0.0] if sw - ww < 1 else [(sw - ww) * k / 4 for k in range(5)]
+    ys = [0.0] if sh - wh < 1 else [(sh - wh) * k / 4 for k in range(5)]
+    return [(x, y, ww, wh) for x in xs for y in ys]
+
+
+def _face_excess(faces, sw, sh, x0, y0, ww, wh, limit):
+    """Tong so px (tren canvas W x H) mat nguoi TRAN khoi vung cho phep cua khung: phan bi cat
+    ra ngoai mep khung + phan ma day mat thap hon `limit` (dong chu dau - FACE_TEXT_GAP). 0 = dat."""
+    s = H / wh
+    out = 0.0
+    for f in faces:
+        out += (max(0.0, x0 - f[0] * sw) + max(0.0, f[2] * sw - (x0 + ww)) + max(0.0, y0 - f[1] * sh)) * s
+        out += max(0.0, (f[3] * sh - y0) * s - limit)
+    return out
+
+
+def choose_window(img, faces, g, report=None):
+    """(x0, y0, w, h) khung cat toi uu (toa do anh nguon) — thuan, khong ve. `g`: geometry(lay).
+
+    LOW-447: khong khung nao giu duoc mat tren chu (mat thap, anh da sat 4:5) thi truoc day lay
+    khung giua — chinh khung mat de len tieu de, im lang. Nay:
+      1. bo mat qua nho de nhan ra (subject_fit.FACE_MIN_HEIGHT, LOW-279: nguoi dung xa) roi chon
+         lai — do that 30/09: hai mat 2% anh o quay le tan AMD ep phong 1.4, tieu de mat chu;
+      2. van khong duoc: lay khung mat TRAN IT NHAT (`_face_excess`, px; trong FACE_TEXT_GAP coi
+         nhu bang nhau thi lay khung chu doc duoc nhat) va ghi `face_text_overlap_px` vao
+         `report` de build_all in canh bao."""
+    src = img.convert("RGB")
+    ty = 1600 / max(src.size)
+    if ty < 1:
+        src = src.resize((max(1, round(src.width * ty)), max(1, round(src.height * ty))), Image.Resampling.BILINEAR)
+    sw, sh = src.size
+    k = 0.25                                                    # cham diem tren ban 1/4 cho nhanh
+    title = (g["first_line_top"] * k, g["frame_bottom"] * k)
+    summ = (g["summary_top"] * k, g["summary_bottom"] * k)
+
+    def score(x0, y0, ww, wh, z, lech):
+        small = src.crop((round(x0), round(y0), round(x0 + ww), round(y0 + wh))).resize(
+            (round(W * k), round(H * k)), Image.Resampling.BILINEAR)
+        cr = min(max(_contrast_p10(small, *title)), max(_contrast_p10(small, *summ)))
+        return min(cr, LEGIBLE_CR) - ZOOM_COST * (z - 1) - SHIFT_COST * lech
+
+    best, best_u = None, None
+    rejected = []                                               # (px mat tran, khung, z, lech)
+    for z in ZOOMS:
+        for (x0, y0, ww, wh) in _windows(sw, sh, z):
+            lech = (abs((x0 + ww / 2) / sw - 0.5) + abs((y0 + wh / 2) / sh - 0.5))
+            excess = _face_excess(faces, sw, sh, x0, y0, ww, wh, g["first_line_top"] - FACE_TEXT_GAP)
+            if excess > 0:                                      # mat bi cat hoac roi vao vung chu
+                rejected.append((excess, (x0, y0, ww, wh), z, lech))
+                continue
+            u = score(x0, y0, ww, wh, z, lech)
+            if best_u is None or u > best_u:
+                best, best_u = (x0, y0, ww, wh), u
+    if best is None:
+        import subject_fit
+        big = [f for f in faces if f[3] - f[1] >= subject_fit.FACE_MIN_HEIGHT]
+        if len(big) < len(faces):
+            return choose_window(img, big, g, report)
+        least = min(r[0] for r in rejected)
+        pool = [r for r in rejected if r[0] <= least + FACE_TEXT_GAP]
+        excess, best, _, _ = max(pool, key=lambda r: score(*r[1], r[2], r[3]))
+        if report is not None:
+            report["face_text_overlap_px"] = round(excess)
+    return tuple(v / ty if ty < 1 else v for v in best)
+
+
 def build(img_path, title: str, summary: str, handle: str, out, report=None,
           cluttered: bool = False, sizes: tuple | None = None):
     """Ve mot slide ra `out`. `report` (dict) nhan so do nen chu LOW-286/LOW-341.
@@ -158,17 +291,29 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
     # Nhu build_body_quote: voi anh nen phang, "dinh vung chu" la dinh dau " + chip (tren net
     # ngang tren cua khung); day vung chu la day tom tat.
     plan = carousel._flat_plan({"image": str(img_path)})
-    base, flat, hop, _ = carousel._place_image(canvas, carousel._open(img_path), plan,
-                                               g["frame_top"] - carousel.Q_MARK_CLEAR, g["summary_bottom"])
+    img = carousel._open(img_path)
+    if plan and plan[0]:             # nen phang (LOW-341): giu duong cu, KHONG dung nen mau "zone"
+        _, flat, hop, _ = carousel._place_image(canvas, img, (plan[0], None),
+                                                g["frame_top"] - carousel.Q_MARK_CLEAR, g["summary_bottom"])
+    else:                            # LOW-422 (Ong Chu 30/09: "ko blur nen"): anh SAC NET phu kin khung
+        flat, hop = None, None
+        img, kdai = extend_bottom(img)
+        faces = [[f[0], f[1] / kdai, f[2], f[3] / kdai] for f in _face_boxes(img_path)]
+        x0, y0, ww, wh = choose_window(img, faces, g, report)
+        canvas.paste(img.convert("RGB").crop((round(x0), round(y0), round(x0 + ww), round(y0 + wh)))
+                     .resize((W, H), Image.Resampling.LANCZOS), (0, 0))
     truoc_nen = canvas.copy() if report is not None else None
-    if flat:
-        pal = carousel._flat_palette(flat)
-        fg, net = pal["fg"], pal["net"]
-    else:
-        # Overlay neo o DONG CHU DAU cua tieu de (LOW-286), tan ngay duoi dong tom tat cuoi.
-        carousel._layer_if_can(canvas, base, max(0, g["first_line_top"]), g["summary_bottom"],
-                               image_cluttered=cluttered, overlay_only=True)
-        fg, net = carousel.FG, carousel._net()
+    # LOW-422 (Ong Chu 30/09/2026: *"khong co dai nen duoi text"*, *"nen sang thi dung chu mau den"*):
+    # KHONG overlay, KHONG vien/quang. Chu doi mau theo do sang THAT cua anh duoi chu (sang -> den,
+    # toi -> trang), y het cach anh nen phang doi mau chu (LOW-341).
+    # Tieu de (trong khung) va tom tat (ngoai khung) nam o hai vung anh khac nhau: moi khoi do mau rieng.
+    ref = flat or _contrast_bg(canvas, g["first_line_top"], g["frame_bottom"])
+    pal = carousel._flat_palette(ref)
+    fg = pal["fg"]
+    # Net khung + dau ngoac GIU MAU GOC cua quote Dre (cyan/trang theo thuong hieu) — chi doi
+    # mau CHU; ai muon doi mau khung thi noi (Ong Chu 30/09: "tai sao lai thay mau duong line").
+    net = pal["net"] if flat else carousel._net()
+    fg_sum = pal["fg"] if flat else carousel._flat_palette(_contrast_bg(canvas, g["summary_top"], g["summary_bottom"]))["fg"]
     if report is not None:
         report.update(carousel._text_bg_report(truoc_nen, canvas))
         carousel._note_flat(report, canvas, flat, hop)
@@ -190,7 +335,7 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
 
     y = g["summary_top"]
     for ln in lay.summary_lines:
-        d.text((TEXT_X, y - lay.summary_ink_top), ln, font=lay.summary_font, fill=fg)
+        d.text((TEXT_X, y - lay.summary_ink_top), ln, font=lay.summary_font, fill=fg_sum)
         y += lay.summary_step
     canvas.convert("RGB").save(out, "PNG")
 
@@ -222,6 +367,11 @@ def build_all(slides: list, out: Path, brand: str, tone: str = "dark") -> tuple[
                   cluttered=bool(s.get("cluttered")), sizes=sizes)
             max_share = carousel.TEXT_BG_MAX_SHARE
         paths.append(p)
+        if bao.get("face_text_overlap_px"):
+            # LOW-447: chi CANH BAO, khong chan — anh van dung duoc, nguoi duyet nhin la thay.
+            print(f"[CANH BAO] slide {i}: khong khung cat nao giu mat nguoi tren chu — lay khung mat "
+                  f"tran it nhat ({bao['face_text_overlap_px']}px de len/ra ngoai vung cho phep); "
+                  "doi anh mat cao hon neu can", file=sys.stderr)
         loi = (carousel._gate_text_background(f"slide {i}", bao, max_share=max_share)
                or carousel._gate_flat(f"slide {i}", bao))
         if loi:

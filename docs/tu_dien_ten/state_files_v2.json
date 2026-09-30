@@ -55,11 +55,11 @@
             "state/9router/ (monitor_9router ghi gốc)", "state/model_audition.json", "state/cron_audit.json",
             "state/migrate_state_paths_*.journal.jsonl",
             "state/<brand>/publish_schedule.json", "state/<brand>/publish_slot.lock",
-            "state/<brand>/publish_due.lock",
+            "state/<brand>/publish_due.lock", "state/<brand>/moat_queue.lock",
             "state/<brand>/scan/<run>/overflow_report.txt", "state/<brand>/scan/<run>/trial_overflow_manifest.json",
             "state/<brand>/dispatch_shadow.jsonl", "state/<brand>/model_versions.json",
             "state/<brand>/report_history.<role>.jsonl", "state/<brand>/repick_pending.json",
             "state/<brand>/prepare/<draft_id>/hiro_job.json",
             "state/<brand>/prepare/<draft_id>/hiro_images.json", "state/<brand>/prepare/<draft_id>/hiro_images/",
-            "state/<brand>/hiro_auto.json"]
+            "state/<brand>/hiro_auto.json", "state/<brand>/schedule_board.json"]
 }

@@ -1,6 +1,14 @@
 [Unit]
 Description=Hermes Content Team approve (%i)
 After=network-online.target
+# D17: Restart=always khong bao gio dua unit sang `failed` (crash loop cu 5s/lan chi la
+# "auto-restart"), nen OnFailure= chet neu thieu gioi han khoi dong. 20 lan trong 15
+# phut la loop that (moi lan ~5s + thoi gian chay), khong phai su co le te; toi do
+# unit DUNG han, bao qua notify-fail@ va cho nguoi reset-failed — dung hon la quay vo han
+# trong im lang. Cai tay unit mau: hermes/systemd/README.md.
+OnFailure=notify-fail@%n.service
+StartLimitIntervalSec=900
+StartLimitBurst=20
 
 [Service]
 Type=simple
