@@ -111,6 +111,28 @@ def error(nhan: str, noi_dung: str) -> None:
     log(nhan, noi_dung, logging.ERROR)
 
 
+def run_cli(main, *args) -> int:
+    """Diem vao chung cua cac script vai (`*_submit.py`): `sys.exit(write_log.run_cli(main))`.
+
+    Vi sao (D17, audit 30/09/2026): loi cua vai nop bai di ra bang `sys.exit("[LOI] ...")`
+    — chi la chuoi tren stderr cho vai doc, khong dong nao vao log nen `grep`/`journalctl -p
+    err` khong thay vai nao dang tac (LOW-305 moi phu approve). Boc MOT cho o day thay vi
+    ~50 cho goi: moi `sys.exit(<chuoi>)` (chuoi la loi, con 0/None/so la ket qua binh
+    thuong) ghi mot dong ERROR muc `[submit]` roi thoat NGUYEN chuoi + ma nhu cu, nen
+    vai va test van doc dung thong bao. Khong loc theo nhan "[LOI]" — nhan doi English la
+    LOW-297, loc theo do se im lang ngay hom do.
+
+    Ghi vao `state/<brand>/approve.log` khi co CT_BRAND (worker kanban co bien nay);
+    stdout cua vai do worker bat nen khong tu vao journal cua systemd.
+    """
+    try:
+        return main(*args)
+    except SystemExit as e:
+        if isinstance(e.code, str) and e.code.strip():
+            error("submit", f"{Path(sys.argv[0]).name}: {e.code}")
+        raise
+
+
 def shorten(text, n: int = 90) -> str:
     """Rut gon chuoi de log, khong log ca bai."""
     t = (text or "").replace("\n", " ")

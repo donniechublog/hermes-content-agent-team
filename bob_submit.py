@@ -324,4 +324,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import write_log                  # D17: str exit vao muc ERROR, xem write_log.run_cli
+    sys.exit(write_log.run_cli(main))
