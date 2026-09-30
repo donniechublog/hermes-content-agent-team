@@ -35,6 +35,7 @@ import httpx
 
 import env_load
 import state_paths
+import write_log
 
 ROOT = env_load.ROOT
 DRAFTS = ROOT / "drafts"
@@ -746,7 +747,7 @@ def _tele(method, **kw):
                        json=kw)
         return r.json()
     except Exception as e:                                   # noqa: BLE001
-        return {"ok": False, "description": type(e).__name__ + ": " + str(e)}
+        return {"ok": False, "description": write_log.redact(type(e).__name__ + ": " + str(e))}
 
 
 def report_card(draft_id, text, nut=None):

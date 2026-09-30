@@ -187,7 +187,7 @@ def refresh(call, token, group, now=None, brand=None):
         brand = moat_publish.brand_container()
     rows = collect(now=now, brand=brand)
     body = render(rows, now, brand, group)
-    fingerprint = hashlib.sha1(body.encode("utf-8")).hexdigest()
+    fingerprint = hashlib.sha1(body.encode("utf-8"), usedforsecurity=False).hexdigest()
     st = _read_state()
     day = _today(now)
     mid = st.get("message_id") if st.get("date") == day else None
