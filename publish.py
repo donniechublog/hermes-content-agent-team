@@ -298,9 +298,13 @@ def _main():
 
     body = a.file.read_text(encoding="utf-8") if a.file else None
 
-    cac_manh = []                 # result cua TUNG manh — chi nhanh text moi > 1
+    cac_manh = []                 # result cua TUNG manh — nhanh text (>1 manh) va album
     if a.album:
-        res = send_media_group(token, chat, a.album, body or a.caption, thread=thread)
+        # sendMediaGroup tra LIST message (moi anh mot cai), khong phai dict nhu
+        # cac ham khac: xu ly nhu cac manh text — `message_id` = cai cuoi,
+        # `message_ids` = ca album (Ong Chu co the reply vao bat ky anh nao).
+        cac_manh = send_media_group(token, chat, a.album, body or a.caption, thread=thread)
+        res = cac_manh[-1] if cac_manh else {}
     elif a.document:
         res = send_document(token, chat, a.document, body or a.caption, thread=thread)
     elif a.photo:
