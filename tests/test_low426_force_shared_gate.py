@@ -20,7 +20,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import image_rules_kite  # noqa: E402
 import kite_prepare as kb  # noqa: E402
 import state_paths  # noqa: E402
-from PIL import Image  # noqa: E402
 from tam import so_tam  # noqa: E402
 from test_spec_dre import _ve  # noqa: E402
 from test_spec_kite import _m  # noqa: E402
