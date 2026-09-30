@@ -805,6 +805,8 @@ def _densest_center(img, fw, fh):
     nho = img.convert("L").resize((200, max(1, round(200 * img.height / img.width))),
                                   Image.Resampling.BOX).filter(ImageFilter.FIND_EDGES)
     w, h = nho.size
+    if h < 3:            # anh cuc mong (vd 3000x1): khong con hang de do canh, crop se ValueError (B24)
+        return 0.5, 0.5
     nho = nho.crop((1, 1, w - 1, h - 1))
     w, h = nho.size
 
