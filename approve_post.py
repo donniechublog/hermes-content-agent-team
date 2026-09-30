@@ -281,7 +281,7 @@ def push_fingerprint(d):
     """Dau van tay NOI DUNG ban nhap: caption + tung anh (duong dan, dung luong,
     mtime). Hai lan push cung dau van tay = cung mot the, khong can gui lai
     (LOW-296: writer chay lai lenh nop 5 lan, moi lan them mot the)."""
-    h = hashlib.sha1()
+    h = hashlib.sha1(usedforsecurity=False)
     h.update((d.get("caption") or "").encode("utf-8"))
     for p in (d.get("images") or [d.get("image")]):
         if not p:
