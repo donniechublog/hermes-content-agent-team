@@ -1,7 +1,7 @@
 """LOW-422: chu the len nua tren khung, day anh keo dai bang mau mep (Ong Chu 30/09/2026:
 *"day logo cao len cho phan duoi nhieu khong gian de text ko bi chen vao chu the"*).
 
-Chay:  python tests/test_low422_subject_up.py
+Chay:  python tests/test_low422_main_subject.py
 """
 import sys
 from pathlib import Path
@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT))
 from PIL import Image, ImageDraw                               # noqa: E402
 
 import digest_slide as ds                                      # noqa: E402
-import subject_focus                                           # noqa: E402
+import main_subject                                           # noqa: E402
 
 
 def _blob_img(w, h, box):
@@ -22,17 +22,17 @@ def _blob_img(w, h, box):
 
 def test_edge_box_finds_the_bright_subject():
     im = _blob_img(600, 900, (150, 500, 450, 800))
-    subject_focus._faces = lambda i: []
-    box = subject_focus.find(im)
+    main_subject._faces = lambda i: []
+    box = main_subject.find(im)
     assert box and 0.2 < box[0] < 0.3 and 0.7 < box[2] < 0.8 and 0.5 < box[1] < 0.62 and 0.85 < box[3] < 0.95, box
 
 
 def test_crop_center_puts_subject_in_upper_half_for_tall_image():
     """Anh doc: chu the o duoi (y 0.55..0.9) -> cat 4:5 day chu the len het muc anh cho phep."""
     import crop_ratio
-    subject_focus._faces = lambda i: []
+    main_subject._faces = lambda i: []
     im = _blob_img(600, 1200, (150, 660, 450, 1080))
-    cx, cy = subject_focus.crop_center(im, 0.8)
+    cx, cy = main_subject.crop_center(im, 0.8)
     ra = crop_ratio.crop(im, 0.8, cx, cy, cat_ngang=True)
     sub_center_y = (0.5 * (660 + 1080) - (im.height - ra.height) * 0)  # toa do anh goc
     y0 = round(cy * im.height - ra.height / 2)
@@ -43,8 +43,8 @@ def test_crop_center_puts_subject_in_upper_half_for_tall_image():
 
 
 def test_crop_center_flat_image_falls_back_to_center():
-    subject_focus._faces = lambda i: []
-    assert subject_focus.crop_center(Image.new("RGB", (400, 600), (50, 50, 50)), 0.8) == (0.5, 0.5)
+    main_subject._faces = lambda i: []
+    assert main_subject.crop_center(Image.new("RGB", (400, 600), (50, 50, 50)), 0.8) == (0.5, 0.5)
 
 
 def test_extend_bottom_only_when_bottom_is_simple():

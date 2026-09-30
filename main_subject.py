@@ -1,4 +1,4 @@
-"""subject_focus.py — tam chu the cua anh, de cat 4:5 dat chu the o NUA TREN khung (LOW-422).
+"""main_subject.py — tam chu the cua anh, de cat 4:5 dat chu the o NUA TREN khung (LOW-422).
 
 Ong Chu 30/09/2026: bo dai nen duoi chu thi chu the phai nam tren de duoi con cho cho chu
 (*"day logo cao len cho phan duoi nhieu khong gian"*). Cat giua (crop_ratio mac dinh) bo qua viec do.
