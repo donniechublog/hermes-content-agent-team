@@ -26,6 +26,7 @@ import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -103,7 +104,7 @@ def about_download_wait(s: dict, muc: dict, out: Path, bo_qua_dau: bool) -> list
     vung = {str(v["number"]): v for v in s["regions"]}
     im = Image.open(s["clean_background_path"]).convert("RGB")
     d = ImageDraw.Draw(im)
-    da_dung = set()
+    da_dung: set[Any] = set()
     khoi = []
     for g in muc.get("merges") or []:
         try:

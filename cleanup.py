@@ -19,6 +19,7 @@ import io
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", newline="")
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", newline="")
@@ -65,7 +66,7 @@ def trim_jsonl(file_path: Path, keep_lines: int = 5000, dry_run: bool = False) -
     try:
         with open(file_path, "r", encoding="utf-8") as fh:
             tong = 0
-            cuoi = collections.deque(maxlen=keep_lines)
+            cuoi: collections.deque[Any] = collections.deque(maxlen=keep_lines)
             for dong in fh:
                 tong += 1
                 cuoi.append(dong)
@@ -114,7 +115,7 @@ def cleanup_old_manifests(state_dir: Path, age_days: int = 30, dry_run: bool = F
     cutoff = datetime.now() - timedelta(days=age_days)
 
     # Nhóm manifest theo vai
-    manifest_groups = {}
+    manifest_groups: dict[Any, Any] = {}
     for manifest_file in state_dir.glob("*_manifest*.json"):
         vai = manifest_file.name.split("_")[0]
         if vai not in manifest_groups:

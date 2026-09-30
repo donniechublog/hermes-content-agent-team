@@ -15,6 +15,7 @@ Ham THUAN (PIL), khong biet vai nao goi: nhan hop logo da do (vision `subject_bo
 ve mot tam anh dung san o dung co khung cua renderer.
 """
 from PIL import Image
+from typing import Any
 
 import image_rules_common
 
@@ -33,7 +34,7 @@ def background_color(im: Image.Image) -> tuple:
     for x0, y0 in ((0, 0), (w - CORNER, 0), (0, h - CORNER), (w - CORNER, h - CORNER)):
         o = im.crop((x0, y0, x0 + CORNER, y0 + CORNER))
         diem.extend(list(o.getdata()))
-    dem = {}
+    dem: dict[Any, Any] = {}
     for p in diem:
         k = tuple(v // 8 for v in p)                  # gom mau gan giong
         dem.setdefault(k, []).append(p)

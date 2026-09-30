@@ -34,6 +34,7 @@ import sys
 from pathlib import Path
 
 from PIL import Image
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -65,10 +66,10 @@ class Context:
         self.m, self.wd = m, wd
         self.anh = {a["id"]: a for a in m["images"]}
         self.chu_bai = nc.article_text_for(m, wd)
-        self.loi = []
-        self.canh = []                   # canh bao: in ra, khong chan
-        self.da_dung = {}                # ma anh -> nhan slide da dung no
-        self.dung_anh = []               # [(nhan slide, [ma...])]
+        self.loi: list[Any] = []
+        self.canh: list[Any] = []                   # canh bao: in ra, khong chan
+        self.da_dung: dict[Any, Any] = {}                # ma anh -> nhan slide da dung no
+        self.dung_anh: list[Any] = []               # [(nhan slide, [ma...])]
 
     def nhan_ma(self, ma: str, nhan: str) -> None:
         """Ghi nhan mot ma da duoc dung o `nhan`, va bao neu no dung hai lan."""

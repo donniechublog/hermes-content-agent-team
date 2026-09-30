@@ -34,6 +34,7 @@ import re
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -238,7 +239,7 @@ def say_image_new(m: dict, bo_sung: list, wd: Path, tieu_de: str) -> list:
     """Danh ma A<n> tiep theo, don ve original/, phan loai + vision. Tra danh sach anh MOI."""
     anh = m["images"]
     n0 = len(anh)
-    moi = []
+    moi: list[Any] = []
     for i, a in enumerate(bo_sung, start=n0 + 1):
         if len(moi) >= MAX_IMAGE_EXTRA:
             break

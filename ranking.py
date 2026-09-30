@@ -22,6 +22,7 @@ import time
 from pathlib import Path
 
 from PIL import Image, ImageDraw
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -750,7 +751,8 @@ def capture_board(page, models: list, out: Path, dpr: int = DPR, vua_khung: bool
     ung = page.evaluate(_JS_TIM, [models, HEIGHT_MAX_CSS, RATIO_FIT, vua_khung])
     if not ung:
         return None, "không có bảng ≥5 hàng chứa tên model"
-    da, ly_do = [], []
+    da: list[Any] = []
+    ly_do: list[Any] = []
     for tim in ung[:3]:
         p = out if not da else out.with_suffix(f".b{len(da)}.png")
         try:

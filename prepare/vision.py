@@ -21,6 +21,7 @@ import subject_fit
 from prepare import decision_log
 from prepare.source import all_proper_nouns, story_text
 from prepare.download_filter import _chart_by_figure, _save_crop
+from typing import Any
 
 
 VISION_MODEL = env_load.VISION_MODEL
@@ -554,7 +555,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     # (LOW-45) — hai co so doc lap, mot anh hero chup tu nguon van co the ngang
     # cao va can hoi cat_ngang binh thuong.
     hoi_cat_ngang = (r >= role.active_rules().LANDSCAPE_CLEAR and h >= 700 and not la_ct)
-    kq = {}
+    kq: dict[Any, Any] = {}
     ket_qua = (description_image(a["original_path"], tieu_de, hang, khai_niem=kn,
                          khai_niem_theo_loai=kn_theo_loai,
                          thuong_hieu=a.get("brand_match"), chup_nguon=chup_nguon,

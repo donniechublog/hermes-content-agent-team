@@ -26,6 +26,7 @@ import re
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -74,7 +75,8 @@ def md_bright_html(tho: str) -> str:
     router. Mot ten model dat la `<img src=x onerror=...>` se chay trong trinh
     duyet cua Ong Chu khi bam link luc 6h sang. (Ban cu dung python-markdown
     cung phai escape truoc vi chinh ly do do.)"""
-    ra, bang = [], []
+    ra: list[Any] = []
+    bang: list[Any] = []
 
     def xa_bang():
         if not bang:

@@ -22,6 +22,7 @@ import re
 import sys
 import time
 from datetime import date, datetime
+from typing import Any
 
 # họ model -> (regex tên họ, trang Wikipedia có bảng lịch sử phiên bản)
 FAMILIES = {
@@ -58,7 +59,7 @@ LEGACY_NAMES = {r"gemini\s+ultra": ("gemini", "1.0"), r"\bbard\b": ("gemini", "1
 
 def versions_in_text(text: str) -> dict:
     """{họ: {"3.1", "1.5", ...}} — các phiên bản có số được ghi trong đoạn chữ. Thuần."""
-    ra = {}
+    ra: dict[Any, Any] = {}
     for fam, (pat, _) in FAMILIES.items():
         for m in _family_rx(pat).finditer(text or ""):
             ra.setdefault(fam, set()).add(m.group(1))

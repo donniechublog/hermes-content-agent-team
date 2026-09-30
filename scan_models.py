@@ -46,6 +46,7 @@ import scan_common                                            # noqa: E402
 import scan_seen                                              # noqa: E402
 import state_paths                                            # noqa: E402
 import env_load
+from typing import Any
 
 STATE = env_load.state_dir() / state_paths.MODELS_SEEN_FILE
 UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
@@ -304,7 +305,7 @@ def fetch_swebench(top: int) -> dict:
         ngay = max((r.get("date") or "" for r in kq), default="") or None
         # Cung mot model duoc chay lai o nhieu moc ngay -> giu diem cao nhat,
         # khong thi mot model chiem nhieu dong va thu hang thanh vo nghia.
-        goc = {}
+        goc: dict[Any, Any] = {}
         for r in sorted(kq, key=lambda r: -(r.get("resolved") or 0)):
             ten = (r.get("model_display") if chi_bash else r.get("name")) or "?"
             goc.setdefault(ten, r)
@@ -588,7 +589,7 @@ I2V_PAT = re.compile(r'\{"formatted":\{"rank":(\d+),"elo":"([^"]*)"'
 
 def fetch_aa_media(top: int) -> dict:
     """Ba bang media cua AA. Tra {'tts': rows, 'stt': rows, 'i2v': rows}."""
-    ra = {}
+    ra: dict[Any, Any] = {}
     for ma, url, _nhan in AA_MEDIA:
         try:
             s = _rsc(_get(url, timeout=60).text)
@@ -790,7 +791,7 @@ def filter_aa(aa: dict, ngay: int, top: int) -> dict:
     # NHOM THEO TEN GOC: AA liet ke moi muc effort la mot dong ("GPT-6 Astra
     # (high)", "(max)", "(low)"...). Voi Nova do la MOT model ra mat, khong
     # phai bay. Lay bien the diem coding cao nhat lam dai dien.
-    ra_mat_goc = {}
+    ra_mat_goc: dict[Any, Any] = {}
     for r in sorted((slim_with_rank(r) for r in gan_day),
                     key=lambda x: -(x["coding"] or 0)):
         ra_mat_goc.setdefault(r["original_name"], r)
@@ -828,7 +829,8 @@ def name_original(ten: str) -> str:
 def _board_original(co_diem: list, gon2, top: int, khoa: str = "coding") -> list:
     """Top coding theo TEN GOC (moi model mot dong, hang = hang cua bien the
     tot nhat) — de so hang lan nay voi lan truoc bat 'vao top / leo hang'."""
-    ra, thay = [], set()
+    ra: list[Any] = []
+    thay: set[Any] = set()
     for r in co_diem:
         g = gon2(r)
         if g["original_name"] in thay:
@@ -1219,7 +1221,7 @@ def _try(ten: str, fn, khi_hong):
         return khi_hong
 
 
-_HONG_KHAC = []
+_HONG_KHAC: list[Any] = []
 
 
 def main():

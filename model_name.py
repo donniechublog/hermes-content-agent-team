@@ -19,6 +19,7 @@ da quet duoc ben arena hay chua.
 Tep nay KHONG import gi cua du an — thuan, test duoc bang so, khong can mang.
 """
 import re
+from typing import Any
 
 # Hau to MUC NO LUC / che do chay, khong phai mot phan cua ten model. Bang in
 # chung trong ngoac ("(max with fallback)", "(xhigh)") hoac dinh vao slug
@@ -42,7 +43,7 @@ def _merge_version(tokens: list) -> list:
     Slug tach phien ban bang gach noi (`claude-opus-5-5`), con bang in dau cham
     (`Claude Opus 5.5`). Chi noi hai nhom CHU SO lien nhau va ngan (<=2 chu so)
     de khong nuot duoi ngay hay so tham so."""
-    out = []
+    out: list[Any] = []
     for t in tokens:
         if (out and t.isdigit() and len(t) <= 2
                 and re.fullmatch(r"\d{1,2}(\.\d{1,2})*", out[-1])):

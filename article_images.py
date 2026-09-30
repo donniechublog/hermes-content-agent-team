@@ -31,6 +31,7 @@ from pathlib import Path
 
 import httpx
 from PIL import Image
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scan_common                                            # noqa: E402
@@ -306,7 +307,7 @@ def find(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) 
     # Cung mot anh thuong duoc phuc vu o nhieu co: image-46.png (2025x1652) va
     # image-46-1024x835.png?resize=640,522. Gom theo ten goc roi GIU BAN GOC —
     # ban co hau to kich co luon la ban da thu nho, chon no la tu bo do net.
-    theo_goc = {}
+    theo_goc: dict[Any, Any] = {}
     for c in ung_vien:
         k = re.sub(r"[-_]\d{2,4}x\d{2,4}|\?.*$", "", c["image_url"])
         cu = theo_goc.get(k)

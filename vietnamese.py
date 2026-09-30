@@ -11,6 +11,7 @@ Nova, Ada, Jean.
 `card.py` vẫn re-export hai tên này nên mọi lời gọi cũ giữ nguyên.
 """
 import re
+from typing import Any
 
 # Em-dash bi cam trong moi van ban dang. caption_check chan o bai viet, publish
 # doi not truoc khi gui, nhung THE ANH di duong khac nen truot qua. Chan tai day.
@@ -104,7 +105,7 @@ def find_face_mark(text: str) -> list:
     # Gop theo CHU THUONG (LOW-289, 20/09/2026): truoc day "The ... the" cua mot cau
     # tieng Anh dem thanh HAI dau hieu (khac hoa/thuong) nen cau do bi bao la tieng Viet
     # mat dau. Dem theo tu khac nhau THAT SU; in ra dang xuat hien dau tien.
-    dau = {}
+    dau: dict[Any, Any] = {}
     for i, t in enumerate(low):
         if t in NEGATIVE_FACE_MARK:
             dau.setdefault(t, tu[i])

@@ -24,6 +24,7 @@ import re
 from pathlib import Path
 
 from PIL import Image
+from typing import Any
 
 # IMAGE_PHRASES_SCREENSHOT (LOW-45, 13/09/2026) DA GO 16/09/2026 (LOW-201, dao
 # LOW-45): tieu chi "trong giong chup lai man hinh" loai oan anh dung chu de
@@ -721,7 +722,7 @@ def check_founder_balance(anh: dict, muc_ds) -> list:
         for t in _SUBJECT_SEPARATOR.split(str(muc.get("subject") or "")):
             if t.strip():
                 khai.add(_key(t))
-    nguoi = {}                                     # hang -> [(ma, ten)] chan dung dung duoc
+    nguoi: dict[Any, Any] = {}                                     # hang -> [(ma, ten)] chan dung dung duoc
     for ma, a in anh.items():
         bm = a.get("brand_match") or {}
         if bm.get("kind") != "person" or not bm.get("person") or not bm.get("key"):

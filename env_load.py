@@ -22,6 +22,7 @@ KIEN TRUC CONTAINER (nhieu brand tren 1 ma nguon):
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 _BASE = Path(__file__).resolve().parent
 # Goc du an = thu muc chua tep nay. Truoc day 16 tep tu tinh `Path.home() /
@@ -495,7 +496,7 @@ def exit_if_stale_worker(script: str) -> None:
                          "phien dang giu task se lam tiep.")
 
 
-_HELD_LOCKS = []
+_HELD_LOCKS: list[Any] = []
 
 
 class DraftLock:

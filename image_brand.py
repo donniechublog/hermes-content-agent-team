@@ -57,6 +57,7 @@ from pathlib import Path
 import env_load
 import manifest_values
 import state_paths
+from typing import Any
 
 MAX_RANK = 3            # số hãng lấy trong một tin
 SHORT_SIDE_MIN = 700
@@ -212,7 +213,8 @@ def vendors_in_story(tieu_de: str, tom_tat: str = "") -> list:
     import scan_business
     from prepare.source import all_proper_nouns
     vb = f"{tieu_de or ''} {tom_tat or ''}".lower()
-    vi_tri, ten_that = {}, {}
+    vi_tri: dict[Any, Any] = {}
+    ten_that: dict[Any, Any] = {}
     for ten in list(scan_business.WATCHLIST) + list(NAME_EXTRA):
         t = ten.strip()
         if len(t) < 3:                       # "yi" một mình bắt cả "yield"
@@ -406,7 +408,8 @@ def _file_claim(claims: dict, p: str) -> list:
     LOW-266 (19/09/2026): Wikidata giữ cả logo cũ trong P154 — Microsoft trả về
     logo 1980, 1982, 1987 (có P582) rồi mới tới logo 2012 (`preferred`), nên lấy
     phần tử đầu ra ngay logo 1980 lên bìa. Cùng lý do `_qid_claim` đã lọc CEO cũ."""
-    preferred, normal = [], []
+    preferred: list[Any] = []
+    normal: list[Any] = []
     for c in (claims or {}).get(p, []):
         if c.get("rank") == "deprecated" or "P582" in (c.get("qualifiers") or {}):
             continue

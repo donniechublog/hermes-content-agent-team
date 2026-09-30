@@ -21,6 +21,7 @@ import re
 import sys
 
 import env_load
+from typing import Any
 
 WIKI_API = "https://en.wikipedia.org/w/api.php"
 SHORT_SIDE_MIN = 700
@@ -88,7 +89,7 @@ def pageimages(ten: str) -> dict | None:
             "prop": "pageimages", "piprop": "original", "format": "json"},
             headers={"User-Agent": env_load.UA_WIKI}, timeout=20)
         r.raise_for_status()
-        pg = next(iter(r.json().get("query", {}).get("pages", {}).values()), {})
+        pg: dict[str, Any] = next(iter(r.json().get("query", {}).get("pages", {}).values()), {})
     except Exception as e:                                   # noqa: BLE001
         print(f"[thuc_the] wikipedia {ten!r}: {type(e).__name__}", file=sys.stderr)
         return None

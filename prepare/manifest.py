@@ -16,6 +16,7 @@ import state_paths
 import role as vai_mod                 # `vai` la ten tham so o vai ham duoi
 
 from prepare.common import ROOT, _brand_of
+from typing import Any
 
 
 def describe_ranking_image(m: dict) -> str:
@@ -88,7 +89,7 @@ def pair_two_vendor_images(anh: list, category) -> list:
     import story_type
     if not story_type.late(category, "two_company_pair"):
         return []
-    theo_hang = {}
+    theo_hang: dict[Any, Any] = {}
     for a in anh:
         th = a.get("brand_match") or {}
         if not th.get("key") or not a.get("uses") or a.get("relevant") is False:

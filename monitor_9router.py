@@ -26,6 +26,7 @@ import sqlite3
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -121,7 +122,7 @@ def string_already_config() -> dict:
     Model xuất hiện trong usage mà không có ở đây = fallback âm thầm hoặc client
     khác dùng chung 9router. Chuyển từ usage_audit.py (gộp 05/09/2026)."""
     import yaml
-    ra = {}
+    ra: dict[Any, Any] = {}
     homes = HERMES_HOMES or [env_load.hermes_home()]
     for home in homes:
         brand = home.name.replace(".hermes-", "")
@@ -196,7 +197,7 @@ def inspect_model(theo_model: dict, combo: dict) -> tuple:
         if ten in cau_hinh:
             for x in tv:
                 cau_hinh.setdefault(x, cau_hinh[ten])
-    gop = {}
+    gop: dict[Any, Any] = {}
     for nhan, v in theo_model.items():
         m = nhan.split(" @ ")[0].lower()
         a = gop.setdefault(m, {"req": 0, "prompt": 0, "cache": 0, "usd": 0.0})
@@ -238,16 +239,16 @@ def aggregate(rows, khoa_ten=None, kn_ten=None, cap_fb=None) -> tuple[dict, dict
         return {"req": 0, "prompt": 0, "cache": 0, "out": 0, "usd": 0.0, "error_count": 0}
 
     tong = zero_counters()
-    theo_model = collections.defaultdict(zero_counters)
-    theo_khoa = collections.defaultdict(zero_counters)
-    theo_gio = collections.defaultdict(zero_counters)
-    loi = collections.Counter()
+    theo_model: collections.defaultdict[Any, dict[str, Any]] = collections.defaultdict(zero_counters)
+    theo_khoa: collections.defaultdict[Any, dict[str, Any]] = collections.defaultdict(zero_counters)
+    theo_gio: collections.defaultdict[Any, dict[str, Any]] = collections.defaultdict(zero_counters)
+    loi: collections.Counter[Any] = collections.Counter()
     top = []
-    lat = collections.Counter()
-    lat_vi_du = []
+    lat: collections.Counter[Any] = collections.Counter()
+    lat_vi_du: list[Any] = []
     truoc = None                                             # (giây, model)
-    rong = collections.Counter()
-    rong_vi_du = []
+    rong: collections.Counter[Any] = collections.Counter()
+    rong_vi_du: list[Any] = []
     for ts, provider, model, cid, ak, status, ptok, ctok, cost, tok in rows:
         if (status in (None, "ok")) and (ctok or 0) <= EMPTY_OUT_MAX and (ptok or 0) >= EMPTY_PROMPT_MIN:
             rong[model] += 1
@@ -341,7 +342,7 @@ def read_date(ngay: str) -> dict:
 def error_connection(con, t0: str, t1: str) -> list:
     """Snapshot providerConnections: connection nào đang unavailable / có lỗi
     trong ngày, mã gì. Trả lời câu "vì sao lật model" thay vì đoán."""
-    ra = []
+    ra: list[Any] = []
     try:
         rows = con.execute("select name, provider, isActive, data, updatedAt from providerConnections").fetchall()
     except sqlite3.Error:
@@ -373,7 +374,8 @@ def _standard_model(ten: str) -> str:
 def _single_fake(theo_model: dict, tong: dict) -> tuple[dict, float, dict]:
     """$ trên mỗi token (prompt + out) của từng model trong ngày, đọc từ 9router;
     combo → trung bình có trọng số các thành viên. Thiếu thì dùng giá gộp ngày."""
-    gia, tok = collections.defaultdict(float), collections.defaultdict(int)
+    gia: collections.defaultdict[Any, float] = collections.defaultdict(float)
+    tok: collections.defaultdict[Any, int] = collections.defaultdict(int)
     for nhan, v in theo_model.items():                       # 'model @ kết nối' → gộp theo model
         m = nhan.split(" @ ")[0].lower()
         gia[m] += v["usd"]
@@ -446,7 +448,7 @@ def gather_role(ngay: str, theo_model: dict, tong: dict) -> dict:
                 vai[k]["usd_task"] = round(vai[k]["usd"] / n, 4) if n else None
     # $/bài: draft published có mtime trong ngày, theo brand (tên brand trong draft
     # là 'donniechublog'/'dcgr', home là blog/dcgr → khớp bằng chứa chuỗi).
-    bai = collections.Counter()
+    bai: collections.Counter[Any] = collections.Counter()
     for p in DRAFTS.glob("*.json"):
         if p.name.endswith((".meta.json", ".img.json", ".writer.json")):
             continue
@@ -459,7 +461,7 @@ def gather_role(ngay: str, theo_model: dict, tong: dict) -> dict:
             continue
         if d.get("status") == "published":
             bai[d.get("brand") or "?"] += 1
-    theo_brand = {}
+    theo_brand: dict[Any, Any] = {}
     for k, a in vai.items():
         b = theo_brand.setdefault(a["brand"], {"usd": 0.0, "published_count": 0, "usd_per_published": None})
         b["usd"] += a["usd"]

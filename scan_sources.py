@@ -37,6 +37,7 @@ import scan_seen                                              # noqa: E402
 import state_paths                                            # noqa: E402
 import env_load
 import required
+from typing import Any
 
 ROOT = env_load.ROOT
 STATE = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
@@ -146,7 +147,7 @@ def score_spread(points: int, median: float) -> int:
 # ---------- cac nguon ----------
 
 def fetch_hn(limit=40) -> list:
-    out = []
+    out: list[Any] = []
     with httpx.Client(timeout=25, headers={"User-Agent": UA}) as c:
         # Boc rieng loi goi danh sach: docstring hua "mot nguon chet khong keo
         # do ca lan quet" nhung loi goi nay tung de tran — HN 503 hoac tra HTML
@@ -347,7 +348,7 @@ def drop_duplicate_link(items: list) -> tuple:
     cong dong la mot tin hieu that, dung vut di.
 
     `seen_keys` la viec KHAC: no chan tin da len manifest NHUNG NGAY TRUOC."""
-    giu = {}
+    giu: dict[Any, Any] = {}
     bo = 0
     for it in items:
         k = _norm_url(it["link"])

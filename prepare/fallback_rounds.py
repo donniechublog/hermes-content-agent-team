@@ -21,6 +21,7 @@ from prepare.common import MAX_IMAGE, _brand_of, _write_json, _domain
 from prepare.source import _leading_proper_noun, _title_page, commons_images, candidate_social, candidate_static
 from prepare.vision import classify
 from prepare.download_filter import download_and_filter
+from typing import Any
 
 
 MAX_ARTICLE_SOURCES = 6           # tran nguon bai gop (Google News + Bing News) truoc khi chup
@@ -98,7 +99,7 @@ def _benchmark_pages(nguon: dict, nguon_path: Path, source_pages: list, tieu_de:
     truy_van = [f"{m} benchmark cost per task", f"{m} vs comparison table", f"{m} pricing benchmark"]
     co = {t.get("url") for t in source_pages}
     mien_co = {_domain(t.get("url", "")) for t in source_pages}
-    them_tong = []
+    them_tong: list[Any] = []
     for i, q in enumerate(truy_van):
         if len(them_tong) >= MAX_BENCHMARK_PAGE:
             break

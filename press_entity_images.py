@@ -24,6 +24,7 @@ import article_sources
 import scan_common
 import safe_xml
 from prepare.common import _domain
+from typing import Any
 
 BING_RSS = "https://www.bing.com/news/search?q={q}&format=rss&mkt={mkt}"
 MKT = ("en-US", "en-GB")          # hai thi truong -> hai bo bai khac nhau (do 12/09)
@@ -44,7 +45,9 @@ def filter_article(items: list, bo_mien: tuple = (), toi_da: int = MAX_ARTICLE) 
     """`items` = [(link, title)] từ RSS (đã hoặc chưa giải url=). Bỏ trùng URL,
     bỏ miền tổng hợp/chặn bot (article_sources.DROP_DOMAIN + bo_mien), tối đa
     MAX_NEW_DOMAIN bài một miền. Giữ thứ tự RSS (mới trước)."""
-    ra, thay, dem = [], set(), {}
+    ra: list[Any] = []
+    thay: set[Any] = set()
+    dem: dict[Any, Any] = {}
     for link, title in items:
         u = link_real(link)
         if not u.startswith("http") or u in thay:

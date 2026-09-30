@@ -12,6 +12,7 @@ import threading
 from dataclasses import dataclass
 from html import escape as html_escape
 from pathlib import Path
+from typing import Any
 
 
 
@@ -172,7 +173,7 @@ PICK_ALL_USAGE = ("Cú pháp: <code>Dre</code> (Dre làm cả báo cáo), <code>
 def read_number_ranges(text: str) -> tuple[tuple, str]:
     """'3, 5 11-15' -> ((3, 5, 11, 12, 13, 14, 15), ''). Manh sai (`x`, `5-3`, `0`) ->
     ((), manh do). Dung chung cho `Hiro /…` (LOW-418) va `Dre /…` (LOW-421)."""
-    ra = []
+    ra: list[Any] = []
     for tok in re.split(r"[,;\s/]+", _NUMBER_DASH.sub("-", text.strip())):
         if not tok:
             continue
@@ -187,7 +188,7 @@ def read_number_ranges(text: str) -> tuple[tuple, str]:
 
 def _runs(nums) -> list:
     """[3, 4, 5, 9] -> [(3, 5), (9, 9)]."""
-    ra = []
+    ra: list[Any] = []
     for n in sorted(set(nums)):
         if ra and n == ra[-1][1] + 1:
             ra[-1] = (ra[-1][0], n)
@@ -300,7 +301,9 @@ def read_pick_command(text: str):
     if not any(k == "so" for k, _ in manh):
         return None
 
-    ra, cho, thay = [], [], set()
+    ra: list[Any] = []
+    cho: list[Any] = []
+    thay: set[Any] = set()
     def _xa(ten):
         for n in cho:
             if n in thay:
@@ -655,7 +658,7 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
         {"image_role": vai_anh, "brand": brand, "draft_id": draft_id, "image_task": illu_id})
     return illu_id, None
 
-_KHOA_MANIFEST = {}                    # manifest path -> Lock
+_KHOA_MANIFEST: dict[Any, Any] = {}                    # manifest path -> Lock
 
 _KHOA_KHOA_MANIFEST = threading.Lock()
 

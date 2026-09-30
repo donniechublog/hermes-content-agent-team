@@ -37,6 +37,7 @@ import required
 import safe_xml
 import scan_seen                                              # noqa: E402
 import state_paths
+from typing import Any
 
 STATE = env_load.state_dir() / state_paths.BUSINESS_SEEN_FILE
 UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
@@ -374,7 +375,7 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
         if tu:
             items.append((t, tu, _deal_keywords(t["title"]), _amounts(t["title"])))
 
-    items_with_word = {}
+    items_with_word: dict[Any, Any] = {}
     for idx, (_, tu, _, _) in enumerate(items):
         for w in tu:
             items_with_word.setdefault(w, []).append(idx)
@@ -463,7 +464,7 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
                 parent[max(ri, rj)] = min(ri, rj)   # goc = ban som nhat
                 changed = True
 
-    nhom = {}
+    nhom: dict[Any, Any] = {}
     for i, (t, _, _, _) in enumerate(items):
         r = root(i)
         vao = nhom.get(r)
@@ -616,7 +617,7 @@ def consensus_groups(txts: list, today: list, prior: list) -> list:
     if not edge_sets:
         return []
     agreed = set.intersection(*edge_sets)
-    parent = {}
+    parent: dict[Any, Any] = {}
 
     def root(m):
         parent.setdefault(m, m)
@@ -627,7 +628,7 @@ def consensus_groups(txts: list, today: list, prior: list) -> list:
     for edge in agreed:
         a, b = sorted(edge)
         parent[root(b)] = root(a)
-    comps = {}
+    comps: dict[Any, Any] = {}
     for m in {m for e in agreed for m in e}:
         comps.setdefault(root(m), []).append(m)
     return sorted(sorted(c) for c in comps.values() if any(k == "T" for k, _ in c))
@@ -640,7 +641,8 @@ def merge_same_story(fresh: list, groups: list) -> tuple:
     T cung mot su kien -> gop vao ban som nhat, cong so bao va khoa da thay.
     Tra ve (fresh_moi, nhom_da_bao).
     """
-    absorbed, already_reported = set(), []
+    absorbed: set[Any] = set()
+    already_reported: list[Any] = []
     out = {id(t): t for t in fresh}
     for members in groups:
         idx = sorted({n for k, n in members if k == "T"} - absorbed,

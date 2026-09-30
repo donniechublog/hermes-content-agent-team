@@ -111,6 +111,7 @@ import text_bg  # noqa: E402
 # nhan dien + mau ten hang dung chung ca doi designer — LOW-344
 import brand_names  # noqa: E402
 import safe_zone  # noqa: E402
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 FONTS_DIR = ROOT / "assets" / "fonts"
@@ -644,7 +645,7 @@ FLAT_TEXT_GAP = 8       # px: anh nen phang ket thuc TREN dong chu dau it nhat c
 # Mot tam anh bi soi di soi lai: cong chan doc no, cong chan 2 dong dung slide
 # mot lan, roi vong chup dung lai lan nua. Rieng doc_nen phai quet toan bo pixel
 # va _anh_data_uri phai base64 ca tep — lam lai 3 lan cho mot anh 4MB la phi.
-_NHO_ANH = {}
+_NHO_ANH: dict[Any, Any] = {}
 
 
 def _small(khoa, lam):

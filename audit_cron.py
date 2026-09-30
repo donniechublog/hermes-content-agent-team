@@ -39,6 +39,7 @@ import hermes_adapter
 import publish
 import role
 import state_paths
+from typing import Any
 
 # Nhip ticker cua hermes la 60s (cron/jobs.py TICKER_INTERVAL_SECONDS). Nguong
 # "ticker dung" lay DUNG cong thuc cua `hermes cron status`
@@ -116,7 +117,8 @@ def audit_format(cron_dir: Path, bay_gio: float) -> tuple:
     """Soat MOT kho cron. Tra ve (van_de, so_job_da_soat).
 
     `van_de`: list dict {severity, name, reasons} — `name` da gom ca profile neu co."""
-    van_de, tep = [], cron_dir / "jobs.json"
+    van_de: list[Any] = []
+    tep = cron_dir / "jobs.json"
     if not tep.exists():
         # Kho khong co jobs.json la binh thuong (home chua tung tao job nao).
         return van_de, 0

@@ -34,6 +34,7 @@ from pathlib import Path
 
 import env_load
 import publish
+from typing import Any
 
 REPO = env_load.ROOT
 STATE = REPO / "state" / "skill_lessons"
@@ -88,7 +89,7 @@ class RepoIndex:
         listing = subprocess.run(["git", "-C", str(self.repo), "ls-files"],
                                  capture_output=True, text=True, check=True).stdout
         self.files = set(listing.splitlines())
-        self.by_name = {}
+        self.by_name: dict[Any, Any] = {}
         for path in self.files:
             self.by_name.setdefault(Path(path).name, []).append(path)
         self.renames = {}
@@ -97,7 +98,7 @@ class RepoIndex:
                 self.renames.update(json.loads((self.repo / rel).read_text(encoding="utf-8")))
             except (OSError, ValueError):
                 pass
-        self._identifier_cache = {}
+        self._identifier_cache: dict[Any, Any] = {}
 
     def _read(self, path: str) -> str:
         try:

@@ -42,6 +42,7 @@ from pathlib import Path
 
 import env_load
 import kanban_plugin_build
+from typing import Any
 
 ROOT = env_load.ROOT
 REPO = ROOT / "hermes"
@@ -303,7 +304,7 @@ def cap_file():
 
 IS_PLUGIN = "kanban "
 
-_PLUGIN_BUILD = {}            # {"built": {tep: {...}}} hoac {"error": str} — dung MOT lan moi lan chay
+_PLUGIN_BUILD: dict[Any, Any] = {}            # {"built": {tep: {...}}} hoac {"error": str} — dung MOT lan moi lan chay
 
 
 def plugin_build() -> dict:
