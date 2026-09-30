@@ -34,12 +34,19 @@ _kiem_host = scan_common.check_url
 SKIP_IMG_HINTS = ("avatar", "logo", "favicon", "icon-")
 
 
+def _check_redirect_step(request) -> None:
+    _kiem_host(request.url, "URL chuyen huong")
+
+
 def fetch(url: str) -> str:
-    # Kiem HAI lan: truoc khi goi, va lai sau khi di het chuoi chuyen huong.
-    # Chi kiem URL dau la ho: follow_redirects=True nen mot dia chi cong khai
-    # van co the 302 ve 127.0.0.1 — dung tro cu cua SSRF.
+    # Kiem TUNG BUOC truoc khi goi. Chi kiem URL dau la ho: follow_redirects=True
+    # nen mot dia chi cong khai van co the 302 ve 127.0.0.1 — dung tro cu cua SSRF.
+    # Truoc LOW-438 buoc chuyen huong chi duoc kiem SAU khi di het chuoi, tuc
+    # request toi 127.0.0.1 da di roi moi bi chan. Hook "request" cua httpx chay
+    # truoc MOI request, ke ca tung buoc chuyen huong.
     _kiem_host(url)
-    r = httpx.get(url, headers={"User-Agent": UA}, timeout=25, follow_redirects=True)
+    with httpx.Client(event_hooks={"request": [_check_redirect_step]}) as client:
+        r = client.get(url, headers={"User-Agent": UA}, timeout=25, follow_redirects=True)
     _kiem_host(r.url, "URL sau chuyen huong")
     r.raise_for_status()
     return r.text
