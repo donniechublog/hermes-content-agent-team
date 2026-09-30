@@ -26,7 +26,7 @@ import tam                                                    # noqa: E402
 
 def _wd():
     wd = Path(tam.temp_dir(prefix="low405_"))
-    job = {"scan_role": "vera", "brand": "dcgr", "items": [
+    job = {"scan_role": "vera", "brand": "dcgr", "created_at": "2026-09-30T08:36:37", "items": [
         {"index": 1, "title": "Oracle tuyên bố bất khả kháng", "summary_vi": "Stargate gặp trở ngại.",
          "link": "https://a.test/1"},
         {"index": 2, "title": "DeepSeek đạt doanh thu 1 tỷ USD", "summary_vi": "Tăng giá API 30%.",
@@ -98,6 +98,45 @@ def test_jika_voiced_digest_passes_jika_gate_and_brief_says_so():
     brief = digest_writer.prepare({"title": "x", "brand": "dcgr"}, wd, "d", "jika", "v", ROOT)
     assert "GIỌNG JIKA" in brief and "quý đạo hữu" in brief
     assert "GIỌNG JIKA" not in digest_writer.prepare({"title": "x"}, wd, "d", "miles", "v", ROOT)
+
+
+# LOW-423: mở bài cố định + ngày, câu kết bao quát cả bản tin
+FRAME_OK = """🔥 Điểm tin chuyển động AI ngày 30/09/26:
+• Oracle tuyên bố bất khả kháng với Stargate tại New Mexico, siêu dự án gặp trở ngại pháp lý.
+• DeepSeek chạm doanh thu quy năm 1 tỷ USD nhờ tăng giá API.
+• TSMC nâng giá gia công wafer thêm 3-6% từ năm 2027 vì chip AI chiếm hết công suất.
+
+🤔 Nhìn cả loạt tin này, quý đạo hữu thấy phần nào của ngành AI đang chuyển động nhanh nhất?"""
+
+
+def test_frame_accepts_fixed_title_and_general_closing():
+    wd = _wd()
+    assert digest_writer.check_frame(FRAME_OK, wd) == []
+    tl = digest_writer.material_text(digest_writer.load_slides(wd))
+    assert caption_check.check(FRAME_OK, tl)[0] == []
+    assert caption_check.check_jika_voice(FRAME_OK) == []
+
+
+def test_frame_blocks_thesis_opening_and_wrong_date():
+    wd = _wd()
+    assert digest_writer.check_frame(JIKA, wd), "mo bang luan diem thi bi chan"
+    sai_ngay = FRAME_OK.replace("30/09/26", "01/01/26")
+    assert digest_writer.check_frame(sai_ngay, wd)
+
+
+def test_frame_blocks_closing_about_one_or_two_stories():
+    wd = _wd()
+    hep = FRAME_OK.replace("Nhìn cả loạt tin này, quý đạo hữu thấy phần nào của ngành AI đang chuyển động nhanh nhất?",
+                           "Giữa Oracle và TSMC, quý đạo hữu đặt cược vào bên nào?")
+    assert digest_writer.check_frame(hep, wd)
+    so = FRAME_OK.replace("Nhìn cả loạt tin này", "Sau 3 tin này")
+    assert digest_writer.check_frame(so, wd)
+
+
+def test_brief_dictates_title_with_issue_date():
+    brief = digest_writer.prepare({"title": "x", "brand": "dcgr"}, _wd(), "d", "jika", "v", ROOT)
+    assert "Điểm tin chuyển động AI ngày 30/09/26:" in brief and "BAO QUÁT CẢ BẢN TIN" in brief
+    assert "digest_writer.check_frame(cap, wd)" in (ROOT / "miles_submit.py").read_text(encoding="utf-8")
 
 
 def test_wrong_line_count_is_blocked():
