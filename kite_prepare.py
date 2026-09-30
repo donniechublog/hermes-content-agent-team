@@ -119,7 +119,8 @@ def figure_hero(m: dict) -> dict | None:
     # Anh da len BAI KHAC cung khong len bia duoc: cong nop chan trung o moi slide (LOW-415).
     ut = [a for a in figure_real(m)
           if (a.get("relevant") is True or a.get("paper_figure") or from_arena(a))
-          and not vai_mod.blocked_empty(a, "kite") and not reused_elsewhere(a, m)]
+          and not vai_mod.blocked_empty(a, "kite") and not reused_elsewhere(a, m)
+          and not gate_blocked(a)]
     if not ut:
         return None
     # LOW-254 (18/09/2026): "khoi tit chup trang nguon" (`capture_kind ==
@@ -198,6 +199,31 @@ def line_hero(m: dict) -> list:
                 "Hình còn lại để cho `figure`."]
 
 
+_gate_cache: dict = {}
+
+
+def gate_blocked(a: dict) -> str:
+    """Loi dau tien cua cac cong anh Kite (vien hai ben, mat nguoi vo danh, anh trong...) cho
+    tam nay, hoac "". Cung ham voi cong nop (`image_rules_kite.gate_errors`): tam bi cong nop
+    chan thi KHONG duoc ep vao bo hay len bia (LOW-426). Chan dung hang (`brand_match.person`)
+    la nhan vat da biet ten nen dung nhu `subject` da khai."""
+    import image_rules_kite
+    path = a.get("unpadded_path") or a.get("original_path")
+    if not path:
+        return ""
+    bm = a.get("brand_match") or {}
+    subject = bm.get("person") if bm.get("kind") == "person" else None
+    try:
+        st = Path(path).stat()
+        key = (str(path), st.st_mtime_ns, st.st_size, subject)
+    except OSError:
+        return ""
+    if key not in _gate_cache:
+        loi, _ = image_rules_kite.gate_errors(str(a.get("id", "")), path, subject)
+        _gate_cache[key] = loi[0] if loi else ""
+    return _gate_cache[key]
+
+
 def _force_raw(m: dict) -> list:
     """Mã hình thật bị ép vào bộ khi tin chuyển sang Kite — CHƯA trừ tấm lên bìa.
 
@@ -213,7 +239,7 @@ def _force_raw(m: dict) -> list:
     hop_le = [a for a in figure_real(m)
               if a.get("relevant") is True and not a.get("concept")
               and not a.get("capture_source") and not vai_mod.blocked_empty(a, "kite")
-              and not reused_elsewhere(a, m)]
+              and not reused_elsewhere(a, m) and not gate_blocked(a)]
     return [a["id"] for a in _drop_same_photo(hop_le)][:MAX_FORCE_FIGURE]
 
 
