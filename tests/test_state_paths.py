@@ -342,7 +342,10 @@ def _rows_publish_schedule() -> dict:
             "PUBLISH_SLOT_LOCK": ("publish_slot.lock",
                                   "state/<brand>/publish_slot.lock"),
             "PUBLISH_DUE_LOCK": ("publish_due.lock",
-                                 "state/<brand>/publish_due.lock")}
+                                 "state/<brand>/publish_due.lock"),
+            # LOW-437: khoa hang doi day lai moat, cung di qua publish_schedule._locked
+            "MOAT_QUEUE_LOCK": ("moat_queue.lock",
+                                "state/<brand>/moat_queue.lock")}
 
 
 def _rows_scan_overflow() -> dict:

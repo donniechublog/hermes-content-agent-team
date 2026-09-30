@@ -444,8 +444,10 @@ def _round_widen_search(anh: list, source_pages: list, tieu_de_nhin: str, toi_th
     bo_sung = download_and_filter(cands2, wd2, da_giu=anh) if cands2 else []
     print(f"[tim rong] tai + loc: {len(bo_sung)} anh giu lai / {len(cands2)} ung vien", file=sys.stderr)
     n0 = len(anh)
+    # LOW-441: tran dem anh CON GIU nhu vong thuong hieu (LOW-267); `start` van
+    # la len(anh) — do la so dat ten tep A<i>, phai vuot moi ma da co ke ca anh loai.
     for i, a in enumerate(bo_sung, start=n0 + 1):
-        if len(anh) >= MAX_IMAGE + 4:
+        if _count_kept(anh) >= MAX_IMAGE + 4:
             break
         a["id"] = f"A{i}"
         moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
@@ -1002,7 +1004,7 @@ def _round_concept(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     bo_sung = download_and_filter(cands, wd3, da_giu=anh) if cands else []
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
-        if len(anh) >= MAX_IMAGE + 6:
+        if _count_kept(anh) >= MAX_IMAGE + 6:      # LOW-441: anh da loai khong chiem tran
             break
         a["id"] = f"A{i}"
         moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
@@ -1034,7 +1036,9 @@ def _round_entity(anh: list, tieu_de_nhin: str, wd: Path) -> tuple:
     bo_sung = download_and_filter(cands, wd6, da_giu=anh) if cands else []
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
-        if len(anh) >= MAX_IMAGE + 6 or len(anh) - n0 >= MAX_EXTRA_ENTITY_:
+        # LOW-441: tran tuyet doi dem anh CON GIU; tran rieng cua vong van dem so
+        # tam da them (gioi han so lan tai + hoi con mat trong mot vong).
+        if _count_kept(anh) >= MAX_IMAGE + 6 or len(anh) - n0 >= MAX_EXTRA_ENTITY_:
             break
         a["id"] = f"A{i}"
         moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
