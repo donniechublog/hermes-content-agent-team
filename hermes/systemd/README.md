@@ -51,6 +51,29 @@ Telegram "không phản hồi" vì callback tới trễ, tin tiến độ và ti
 Gỡ khi đường tới Telegram ổn lại: xoá hai drop-in, `daemon-reload`, restart
 `hermes-approve@{blog,dcgr}` và `hermes-gateway@{blog,dcgr}`.
 
+## Báo khi `hermes-approve@` chết hẳn (D17, 30/09/2026)
+
+Trước đây unit chỉ có `Restart=always`, không `OnFailure=`: dịch vụ duyệt bài chết là
+im lặng, Ông Chủ chỉ biết khi nút Telegram không phản hồi. Nay:
+
+- `hermes-approve@.service` có `OnFailure=notify-fail@%n.service`.
+- **Kèm** `StartLimitIntervalSec=900` / `StartLimitBurst=20`. Không có giới hạn này thì
+  `OnFailure=` không bao giờ chạy: `Restart=always` + `RestartSec=5` chỉ ở trạng thái
+  "auto-restart", không sang `failed` (mặc định 5 lần/10 giây, mà 1 lần/5 giây thì không
+  chạm). Hệ quả: crash loop thật (20 lần trong 15 phút) sẽ khiến unit **dừng hẳn** thay
+  vì quay vô hạn trong im lặng. Khởi động lại tay: `systemctl --user reset-failed
+  hermes-approve@<brand> && systemctl --user start hermes-approve@<brand>`.
+- `notify-fail@.service` + `notify-fail.sh` (unit mẫu, chỉ trong repo): ghi một dòng mức
+  ERR vào journal (`journalctl --user -p err` thấy) và gửi Telegram vào topic `ada` của
+  brand qua `publish.py --text ... --to-env TELEGRAM_GROUP_ID --thread-name ada`.
+  Không có gì lạ cần cài ngoài `daemon-reload`. Lệnh `cp` ở trên đã chép được nó
+  (`*.service`); script chạy thẳng từ `~/content-team/hermes/systemd/`.
+
+Chưa cài lên máy nào. Khi cài: chép `hermes-approve@.service` mới + `notify-fail@.service`,
+`daemon-reload`, rồi **restart** `hermes-approve@{blog,dcgr}` để unit nhận `OnFailure=`.
+Thử: `systemctl --user start notify-fail@hermes-approve@blog.service` (chỉ gửi báo, không
+đụng dịch vụ thật).
+
 ## Thứ KHÔNG nằm ở đây
 
 - `HERMES_DASHBOARD_SESSION_TOKEN` trong hai unit dashboard đã được **che**.

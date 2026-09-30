@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import approve_post as ap                                       # noqa: E402
 import approve_service as aps                                   # noqa: E402
+import approve_base                                             # noqa: E402
 import draft_write as dw                                        # noqa: E402
 
 CAP = "💸 Tin mới về chi tiêu AI.\n\nGartner dự báo 2,7 nghìn tỷ USD, theo hãng tự công bố."
@@ -107,6 +108,48 @@ def test_draft_write_bo_dau_vet_khi_the_cu_da_doi_trang_thai():
         _drafts(tmp, "d1", {"caption": "cu", "status": "rejected", "tg_card_message_id": 4110})
         _chay_draft_write(tmp, "d1", CAP)
         assert "tg_card_message_id" not in _read(tmp, "d1")
+    _with_tmp(run)
+
+
+# ------------------------------------------------------------ B2: dau "da len channel" (LOW-431)
+def test_draft_write_giu_dau_len_channel_sau_publish_failed():
+    """Album da len channel, phan chu hong -> publish_failed. Writer nop lai caption
+    (duong hoi phuc duy nhat, the da bi go ban phim) thi draft PHAI con
+    channel_album_mid — mat dau la lan duyet ke tiep gui album lan thu hai."""
+    def run(tmp):
+        _drafts(tmp, "d1", {"caption": "cu", "status": "publish_failed",
+                            "channel_album_mid": 777, "tg_card_message_id": 4110})
+        _chay_draft_write(tmp, "d1", CAP)
+        d = _read(tmp, "d1")
+        assert d["caption"] == CAP and d["status"] == "pending", d
+        assert d["channel_album_mid"] == 777, d
+        assert approve_base.already_len_channel(d), d
+        # the cu KHONG con pending nen dau the (PUSH_KEYS) van khong mang qua
+        assert "tg_card_message_id" not in d, d
+    _with_tmp(run)
+
+
+def test_draft_write_giu_ca_ba_dau_channel_bat_ke_trang_thai():
+    from approve_base import MARK_LEN_CHANNEL
+    assert MARK_LEN_CHANNEL == ("channel_album_mid", "channel_photo_mid", "channel_text_mid")
+
+    def run(tmp):
+        for st in ("pending", "publish_failed", "rejected", "cancelled"):
+            for k in MARK_LEN_CHANNEL:
+                _drafts(tmp, "d1", {"caption": "cu", "status": st, k: 55})
+                _chay_draft_write(tmp, "d1", CAP)
+                assert _read(tmp, "d1").get(k) == 55, (st, k)
+    _with_tmp(run)
+
+
+def test_draft_write_khong_bia_dau_channel_khi_chua_len():
+    """Dau chi mang qua khi ban truoc CO; draft moi/pending thuong khong tu nhien co dau."""
+    def run(tmp):
+        _drafts(tmp, "d1", {"caption": "cu", "status": "pending", "channel_album_mid": None})
+        _chay_draft_write(tmp, "d1", CAP)
+        d = _read(tmp, "d1")
+        assert not any(k in d for k in ("channel_album_mid", "channel_photo_mid", "channel_text_mid")), d
+        assert not approve_base.already_len_channel(d)
     _with_tmp(run)
 
 

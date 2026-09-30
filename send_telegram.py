@@ -51,7 +51,7 @@ def _topic(vai: str) -> int:
 
 
 def _md5(files) -> list:
-    return [hashlib.md5(Path(f).read_bytes()).hexdigest() for f in files]
+    return [hashlib.md5(Path(f).read_bytes(), usedforsecurity=False).hexdigest() for f in files]
 
 
 # Nghi giua cac lan thu lai khi mang loi (LOW-134). Test dat ve 0.

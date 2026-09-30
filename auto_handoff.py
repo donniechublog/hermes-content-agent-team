@@ -136,5 +136,5 @@ def must_review(draft_id: str) -> bool:
     loi, nen tick chay lai khong bien mot bai mau thanh bai auto."""
     if SAMPLE_PERCENT <= 0:
         return False
-    h = int(hashlib.sha1(draft_id.encode("utf-8")).hexdigest()[:8], 16)
+    h = int(hashlib.sha1(draft_id.encode("utf-8"), usedforsecurity=False).hexdigest()[:8], 16)
     return (h % 100) < SAMPLE_PERCENT

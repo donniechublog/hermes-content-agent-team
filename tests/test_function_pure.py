@@ -508,6 +508,46 @@ def test_is_boss_has_file_then_block_person_is():
             cs.BOSS_IDS = cu
 
 
+def _is_boss_with_file(content, uid):
+    """Ghi `content` (None = khong tao tep) vao boss_ids.json tam roi hoi is_boss."""
+    import tempfile
+    import approve_base as cs
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / cs.state_paths.BOSS_IDS_FILE
+        if content is not None:
+            p.write_text(content, encoding="utf-8")
+        cu = cs.BOSS_IDS
+        cs.BOSS_IDS = p
+        try:
+            return cs.is_boss({"from": {"id": uid}})
+        finally:
+            cs.BOSS_IDS = cu
+
+
+def test_is_boss_corrupt_file_then_deny_all():
+    """LOW-432: tep hong JSON truoc day roi vao mac dinh [] => cho qua MOI nguoi
+    o ca 5 cua. Tep co ma bi hong phai la TU CHOI, khong phai 'chua co tep'."""
+    assert _is_boss_with_file('["8112291996"', 12345) is False     # cut giua chung
+    assert _is_boss_with_file("", 12345) is False                  # tep rong 0 byte
+    assert _is_boss_with_file("{not json", 8112291996) is False
+    assert _is_boss_with_file('{"ids": [1]}', 1) is False          # sai kieu (khong phai list)
+    assert _is_boss_with_file('["abc", null]', 12345) is False     # khong phan tu nao ep duoc
+
+
+def test_is_boss_string_ids_normalized():
+    """LOW-432: id ghi dang chuoi `["123"]` truoc day khong bao gio khop int
+    => khoa chinh Ong Chu. Ep int tung phan tu, bo phan tu khong ep duoc."""
+    assert _is_boss_with_file('["8112291996"]', 8112291996) is True
+    assert _is_boss_with_file('["8112291996"]', 12345) is False
+    assert _is_boss_with_file('["x", 7, "9"]', 9) is True
+    assert _is_boss_with_file('["x", 7, "9"]', 7) is True
+
+
+def test_is_boss_missing_and_empty_list_keep_old_behavior():
+    assert _is_boss_with_file(None, 999) is True                   # chua co tep: cho qua
+    assert _is_boss_with_file("[]", 999) is True                   # tep [] hop le: giu hanh vi cu
+
+
 def test_code_article_from_button_right_match_color():
     """`draft_id` trong callback_data den tu client va di THANG vao duong dan
     tep. `_draft_id` sinh no bang slugify nen moi id that deu khop mau nay."""

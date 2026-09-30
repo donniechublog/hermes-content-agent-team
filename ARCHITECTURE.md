@@ -54,7 +54,7 @@ flowchart TB
 
     ocnu(["Ông Chủ<br/>người duyệt nội dung"]):::actor
     telegram["Telegram<br/>Bot API — 1 nhóm chung,<br/>mỗi vai một topic"]:::external
-    sys["content-team<br/>Dây chuyền nội dung tự động<br/>12 vai AI · Python"]:::container
+    sys["content-team<br/>Dây chuyền nội dung tự động<br/>15 vai AI · Python"]:::container
     hermes["Hermes Agent Platform<br/>gateway · kanban · cron ·<br/>dashboard · chat routing"]:::external
     router9["9router<br/>127.0.0.1:20128<br/>→ DeepSeek v4-Flash"]:::external
     news["Nguồn tin, dữ liệu ngoài<br/>HN/Reddit/arXiv, Google/Bing News,<br/>Wikimedia Commons, 22 bảng model,<br/>tin kinh doanh/đầu tư"]:::external
@@ -109,7 +109,7 @@ flowchart TB
         gwB["hermes-gateway@blog<br/>chat routing + kanban dispatcher<br/>max_in_progress: 10 (21/09/2026)"]:::container
         apB["hermes-approve@blog<br/>approve_service + duyet_*"]:::container
         dashB["hermes-dashboard-blog :9120"]:::container
-        cronB{{"cron: finn-scan, qinn-scan @06:00<br/>daily-log @06:00 · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:00"}}:::cron
+        cronB{{"cron: finn-scan, qinn-scan @06:00<br/>daily-log @06:00 · model-watch<br/>moat-watch mỗi 5' · publish-due mỗi phút · audit-cron @07:00"}}:::cron
         stateB[("state/blog/<br/>candidates · prepare/ · required_* ·<br/>used_images.jsonl")]:::datastore
     end
 
@@ -117,7 +117,7 @@ flowchart TB
         gwD["hermes-gateway@dcgr<br/>+ multiplex 8 profile_routes"]:::container
         apD["hermes-approve@dcgr<br/>approve_service — cùng mã nguồn"]:::container
         dashD["hermes-dashboard-dcgr :9121"]:::container
-        cronD{{"cron: vera-scan, nova-scan @06:00<br/>daily-log · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:10"}}:::cron
+        cronD{{"cron: vera-scan, nova-scan @06:00<br/>daily-log · model-watch<br/>moat-watch mỗi 5' · publish-due mỗi phút · audit-cron @07:10"}}:::cron
         stateD[("state/dcgr/")]:::datastore
     end
 
@@ -239,12 +239,16 @@ flowchart TD
     end
 
     subgraph S8["8 · ĐĂNG"]
-        pub["publish.py"]:::container
+        sched["publish_schedule.schedule()<br/>chiếm slot, cách bài trước ≥ 1 tiếng"]:::container
+        pubdue{{"cron publish-due mỗi phút<br/>publish_schedule.run_due()"}}:::cron
+        pub["publish_schedule.publish_one()<br/>→ approve_post.publish()"]:::container
         drop["đánh dấu bỏ — dừng"]:::container
         tgchannel["Telegram channel"]:::external
+        sched -.->|"tới giờ"| pubdue
+        pubdue --> pub
         pub ==>|"đăng bài"| tgchannel
     end
-    duyetbai -->|"✅ Duyệt"| pub
+    duyetbai -->|"✅ Duyệt: chỉ xếp lịch"| sched
     duyetbai -.->|"❌ Bỏ"| drop
 
     subgraph S9["9 · MOAT (hết phần của content-team)"]
@@ -254,13 +258,19 @@ flowchart TD
         moatpush ==> moatext
         moatpoll -.->|"trạng thái đăng"| moatext
     end
-    pub --> moatpush
+    pub -->|"channel nhận rồi mới đẩy"| moatpush
     moatpoll -.->|"báo lại"| tg2
 ```
 
 **Vai không nằm trên đường chính** (không vẽ ở trên để giữ sơ đồ đọc được
 trong vài phút — xem chi tiết ở README §"Đội hình"):
 
+- **Hiro** (`hiro_pick` → `hiro_prepare` → `hiro_submit`, dựng slide bằng
+  `digest_slide.py`) — gom **cả danh sách** một researcher vừa nộp thành MỘT
+  carousel bản tin vắn (mỗi headline một slide, tối đa 10). Kích hoạt bằng reply
+  `Hiro` / `Hiro 1-10` vào báo cáo quét (hoặc cờ `/hiro on`, `hiro_auto.py`),
+  **không qua lệnh chọn từng tin** ở stage 2. Bản nháp vẫn đi qua stage 7 (nút
+  Duyệt) rồi stage 8; tin trong bộ Hiro vẫn giao riêng được cho Ethan/Dre/Kite.
 - **Gin → Itachi** — kích hoạt qua **chat trực tiếp** (khoá `message_id`/URL),
   **không qua vòng chọn số** ở stage 2. Gin xoá chữ tiếng Anh trên ảnh nền
   (OCR+LaMa), Itachi dựng lại carousel kiểu editorial-deck (`deck.py`) **từ
@@ -292,7 +302,7 @@ sequenceDiagram
     participant IR as "Vai ảnh (vd Ethan)"
     participant MI as "Vai viết (Miles/Jika)"
     participant LLM as "9router → DeepSeek"
-    participant PB as "publish.py"
+    participant PB as "Cron publish-due<br/>(publish_schedule)"
     participant MO as "Moat"
 
     CR->>SC: kích hoạt quét (06:00 VN)
@@ -317,9 +327,11 @@ sequenceDiagram
     alt Duyệt
         OC->>TG: bấm ✅
         TG->>AP: callback duyệt (approve_post)
-        AP->>PB: publish.py đăng bài
-        PB->>TG: đăng lên channel
-        AP->>MO: moat_publish.intake() đẩy bài
+        AP->>AP: publish_schedule.schedule() — chỉ xếp lịch, cách bài trước ≥ 1 tiếng
+        AP->>TG: sửa thẻ: "ĐÃ DUYỆT — đăng lúc HH:MM"
+        Note over AP,PB: nút ✅ KHÔNG đăng. Đăng là việc của cron publish-due<br/>(mỗi phút; nút "Đăng ngay" gọi cùng publish_one)
+        PB->>TG: publish_one() → approve_post.publish() đăng lên channel
+        PB->>MO: channel nhận xong mới moat_publish.intake() đẩy bài
         loop mỗi 5 phút — cron moat-publish-watch
             MO-->>AP: trạng thái đăng social
         end
@@ -353,15 +365,15 @@ thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương �
   vào topic của Miles mà không cổng nào báo lỗi.
 - `hermes_adapter.py` — mọi SQL vào `kanban.db` và `profiles/*/state.db` của
   hermes; `check_hermes.COLUMN_CAN*` dẫn xuất cột từ đây.
-- `schema.py` — hợp đồng dữ liệu (`Manifest`, `Meta`, `SidecarAnh`,
-  `SidecarViet`), `read_manifest` nâng bản cũ, `merge_meta` trộn thay vì ghi
+- `schema.py` — hợp đồng dữ liệu (`Manifest`, `Meta`, `SidecarImage`,
+  `SidecarWrite`), `read_manifest` nâng bản cũ, `merge_meta` trộn thay vì ghi
   đè `.meta.json` (tệp ba tiến trình cùng ghi).
 - `route_missing_images.py` — tầng ghép nối giữa engine (stage 4) và duyệt (stage 6):
   engine chỉ mô tả thiếu ảnh, tầng này quyết định hỏi Ông Chủ / chuyển Kite.
   "Thiếu" đo theo ngưỡng của **vai được giao**, nên bài 2 ảnh là đủ với Ethan
   và vẫn thiếu với Dre.
 - `prepare/` — engine `image_prepare.py` tách thành gói theo pha
-  (`nguon → browser → download_filter → nhin → fallback_rounds → manifest`); `image_prepare.py`
+  (`source → browser → download_filter → vision → fallback_rounds → manifest`); `image_prepare.py`
   còn là mặt tiền + CLI.
 
 ## Bảo trì sơ đồ
