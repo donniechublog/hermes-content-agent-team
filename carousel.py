@@ -524,6 +524,11 @@ def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False, ov
 
     `overlay_only`: slide than/quote LUON di duong overlay LOW-286. Anh roi cung vay,
     o moi cho ke ca bia (LOW-330) — khong con duong nen dac nao."""
+    if min(H, int(text_bottom)) <= max(0, int(text_top)):
+        # Vung chu RONG (slide `"text": " "` lot `_standard_text`): khong co chu de bao ve thi
+        # khong co gi de overlay. `_measure_region_text` tra 255 cho vung rong = "qua sang" ->
+        # overlay dam nhat phu len slide khong chu (B24).
+        return
     sang, variance = _measure_region_text(canvas, text_top, text_bottom)
     if FG == (255, 255, 255):
         thieu = max(0.0, sang - THRESHOLD_BRIGHT_DARK)          # nen "dark": qua sang la thieu

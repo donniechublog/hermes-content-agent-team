@@ -64,7 +64,13 @@ def build_card(path, box, w: int, h: int) -> tuple:
     `box`: hop logo 0..1 (vision `subject_box`); thieu thi lay ca tam."""
     im = Image.open(path).convert("RGB")
     bg = background_color(im)
+    # Hop suy bien (rong/cao 0, dao nguoc — vision doi khi tra vay) hoac cat ra tam rong thi
+    # khong co "logo" de phong: roi ve lay ca tam nhu khi thieu hop, khong chia cho 0 (B24).
+    if box and not (box[2] > box[0] and box[3] > box[1]):
+        box = None
     lg = crop_logo(im, box) if box else im
+    if lg.width < 1 or lg.height < 1:
+        box, lg = None, im
     # Ti le tinh theo CHINH HOP LOGO, khong tinh le cat: Ong Chu doi logo hien het 90% be
     # ngang. Tinh theo anh da cat thi logo chi con ~80% (do 20/09).
     rong_logo = (box[2] - box[0]) * im.width if box else lg.width
