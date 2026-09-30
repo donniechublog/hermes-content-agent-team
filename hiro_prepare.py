@@ -103,7 +103,7 @@ def _save_candidate(url: str, out: Path, seen: list) -> dict | None:
         r = article_images._download(url)
         if r.status_code != 200:
             return None
-        img = image_rules_common.open_rgb(io.BytesIO(r.content))   # LOW-445: EXIF
+        img = image_rules_common.open_rgb(io.BytesIO(r.content))   # LOW-445/446: EXIF + alpha
     except Exception:                                        # noqa: BLE001 — anh hong thi bo, thu anh sau
         return None
     w, ht = img.size

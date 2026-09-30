@@ -652,7 +652,7 @@ def stack_read(paths, gap=0, nen=(0, 0, 0)):
     ra HAI VUNG rieng biet, dung thu ma luat carousel/hero cam. Hai anh ap sat
     nhau, cong `tone_mismatch` lo phan tone, moi ra mot mat phang lien. Chi truyen
     `gap` khac 0 khi co ly do rat cu the."""
-    ims = [image_rules_common.open_rgb(q) for q in paths]          # LOW-445
+    ims = [image_rules_common.open_rgb(q) for q in paths]          # LOW-445/446
     if len(ims) == 1:
         return ims[0]
     # Cong lech tone (`kiem_lech_tone`) da bo (Ong Chu 13/09/2026: bo
@@ -740,7 +740,7 @@ def _open_image(src):
     """src: mot duong dan, hoac danh sach duong dan (ghep doc)."""
     if isinstance(src, (list, tuple)):
         return stack_read(src)
-    return image_rules_common.open_rgb(src)                          # LOW-445: EXIF
+    return image_rules_common.open_rgb(src)                          # LOW-445/446: EXIF + alpha
 
 
 def _is_source_capture(src) -> bool:

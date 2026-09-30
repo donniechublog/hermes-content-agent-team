@@ -298,7 +298,7 @@ def _watermark(canvas, handle, x=None, y=None):
 
 # ---- Anh ------------------------------------------------------------------
 def _open(path):
-    """RGB dung chieu EXIF (LOW-445)."""
+    """RGB dung chieu EXIF, vung trong suot dan len nen (LOW-445/446)."""
     return image_rules_common.open_rgb(path)
 
 

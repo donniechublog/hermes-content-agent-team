@@ -176,8 +176,8 @@ def download_and_filter(cands: list, wd: Path, da_giu=()) -> list:
                 decision_log.drop_candidate(wd, c, "acquire_error", "no_bytes",
                                             "tai khong ra byte nao (HTTP/mang — xem dong [tai] cung URL)")
                 continue
-            # LOW-445: xoay theo EXIF TRUOC khi luu PNG — PNG luu ra khong con tag
-            # orientation, sai o day thi sai ca pipeline.
+            # LOW-445/446: xoay theo EXIF va dan vung trong suot len nen TRUOC khi luu PNG —
+            # PNG luu ra khong con tag orientation lan alpha, sai o day thi sai ca pipeline.
             im = image_rules_common.open_rgb(io.BytesIO(data))
             w, hh = im.size
             if min(w, hh) < short_side_drop:

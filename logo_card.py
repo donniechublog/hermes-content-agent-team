@@ -27,7 +27,7 @@ CORNER = 6                       # o vuong lay mau nen o bon goc anh goc
 
 def background_color(im: Image.Image) -> tuple:
     """Mau NEN cua anh logo: mau hay gap nhat o bon goc (logo thuong nam giua)."""
-    im = im.convert("RGB")
+    im = image_rules_common.to_rgb(im)                # LOW-446: trong suot khong thanh den
     w, h = im.size
     diem = []
     for x0, y0 in ((0, 0), (w - CORNER, 0), (0, h - CORNER), (w - CORNER, h - CORNER)):
@@ -64,7 +64,7 @@ def build_card(path, box, w: int, h: int) -> tuple:
     """-> (anh khung w x h co logo 90% be ngang tren nen cua chinh no, mau nen).
 
     `box`: hop logo 0..1 (vision `subject_box`); thieu thi lay ca tam."""
-    im = image_rules_common.open_rgb(path)            # LOW-445
+    im = image_rules_common.open_rgb(path)            # LOW-445/446
     bg = background_color(im)
     lg = crop_logo(im, box) if box else im
     # Ti le tinh theo CHINH HOP LOGO, khong tinh le cat: Ong Chu doi logo hien het 90% be
@@ -114,7 +114,7 @@ FLAT_PROBE = 640                 # do tren ban thu nho (canh dai) — nhanh, va 
 
 
 def _probe(im: Image.Image) -> Image.Image:
-    im = im.convert("RGB")
+    im = image_rules_common.to_rgb(im)
     if max(im.size) > FLAT_PROBE:
         im = im.copy()
         im.thumbnail((FLAT_PROBE, FLAT_PROBE), Image.Resampling.BOX)
@@ -161,7 +161,7 @@ def content_box(im: Image.Image, bg) -> tuple:
     Hinh paper thuong co le trang rong (Figure 1 MiniMax-H3: noi dung chi 73% be ngang) —
     phong theo ca tam thi le trang an mat cho cua noi dung."""
     import numpy as np
-    im = im.convert("RGB")
+    im = image_rules_common.to_rgb(im)
     p = _probe(im)
     a = np.asarray(p, dtype=np.int16)
     diff = np.abs(a - np.array(bg[:3])).max(axis=2) > CONTENT_TOLERANCE

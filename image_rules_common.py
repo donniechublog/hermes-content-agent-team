@@ -323,13 +323,66 @@ def trim_flat_sides_until_clean(img, rounds: int = 3):
     return img
 
 
+# ---- Mo anh: dung chieu EXIF + nen cho vung trong suot (LOW-445/446) -------------
+# Truoc 30/09/2026 moi renderer tu `Image.open(p).convert("RGB")`, sai hai cho:
+#   - EXIF orientation (anh dien thoai: dieu 6/8) khong duoc ap -> anh NAM NGANG, trong khi
+#     cv2.imread (hop mat YuNet) lai ap -> hop mat va khung cat PIL lech truc (LOW-445).
+#     Do 30/09 tren cv2 5.0: imread ap orientation cho JPEG/PNG/WebP y nhu
+#     ImageOps.exif_transpose, nen chi can PIL xoay theo la hai ben cung truc.
+#   - RGBA/LA/P-trong-suot: convert("RGB") vut alpha, vung trong suot ra DEN (thuong la
+#     vay) -> logo toi bien mat, slide "nen phang" thanh nen den (LOW-446).
+# Than lay tu `image_frame._about_rgb` (chi no lam dung), them nen TU CHON khi khong truyen.
+OPAQUE_ALPHA = 128        # diem co alpha tren muc nay moi tinh la noi dung (nhu image_brand)
+HIDDEN_DELTA = 48         # moi kenh lech nen duoi muc nay = diem chim vao nen (image_brand)
+NEGATIVE_SHARE = 0.5      # > nua diem noi dung chim tren nen trang = anh AM BAN -> nen den
 
-# ---- Mo anh dung chieu EXIF (LOW-445) ----------------------------------------------
-# Truoc 30/09/2026 moi renderer tu `Image.open(p).convert("RGB")`: EXIF orientation (anh
-# dien thoai: dieu 6/8) khong duoc ap -> anh NAM NGANG, trong khi cv2.imread (hop mat YuNet)
-# lai ap -> hop mat va khung cat PIL lech truc. Do 30/09 tren cv2 5.0: imread ap orientation
-# cho JPEG/PNG/WebP y nhu ImageOps.exif_transpose, nen chi can PIL xoay theo la hai ben cung truc.
-def open_rgb(src):
-    """Mo anh (duong dan / file-like) -> RGB DUNG CHIEU (EXIF orientation, LOW-445)."""
+
+def contrast_background(im) -> tuple:
+    """Mau nen ghep cho anh trong suot — cung luat chon nen voi the logo
+    (`image_brand.card_logo`, LOW-337, Ong Chu 21/09/2026: nen SANG tru khi logo am ban):
+    TRANG, chi DEN khi hon nua diem noi dung chim tren nen trang (logo trang cho trang nen
+    toi — convert("RGB") cu ra nen den va logo do van hien, giu nguyen). Khong chon theo do
+    sang TRUNG BINH: logo nhieu mau lua phep trung binh (Hugging Face, xem card_logo).
+    Anh trong suot hoan toan: trang."""
+    import numpy as np
+    nho = im.convert("RGBA")
+    nho.thumbnail((300, 300))
+    a = np.asarray(nho, dtype=np.int16)
+    rgb = a[..., :3][a[..., 3] > OPAQUE_ALPHA]
+    if not len(rgb):
+        return (255, 255, 255)
+    hidden_white = int(((255 - rgb).max(axis=1) < HIDDEN_DELTA).sum())
+    hidden_black = int((rgb.max(axis=1) < HIDDEN_DELTA).sum())
+    if hidden_white > NEGATIVE_SHARE * len(rgb) and hidden_white > hidden_black:
+        return (0, 0, 0)
+    return (255, 255, 255)
+
+
+def to_rgb(im, bg=None):
+    """Ve RGB ma KHONG lam den vung trong suot (LOW-446) va khong lam trang anh 16-bit.
+
+    - RGBA/LA/PA/P-co-trong-suot: dan len nen `bg` bang kenh alpha. `bg=None`: nen tuong
+      phan voi noi dung (`contrast_background`). Anh RGBA ma alpha deu 255 ra dung byte
+      nhu convert("RGB").
+    - I;16 (PNG 16-bit): convert("RGB") ket gia tri >255 thanh 255 -> anh TRANG TINH.
+      Chia ve 8-bit truoc."""
+    if im.mode.startswith("I"):
+        im = im.point(lambda v: v / 256).convert("L")
+    elif im.mode == "PA" or (im.mode == "P" and "transparency" in im.info):
+        im = im.convert("RGBA")
+    if im.mode in ("RGBA", "LA"):
+        if bg is None:
+            if im.getchannel("A").getextrema()[0] == 255:
+                return im.convert("RGB")               # khong co diem trong suot nao
+            bg = contrast_background(im)
+        nen = Image.new("RGB", im.size, bg)
+        nen.paste(im.convert("RGBA"), mask=im.getchannel("A"))
+        return nen
+    return im.convert("RGB")
+
+
+def open_rgb(src, bg=None):
+    """Mo anh (duong dan / file-like) -> RGB DUNG CHIEU (EXIF orientation, LOW-445) va
+    vung trong suot dan len nen (LOW-446, xem `to_rgb`)."""
     with Image.open(src) as im:
-        return ImageOps.exif_transpose(im).convert("RGB")
+        return to_rgb(ImageOps.exif_transpose(im), bg)
