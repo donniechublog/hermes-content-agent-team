@@ -187,7 +187,10 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
     # Tieu de (trong khung) va tom tat (ngoai khung) nam o hai vung anh khac nhau: moi khoi do mau rieng.
     ref = flat or _contrast_bg(canvas, g["first_line_top"], g["frame_bottom"])
     pal = carousel._flat_palette(ref)
-    fg, net = pal["fg"], pal["net"]
+    fg = pal["fg"]
+    # Net khung + dau ngoac GIU MAU GOC cua quote Dre (cyan/trang theo thuong hieu) — chi doi
+    # mau CHU; ai muon doi mau khung thi noi (Ong Chu 30/09: "tai sao lai thay mau duong line").
+    net = pal["net"] if flat else carousel._net()
     fg_sum = pal["fg"] if flat else carousel._flat_palette(_contrast_bg(canvas, g["summary_top"], g["summary_bottom"]))["fg"]
     if report is not None:
         report.update(carousel._text_bg_report(truoc_nen, canvas))
@@ -198,7 +201,7 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
         d.text((TEXT_X, y - lay.title_ink_top), ln, font=lay.title_font, fill=fg)
         y += lay.title_step
     mau_hang = card._color_rank_within(title)
-    mark_col = carousel._flat_mark(mau_hang, pal)
+    mark_col = carousel._flat_mark(mau_hang, pal) if flat else carousel._color_mark(mau_hang)
     card._quote_frame(d, FRAME_X, g["frame_top"], W - FRAME_X, g["frame_bottom"], net, mark_col)
 
     if handle:                       # chip ten kenh goc TREN-PHAI khung, nhu slide quote Dre
