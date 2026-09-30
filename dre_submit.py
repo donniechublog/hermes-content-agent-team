@@ -486,6 +486,14 @@ def handoff(m: dict, spec: dict, dung_anh: list, out: Path) -> str:
     return "\n".join(L)
 
 
+def _cover_key(cover: dict) -> str:
+    """Khoa nhan dien bia de so voi lan nop truoc: ma anh, hoac "A3+A5" voi bia "stack".
+    Cong Lam lai (check_redo_reused) so khoa nay voi `cover_image` da ghi trong
+    previous_submission.json — ghi CUNG khoa o day, khong thi bia stack luon la None
+    o phia da ghi va cong khong bao gio bat duoc "van la cap anh cu" (B23)."""
+    return cover.get("image") or "+".join(cover.get("stack") or [])
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Nop carousel cua Dre (tat dinh)")
     ap.add_argument("draft_id")
@@ -508,7 +516,7 @@ def main() -> int:
     # bia phai la no, khong bao "lam lai ma van giu bia cu" — khong con anh nao
     # khac de doi (xem submit_common.only_ranking_choice).
     bat_buoc = cover.get("image") is not None and cover.get("image") == nc.only_ranking_choice(m)
-    loi = nc.check_redo_reused(da_dung, "bìa", cover.get("image") or "+".join(cover.get("stack") or []),
+    loi = nc.check_redo_reused(da_dung, "bìa", _cover_key(cover),
                           cover.get("hook"), khoa_anh="cover_image", draft_id=a.draft_id,
                           anh_bat_buoc=bat_buoc) + loi
     if loi:
@@ -561,7 +569,7 @@ def main() -> int:
         print(f"[thu] khong gui Telegram (--khong-gui). {n} slide o {out.parent}")
     else:
         mid = nc.send_album("dre", files, mo_ta, a.draft_id, wd, da_dung,
-                           {"cover_image": cover.get("image"), "hook": hook,
+                           {"cover_image": _cover_key(cover) or None, "hook": hook,
                             "image_ids": [ma for _, ds in dung_anh for ma in ds]})
     nguon_anh = sorted({m_["domain"] or manifest_values.source_label(m_["source"]) for m_ in m["images"]
                         if m_["id"] in {ma for _, ds in dung_anh for ma in ds}})
