@@ -2,6 +2,10 @@
 # Nguon: Python 3.11.16 tren donniechu-01, ngay 2026-09-20.
 # 18 goi = cac goi khai trong requirements.txt + phu thuoc bac cau; khong phai ca
 # venv dung chung voi hermes. Cach lam moi: xem dau requirements.txt.
+# hermes-agent: CHUA GHI — lock nay sinh truoc khi co dong nay. Lan lam moi tren may chu se
+# tu ghi commit (lock_requirements.py doc `git -C ~/hermes-agent rev-parse HEAD`). Phu thuoc
+# ngam vao ma hermes: blackboard.py (hermes_cli.kanban_db/kanban_swarm), cost_squeeze.py
+# (hermes_constants) — nang hermes-agent la co the vo chung, du lock khong doi.
 anyio==4.14.2
 beautifulsoup4==4.15.0
 certifi==2026.5.20
