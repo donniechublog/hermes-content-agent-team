@@ -865,9 +865,9 @@ MODEL_LOGO = {
     "deepseek": ("DeepSeek", "DeepSeek logo.svg", r"deepseek"),
     "mistral": ("Mistral", "Mistral AI logo (2025–).svg", r"mistral|magistral|devstral|codestral"),
 }
-MODEL_DESCRIPTION = re.compile(r"chatbot|language model|llms?|ai model|artificial intelligence model|"
+MODEL_DESCRIPTION = re.compile(r"chatbot|language model|\bllms?\b|ai model|artificial intelligence model|"
                                r"text-to-(image|video)|image generat|video generat|generative", re.I)
-NOT_MODEL_DESCRIPTION = re.compile(r"company|corporation|startup|firm|racing driver|television|game", re.I)
+NOT_MODEL_DESCRIPTION = re.compile(r"company|corporation|startup|\bfirm\b|racing driver|television|game", re.I)
 
 
 def model_families_in_story(tieu_de: str) -> list:
