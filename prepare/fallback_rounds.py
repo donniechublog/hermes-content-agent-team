@@ -238,7 +238,7 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
             # nam trong finally. `hermes update` lam mat playwright khoi venv
             # chung (da xay ra voi pymupdf) hay chromium chua cai la: tin THUONG
             # van ra manifest.json binh thuong, rieng tin XEP HANG giet ca engine
-            # giua chung — khong manifest.json, va vai chay lai qua `chay()` chet y
+            # giua chung — khong manifest.json, va vai chay lai qua `run()` chet y
             # het. Nhanh "khong co ma XH" (:743) da co san, cu roi ve do.
             try:
                 xhs = ranking.find_and_capture_many(
