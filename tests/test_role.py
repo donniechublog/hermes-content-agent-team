@@ -15,6 +15,7 @@ Tep nay giu hai thu:
 
 Chay:  venv/bin/python tests/test_role.py
 """
+import re
 import sys
 from pathlib import Path
 
@@ -435,6 +436,34 @@ def test_writer_groups_are_writers_and_include_tentative_writer():
         for slug in group:
             assert slug in role.ROLE and role.ROLE[slug].viet, (brand, slug)
         assert role.WRITE_BY_BRAND[brand] in group, f"{brand}: tentative writer is not in the group"
+
+
+def test_is_flagship_text_same_regex_old_of_carousel():
+    """LOW-430 D3: luat flagship chuyen tu `carousel._FLAGSHIP_RE` sang role. Ban CU
+    chep nguyen o day de chung minh ket qua khong doi tren cac chuoi thuc te."""
+    cu = re.compile(
+        r"\b(GPT-?\d|GPT-?[0-9.]+|o[3-9](?:-pro|-mini)?|Claude|Opus|Sonnet|Gemini|Llama|"
+        r"Grok|DeepSeek|Qwen|Kimi|GLM|MiniMax|Doubao|Mistral Large|Nova Premier)\b", re.I)
+    for chu in ("OpenAI ra mat GPT-6 Astra", "Claude Opus 5 vuot benchmark", "gemini 3 ultra",
+                "DeepSeek V4 Flash", "Qwen3-Max", "o3-pro mo cho moi nguoi", "Kimi K3", "GLM-5",
+                "Mistral Large 3", "Nova Premier", "Anthropic tuyen them ky su",
+                "Nova Poshta", "Sonnets and poetry", "gpt", "GPTs", "", "video Sora 2",
+                "Meta Llama 5 ra mat"):
+        assert role.is_flagship_text(chu) == bool(cu.search(chu)), chu
+    assert role.is_flagship_text("GPT-6 ra mat") and not role.is_flagship_text("Sora 2")
+    assert role.is_flagship_text(None) is False
+
+
+def test_image_prepare_no_import_carousel():
+    """Engine anh chi hoi role (`min_images`/`is_flagship_text`), khong keo carousel
+    (1.4k dong + PIL) vao chi de lay mot regex."""
+    import ast
+    tree = ast.parse((ROOT / "image_prepare.py").read_text(encoding="utf-8"))
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Import):
+            assert all(a.name != "carousel" for a in n.names), "image_prepare lai import carousel"
+        elif isinstance(n, ast.ImportFrom):
+            assert n.module != "carousel", "image_prepare lai import tu carousel"
 
 
 def test_pick_by_queue_prefers_shorter_queue():
