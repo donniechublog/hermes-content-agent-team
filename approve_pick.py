@@ -352,7 +352,7 @@ def _link_hash(item) -> str:
     lam lai LOW-362) ra id khac id da tao."""
     import hashlib
     goc = _link_key(item.get("gnews_url") or item.get("link") or "")
-    return hashlib.sha1(goc.encode()).hexdigest()[:6]
+    return hashlib.sha1(goc.encode(), usedforsecurity=False).hexdigest()[:6]
 
 
 def _draft_id(item, brand, vai_anh, legacy=False):
