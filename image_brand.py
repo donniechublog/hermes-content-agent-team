@@ -385,6 +385,22 @@ def _ask_api(url: str, **kw) -> dict | None:
         return None
 
 
+def _download_capped(url: str, timeout: float) -> bytes:
+    """Tai mot tep (logo Commons) theo dong, vuot tran dung luong thi bo (raise).
+    Truoc day `httpx.get(...).content` doc het tep vao RAM khong han (B23). Dung lai tran
+    cua `prepare.download_filter` de khong mo them mot hang so anh thu hai."""
+    import httpx
+    from prepare.download_filter import DOWNLOAD_MAX_BYTE
+    buf = b""
+    with httpx.stream("GET", url, headers={"User-Agent": env_load.UA_WIKI}, timeout=timeout,
+                      follow_redirects=True) as r:
+        for chunk in r.iter_bytes(65536):
+            buf += chunk
+            if len(buf) > DOWNLOAD_MAX_BYTE:
+                raise ValueError(f"tep lon hon {DOWNLOAD_MAX_BYTE // 1_000_000} MB")
+    return buf
+
+
 def _file_claim(claims: dict, p: str) -> list:
     """Tên tệp Commons trong một thuộc tính ảnh (P18/P154), bậc `preferred` trước,
     BỎ bậc `deprecated` và giá trị đã hết hiệu lực (qualifier P582).
@@ -828,9 +844,7 @@ def image_wikidata(hang, wd=None) -> list:
         try:
             goc = Path(wd) / state_paths.LOGO_ORIGINAL_FILE
             goc.parent.mkdir(parents=True, exist_ok=True)
-            import httpx
-            goc.write_bytes(httpx.get(u["url"], headers={"User-Agent": env_load.UA_WIKI},
-                                      timeout=cap_timeout(30), follow_redirects=True).content)
+            goc.write_bytes(_download_capped(u["url"], cap_timeout(30)))
             the, nen, fill = card_logo(goc, Path(wd) / state_paths.LOGO_CARD_FILE, env_load.brand_long())
         except Exception as e:                               # noqa: BLE001
             print(f"[thuong_hieu] the logo hong: {type(e).__name__}", file=sys.stderr)
@@ -868,9 +882,9 @@ MODEL_LOGO = {
     "deepseek": ("DeepSeek", "DeepSeek logo.svg", r"deepseek"),
     "mistral": ("Mistral", "Mistral AI logo (2025–).svg", r"mistral|magistral|devstral|codestral"),
 }
-MODEL_DESCRIPTION = re.compile(r"chatbot|language model|llms?|ai model|artificial intelligence model|"
+MODEL_DESCRIPTION = re.compile(r"chatbot|language model|\bllms?\b|ai model|artificial intelligence model|"
                                r"text-to-(image|video)|image generat|video generat|generative", re.I)
-NOT_MODEL_DESCRIPTION = re.compile(r"company|corporation|startup|firm|racing driver|television|game", re.I)
+NOT_MODEL_DESCRIPTION = re.compile(r"company|corporation|startup|\bfirm\b|racing driver|television|game", re.I)
 
 
 def model_families_in_story(tieu_de: str) -> list:
@@ -978,9 +992,7 @@ def model_logo_images(tieu_de: str, wd, only_table: bool = False) -> list:
         try:
             thu_muc.mkdir(parents=True, exist_ok=True)
             goc = thu_muc / state_paths.LOGO_ORIGINAL_FILE
-            import httpx
-            goc.write_bytes(httpx.get(u["url"], headers={"User-Agent": env_load.UA_WIKI},
-                                      timeout=cap_timeout(30), follow_redirects=True).content)
+            goc.write_bytes(_download_capped(u["url"], cap_timeout(30)))
             the, nen, fill = card_logo(goc, thu_muc / state_paths.LOGO_CARD_FILE, env_load.brand_long())
         except Exception as e:                               # noqa: BLE001
             print(f"[thuong_hieu] the logo model hong: {type(e).__name__}", file=sys.stderr)

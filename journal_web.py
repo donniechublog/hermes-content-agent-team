@@ -14,9 +14,10 @@ nào — bảng .md tự dựng thành HTML bằng `md_bright_html` (bỏ `markd
     /9router/<ngày>.json    số liệu thô (cho ai muốn vẽ thêm)
 
 Chạy dưới systemd user `journal-web` (hermes/systemd/). Cổng JOURNAL_WEB_PORT
-(mặc định 9130), host JOURNAL_WEB_HOST (mặc định 0.0.0.0 để đi qua netbird
-100.87.121.46). Không có gì bí mật trong nhật ký (tên connection, model, tiền),
-không có khoá.
+(mặc định 9130), host JOURNAL_WEB_HOST (mặc định 127.0.0.1; muốn đi qua netbird
+100.87.121.46 thì đặt địa chỉ netbird trong unit systemd, đừng mở 0.0.0.0).
+Không có giá trị khoá nào trong nhật ký, nhưng có tên khoá API, tên connection, model,
+chi phí theo vai, và trang không xác thực — nên mặc định chỉ nghe 127.0.0.1.
 """
 import html
 import json

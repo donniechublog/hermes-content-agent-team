@@ -560,14 +560,25 @@ def _check_not_yet_seen_and_number(slides: list, hinh: dict, m: dict, wd, canh: 
     canh.extend(nc.check_numbers_on_card(chu, m, wd))
 
 
-def _check_redo(spec: dict, da_dung, hook: str, loi: list, theme_locked: bool = False) -> None:
+def _check_redo(spec: dict, da_dung, hook: str, loi: list, theme_locked: bool = False,
+                draft_id: str = "") -> None:
     """LAM LAI thi theme/hero va hook bia phai KHAC lan truoc — khong thi Ong Chu
     bam "lam lai" ma nhan lai gan nhu cai vua bac.
 
     Theme khoa theo hang (LOW-340) thi khong doi duoc: chi doi hero khi bia ve
-    vector — bia anh that thi hero luon None, doi "theme hoac hero" la chan cung."""
+    vector — bia anh that thi hero luon None, doi "theme hoac hero" la chan cung.
+
+    CHI ap khi Ong Chu THAT SU bam "Lam lai" (LOW-440, cung moc voi
+    submit_common.check_redo_reused cua Dre/Ethan): previous_submission.json duoc ghi
+    o MOI lan gui, nen "co da_dung" chi co nghia la da nop mot lan. Kanban retry hay
+    worker chet giua chung (LOW-134 "album da len, chay lai dung lenh") ma bat doi
+    hook thi Kite hoac bi chan, hoac doi hook that roi gui BO THU HAI kem nut Duyet
+    thu hai. Moc so sanh la `remakes` trong img.json — con so approve_post tang moi
+    lan bam nut; `da_dung` ghi lai con so do luc nop."""
     if not da_dung:
         return
+    if draft_id and nc.count_of_redo(draft_id) <= int(da_dung.get("remakes", -1)):
+        return                       # chay lai, KHONG phai Ong Chu bam lam lai
     if theme_locked:
         bia_vector = not (spec.get("slides") or [{}])[0].get("image")
         if bia_vector and spec.get("hero") and spec.get("hero") == da_dung.get("hero"):
@@ -656,7 +667,8 @@ def main() -> int:
             tops = {}
         loi += check_subject_above_text(spec_r, m, tops)
     hook = (spec.get("slides") or [{}])[0].get("title", "")
-    _check_redo(spec, da_dung, hook, loi, render_edu.is_brand_theme(spec_r.get("theme")))
+    _check_redo(spec, da_dung, hook, loi, render_edu.is_brand_theme(spec_r.get("theme")),
+                draft_id=a.draft_id)
     for c in canh:
         print(f"[CANH BAO] {c}")
     if loi:
@@ -714,4 +726,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import write_log                  # D17: str exit vao muc ERROR, xem write_log.run_cli
+    sys.exit(write_log.run_cli(main))

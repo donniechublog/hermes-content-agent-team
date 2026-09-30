@@ -528,7 +528,6 @@ def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int
     tieu de goc (truy van ngan de keo ve ca tin cu/khong lien quan). Bo trang
     tong hop (msn, yahoo), trang chan bot (seekingalpha) va `bo_mien`.
     Tra ve [{url, kind: "other_outlet", title, outlet_url}] (muc `pages[]`, LOW-238)."""
-    import email.utils as eu
     import time as _t
     tieu_de = strip_site_suffix(tieu_de)      # LOW-33: " · Hugging Face" khong vao truy van
     moc = _t.time() - ngay * 86400
@@ -550,12 +549,9 @@ def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int
         link = it.findtext("link") or ""
         if not link:
             continue
-        try:
-            ts = eu.parsedate_to_datetime(it.findtext("pubDate") or "").timestamp()
-            if ts < moc:
-                continue
-        except Exception:                                    # noqa: BLE001
-            pass
+        ts = scan_common.pubdate_epoch(it)                   # khong doc duoc ngay -> giu tin
+        if ts is not None and ts < moc:
+            continue
         recent.append((link, it.findtext("title") or ""))
     # Loc cung su kien MOT lan cho ca danh sach (LOW-276) — ca lung chung hoi LLM mot lan.
     verdicts = same_story_many(tieu_de, [td for _link, td in recent])
@@ -626,7 +622,8 @@ def web_search(truy_van: str, so: int = 6, bo_mien: tuple = ()) -> list:
             continue                                        # quang cao cua chinh DDG
         if not scan_common.url_hide_whole(u):
             continue
-        mien = (re.match(r"https?://([^/]+)", u).group(1) or "").replace("www.", "")
+        m_host = re.match(r"https?://([^/]+)", u)           # "http://" tron: khong co host
+        mien = (m_host.group(1) if m_host else "").replace("www.", "")
         if not mien or mien in thay or any(b in mien for b in DROP_DOMAIN + tuple(bo_mien)):
             continue
         thay.add(mien)
@@ -661,7 +658,6 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
     if has_vietnamese(tu_khoa):
         print("[nguon_bai] TU CHOI report_about_keyword bang tieng Viet", file=sys.stderr)
         return []
-    import email.utils as eu
     import time as _t
     can = story_tokens(tu_khoa)
     if not can:
@@ -697,12 +693,9 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
         # o day, tren chinh tieu de bai tra ve.
         if has_vietnamese(td):
             continue
-        try:
-            ts = eu.parsedate_to_datetime(it.findtext("pubDate") or "").timestamp()
-            if ts < moc:
-                continue
-        except Exception:                                    # noqa: BLE001
-            pass
+        ts = scan_common.pubdate_epoch(it)                   # khong doc duoc ngay -> giu tin
+        if ts is not None and ts < moc:
+            continue
         try:
             if not scan_common.url_hide_whole(link):
                 continue
@@ -749,7 +742,6 @@ def other_outlets_gnews(title_en: str, items: list, count: int = 3, skip_domains
     link chan bot treo toi het timeout — nen 10s/link va tran `budget_seconds`
     de ca buoc research khong cham 180s cua approve (buoc doan RSS truoc do da
     co the ton ~80s)."""
-    import email.utils as eu
     import time as _t
     story = story_tokens(title_en)
     cutoff = _t.time() - days * 86400
@@ -759,10 +751,8 @@ def other_outlets_gnews(title_en: str, items: list, count: int = 3, skip_domains
         title = strip_site_suffix(item.findtext("title") or "")
         if len(story & story_tokens(title)) < 2 or has_vietnamese(title):
             continue                                          # chac khong cung tin: khoi dua LLM
-        try:
-            if eu.parsedate_to_datetime(item.findtext("pubDate") or "").timestamp() < cutoff:
-                continue
-        except Exception:                                    # noqa: BLE001
+        ts = scan_common.pubdate_epoch(item)
+        if ts is None or ts < cutoff:
             continue                                          # khong ngay -> khong biet cung dot tin
         source = item.find("source")
         outlet = ((source.get("url") if source is not None else "") or "").rstrip("/")

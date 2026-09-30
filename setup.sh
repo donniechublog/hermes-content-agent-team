@@ -9,7 +9,8 @@
 # moi buoc browser chet giua chung.
 #
 # HAI buoc THAT (font + YuNet onnx da nam trong git, khong phai tai gi):
-#   1. pip install -r requirements.txt
+#   1. pip install -r requirements.lock   (D15: ban chay tren may chu; requirements.txt chi
+#      la lui khi thieu lock hoac `--txt`)
 #   2. playwright install chromium        (goi Python co roi van phai tai browser)
 # Node da BO han 09/09/2026 (audit A6): frame.js/screenshot.js viet lai bang PIL
 # + Playwright cua Python, server khong con `npm ci` nao.
@@ -18,14 +19,17 @@
 # Dung:
 #     hermes/scripts/../setup.sh          # hoac: bash setup.sh
 #     bash setup.sh --thu                 # chi xem se lam gi, khong cai
+#     bash setup.sh --txt                 # cai tu requirements.txt (`>=`) thay vi lock
 set -uo pipefail
 cd "$(dirname "$0")" || exit 2
 
 THU=0
+TXT=0
 for co in "$@"; do
   case "$co" in
     --thu) THU=1 ;;
-    *) echo "Tham so la: $co (chi nhan --thu)" >&2; exit 2 ;;
+    --txt) TXT=1 ;;
+    *) echo "Tham so la: $co (chi nhan --thu, --txt)" >&2; exit 2 ;;
   esac
 done
 
@@ -52,8 +56,26 @@ if [ ! -x "$PY" ]; then
   [ "$THU" -eq 1 ] || exit 2
 fi
 echo "[1/2] goi Python"
-chay "$PY" -m pip install -q -r requirements.txt || {
-  echo "[LOI] pip install that bai — xem dong tren." >&2; exit 1; }
+# Cai tu LOCK (D15, audit 30/09/2026): CI da cai tu requirements.lock tu LOW-300, con may
+# moi cai tu requirements.txt (`>=`) thi ra ban moi hon ban dang chay tren may chu — CI xanh
+# va may that chay hai bo ban khac nhau. Lock chi ghim goi cua ta + phu thuoc bac cau
+# (khong phai ca venv dung chung voi hermes), va tren may chu la no-op vi ghi dung ban dang
+# chay. Lock thieu (clone cu, tep bi xoa) thi lui ve requirements.txt, noi ro tren man hinh.
+# Lock hong (xung dot voi ban hermes tren may nay) thi KHONG tu lui: im lang lui la chinh
+# cai lam CI lech may that; dung `--txt` khi thuc su muon.
+if [ "$TXT" -eq 0 ] && [ -f requirements.lock ]; then
+  REQ=requirements.lock
+else
+  REQ=requirements.txt
+  if [ "$TXT" -eq 0 ]; then
+    echo "  [canh bao] khong thay requirements.lock — cai tu requirements.txt (ban >=, co the moi hon may chu)." >&2
+  fi
+fi
+chay "$PY" -m pip install -q -r "$REQ" || {
+  echo "[LOI] pip install -r $REQ that bai — xem dong tren." >&2
+  [ "$REQ" = requirements.lock ] && \
+    echo "      Lock xung dot voi venv nay? Thu 'bash setup.sh --txt' (ban >=), nhung bao lai de lam moi lock." >&2
+  exit 1; }
 
 # --- 2. Chromium cho Playwright --------------------------------------------
 # Cai goi playwright KHONG keo theo browser. `playwright install` tu bo qua khi

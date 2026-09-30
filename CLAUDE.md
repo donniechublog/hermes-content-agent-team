@@ -51,3 +51,9 @@ Bối cảnh: repo này được sửa từ nhiều máy (Mac này + 2 máy khá
   Trước 23/09/2026 câu này ghi `/tmp`. Đổi vì `/tmp` trên máy chủ là **tmpfs (RAM)** và từ 23/09 bị quét theo tuổi **3 ngày** (`/etc/tmpfiles.d/tmp.conf`, LOW-382) — ảnh trước/sau để đối chiếu qua hôm sau sẽ biến mất. `~/render-check/<ticket>/` nằm ngoài vùng quét và có thư mục theo ticket nên đối chiếu về sau dễ hơn. Dọn tay khi ticket đóng.
 - Luật hình mới được chốt thì khoá bằng **test + cổng đo trên pixel thật**, không chỉ ghi vào tài liệu. Mẫu: `carousel._gate_text_background`, `tests/test_low286_text_overlay.py`.
 
+
+## 7. Comment giữ "vì sao hiện tại"; lịch sử để nhat_ky/ và ticket (D8, LOW-430)
+
+- Comment/docstring trả lời **vì sao code đang thế này**. Câu chuyện "ngày X sự cố Y, ticket Z sửa" đã có chỗ riêng: `nhat_ky/`, `INCIDENT_LOG.md`, ticket Linear, `git log`.
+- Không dọn hàng loạt mã LOW-/ngày trong comment cũ — dọn khi chạm vào chỗ đó, không mở PR chỉ để xoá.
+- Comment nhắc **tên** (hàm, hằng, tệp) phải là tên đang chạy: đổi tên thì grep tên cũ trong comment cùng lúc (D8: `env_load.ghi_json`→`write_json`, `chay()`→`run()` sót cả chục chỗ). `tests/test_docs.py` chỉ giữ cho ARCHITECTURE.md/README.md; comment trong mã dựa vào quy ước này.

@@ -97,16 +97,14 @@ def _candidate_urls(item: dict, wide_only: bool = False) -> list:
 def _save_candidate(url: str, out: Path, seen: list) -> dict | None:
     """Tai + cat mot anh ra `out`. None neu khong dung duoc hoac trung anh da giu (`seen`: dhash)."""
     import article_images
-    from PIL import Image
+    import image_rules_common
     from prepare.download_filter import _save_crop
     rules = role.active_rules()
     try:
         r = article_images._download(url)
         if r.status_code != 200:
             return None
-        img = Image.open(io.BytesIO(r.content))
-        img.load()
-        img = img.convert("RGB")
+        img = image_rules_common.open_rgb(io.BytesIO(r.content))   # LOW-445/446: EXIF + alpha
     except Exception:                                        # noqa: BLE001 — anh hong thi bo, thu anh sau
         return None
     w, ht = img.size

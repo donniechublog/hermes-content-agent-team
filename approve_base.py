@@ -179,7 +179,7 @@ def _write_json(path, data, indent=2):
     Ten tmp mang pid + thread id vi nhieu thread nen cung ghi mot tep state
     (nut chay nen, vong poll): dung chung mot ten tmp thi hai ban ghi lai lan
     vao nhau roi ban lai lan do moi la cai duoc replace."""
-    # ADF-r2-11: pid+thread va don tmp khi hong nay nam trong env_load.ghi_json
+    # ADF-r2-11: pid+thread va don tmp khi hong nay nam trong env_load.write_json
     # (mot ban cho 4 cho tung tu viet). Giu ten ham cho ho duyet_*.
     env_load.write_json(path, data, indent=indent)
 
@@ -265,6 +265,42 @@ def _load_json(path, mac_dinh):
         return mac_dinh
 
 
+def boss_allowlist():
+    """Danh sach id duoc phep (LOW-432). Tra ve:
+
+      None       — KHONG co tep, hoac tep la [] hop le: cho qua het (hanh vi cu).
+      set[int]   — co danh sach: chi nhung id nay.
+      set() rong — tep TON TAI nhung hong (JSON cut, sai kieu, khong phan tu nao
+                   ep duoc int): TU CHOI het. Truoc day `_load_json` nuot loi roi tra
+                   `[]`, ma `[]` nghia la "cho qua het" — tep hong = mo toang ca 5 cua.
+
+    Id ghi dang chuoi `["123"]` van khop (ep int tung phan tu, bo phan tu khong ep duoc);
+    truoc day `int in ["123"]` luon False = khoa chinh Ong Chu."""
+    try:
+        raw = json.loads(BOSS_IDS.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError) as e:
+        write_log.error("boss", f"{BOSS_IDS.name} doc/parse loi ({type(e).__name__}: {e}) "
+                                f"-> TU CHOI moi nguoi cho toi khi sua tep")
+        return set()
+    if not isinstance(raw, list):
+        write_log.error("boss", f"{BOSS_IDS.name} khong phai danh sach ({type(raw).__name__}) "
+                                f"-> TU CHOI moi nguoi cho toi khi sua tep")
+        return set()
+    if not raw:
+        return None
+    ids = set()
+    for x in raw:
+        try:
+            ids.add(int(x))
+        except (TypeError, ValueError):
+            continue
+    if not ids:
+        write_log.error("boss", f"{BOSS_IDS.name} khong co id nao hop le -> TU CHOI moi nguoi")
+    return ids
+
+
 def is_boss(msg) -> bool:
     """Tin nhan / nut bam nay co den tu nguoi duoc phep ra lenh khong.
 
@@ -282,8 +318,8 @@ def is_boss(msg) -> bool:
     Ba cua do la ba cua nang nhat. Co co che ma che duoc 2/5 con nguy hiem hon
     khong co: no tao cam giac da khoa cua.
     """
-    cho_phep = _load_json(BOSS_IDS, [])
-    if not cho_phep:
+    cho_phep = boss_allowlist()
+    if cho_phep is None:
         return True
     return ((msg or {}).get("from") or {}).get("id") in cho_phep
 

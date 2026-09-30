@@ -9,7 +9,7 @@ thi hong CAM: su co 06/09/2026 "kites" khong khop NAME_BRIGHT_CAP nen lenh chon 
 ve hoi thoai va gui nham cho Finn, con su co 01/09/2026 sidecar ghi slug cu
 ("dre") lam task nam 'ready' hai ngay vi khong profile nao ten vay.
 
-Nay moi bang cu deu la VIEW dan xuat tu `VAI` o duoi. Them mot vai = them MOT
+Nay moi bang cu deu la VIEW dan xuat tu `ROLE` o duoi. Them mot vai = them MOT
 dong o day (+ mot cap <vai>_prepare/_submit + mot SOUL), khong phai tam cho.
 
 HAI LOAI ALIAS, co y tach doi — chung khong trung nhau:
@@ -21,7 +21,7 @@ Vd "chad"/"heller" chi la slug_cu (khong ai go nua), con "img"/"cr"/"kites" chi
 la `go` (chua bao gio la ten thu muc profile).
 
 TEN VAI MOI: dat theo TEN NHAN VAT, khong theo role — xem luat trong docstring
-cua lop `Vai` ngay duoi.
+cua lop `Role` ngay duoi.
 """
 import re
 from dataclasses import dataclass
@@ -331,6 +331,20 @@ def max_runtime_for(slug: str) -> str:
     """`--max-runtime` cho task cua vai nay: vai DUNG ANH 40m, con lai 25m."""
     v = ROLE.get(canonical_slug(slug) or slug)
     return MAX_RUNTIME_IMAGE if v and v.nhan_anh else MAX_RUNTIME
+
+
+# Ho model cua cac hang frontier (My + top Trung Quoc, theo scan_models.py). Tin nhac
+# toi ho nay la tin "flagship": carousel doi them slide (`anh_toi_thieu_flagship`).
+# O day chu khong o carousel.py de engine anh dung chung hoi duoc ma khong phai
+# import carousel (1.4k dong + PIL) — cung ly do `min_images` nam o day (D3, LOW-430).
+_FLAGSHIP_RE = re.compile(
+    r"\b(GPT-?\d|GPT-?[0-9.]+|o[3-9](?:-pro|-mini)?|Claude|Opus|Sonnet|Gemini|Llama|"
+    r"Grok|DeepSeek|Qwen|Kimi|GLM|MiniMax|Doubao|Mistral Large|Nova Premier)\b", re.I)
+
+
+def is_flagship_text(text: str) -> bool:
+    """Chu (tieu de + tom tat, hay hook/label/slide) co nhac ho model frontier khong."""
+    return bool(_FLAGSHIP_RE.search(text or ""))
 
 
 def min_images(slug: str, flagship: bool = False) -> int:

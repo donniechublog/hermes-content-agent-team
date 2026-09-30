@@ -216,8 +216,27 @@ def _windows(sw, sh, z):
     return [(x, y, ww, wh) for x in xs for y in ys]
 
 
-def choose_window(img, faces, g):
-    """(x0, y0, w, h) khung cat toi uu (toa do anh nguon) — thuan, khong ve. `g`: geometry(lay)."""
+def _face_excess(faces, sw, sh, x0, y0, ww, wh, limit):
+    """Tong so px (tren canvas W x H) mat nguoi TRAN khoi vung cho phep cua khung: phan bi cat
+    ra ngoai mep khung + phan ma day mat thap hon `limit` (dong chu dau - FACE_TEXT_GAP). 0 = dat."""
+    s = H / wh
+    out = 0.0
+    for f in faces:
+        out += (max(0.0, x0 - f[0] * sw) + max(0.0, f[2] * sw - (x0 + ww)) + max(0.0, y0 - f[1] * sh)) * s
+        out += max(0.0, (f[3] * sh - y0) * s - limit)
+    return out
+
+
+def choose_window(img, faces, g, report=None):
+    """(x0, y0, w, h) khung cat toi uu (toa do anh nguon) — thuan, khong ve. `g`: geometry(lay).
+
+    LOW-447: khong khung nao giu duoc mat tren chu (mat thap, anh da sat 4:5) thi truoc day lay
+    khung giua — chinh khung mat de len tieu de, im lang. Nay:
+      1. bo mat qua nho de nhan ra (subject_fit.FACE_MIN_HEIGHT, LOW-279: nguoi dung xa) roi chon
+         lai — do that 30/09: hai mat 2% anh o quay le tan AMD ep phong 1.4, tieu de mat chu;
+      2. van khong duoc: lay khung mat TRAN IT NHAT (`_face_excess`, px; trong FACE_TEXT_GAP coi
+         nhu bang nhau thi lay khung chu doc duoc nhat) va ghi `face_text_overlap_px` vao
+         `report` de build_all in canh bao."""
     src = img.convert("RGB")
     ty = 1600 / max(src.size)
     if ty < 1:
@@ -226,22 +245,36 @@ def choose_window(img, faces, g):
     k = 0.25                                                    # cham diem tren ban 1/4 cho nhanh
     title = (g["first_line_top"] * k, g["frame_bottom"] * k)
     summ = (g["summary_top"] * k, g["summary_bottom"] * k)
+
+    def score(x0, y0, ww, wh, z, lech):
+        small = src.crop((round(x0), round(y0), round(x0 + ww), round(y0 + wh))).resize(
+            (round(W * k), round(H * k)), Image.Resampling.BILINEAR)
+        cr = min(max(_contrast_p10(small, *title)), max(_contrast_p10(small, *summ)))
+        return min(cr, LEGIBLE_CR) - ZOOM_COST * (z - 1) - SHIFT_COST * lech
+
     best, best_u = None, None
+    rejected = []                                               # (px mat tran, khung, z, lech)
     for z in ZOOMS:
         for (x0, y0, ww, wh) in _windows(sw, sh, z):
-            if any(not (x0 <= f[0] * sw and f[2] * sw <= x0 + ww and y0 <= f[1] * sh
-                        and (f[3] * sh - y0) / wh * H <= g["first_line_top"] - FACE_TEXT_GAP)
-                   for f in faces):
-                continue                                        # mat bi cat hoac roi vao vung chu
-            small = src.crop((round(x0), round(y0), round(x0 + ww), round(y0 + wh))).resize(
-                (round(W * k), round(H * k)), Image.Resampling.BILINEAR)
-            cr = min(max(_contrast_p10(small, *title)), max(_contrast_p10(small, *summ)))
             lech = (abs((x0 + ww / 2) / sw - 0.5) + abs((y0 + wh / 2) / sh - 0.5))
-            u = min(cr, LEGIBLE_CR) - ZOOM_COST * (z - 1) - SHIFT_COST * lech
+            excess = _face_excess(faces, sw, sh, x0, y0, ww, wh, g["first_line_top"] - FACE_TEXT_GAP)
+            if excess > 0:                                      # mat bi cat hoac roi vao vung chu
+                rejected.append((excess, (x0, y0, ww, wh), z, lech))
+                continue
+            u = score(x0, y0, ww, wh, z, lech)
             if best_u is None or u > best_u:
-                best, best_u = (x0 / ty if ty < 1 else x0, y0 / ty if ty < 1 else y0,
-                                ww / ty if ty < 1 else ww, wh / ty if ty < 1 else wh), u
-    return best or _windows(*img.size, 1.0)[len(_windows(*img.size, 1.0)) // 2]
+                best, best_u = (x0, y0, ww, wh), u
+    if best is None:
+        import subject_fit
+        big = [f for f in faces if f[3] - f[1] >= subject_fit.FACE_MIN_HEIGHT]
+        if len(big) < len(faces):
+            return choose_window(img, big, g, report)
+        least = min(r[0] for r in rejected)
+        pool = [r for r in rejected if r[0] <= least + FACE_TEXT_GAP]
+        excess, best, _, _ = max(pool, key=lambda r: score(*r[1], r[2], r[3]))
+        if report is not None:
+            report["face_text_overlap_px"] = round(excess)
+    return tuple(v / ty if ty < 1 else v for v in best)
 
 
 def build(img_path, title: str, summary: str, handle: str, out, report=None,
@@ -267,7 +300,7 @@ def build(img_path, title: str, summary: str, handle: str, out, report=None,
         flat, hop = None, None
         img, kdai = extend_bottom(img)
         faces = [[f[0], f[1] / kdai, f[2], f[3] / kdai] for f in _face_boxes(img_path)]
-        x0, y0, ww, wh = choose_window(img, faces, g)
+        x0, y0, ww, wh = choose_window(img, faces, g, report)
         canvas.paste(img.convert("RGB").crop((round(x0), round(y0), round(x0 + ww), round(y0 + wh)))
                      .resize((W, H), Image.Resampling.LANCZOS), (0, 0))
     truoc_nen = canvas.copy() if report is not None else None
@@ -335,6 +368,11 @@ def build_all(slides: list, out: Path, brand: str, tone: str = "dark") -> tuple[
                   cluttered=bool(s.get("cluttered")), sizes=sizes)
             max_share = carousel.TEXT_BG_MAX_SHARE
         paths.append(p)
+        if bao.get("face_text_overlap_px"):
+            # LOW-447: chi CANH BAO, khong chan — anh van dung duoc, nguoi duyet nhin la thay.
+            print(f"[CANH BAO] slide {i}: khong khung cat nao giu mat nguoi tren chu — lay khung mat "
+                  f"tran it nhat ({bao['face_text_overlap_px']}px de len/ra ngoai vung cho phep); "
+                  "doi anh mat cao hon neu can", file=sys.stderr)
         loi = (carousel._gate_text_background(f"slide {i}", bao, max_share=max_share)
                or carousel._gate_flat(f"slide {i}", bao))
         if loi:

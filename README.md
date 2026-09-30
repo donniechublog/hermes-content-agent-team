@@ -58,7 +58,8 @@ cron 06:00 VN → task cho vai quét → quét, ghi manifest, gửi báo cáo
                         ↓
       Bản nháp + thẻ ảnh vào topic Miles/Jika kèm nút ✅ / ❌
                         ↓
-   ✅ → đăng lên channel + đẩy sang moat      ❌ → đánh dấu bỏ
+   ✅ → xếp lịch (cách bài trước ≥ 1 tiếng);    ❌ → đánh dấu bỏ
+       cron `publish-due` đăng channel + đẩy moat
 ```
 
 **Phần của ta dừng ở moat.** `moat_publish.py` đẩy bài sang moat (`facebook_post`,
@@ -77,7 +78,7 @@ Mỗi vai theo một khuôn: **CHUẨN BỊ (script) → VIẾT (LLM, một tệ
 - Vai quét dùng `scan_prepare.py` + `scan_submit.py`. Một lần quét = một báo cáo.
 - Vai theo chat (`gin_*`, `itachi_*`, `cape_*`, `ada_*`, `bob_submit.py`) cùng mẫu.
 
-**Thêm vai mới:** một dòng `Vai(...)` trong `role.py` (các bảng khác tự dẫn xuất),
+**Thêm vai mới:** một dòng `Role(...)` trong `role.py` (các bảng khác tự dẫn xuất),
 một cặp `<vai>_prepare/submit.py`, một SOUL trong `hermes/profiles/`, một topic trong
 `state/topics.<brand>.json`, rồi `sync_hermes.py --ra-hermes`. `tests/test_role.py`
 giữ các bảng khớp nhau.
@@ -97,7 +98,8 @@ giữ các bảng khớp nhau.
 `manifest_common.py`, `required.py`, `material.py`.
 
 **Duyệt và đăng**: `approve_service.py` (mặt tiền; thân ở `approve_*.py`),
-`chat_router.py`, `draft_write.py`, `publish.py`, `moat_publish.py`,
+`chat_router.py`, `draft_write.py`, `publish_schedule.py` (xếp lịch + cron `publish-due`),
+`publish.py`, `moat_publish.py`,
 `blackboard.py`, `write_log.py`, `env_load.py`.
 
 **Đo đạc**: `monitor_9router.py`, `journal.py` + `journal_web.py` (cổng 9130),
@@ -105,7 +107,7 @@ giữ các bảng khớp nhau.
 
 **Khác**
 - `assets/` — font và model YuNet, nguồn/giấy phép ở `assets/README.md`.
-- `hermes/skills/` — skill dùng chung; `hermes/profiles/` — SOUL/MEMORY, đồng bộ bằng `sync_hermes.py`.
+- `hermes/skills/` — skill dùng chung (nạp qua `skills.external_dirs`); `hermes/skills_parked/` — skill chờ điều kiện (vd `ai-background` chờ GPU), KHÔNG nạp; `hermes/profiles/` — SOUL/MEMORY, đồng bộ bằng `sync_hermes.py`.
 - `setup.sh` — dựng máy mới (chạy lại được), kết thúc bằng `check_env.py`.
 - `requirements.txt` / `requirements.lock` — lock làm mới bằng `lock_requirements.py`.
 - `tests/` — chạy `tests/run.sh` (offline).
@@ -132,6 +134,8 @@ trong repo chỉ là **bản chụp**, sửa nó không tạo được job.
 | `model-watch` | `*/30` trừ 08–10h và 13–16h VN | Dò sức khoẻ model |
 | `moat-publish-watch` | 5 phút | Hỏi moat bài đã lên social chưa |
 | `skill-lesson-filter` | mỗi giờ | Chấm bài học skill vai tự ghi |
+| `publish-due` | mỗi phút | Đăng bài đã tới giờ trong hàng đợi xếp lịch (`hermes/scripts/publish_due.sh`) |
+| `skill-lesson-commit` | chạy sau `skill-lesson-filter` (lịch theo job live; chưa có trong bản chụp) | Bài học đã lọc → commit + PR (`hermes/scripts/skill_lesson_commit.sh`) |
 
 ## State
 
@@ -139,7 +143,7 @@ Quy ước: `state/<brand>/` cho thứ của một brand; `state/` gốc chỉ c
 máy (nhật ký 9router, khoá). Tên tệp/thư mục chỉ lấy từ `state_paths.py`.
 
 Tệp nhiều tiến trình cùng ghi (`meta.json`, `drafts/<id>.json`, sidecar `duyet_*`)
-phải ghi qua `env_load.ghi_json` (tmp + `os.replace`), không `write_text` thẳng.
+phải ghi qua `env_load.write_json` (tmp + `os.replace`), không `write_text` thẳng.
 
 | Tệp | Tạo | Sửa | Đọc |
 |---|---|---|---|

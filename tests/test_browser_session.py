@@ -47,6 +47,11 @@ class _CtxGia:
     def __init__(self, kw):
         self.kw = kw
         self.da_dong = False
+        self.routes = []
+
+    def route(self, pattern, handler):
+        # cong SSRF LOW-438 gan vao moi context
+        self.routes.append((pattern, handler))
 
     def new_page(self):
         return f"page-cua-{id(self)}"

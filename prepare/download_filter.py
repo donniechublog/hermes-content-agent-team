@@ -15,6 +15,7 @@ from PIL import Image
 import role
 import scan_common
 import env_load                                              # noqa: E402
+import image_rules_common
 import state_paths
 
 from prepare import decision_log
@@ -176,9 +177,9 @@ def download_and_filter(cands: list, wd: Path, da_giu=()) -> list:
                 decision_log.drop_candidate(wd, c, "acquire_error", "no_bytes",
                                             "tai khong ra byte nao (HTTP/mang — xem dong [tai] cung URL)")
                 continue
-            im = Image.open(io.BytesIO(data))
-            im.load()
-            im = im.convert("RGB")
+            # LOW-445/446: xoay theo EXIF va dan vung trong suot len nen TRUOC khi luu PNG —
+            # PNG luu ra khong con tag orientation lan alpha, sai o day thi sai ca pipeline.
+            im = image_rules_common.open_rgb(io.BytesIO(data))
             w, hh = im.size
             if min(w, hh) < short_side_drop:
                 decision_log.drop_candidate(wd, c, "too_small", "SHORT_SIDE_DOWNLOAD",
@@ -280,9 +281,13 @@ def download_and_filter(cands: list, wd: Path, da_giu=()) -> list:
                                                  or article_images.RULE_MODEL.search(c.get("alt", "") or "")))
                     or c.get("html_tag") in ("table", "canvas", "svg")
                     or c.get("source") == "arxiv_figure")
+        # LOW-442: og:image bao chi (press_entity_images) de `page_url` = chinh anh
+        # cho qua cong ben thu ba o tren; trang bao that nam o `article_url`.
+        # Manifest ghi trang bao, khong ghi CDN anh ("via image.cnbcfm.com").
+        page = c.get("article_url") or c.get("page_url", "")
         ra.append({"id": ma, "original_path": str(out), "url": c.get("image_url", ""),
                    "alt": (c.get("alt") or c.get("capture_alt") or "")[:120], "source": c.get("source", ""),
-                   "page_url": c.get("page_url", ""), "domain": _domain(c.get("page_url") or c.get("image_url")),
+                   "page_url": page, "domain": _domain(page or c.get("image_url")),
                    "score": c.get("score", 0), "score_reason": c.get("score_reason", ""), "chart_hint": hint,
                    # Ten hinh trong paper ("Figure 1") — Kite doc de biet tam nao
                    # la hinh mo dau bai, va de viet caption cho dung.

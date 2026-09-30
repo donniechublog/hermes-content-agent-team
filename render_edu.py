@@ -1942,7 +1942,7 @@ def pick_theme_auto(spec, bia_anh=False, anh_mau=None):
         raise SystemExit(f"hero '{hero}' khong co (chon: {', '.join(HEROES)})")
 
     import hashlib
-    seed = int(hashlib.md5(str(spec.get("folio", "")).encode()).hexdigest(), 16)
+    seed = int(hashlib.md5(str(spec.get("folio", "")).encode(), usedforsecurity=False).hexdigest(), 16)
 
     def it_dung_nhat(ung_vien, da_dung, xoay):
         # uu tien cai chua xuat hien trong lich su gan day; cai vua dung xep

@@ -190,7 +190,7 @@ def test_ban_cu_khoa_viet_bi_tu_choi_co_bao_ro():
 
 def _khoa_dict_ghi_vao(src: str, ten_tep: str) -> set:
     """Khoa cua dict literal duoc ghi vao tep co ten chua `ten_tep` (qua
-    _write_json/ghi_json/write_text) — doc bang ast, comment khong tinh."""
+    _write_json/write_json/write_text) — doc bang ast, comment khong tinh."""
     import ast
     ra = set()
     for n in ast.walk(ast.parse(src)):

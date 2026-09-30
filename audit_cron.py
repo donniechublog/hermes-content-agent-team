@@ -70,15 +70,23 @@ def _epoch(p: Path):
         return None
 
 
+def _aware(t: datetime) -> datetime:
+    """ISO khong mui gio = GIO MAY, khong phai UTC (B21).
+
+    Hermes ghi `next_run_at` bang gio may (+07 tren may chu, khong kem `+07:00`);
+    coi la UTC thi moc lech dung 7 gio -> bao KET sai (hoac bo sot job ket that)."""
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=datetime.now().astimezone().tzinfo)
+    return t
+
+
 def _hours(iso: str) -> str:
     """ISO cua hermes -> gio VN doc duoc. Khong doc duoc thi tra nguyen chuoi."""
     try:
         t = datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
     except (TypeError, ValueError):
         return str(iso)
-    if t.tzinfo is None:
-        t = t.replace(tzinfo=timezone.utc)
-    return t.astimezone().strftime("%H:%M %d/%m")
+    return _aware(t).astimezone().strftime("%H:%M %d/%m")
 
 
 def _age(giay: float) -> str:
@@ -169,9 +177,7 @@ def audit_format(cron_dir: Path, bay_gio: float) -> tuple:
         if job.get("enabled", True) and (job.get("state") or "") != "paused" and ke:
             try:
                 t = datetime.fromisoformat(str(ke).replace("Z", "+00:00"))
-                if t.tzinfo is None:
-                    t = t.replace(tzinfo=timezone.utc)
-                tre = bay_gio - t.timestamp()
+                tre = bay_gio - _aware(t).timestamp()
                 if tre > LATE_SECONDS:
                     muc = "STUCK" if muc == "OFF" else muc
                     ly_do.append(f"lỡ hẹn {_age(tre)} (đáng lẽ chạy lúc {_hours(ke)})")

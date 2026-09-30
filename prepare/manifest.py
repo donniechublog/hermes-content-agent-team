@@ -138,12 +138,23 @@ def contact_sheet(anh: list, out: Path) -> None:
     canvas = Image.new("RGB", (W * cot, 300 * hang), (18, 18, 18))
     d = ImageDraw.Draw(canvas)
     for k, a in enumerate(anh):
-        im = Image.open(a["original_path"]).convert("RGB")
-        im.thumbnail((W - 16, 240))
         x, y = (k % cot) * W + 8, (k // cot) * 300 + 8
-        canvas.paste(im, (x, y))
-        nhan = f"{a['id']}  {a['w']}x{a['h']}  {manifest_values.kind_label(a['kind']).upper()}" + \
-               ("  MẶT" if a["faces"] else "") + ("  NGANG" if a["landscape"] else "")
+        # Anh hong (PNG cut, tep rac) da duoc vision._classify_hide_whole giu lai thanh
+        # anh "chua nhin" KHONG co kind/landscape/ratio. Mo lai o day ma nem thi ca tam
+        # thu chet, va vi contact_sheet chay TRUOC khi run() ghi manifest.json, engine
+        # chet khong manifest — dung loi ma B-r2-3 da chan o vision (LOW-439). O hong
+        # ghi nhan HONG, cac anh khac van len tam thu.
+        try:
+            im = Image.open(a["original_path"]).convert("RGB")
+            im.thumbnail((W - 16, 240))
+            canvas.paste(im, (x, y))
+            loai = manifest_values.kind_label(a["kind"]).upper() if a.get("kind") else "CHƯA PHÂN LOẠI"
+            nhan = f"{a['id']}  {a.get('w', 0)}x{a.get('h', 0)}  {loai}" + \
+                   ("  MẶT" if a.get("faces") else "") + ("  NGANG" if a.get("landscape") else "")
+        except Exception as e:                                   # noqa: BLE001
+            print(f"[contact_sheet] {a.get('id')}: HONG khi mo — {type(e).__name__}, bo o trong",
+                  file=sys.stderr)
+            nhan = f"{a.get('id')}  HỎNG ({type(e).__name__})"
         d.text((x, y + 250), nhan, font=f, fill=(0, 204, 224))
     out.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(out, "PNG")

@@ -77,20 +77,26 @@ def test_reject_slug_old_and_profile_missing():
         assert "khong co profile" not in r.stderr, f"vera co profile ma van bi chan: {r.stderr}"
 
 
-def _run_with_fake_kanban(home: Path, created_at: float, title: str):
+def _run_with_fake_kanban(home: Path, created_at: float, title: str,
+                          stdout_tail: str = "", stderr_tail: str = "", raw: str | None = None):
     """Chay daily_scan.sh finn voi `python` gia: `-m hermes_cli...` in JSON task
-    dung san, con lai chuyen sang python that (script dung no de doc JSON)."""
+    dung san, con lai chuyen sang python that (script dung no de doc JSON).
+    `stdout_tail`/`stderr_tail`: rac in SAU JSON (warning cua hermes); `raw` thay
+    han JSON bang chuoi tuy y (vd JSON hong)."""
     (home / "profiles" / "finn").mkdir(parents=True, exist_ok=True)
     bin_dir = home / "hermes-agent" / "venv" / "bin"
     bin_dir.mkdir(parents=True, exist_ok=True)
-    (home / "task.json").write_text(json.dumps(
+    (home / "task.json").write_text(raw if raw is not None else json.dumps(
         {"id": "t_old", "title": title, "status": "done", "created_at": created_at}, indent=2),
         encoding="utf-8")
+    (home / "tail_out").write_text(stdout_tail, encoding="utf-8")
+    (home / "tail_err").write_text(stderr_tail, encoding="utf-8")
     fake = bin_dir / "python"
     real = Path(sys.executable).as_posix()
     fake.write_text(
         "#!/bin/bash\n"
-        f'if [ "$1" = "-m" ]; then cat "{(home / "task.json").as_posix()}"; exit 0; fi\n'
+        f'if [ "$1" = "-m" ]; then cat "{(home / "task.json").as_posix()}"; '
+        f'cat "{(home / "tail_out").as_posix()}"; cat "{(home / "tail_err").as_posix()}" >&2; exit 0; fi\n'
         f'exec "{real}" "$@"\n', encoding="utf-8")
     fake.chmod(0o755)
     return _run("finn", home)
@@ -112,6 +118,37 @@ def test_old_task_same_vn_day_is_rejected():
     with tempfile.TemporaryDirectory() as d:
         r = _run_with_fake_kanban(Path(d), time.time() - 2, title)
         assert r.returncode == 0, f"task vua tao phai qua cong, duoc {r.returncode}: {r.stdout}{r.stderr}"
+
+
+def test_warning_after_json_does_not_fake_old_task():
+    """B19: hermes in warning SAU dong JSON (stderr, hoac ca stdout) -> khong duoc lam
+    json.loads hong roi bao "task CU" gia + exit 1 du task vua tao that."""
+    if not BASH:
+        print("  (bo qua: khong co bash)")
+        return
+    today = datetime.now(timezone(timedelta(hours=7))).strftime("%Y-%m-%d")
+    title = f"Quet tin sang {today}"
+    warn = "\nWARNING: hermes deprecation {x}\n"
+    for kieu, k in (("stderr", {"stderr_tail": warn}), ("stdout", {"stdout_tail": warn})):
+        with tempfile.TemporaryDirectory() as d:
+            r = _run_with_fake_kanban(Path(d), time.time() - 2, title, **k)
+            assert r.returncode == 0, \
+                f"warning o {kieu} sau JSON lam hong cong (ma {r.returncode}): {r.stdout}{r.stderr}"
+    # task CU van phai bi bat du co warning di kem
+    with tempfile.TemporaryDirectory() as d:
+        r = _run_with_fake_kanban(Path(d), time.time() - 17 * 3600, title, stderr_tail=warn)
+        assert r.returncode == 1 and "task CU" in r.stdout, f"{r.returncode}: {r.stdout}{r.stderr}"
+
+
+def test_json_unreadable_is_reported_as_such_not_old_task():
+    """B19: co "id" nhung JSON hong -> bao "khong doc duoc JSON" (khong gia vo task CU)."""
+    if not BASH:
+        print("  (bo qua: khong co bash)")
+        return
+    with tempfile.TemporaryDirectory() as d:
+        r = _run_with_fake_kanban(Path(d), 0, "t", raw='{"id": "t_x", "created_at": ')
+        assert r.returncode == 1 and "khong doc duoc JSON" in r.stdout and "task CU" not in r.stdout, \
+            f"{r.returncode}: {r.stdout}{r.stderr}"
 
 
 def test_qinn_turn_matches_scan_prepare():

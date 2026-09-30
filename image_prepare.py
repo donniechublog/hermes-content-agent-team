@@ -110,7 +110,6 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
     """Engine anh cho MOT bai: nguon -> browser -> (xep hang) -> tai anh -> nhin
     -> tim rong neu thieu -> anh khai niem neu van thieu/khong co bia -> tu lieu -> manifest. Tach 07/09/2026 tu mot ham 231
     dong; doi chieu bang vet voi moi ham anh em thay bang ban gia (13 kich ban)."""
-    import carousel
     t_start = time.time()           # LOW-225: moc gom ban ghi anh bi bo cua CHINH lan chay nay
     title = meta.get("title", draft_id)
     # `tom`/`vai_anh` doc SOM, TRUOC ca browser (doi cho tu duoi len 16/09/2026,
@@ -165,7 +164,7 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
                                            khong_browser, phien=phien)
         anh = _gather_and_download_image(title, link, nguon_path, nguon, source_pages, bp, wd, xhs)
         anh, dung_duoc, chua_nhin = _seen_image(anh, nguon, title, wd)
-        flagship = bool(carousel._FLAGSHIP_RE.search(title + " " + tom.get("summary", "")))
+        flagship = role.is_flagship_text(title + " " + tom.get("summary", ""))
         toi_thieu = role.min_images(vai_anh, flagship)
         # HAI CAU HOI KHAC NHAU, dung lan nhau la hong ca hai chieu:
         #   `toi_thieu`             — nguong CHAN: duoi no thi bai bi coi la
@@ -302,7 +301,7 @@ def _wait_for_slot():
     Thieu fcntl (Windows) thi CHAY KHONG KHOA kem mot dong canh bao — tran
     CT_PREPARE_PARALLEL khong con hieu luc, nhung may do chi mot nguoi chay
     tay/chay test, khong phai server hai brand. Truoc 09/09/2026 cho nay
-    `import fcntl` tran nen `chay()` KHONG chay duoc tren Windows chut nao
+    `import fcntl` tran nen `run()` KHONG chay duoc tren Windows chut nao
     (audit C3); emoji_deck.py da co san mau nay tu lau."""
     if fcntl is None:
         print("[cho] khong co fcntl (khong phai POSIX) -> chay KHONG khoa, "
@@ -364,10 +363,10 @@ def _handle_lock(khoa: Path, cho: int, draft_id: str, ngu=time.sleep) -> bool:
          het gio ma van song thi thoat bang mot cau vai doc duoc. KHONG ghi de
          khoa (06/09/2026: hai engine tren cung draft de len manifest.json cua nhau).
 
-    Tach ra khoi `chay()` de test duoc bang mot tep khoa gia, khong can meta
+    Tach ra khoi `run()` de test duoc bang mot tep khoa gia, khong can meta
     draft hay browser. `ngu` chi de test khong phai ngu that.
 
-    Tra ve True khi gap KHOA MO COI (tien trinh truoc chet bat thuong) — `chay()`
+    Tra ve True khi gap KHOA MO COI (tien trinh truoc chet bat thuong) — `run()`
     dem so lan do de dung lai (LOW-28)."""
     if not khoa.exists():
         return False
@@ -407,7 +406,7 @@ def _handle_lock(khoa: Path, cho: int, draft_id: str, ngu=time.sleep) -> bool:
 def count_crashes(wd: Path, mo_coi: bool, lam_moi: bool = False) -> int:
     """So lan engine chet bat thuong LIEN TIEP tren draft nay (LOW-28). Ham thuan
     tren mot tep `crash_count.json` trong wd: `mo_coi` -> +1; `lam_moi` -> ve 0;
-    manifest.json ghi duoc -> `chay()` goi lai voi lam_moi=True de ve 0."""
+    manifest.json ghi duoc -> `run()` goi lai voi lam_moi=True de ve 0."""
     tep = wd / state_paths.CRASH_COUNT_FILE
     n = 0
     if not lam_moi:

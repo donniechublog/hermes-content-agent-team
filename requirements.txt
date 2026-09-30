@@ -10,7 +10,8 @@
 # GHIM BAN (LOW-300): `requirements.lock` giu dung phien ban dang chay tren may chu
 # — chi cac goi khai o day + phu thuoc bac cau, khong phai ca venv dung chung voi
 # hermes. CI cai tu lock (nen CI va may chu chay cung ban) va pip-audit quet lock.
-# `>=` o day van la thu nguoi doc doi; setup.sh van cai tu tep nay. KHONG ghim hay
+# `>=` o day van la thu nguoi doc doi; setup.sh cai tu LOCK (D15), roi ve tep nay chi khi
+# thieu lock hoac chay `bash setup.sh --txt`. KHONG ghim hay
 # cai lai gi tren venv may chu: no dung chung voi hermes, `hermes update` co the
 # nang bat cu goi nao.
 #
@@ -18,6 +19,11 @@
 # trong venv dang chay on:
 #     scp requirements.txt lock_requirements.py dc-group@dc-group-system-product-name.netbird.mated:/tmp/
 #     ssh dc-group@dc-group-system-product-name.netbird.mated '~/hermes-agent/venv/bin/python /tmp/lock_requirements.py /tmp/requirements.txt' > requirements.lock
+# Script cung ghi dong `# hermes-agent: <commit>` (doc `git -C ~/hermes-agent rev-parse HEAD`
+# tren may chu): lock chi ghim goi, nhung blackboard.py va cost_squeeze.py con import ma
+# hermes (`hermes_cli.kanban_db`, `hermes_constants`) nen "ban chay duoc" = lock + commit do.
+# Khong co dong do trong ket qua (git hong/khong phai checkout) thi tu ghi tay:
+#     ssh dc-group@dc-group-system-product-name.netbird.mated 'git -C ~/hermes-agent rev-parse HEAD'
 # Thieu goi tren may chu thi script tu choi ghi (khong sinh lock thieu). Quen lam moi
 # lock sau khi them goi o day thi tests/test_requirements_lock.py do.
 
