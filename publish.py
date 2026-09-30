@@ -17,6 +17,7 @@ import env_load  # LOW-159: phai nap TRUOC httpx de dat OPENSSL_CONF kip
 import httpx
 
 import tele_util
+import write_log
 API = "https://api.telegram.org/bot{token}/{method}"
 CAPTION_LIMIT = 1024          # gioi han caption cua Telegram
 
@@ -222,7 +223,7 @@ def send_topic_with_keyboard(text: str, vai: str, keyboard: dict) -> dict | None
             r = c.post(API.format(token=tok, method="sendMessage"), json=payload)
         return _check(r)
     except Exception as e:                                   # noqa: BLE001
-        print(f"[canh bao] khong gui duoc Telegram: {type(e).__name__}: {e}")
+        print(f"[canh bao] khong gui duoc Telegram: {type(e).__name__}: {write_log.redact(e)}")
         return None
 
 
@@ -242,7 +243,7 @@ def send_topic(text: str, vai: str) -> bool:
         send_text(tok, chat, text, thread=env_load.topics().get(vai))
         return True
     except Exception as e:                                   # noqa: BLE001
-        print(f"[canh bao] khong gui duoc Telegram: {type(e).__name__}: {e}")
+        print(f"[canh bao] khong gui duoc Telegram: {type(e).__name__}: {write_log.redact(e)}")
         return False
 
 

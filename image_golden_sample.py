@@ -118,7 +118,7 @@ def write_snapshot(samples: list, out_dir: Path) -> Path:
         im.thumbnail((THUMB_MAX, THUMB_MAX))
         thumb = img_dir / f"{n:03d}.jpg"
         im.save(thumb, "JPEG", quality=85)
-        rows.append({"n": n, "id": s["id"], "md5": hashlib.md5(data).hexdigest(),
+        rows.append({"n": n, "id": s["id"], "md5": hashlib.md5(data, usedforsecurity=False).hexdigest(),
                      "thumb": f"img/{thumb.name}", "story": s["story"], "image": s["image"]})
     path = out_dir / "samples.jsonl"
     path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
