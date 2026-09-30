@@ -49,7 +49,6 @@ Cong chan giong card.py: tieng Viet mat dau bi chan (tru --bo-qua-dau), em-dash
 tu thay bang dau phay.
 """
 import argparse
-import re
 import json
 import sys
 from pathlib import Path
@@ -62,6 +61,7 @@ import card
 import image_provenance
 import image_rules_dre
 import logo_card
+import role
 import role_spec
 import safe_zone
 import text_bg
@@ -1082,10 +1082,9 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
 # anh khi mot carousel 6 la dat. Truoc do 5 / 8 (8 tu loi GPT-6 Astra 03/09).
 MIN_SLIDE = 6
 FLAGSHIP_MIN = 7
-# Ho model cua cac hang frontier (My + top Trung Quoc, theo scan_models.py).
-_FLAGSHIP_RE = re.compile(
-    r"\b(GPT-?\d|GPT-?[0-9.]+|o[3-9](?:-pro|-mini)?|Claude|Opus|Sonnet|Gemini|Llama|"
-    r"Grok|DeepSeek|Qwen|Kimi|GLM|MiniMax|Doubao|Mistral Large|Nova Premier)\b", re.I)
+# Luat "tin flagship" (regex ho model frontier) nam o `role.is_flagship_text`, canh
+# `role.min_images` dung no: engine anh (image_prepare) hoi o do, khong phai import
+# carousel chi de lay mot regex.
 
 
 def _is_flagship(spec, cover, slides):
@@ -1099,7 +1098,7 @@ def _is_flagship(spec, cover, slides):
         return False
     chu = " ".join([cover.get("hook", ""), cover.get("label", "")] +
                    [s.get("text", "") + " " + s.get("quote", "") for s in slides])
-    return bool(_FLAGSHIP_RE.search(chu))
+    return role.is_flagship_text(chu)
 
 
 # ---- Cong chan tieng Viet -------------------------------------------------
