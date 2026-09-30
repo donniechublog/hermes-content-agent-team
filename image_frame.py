@@ -104,16 +104,11 @@ def _about_rgb(im: Image.Image) -> Image.Image:
       kem — day dan len nen BG bang kenh alpha truoc.
     - I;16 (PNG 16-bit, export khoa hoc/mot so tool chup): convert("RGB") ket
       gia tri >255 thanh 255 -> anh TRANG TINH, khong loi, Bob van gui. Chia
-      ve 8-bit truoc."""
-    if im.mode.startswith("I"):
-        im = im.point(lambda v: v / 256).convert("L")
-    elif im.mode == "P" and "transparency" in im.info:
-        im = im.convert("RGBA")
-    if im.mode in ("RGBA", "LA"):
-        nen = Image.new("RGB", im.size, _color(BG))
-        nen.paste(im.convert("RGBA"), mask=im.getchannel("A"))
-        return nen
-    return im.convert("RGB")
+      ve 8-bit truoc.
+
+    Than da dua ra `image_rules_common.to_rgb` (LOW-446) de moi renderer dung chung."""
+    import image_rules_common
+    return image_rules_common.to_rgb(im, _color(BG))
 
 
 def line_frame(nguon, out_path, emoji: str = "", handle: str = "@donniechublog",

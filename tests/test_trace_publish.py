@@ -54,7 +54,8 @@ def _multipart(request):
 
 class FakeBotApi:
     """`script(r1, r2...)`: cau tra loi lan luot cho cac request ke tiep (dict
-    JSON | Exception); het hang thi tra ok voi message_id tang dan tu 9001."""
+    JSON | Exception); het hang thi tra ok voi message_id tang dan tu 9001
+    (sendMediaGroup: list, moi anh mot message_id nhu Bot API that)."""
 
     def __init__(self, h):
         self.h, self._queue, self._mid = h, [], 9000
@@ -75,8 +76,15 @@ class FakeBotApi:
             kw = json.loads(request.content.decode("utf-8"))
         self.h.trace.add("tg", method, token=bot[3:], **kw)
         self._mid += 1
-        r = self._queue.pop(0) if self._queue else {
-            "ok": True, "result": {"message_id": self._mid}}
+        if self._queue:
+            r = self._queue.pop(0)
+        elif method == "sendMediaGroup":
+            # Bot API that: sendMediaGroup tra LIST message (mot moi anh), khong phai dict.
+            n = len(json.loads(kw["media"]))
+            r = {"ok": True, "result": [{"message_id": self._mid + i} for i in range(n)]}
+            self._mid += n - 1
+        else:
+            r = {"ok": True, "result": {"message_id": self._mid}}
         if isinstance(r, BaseException):
             raise r
         return httpx.Response(200 if r.get("ok") else 400, json=r)
@@ -389,8 +397,10 @@ def test_album_mixes_urls_and_local_files_caption_only_on_first_item():
     h = _harness()
     try:
         a, b = _png(h, "a.png"), _png(h, "b.png")
+        mid_file = h.state / "album_mid.json"
         code, _ = _cli(h, "--album", a, "https://cdn.test/x.jpg", b,
-                       "--caption", "<b>album</b>", "--thread", "62")
+                       "--caption", "<b>album</b>", "--thread", "62",
+                       "--luu-mid", mid_file)
         assert code == 0
         sent, = h.tg.sent("sendMediaGroup")
         assert sent["chat_id"] == "-1002" and sent["message_thread_id"] == "62"
@@ -400,6 +410,11 @@ def test_album_mixes_urls_and_local_files_caption_only_on_first_item():
             {"type": "photo", "media": "https://cdn.test/x.jpg"},
             {"type": "photo", "media": "attach://file2"}]
         assert sent["_files"] == {"file0": "a.png", "file2": "b.png"}
+        # B22: Telegram tra LIST -> truoc day `res.get` no AttributeError SAU khi album
+        # da len, ma thoat != 0 va --luu-mid khong duoc ghi.
+        assert _prints(h) == ["da dang | message_id=9003 chat=-1002"], _prints(h)
+        saved = json.loads(mid_file.read_text(encoding="utf-8"))
+        assert saved["message_ids"] == [9001, 9002, 9003] and saved["message_id"] == 9003, saved
     finally:
         h.__exit__()
 
