@@ -922,7 +922,14 @@ def _layer_image(canvas, src_img, H, top_anchor=False, cover_focus=None) -> int:
     shift = 0
     top_color = _flat_top_color(sac) if (top_anchor or nat_h <= H) else None
     if top_color is not None:
-        shift = safe_zone.top(W, H)
+        # LOW-444: anh THAP HON the nhung khong du cho de ha het (nat_h trong (H-142, H],
+        # tuc ti le 0,80-0,88 tren the 4:5) thi chi ha VUA DU — day anh cham day the, dai
+        # mau keo dai ngan lai tuong ung. Truoc day van ha het 142px roi cat tu toa do
+        # AM ((nat_h - H)//2 < 0), PIL dem DEN: mot dai den toi 142px nam giua dai mau
+        # keo dai va anh — dung "vung thu hai" ma §7 cam, do thay tren the ceiling that
+        # (30 hang den y=142..171). Anh chup trang (top_anchor) van ha het va cat DAY
+        # de giu tit trang nhu cu.
+        shift = safe_zone.top(W, H) if top_anchor else min(safe_zone.top(W, H), H - nat_h)
         canvas.paste(top_color + ((255,) if canvas.mode == "RGBA" else ()), (0, 0, W, shift))
     if nat_h + shift > H:
         top = 0 if top_anchor else (nat_h - H) // 2
