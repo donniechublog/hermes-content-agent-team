@@ -625,7 +625,8 @@ def web_search(truy_van: str, so: int = 6, bo_mien: tuple = ()) -> list:
             continue                                        # quang cao cua chinh DDG
         if not scan_common.url_hide_whole(u):
             continue
-        mien = (re.match(r"https?://([^/]+)", u).group(1) or "").replace("www.", "")
+        m_host = re.match(r"https?://([^/]+)", u)           # "http://" tron: khong co host
+        mien = (m_host.group(1) if m_host else "").replace("www.", "")
         if not mien or mien in thay or any(b in mien for b in DROP_DOMAIN + tuple(bo_mien)):
             continue
         thay.add(mien)
