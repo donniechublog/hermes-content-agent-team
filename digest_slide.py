@@ -145,16 +145,17 @@ def geometry(lay: Layout) -> dict:
 
 def _contrast_bg(canvas, y0, y1):
     """Mau nen GIA de chon mau chu: (0,0,0) neu chu TRANG doc tot hon, (255,255,255) neu chu DEN.
-    So sanh theo pixel — ti le diem anh dat do tuong phan >= 4,5 voi trang va voi den — thay vi
-    lay trung binh (nen xanh dam lan chu trang nhat, trung binh ra "giua" nhung chu trang mat)."""
+    Do THEO PIXEL, lay diem tuong phan tu te (phan vi 10%) cua moi mau chu va chon mau cao hon:
+    nen xanh dam lan logo xanh nhat thi chu trang tot o nen nhung mat het tren logo (p10 1,35),
+    chu den tren ca hai van >= 3,7 — dem ti le pixel >= 4,5 chon nham trang o ca nay."""
     import numpy as np
     y0, y1 = max(0, int(y0)), min(H, int(y1))
     a = np.asarray(canvas.convert("RGB").crop((0, y0, W, y1)), dtype=np.float64) / 255.0
     a = np.where(a <= 0.03928, a / 12.92, ((a + 0.055) / 1.055) ** 2.4)
     lum = 0.2126 * a[..., 0] + 0.7152 * a[..., 1] + 0.0722 * a[..., 2]
-    ok_white = ((1.05) / (lum + 0.05) >= 4.5).mean()
-    ok_black = ((lum + 0.05) / 0.05 >= 4.5).mean()
-    return (0, 0, 0) if ok_white >= ok_black else (255, 255, 255)
+    white = np.percentile(1.05 / (lum + 0.05), 10)
+    black = np.percentile((lum + 0.05) / 0.05, 10)
+    return (0, 0, 0) if white >= black else (255, 255, 255)
 
 
 def build(img_path, title: str, summary: str, handle: str, out, report=None,

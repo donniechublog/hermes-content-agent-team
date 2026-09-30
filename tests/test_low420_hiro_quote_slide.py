@@ -80,13 +80,13 @@ def test_rendered_slide_has_quote_frame_and_passes_overlay_gate():
     sizes = ds.deck_sizes(slides)
     g = ds.geometry(ds.fit_text(ImageDraw.Draw(Image.new("RGB", (ds.W, ds.H))),
                                 LONG[0], LONG[1], ds.TEXT_MAX_H, *sizes))
-    net = carousel._net()
+    nets = [carousel._flat_palette(b)["net"] for b in ((0, 0, 0), (255, 255, 255))]   # net theo mau chu (LOW-422)
     with Image.open(paths[0]) as im:
         px = im.convert("RGB")
         # net doc TRAI cua khung (goc tren-trai: r=30, net doc tu y0+r xuong 1/2 khung)
         y = g["frame_top"] + 30 + 20
         found = [px.getpixel((ds.FRAME_X + dx, y)) for dx in range(-3, 4)]
-        assert any(max(abs(a - b) for a, b in zip(c, net)) <= 40 for c in found), (found, net)
+        assert any(max(abs(a - b) for a, b in zip(c, net)) <= 40 for c in found for net in nets), (found, nets)
 
 
 def test_no_band_under_text_lop_nen_khong_ton_tai():
