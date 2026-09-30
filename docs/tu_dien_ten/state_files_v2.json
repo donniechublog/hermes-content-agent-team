@@ -61,5 +61,5 @@
             "state/<brand>/report_history.<role>.jsonl", "state/<brand>/repick_pending.json",
             "state/<brand>/prepare/<draft_id>/hiro_job.json",
             "state/<brand>/prepare/<draft_id>/hiro_images.json", "state/<brand>/prepare/<draft_id>/hiro_images/",
-            "state/<brand>/hiro_auto.json"]
+            "state/<brand>/hiro_auto.json", "state/<brand>/schedule_board.json"]
 }
