@@ -31,24 +31,33 @@ import hermes_adapter                                          # noqa: E402
 import route_missing_images as rt                              # noqa: E402
 
 
-def _receive_job_text(status):
-    """Tin "📥 đã nhận task" cho mot task Dre moi tao dang o trang thai `status`."""
+UNREADABLE = object()          # hermes_adapter.job tra None: khong doc duoc kanban
+
+
+def _receive_job_text(status, role_slug="dre", tid="t_1", today_rows=None):
+    """Tin "📥 đã nhận task" cho mot task moi tao cua `role_slug` dang o trang thai
+    `status`; `today_rows` la cac task cua vai tao hom nay (mac dinh: chi `tid`)."""
     sent = []
+    if today_rows is None:
+        today_rows = [{"id": tid, "created_at": 1}]
+    elif today_rows is UNREADABLE:
+        today_rows = None
     with tempfile.TemporaryDirectory() as tmp:
         topics = Path(tmp) / "topics.json"
-        topics.write_text(json.dumps({"dre": 11}), encoding="utf-8")
+        topics.write_text(json.dumps({role_slug: 11}), encoding="utf-8")
         saved = (dispatch.env_load.topics_path, hermes_adapter.status,
-                 hermes_adapter.count_form_run, dispatch.call, dispatch.log)
+                 hermes_adapter.count_form_run, hermes_adapter.job, dispatch.call, dispatch.log)
         dispatch.env_load.topics_path = lambda: topics
         hermes_adapter.status = lambda tid: status
         hermes_adapter.count_form_run = lambda tru_tid=None: 0
+        hermes_adapter.job = lambda **kw: today_rows
         dispatch.call = lambda token, method, **kw: sent.append(kw) or {"ok": True}
         dispatch.log = lambda *a, **k: None
         try:
-            dispatch._report_receive_job("TOK", "-100", "dre", None, "Tin A", "t_1")
+            dispatch._report_receive_job("TOK", "-100", role_slug, None, "Tin A", tid)
         finally:
             (dispatch.env_load.topics_path, hermes_adapter.status,
-             hermes_adapter.count_form_run, dispatch.call, dispatch.log) = saved
+             hermes_adapter.count_form_run, hermes_adapter.job, dispatch.call, dispatch.log) = saved
     assert len(sent) == 1, sent
     return sent[0]["text"]
 
@@ -56,15 +65,34 @@ def _receive_job_text(status):
 def test_receive_job_while_waiting_for_engine_does_not_promise_one_minute():
     """Fail tren ma cu: task dang bi chan cho engine van nhan "Bắt đầu ngay khi
     dispatcher nhận (≤ 1 phút)" — bai OpenEvidence 25/09 nhan cau do luc 11:09,
-    11:10 topic hien "dừng (blocked)"."""
+    11:10 topic hien "dừng (blocked)". Ong Chu 03/10/2026: dong "Chờ engine đếm
+    ảnh…" lap o moi tin, bo han."""
     text = _receive_job_text("blocked")
     assert "≤ 1 phút" not in text, text
-    assert "Chờ engine đếm ảnh" in text, text
+    assert "Chờ engine đếm ảnh" not in text, text
+    assert text.endswith("\ntask t_1"), text
 
 
 def test_receive_job_for_ready_task_keeps_start_promise():
     text = _receive_job_text("ready")
-    assert "Bắt đầu ngay khi dispatcher nhận (≤ 1 phút)" in text, text
+    assert "Bắt đầu ngay khi dispatcher nhận (≤ 1 phút) · task t_1" in text, text
+
+
+def test_receive_job_numbers_image_roles_per_day():
+    """Ong Chu 03/10/2026: Dre/Ethan/Kite "đã nhận task #NN" theo ngay."""
+    rows = [{"id": "t_b", "created_at": 20}, {"id": "t_a", "created_at": 10},
+            {"id": "t_c", "created_at": 30}]
+    for role_slug in ("dre", "ethan", "kite"):
+        text = _receive_job_text("blocked", role_slug=role_slug, tid="t_b", today_rows=rows)
+        assert "đã nhận task #02:" in text, text
+    assert "đã nhận task #01:" in _receive_job_text("blocked")
+
+
+def test_receive_job_without_number_for_writers_or_unreadable_kanban():
+    assert "đã nhận task:" in _receive_job_text("ready", role_slug="miles")
+    assert "đã nhận task:" in _receive_job_text("blocked", today_rows=UNREADABLE)
+    text = _receive_job_text("blocked", today_rows=[])
+    assert "đã nhận task #01:" in text, text       # tid chua kip vao hang: van la so ke tiep
 
 
 def test_create_pair_blocks_with_the_shared_engine_wait_reason():
