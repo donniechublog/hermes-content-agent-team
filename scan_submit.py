@@ -37,7 +37,10 @@ NAME = scan_common.NAME_ROLE       # mot ban duy nhat, xem scan_common
 # LOW-419 (25/09/2026): Ong Chu ha tran dcgr 15 -> 12 ("cat tin o 12 roi chuyen
 # bot cho blog"). SOUL Vera (hermes/profiles/dcgr/vera.SOUL.md) noi cung so nay
 # de Vera xep tin — doi o day thi doi ca o do (tests/test_scan_overflow.py chan).
-OVERFLOW = {"vera": ("blog", 12)}
+# 03/10/2026: Ong Chu ha tiep 12 -> 10 ("Vera o tech chi lay toi 10 headline moi
+# ngay, con lai pass qua Vera ben blog"). Vera dcgr chay cron mot lan/ngay (06:00),
+# nen tran moi bao cao = tran moi ngay.
+OVERFLOW = {"vera": ("blog", 10)}
 
 
 def overflow_target(vai: str):
