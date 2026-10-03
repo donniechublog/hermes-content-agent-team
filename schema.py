@@ -282,15 +282,23 @@ def _count_stackable_pairs_real(ds: list, vai_anh: str) -> int:
     def _max_pairs(con: int) -> int:
         if not con:
             return 0
+        # LOW-456: tran n//2 dat duoc thi dung — khong cat thi bai Tencent 03/10
+        # (33 tam chi-ghep, 16 cap) duyet tap con khong bao gio xong, treo ca
+        # find_more_images lan dre_prepare/dre_submit cua bai do.
+        tran = bin(con).count("1") // 2
         i = (con & -con).bit_length() - 1
         bo_i = con & ~(1 << i)
-        ra = _max_pairs(bo_i)                                  # tam i dung le, khong vao cap nao
+        ra = 0
         for j in ke[i]:
             if bo_i >> j & 1:
                 ra = max(ra, 1 + _max_pairs(bo_i & ~(1 << j)))
-        return ra
+                if ra == tran:
+                    return ra
+        return max(ra, _max_pairs(bo_i))                       # tam i dung le, khong vao cap nao
 
-    return _max_pairs((1 << n) - 1)
+    # Tam khong ghep duoc voi tam nao thi bo tu dau: con nam trong tap, tran n//2
+    # khong bao gio dat va phep cat o tren mat tac dung.
+    return _max_pairs(sum(1 << i for i in range(n) if ke[i]))
 
 
 def count_image_use_ok(anh: list | None, vai_anh: str) -> int:

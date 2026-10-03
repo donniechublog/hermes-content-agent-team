@@ -28,6 +28,7 @@ Dung:
 Sau do chay lai <vai>_prepare.py <draft_id> de doc brief moi (manifest.json da cap nhat).
 """
 import argparse
+import concurrent.futures as cf
 import json
 import os
 import re
@@ -57,6 +58,10 @@ from prepare.download_filter import download_and_filter                      # n
 COUNT_REPORT_NEW_TURN = 4         # bao moi hoi Bing moi luot
 COUNT_COMMONS_NEW_TURN = 6
 MAX_IMAGE_EXTRA = 12        # tran anh moi noi vao mot luot (8 -> 12 khi co them nguon web, 12/09)
+# LOW-456: hermes giet lenh terminal o 180 s (profiles/<vai>/config.yaml terminal.timeout).
+# Sau pha tim con tai + loc + vision (do 29/09–03/10: p90 ~50 s) roi moi ghi manifest.
+SEARCH_BUDGET_SECONDS = 75
+KEYWORD_WORKERS = 4
 _ANH_EXT = re.compile(r"\.(jpe?g|png|webp)(\?.*)?$", re.I)
 
 
@@ -208,31 +213,93 @@ def candidate_from_url(urls: list, wd: Path, phien=None) -> list:
     return anh
 
 
-def candidate_keyword(tu_khoa: str, wd: Path, mien_co: set, phien=None) -> list:
-    """Mot tu khoa -> bao cung tin (Bing News, mo browser) + Commons + Openverse + og:image bao ve thuc the."""
-    cands = []
+def candidate_keyword(tu_khoa: str, wd: Path, mien_co: set, phien=None, deadline=None, out=None) -> list:
+    """Mot tu khoa -> bao cung tin (Bing News, mo browser) + Commons + Openverse + og:image bao ve thuc the.
+
+    LOW-456: `deadline` (time.time()) — qua moc thi bo cac nguon con lai, tra phan da co.
+    `out`: danh sach ghi DAN vao (ung vien nguon nao xong la co ngay), de luong
+    goi van lay duoc phan da tim khi tu khoa nay chua chay het luc het gio."""
+    cands = out if out is not None else []
+
+    def late(buoc: str) -> bool:
+        if deadline is not None and time.time() > deadline:
+            print(f"[tim them] '{tu_khoa}': het gio, bo qua tu {buoc}", file=sys.stderr)
+            return True
+        return False
+
     # TIM ANH WEB (Bing/Yandex qua Chromium) — cai gan nhat voi "go Google Images".
     import find_image_web
-    cands += find_image_web.find_image_web(tu_khoa, so=16, phien=phien)
+    cands.extend(find_image_web.find_image_web(tu_khoa, so=16, phien=phien))
+    if late("Bing"):
+        return cands
     bao = article_sources.other_outlets_bing(tu_khoa, so=COUNT_REPORT_NEW_TURN, bo_mien=tuple(x for x in mien_co if x))
     print(f"[tim them] Bing '{tu_khoa}': {len(bao)} bao"
           + (": " + ", ".join(_domain(t["url"]) for t in bao) if bao else ""), file=sys.stderr)
     if bao:
-        bp = browser_pass([{"url": t["url"], "kind": "other_outlet"} for t in bao], wd, tim_them=False, phien=phien)
+        con_lai = 110 if deadline is None else max(5.0, deadline - time.time())
+        bp = browser_pass([{"url": t["url"], "kind": "other_outlet"} for t in bao], wd, tim_them=False,
+                          gio_han=con_lai, phien=phien)
         print(f"[tim them] browser boc {len(bp['cands'])} ung vien tu {len(bao)} bao", file=sys.stderr)
-        cands += bp["cands"]
+        cands.extend(bp["cands"])
+    if late("Commons"):
+        return cands
     cm = candidate_commons(tu_khoa)
     print(f"[tim them] Commons '{tu_khoa}': {len(cm)} ung vien", file=sys.stderr)
-    cands += cm
+    cands.extend(cm)
+    if late("Openverse"):
+        return cands
     ov = candidate_openverse(tu_khoa)
     print(f"[tim them] Openverse '{tu_khoa}': {len(ov)} ung vien", file=sys.stderr)
-    cands += ov
+    cands.extend(ov)
+    if late("bao thuc the"):
+        return cands
     # Anh BAO CHI ve thuc the (og:image cua bai gan day) — cach nguoi tim bang
     # tay (Ong Chu 12/09/2026, 7 link TSMC). Khong doi "cung tin".
     import press_entity_images
-    bt = press_entity_images.press_entity_images([tu_khoa], bo_mien=tuple(x for x in mien_co if x))
-    cands += bt
+    cands.extend(press_entity_images.press_entity_images([tu_khoa], bo_mien=tuple(x for x in mien_co if x)))
     return cands
+
+
+def search_keywords(tu_khoa: list, wd: Path, mien_co: set, use_browser: bool = True,
+                    budget: float = SEARCH_BUDGET_SECONDS, search=candidate_keyword) -> tuple:
+    """LOW-456: cac tu khoa chay SONG SONG, chung mot ngan sach `budget` giay.
+
+    Do 29/09–03/10: moi tu khoa tuan tu ~45 s, 3 tu khoa ~115 s, cong vision la
+    cham `terminal.timeout: 180` cua hermes — 14% lan goi bi giet truoc khi ghi
+    manifest, mat trang. Nay het `budget` thi lay phan da tim (ke ca cua tu khoa
+    chua xong) va di tiep toi tai/loc/ghi manifest.
+
+    Moi luong mot BrowserSession RIENG: Playwright sync gan voi luong da mo no,
+    khong dung chung qua luong duoc. Moi tu khoa mot thu muc con (`keyword_dir`):
+    anh chup figure dat ten theo so thu tu trang, chung thu muc la de len nhau.
+
+    Tra (ung vien, [tu khoa chua xong khi het gio])."""
+    deadline = time.time() + budget
+    found: list[list] = [[] for _ in tu_khoa]
+
+    def _one(i: int) -> None:
+        kw_dir = state_paths.keyword_dir(wd, i)
+        kw_dir.mkdir(parents=True, exist_ok=True)
+        with BrowserSession() as phien:
+            search(tu_khoa[i], kw_dir, mien_co, phien=phien if use_browser else None,
+                   deadline=deadline, out=found[i])
+
+    # Khong `with`: khoi `with` doi MOI luong xong ke ca khi da het gio (cung ly do LOW-277).
+    pool = cf.ThreadPoolExecutor(max_workers=env_load.quantity(KEYWORD_WORKERS))
+    futures = [pool.submit(_one, i) for i in range(len(tu_khoa))]
+    done, _ = cf.wait(futures, timeout=budget)
+    pool.shutdown(wait=False, cancel_futures=True)
+    unfinished = []
+    for i, fut in enumerate(futures):
+        if fut not in done:
+            unfinished.append(tu_khoa[i])
+        elif fut.exception() is not None:
+            e = fut.exception()
+            print(f"[tim them] '{tu_khoa[i]}' hong: {type(e).__name__}: {e}", file=sys.stderr)
+    if unfinished:
+        print(f"[tim them] het {budget:.0f}s: {len(unfinished)}/{len(tu_khoa)} tu khoa chua xong "
+              f"({'; '.join(unfinished)}) — dung phan da tim duoc", file=sys.stderr)
+    return [c for lst in found for c in list(lst)], unfinished
 
 
 def say_image_new(m: dict, bo_sung: list, wd: Path, tieu_de: str) -> list:
@@ -276,8 +343,11 @@ def fresh_manifest(m: dict) -> dict:
     return m
 
 
-def in_result(m: dict, moi: list, so_luot: dict, vai_anh: str) -> None:
+def in_result(m: dict, moi: list, so_luot: dict, vai_anh: str, unfinished=()) -> None:
     print(f"\n== TIM THEM luot {so_luot['run_count']}: +{len(moi)} anh moi ==")
+    if unfinished:
+        print(f"Hết giờ tìm: từ khoá chưa chạy hết nguồn — {'; '.join(unfinished)}. "
+              "Ảnh tìm được tới lúc đó đã vào manifest; cần thêm thì chạy lại riêng từ khoá đó.")
     for a in moi:
         if a.get("relevant") is False:
             print(f"- {a['id']}: ❌ KHÔNG LIÊN QUAN — {a.get('description') or ''} "
@@ -319,6 +389,7 @@ def main() -> int:
     so_luot = read_count_turn(wd)
     cb._handle_lock(khoa, 120, a.draft_id)
     khoa.write_text(str(os.getpid()))
+    unfinished: list = []
     try:
         m = schema.read_manifest(xong)
         if m is None:
@@ -340,14 +411,11 @@ def main() -> int:
         mien_co = {a_.get("domain") for a_ in m["images"]}
         wd2 = state_paths.extra_dir(wd, so_luot['run_count'])
         wd2.mkdir(parents=True, exist_ok=True)
-        cands = []
         t0 = time.time()
-        with BrowserSession() as phien:
-            ph = None if a.khong_browser else phien
-            for tk in a.tu_khoa:
-                cands += candidate_keyword(tk, wd2, mien_co, phien=ph)
-            if a.url:
-                cands += candidate_from_url(a.url, wd2, phien=ph)
+        cands, unfinished = search_keywords(a.tu_khoa, wd2, mien_co, use_browser=not a.khong_browser)
+        if a.url:
+            with BrowserSession() as phien:
+                cands += candidate_from_url(a.url, wd2, phien=None if a.khong_browser else phien)
         da = {x.get("url") for x in m["images"]}
         n_truoc = len(cands)
         cands = [c for c in cands if c.get("image_url") and c["image_url"] not in da]
@@ -362,9 +430,16 @@ def main() -> int:
         fresh_manifest(m)
         contact_sheet(m["images"], wd / state_paths.CONTACT_SHEET_FILE)
         _write_json(xong, m)
-        in_result(m, moi, so_luot, vai_anh)
+        in_result(m, moi, so_luot, vai_anh, unfinished)
+        print(f"[tim them] tong {time.time() - t0:.0f}s", file=sys.stderr)
     finally:
         khoa.unlink(missing_ok=True)
+    if unfinished:
+        # Luong tu khoa bi bo con chay; thoat binh thuong thi Python doi chung (atexit
+        # cua concurrent.futures) va hermes giet ca lenh o 180 s. Manifest da ghi xong.
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(0)
     return 0
 
 
