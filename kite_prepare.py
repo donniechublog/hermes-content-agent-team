@@ -390,6 +390,10 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         m, "KITE",
         f"Brand: {m['brand']} | draft: {m['draft_id']} | 6..10 slide, slide 1 là cover | "
         "art vector gốc, KHÔNG ảnh thật trừ hình thật liệt kê dưới")
+    if m.get("ethan_handoff"):
+        L.append("🛑 TIN NÀY ĐÃ CHUYỂN ETHAN vì không có tấm ảnh thật nào lên bìa được. KHÔNG viết spec, "
+                 "KHÔNG dựng. Kết thúc task ngay bằng một câu: \"Đã chuyển Ethan vì không đủ ảnh thật\".")
+        return "\n".join(L)
     L += brief_common.block_redo(
         da_dung, f"theme={da_dung.get('theme')} hero={da_dung.get('hero')}, hook "
                  f"“{da_dung.get('hook', '')}”. Lần này BẮT BUỘC "

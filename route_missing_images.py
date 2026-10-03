@@ -149,6 +149,32 @@ def after_prepare(draft_id: str, m: dict) -> None:
     if not thieu:
         _unblock_image(draft_id, im, f"engine dem xong: du anh cho {vai or 'vai anh'}")
         return                                     # du anh, khong co gi de hoi
+    if vai == "kite" and not im.get("ethan_handoff") and im.get("transferred_from") != "ethan":
+        # Kite KHONG co anh that nao dung duoc -> Ethan (Ong Chu 03/10/2026: "Dre khong du anh
+        # thi Kite, Kite khong du thi Ethan, tu dong"). Kite chi can MOT tam len bia (bia vector
+        # bi cam, 10/09/2026), nen "khong du" cua Kite chinh la `missing_images` cua engine voi
+        # nguong Kite. Bai Ethan da chuyen Kite (`transferred_from == "ethan"`) KHONG quay lai
+        # Ethan: chuoi mot chieu, khong co vong.
+        from approve_dispatch import standard_assignee
+        _, khong_ethan = standard_assignee("ethan")
+        if not khong_ethan:
+            tt_kite = int(thieu.get("min_images", 1))
+            im["ethan_handoff"] = True
+            _write_img(draft_id, im)
+            m["ethan_handoff"] = True
+            _start_ethan_handoff(draft_id)
+            print(f"[route] Kite {thieu.get('count', 0)}/{tt_kite} anh -> Ethan (draft {draft_id})",
+                  file=sys.stderr)
+            return
+    if vai == "ethan" and im.get("transferred_from") == "kite":
+        # Cuoi chuoi Dre -> Kite -> Ethan: khong con vai nao de chuyen tiep (chuyen lai Kite
+        # la vong). Mo chan de Ethan thay brief "khong co anh that" va tu block — Ong Chu thay
+        # task do tren bang tien do, thay vi bai nam blocked vi cho engine.
+        _unblock_image(draft_id, im, "engine dem xong: het chuoi Dre -> Kite -> Ethan")
+        _time_send("ethan", f"🖼 <b>{m.get('title', draft_id)}</b>: Dre, Kite đều không đủ ảnh thật, "
+                            f"Ethan cũng chỉ có {thieu.get('count', 0)}/{thieu.get('min_images', 1)} ảnh dùng được "
+                            "— hết vai để chuyển. Bỏ tin hoặc đợi ảnh.")
+        return
     if vai == "kite" or im.get("kite_task_id"):
         # Kite dung duoc voi it anh (`anh_toi_thieu=1`), va bai da chuyen roi thi
         # task cu khong con la cua ai — ca hai truong hop deu khong doi vai nua.
@@ -219,6 +245,50 @@ def after_prepare(draft_id: str, m: dict) -> None:
                         f"<b>Kite</b> vẽ vector (task {rid}). {ten} không dựng bộ này."):
         m["route_error"] = f"da chuyen Kite (task {rid}) nhung khong bao duoc len topic {vai}"
     print(f"[route] {so}/{tt} anh -> Kite task {rid}", file=sys.stderr)
+
+
+def _start_ethan_handoff(draft_id: str) -> None:
+    """Chay `route_missing_images.py --to-ethan` o tien trinh RIENG: `create_pair` mat toi
+    3 phut (research nguon), con `after_prepare` chay TRONG khoa engine cua draft Kite — de
+    dong bo o day la giu khoa va chan bai ngan do."""
+    import subprocess
+    try:
+        subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--to-ethan", draft_id],
+                         cwd=str(Path(__file__).resolve().parent), stdin=subprocess.DEVNULL,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    except OSError as e:
+        print(f"[route] khong khoi chay duoc chuyen Ethan: {e!r}", file=sys.stderr)
+
+
+def route_to_ethan(draft_id: str) -> tuple:
+    """Tao task Ethan cho tin cua draft Kite khong du anh. Tra (task_id, loi).
+
+    Dung `create_pair` (mot draft RIENG cho Ethan, engine chay lai theo nguong cua Ethan)
+    thay vi doi vai tai cho nhu Dre -> Kite: manifest Kite da dan nhan `uses` theo luat
+    Kite, Ethan can ban tinh lai. Draft Kite bo lai, khong len channel."""
+    im = json.loads((DRAFTS / (draft_id + ".img.json")).read_text(encoding="utf-8"))
+    try:
+        meta = json.loads((DRAFTS / (draft_id + ".meta.json")).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        meta = {}
+    brand = meta.get("brand", "")
+    item = {"index": 0, "title": im.get("title", draft_id), "link": im.get("link") or meta.get("source_url", ""),
+            "summary": im.get("summary", ""), "summary_vi": im.get("summary", ""),
+            "source_note": im.get("source_note", ""), "via": im.get("via") or meta.get("via", ""),
+            "category": meta.get("category"), "score": meta.get("score"),
+            "score_reason": meta.get("score_reason", ""),
+            "transferred_from": "kite", "transfer_reason": "Kite khong co anh that dung duoc"}
+    from approve_pick import create_pair
+    tid, loi = create_pair(item, "ethan", brand) if brand else (None, "khong ro brand cua draft")
+    title = item["title"]
+    if loi:
+        _time_send("kite", f"🖼 <b>{title}</b>: Kite không đủ ảnh, chuyển Ethan <b>lỗi</b>: {loi}")
+        return None, loi
+    im["ethan_task_id"] = tid
+    _write_img(draft_id, im)
+    _time_send("ethan", f"🖼 <b>{title}</b>: Kite không có ảnh thật dùng được → đã tự chuyển "
+                        f"<b>Ethan</b> (task {tid}). Kite không dựng bộ này.")
+    return tid, None
 
 
 # --- vai dung carousel het ngan sach HAI lan -> Kite (LOW-411) -----------------
@@ -348,3 +418,11 @@ def route_out_of_budget(token, group, rows=None) -> list:
     except Exception as e:                                   # noqa: BLE001
         _log(f"chuyen Kite khi het ngan sach hong: {type(e).__name__}: {e!r}")
         return []
+
+
+if __name__ == "__main__":
+    if len(sys.argv) == 3 and sys.argv[1] == "--to-ethan":
+        _tid, _loi = route_to_ethan(sys.argv[2])
+        print(f"[route] ethan task={_tid} loi={_loi}", file=sys.stderr)
+        sys.exit(1 if _loi else 0)
+    sys.exit("usage: route_missing_images.py --to-ethan <draft_id>")
