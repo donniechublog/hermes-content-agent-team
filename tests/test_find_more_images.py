@@ -164,8 +164,8 @@ def test_round_widen_search_say_out_each_step():
 
 def test_keywords_run_in_parallel_each_in_own_dir():
     # LOW-456: 3 tu khoa tuan tu ~115 s + vision cham terminal.timeout 180 s cua hermes.
-    import tempfile
     import time
+    import tam
     seen_dirs = []
 
     def slow(tk, wd, mien_co, phien=None, deadline=None, out=None):
@@ -174,7 +174,7 @@ def test_keywords_run_in_parallel_each_in_own_dir():
         out.append({"image_url": f"https://x/{tk}.jpg", "score": 40})
         return out
 
-    wd = Path(tempfile.mkdtemp())
+    wd = tam.temp_dir()
     t0 = time.time()
     cands, unfinished = find_more_images.search_keywords(["a", "b", "c"], wd, set(), budget=5, search=slow)
     took = time.time() - t0
@@ -186,8 +186,8 @@ def test_keywords_run_in_parallel_each_in_own_dir():
 
 def test_budget_returns_partial_candidates_instead_of_hanging():
     # LOW-456: 8/58 lan goi 03/10 bi giet o 180 s, mat het ung vien da tim.
-    import tempfile
     import time
+    import tam
 
     def hang(tk, wd, mien_co, phien=None, deadline=None, out=None):
         out.append({"image_url": f"https://x/{tk}.jpg", "score": 40})   # nguon dau da xong
@@ -196,7 +196,7 @@ def test_budget_returns_partial_candidates_instead_of_hanging():
         return out
 
     t0 = time.time()
-    cands, unfinished = find_more_images.search_keywords(["fast", "slow"], Path(tempfile.mkdtemp()), set(),
+    cands, unfinished = find_more_images.search_keywords(["fast", "slow"], tam.temp_dir(), set(),
                                                          budget=0.3, search=hang)
     took = time.time() - t0
     assert took < 1.5, f"het ngan sach 0.3 s phai tra ngay, mat {took:.2f}s"
