@@ -9,14 +9,14 @@ blog/ada:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-pro
+    model: xai/grok-4.6
     provider: custom
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - hermes-cli
@@ -26,10 +26,14 @@ blog/bob:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - kanban
@@ -42,10 +46,14 @@ blog/cape:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - hermes-cli
@@ -55,10 +63,14 @@ blog/dre:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   skills/external_dirs:
   - /home/dc-group/content-team/hermes/skills
@@ -71,10 +83,14 @@ blog/ethan:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   skills/external_dirs:
   - /home/dc-group/content-team/hermes/skills
@@ -87,10 +103,14 @@ blog/finn:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - hermes-cli
@@ -101,10 +121,14 @@ blog/gin:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   skills/external_dirs:
   - /home/dc-group/content-team/hermes/skills
@@ -117,10 +141,14 @@ blog/itachi:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   skills/external_dirs:
   - /home/dc-group/content-team/hermes/skills
@@ -133,10 +161,14 @@ blog/jika:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - hermes-cli
@@ -146,10 +178,14 @@ blog/kite:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   skills/external_dirs:
   - /home/dc-group/content-team/hermes/skills
@@ -162,10 +198,14 @@ blog/miles:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - hermes-cli
@@ -175,10 +215,14 @@ blog/qinn:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - hermes-cli
@@ -188,14 +232,14 @@ dcgr/ada:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-pro
+    model: xai/grok-4.6
     provider: custom
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - hermes-cli
@@ -205,10 +249,14 @@ dcgr/bob:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - kanban
@@ -221,10 +269,14 @@ dcgr/dre:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   skills/external_dirs:
   - /home/dc-group/content-team/hermes/skills
@@ -237,10 +289,14 @@ dcgr/ethan:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   skills/external_dirs:
   - /home/dc-group/content-team/hermes/skills
@@ -253,10 +309,14 @@ dcgr/gin:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   skills/external_dirs:
   - /home/dc-group/content-team/hermes/skills
@@ -269,10 +329,14 @@ dcgr/itachi:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   skills/external_dirs:
   - /home/dc-group/content-team/hermes/skills
@@ -285,10 +349,14 @@ dcgr/jika:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - hermes-cli
@@ -298,10 +366,14 @@ dcgr/kite:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   skills/external_dirs:
   - /home/dc-group/content-team/hermes/skills
@@ -314,10 +386,14 @@ dcgr/miles:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - hermes-cli
@@ -327,10 +403,14 @@ dcgr/nova:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - hermes-cli
@@ -340,10 +420,14 @@ dcgr/vera:
   fallback_providers:
   - api_key: <da bo>
     base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+    provider: custom
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: gcli/grok-4.6
     provider: custom
   model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
+  model/default: ag/gemini-3.8-flash
   model/provider: custom
   toolsets:
   - hermes-cli

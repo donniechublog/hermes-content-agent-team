@@ -1,5 +1,5 @@
 model:
-  default: DS-v4Flash
+  default: ag/gemini-3.8-flash
   provider: custom
   base_url: http://127.0.0.1:20128/v1
   api_key: ${OPENAI_API_KEY}
@@ -7,7 +7,11 @@ fallback_providers:
   - provider: custom
     base_url: http://127.0.0.1:20128/v1
     api_key: ${OPENAI_API_KEY}
-    model: ds/deepseek-v4-flash
+    model: xai/grok-4.6
+  - provider: custom
+    base_url: http://127.0.0.1:20128/v1
+    api_key: ${OPENAI_API_KEY}
+    model: gcli/grok-4.6
 toolsets:
   - hermes-cli
 database:
