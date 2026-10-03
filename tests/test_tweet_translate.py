@@ -215,6 +215,32 @@ def test_prompt_luon_co_bon_luat_xuong_dong_va_hl():
         assert luat in p, luat
 
 
+# ---- lỗi router -------------------------------------------------------------
+
+def _http_error(code, body: bytes):
+    import io
+    import urllib.error
+    return urllib.error.HTTPError("http://router", code, "x", {}, io.BytesIO(body))
+
+
+def test_router_error_shows_body_reason():
+    """03/10/2026: gcli/grok-* trả 426 mà chỉ thấy mã — lý do nằm trong body."""
+    body = (b'{"error":{"message":"[426]: Your Grok CLI version (0.2.99) is outdated.",'
+            b'"type":"invalid_request_error"}}')
+    assert tt.router_error_detail(_http_error(426, body)) == \
+        ": [426]: Your Grok CLI version (0.2.99) is outdated."
+
+
+def test_router_error_non_json_body_is_compacted():
+    assert tt.router_error_detail(_http_error(502, b"Bad\n  gateway")) == ": Bad gateway"
+    assert len(tt.router_error_detail(_http_error(500, b"x" * 1000))) == 302
+
+
+def test_non_http_error_adds_nothing():
+    assert tt.router_error_detail(TimeoutError()) == ""
+    assert tt.router_error_detail(_http_error(500, b"")) == ""
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca
     chay_tat_ca(globals())
