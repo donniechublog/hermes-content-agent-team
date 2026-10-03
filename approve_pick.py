@@ -539,7 +539,8 @@ def _crop_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu
                "title": item["title"], "body": illu_body, "remakes": 0,
                "link": item.get("link", ""), "summary": item.get("summary", ""),
                "source_note": item.get("source_note", ""), "via": item.get("via", ""),
-               "image_task": illu_id, "blocked_for_engine": blocked_for_engine})
+               "image_task": illu_id, "blocked_for_engine": blocked_for_engine,
+               **({"transferred_from": item["transferred_from"]} if item.get("transferred_from") else {})})
 
     # KHONG tao task viet ngay nua. Tinh san writer_body + vai_viet roi cat vao
     # sidecar `<draft_id>.writer.json`; task viet CHI sinh khi Ong Chu bam
