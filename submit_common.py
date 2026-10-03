@@ -498,6 +498,41 @@ def _fits_frame_with_subject(a: dict, rules) -> bool:
     return subject_crop_window(a, getattr(rules, "TEXT_SHARE_BODY", 0.3)) is not None
 
 
+def _passes_single_slide_gates(a: dict, slug: str, text_share: float) -> bool:
+    """Anh dung MOT MINH qua duoc cac cong cua `dre_submit` cho mot slide co vung chu
+    `text_share`: lien quan, khong trong, mat nguoi phai ro ai, anh ngang du cao de cat,
+    chu the (neu da do) vua khung 4:5 tren vung chu. Chua do hop chu the thi `_place_subject`
+    khong chan, nen o day cung khong loai. Chart/bang xep hang di cong rieng — khong goi y."""
+    if not a.get("uses") or a.get("relevant") is False:
+        return False
+    if a.get("kind") == "chart" or a.get("ranking"):
+        return False
+    if _vai.blocked_empty(a, slug, only_brand_card=True) or _vai.face_no_clear_ai(a):
+        return False
+    if a.get("landscape") and int(a.get("h") or 0) < schema.HEIGHT_MIN_CROP_LANDSCAPE:
+        return False
+    return not a.get("subject_box") or subject_crop_window(a, text_share) is not None
+
+
+def unused_fitting_images(anh: dict, dung: dict, m: dict, text_share: float) -> list:
+    """Ma anh CHUA DUNG trong bai, qua cac cong cua slide co vung chu `text_share`, chua len
+    bai khac — tam thay duoc ngay, khong phai di tim. Anh sach truoc, anh roi sau
+    (`check_image_fall` chi cho anh roi khi het anh sach).
+
+    Vi sao: cong chan noi "Dung anh khac" ma khong noi tam nao, nen Dre doc thanh "phai
+    tim anh moi" va chay find_more_images du bai con anh qua cong (LOW-458)."""
+    slug = m.get("image_role", "") or "dre"
+    rules = _vai.rules_module(slug)
+    out = []
+    for ma, a in anh.items():
+        if ma in dung or not _passes_single_slide_gates(a, slug, text_share):
+            continue
+        l, _ = rules.check_not_reused(ma, a["original_path"], m.get("draft_id", ""), m.get("link", ""))
+        if not l:
+            out.append(ma)
+    return sorted(out, key=lambda x: bool(anh[x].get("cluttered")))
+
+
 def check_stack_last_resort(anh: dict, dung_anh: list, dung: dict, m: dict) -> list:
     """GHEP DOC chi khi HET anh co chu the dat vua khung 4:5 (LOW-273, Ong Chu
     19/09/2026: "uu tien tim hinh dat vua 4:5 ratio ma co chu the truoc, neu ko thi
