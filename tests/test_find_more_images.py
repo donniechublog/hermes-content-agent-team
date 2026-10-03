@@ -162,6 +162,69 @@ def test_round_widen_search_say_out_each_step():
         assert f"[tim rong] {dau}" in src, f"vong tim rong im lang o buoc: {dau}"
 
 
+def test_keywords_run_in_parallel_each_in_own_dir():
+    # LOW-456: 3 tu khoa tuan tu ~115 s + vision cham terminal.timeout 180 s cua hermes.
+    import tempfile
+    import time
+    seen_dirs = []
+
+    def slow(tk, wd, mien_co, phien=None, deadline=None, out=None):
+        seen_dirs.append(wd)
+        time.sleep(0.5)
+        out.append({"image_url": f"https://x/{tk}.jpg", "score": 40})
+        return out
+
+    wd = Path(tempfile.mkdtemp())
+    t0 = time.time()
+    cands, unfinished = find_more_images.search_keywords(["a", "b", "c"], wd, set(), budget=5, search=slow)
+    took = time.time() - t0
+    assert took < 1.2, f"3 tu khoa x 0.5 s phai chay song song, mat {took:.2f}s"
+    assert sorted(c["image_url"] for c in cands) == ["https://x/a.jpg", "https://x/b.jpg", "https://x/c.jpg"]
+    assert unfinished == []
+    assert len(set(seen_dirs)) == 3, "moi tu khoa mot thu muc: anh chup figure dat ten theo so trang, chung la de len nhau"
+
+
+def test_budget_returns_partial_candidates_instead_of_hanging():
+    # LOW-456: 8/58 lan goi 03/10 bi giet o 180 s, mat het ung vien da tim.
+    import tempfile
+    import time
+
+    def hang(tk, wd, mien_co, phien=None, deadline=None, out=None):
+        out.append({"image_url": f"https://x/{tk}.jpg", "score": 40})   # nguon dau da xong
+        if tk == "slow":
+            time.sleep(3)                                                  # nguon sau treo
+        return out
+
+    t0 = time.time()
+    cands, unfinished = find_more_images.search_keywords(["fast", "slow"], Path(tempfile.mkdtemp()), set(),
+                                                         budget=0.3, search=hang)
+    took = time.time() - t0
+    assert took < 1.5, f"het ngan sach 0.3 s phai tra ngay, mat {took:.2f}s"
+    assert unfinished == ["slow"]
+    assert {c["image_url"] for c in cands} == {"https://x/fast.jpg", "https://x/slow.jpg"}, \
+        "ung vien cua tu khoa chua xong van phai duoc dung"
+
+
+def test_candidate_keyword_skips_remaining_sources_after_deadline():
+    import time
+    import find_image_web
+    calls = []
+    old = (find_image_web.find_image_web, find_more_images.article_sources.other_outlets_bing)
+    find_image_web.find_image_web = lambda *a, **k: calls.append("web") or [{"image_url": "u", "score": 1}]
+    find_more_images.article_sources.other_outlets_bing = lambda *a, **k: calls.append("bing") or []
+    try:
+        out = find_more_images.candidate_keyword("x", Path("."), set(), deadline=time.time() - 1)
+    finally:
+        find_image_web.find_image_web, find_more_images.article_sources.other_outlets_bing = old
+    assert calls == ["web"], f"qua moc thi khong goi tiep nguon nao: {calls}"
+    assert out == [{"image_url": "u", "score": 1}]
+
+
+def test_search_budget_leaves_room_under_terminal_timeout():
+    # p90 tai + loc + vision sau pha tim ~50 s (do 29/09–03/10); hermes giet o 180 s.
+    assert find_more_images.SEARCH_BUDGET_SECONDS + 60 < 180
+
+
 if __name__ == "__main__":
     ok = 0
     ten = [n for n in dir() if n.startswith("test_")]
