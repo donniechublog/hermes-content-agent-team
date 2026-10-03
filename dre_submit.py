@@ -70,6 +70,21 @@ class Context:
         self.canh: list[Any] = []                   # canh bao: in ra, khong chan
         self.da_dung: dict[Any, Any] = {}                # ma anh -> nhan slide da dung no
         self.dung_anh: list[Any] = []               # [(nhan slide, [ma...])]
+        self.replace_requests: list[Any] = []       # [(chi so trong loi, vung chu slide)]
+
+    def needs_replacement(self, msgs: list, text_share: float) -> None:
+        """Ghi loi "anh nay khong dung duoc o slide nay" — `suggest_replacements` gan tam
+        thay the CHUA DUNG vao chinh loi do sau khi ca spec da giai (luc `da_dung` du)."""
+        for msg in msgs:
+            self.replace_requests.append((len(self.loi), text_share))
+            self.loi.append(msg)
+
+    def suggest_replacements(self) -> None:
+        for i, share in self.replace_requests:
+            ma = nc.unused_fitting_images(self.anh, self.da_dung, self.m, share)
+            if ma:
+                self.loi[i] += (f" — bài CÒN ảnh qua cổng này chưa dùng: {', '.join(ma[:6])} "
+                                f"(\"image\": \"{ma[0]}\"); đổi sang một tấm đó, KHÔNG cần find_more_images")
 
     def nhan_ma(self, ma: str, nhan: str) -> None:
         """Ghi nhan mot ma da duoc dung o `nhan`, va bao neu no dung hai lan."""
@@ -212,7 +227,8 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
         if a.get("kind") == "chart":
             ra["chart"] = True                   # carousel._flat_plan xet nguong noi cua chart
         if role.blocked_empty(a, "dre", only_brand_card=True):    # LOW-337: mot luat
-            bo.loi.extend(nc.check_empty_image(a, nhan, image_rules_dre.EMPTY_SHARE_MAX))
+            bo.needs_replacement(nc.check_empty_image(a, nhan, image_rules_dre.EMPTY_SHARE_MAX),
+                                 _text_share(muc, la_bia))
         bo.kiem_mat([ma], muc, nhan)
         bo.dung_anh.append((nhan, [ma]))
         return ra
@@ -282,7 +298,8 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
     else:
         ra["image"] = a["ready_path"]
     if role.blocked_empty(a, "dre", only_brand_card=True):        # LOW-337: mot luat
-        bo.loi.extend(nc.check_empty_image(a, nhan, image_rules_dre.EMPTY_SHARE_MAX))
+        bo.needs_replacement(nc.check_empty_image(a, nhan, image_rules_dre.EMPTY_SHARE_MAX),
+                             _text_share(muc, la_bia))
     _place_subject(bo, a, ma, muc, nhan, la_bia, ra)
     bo.kiem_mat([ma], muc, nhan)
     bo.dung_anh.append((nhan, [ma]))
@@ -321,9 +338,10 @@ def _place_subject(bo: Context, a: dict, ma: str, muc: dict, nhan: str, la_bia: 
         w, h = Image.open(goc).size
         band = subject_fit.band_full_width(w, h, a["subject_box"], carousel.W, carousel.H)
         if band and band[1] > 1 - share + 0.02:
-            bo.loi.append(f"{nhan}: nội dung chính của {ma} kéo xuống tới {band[1]:.0%} khung, lấn vào "
-                          f"vùng chữ (từ {1 - share:.0%} trở xuống) — chữ sẽ đè lên nội dung, nền chữ "
-                          "thành một dải nhoè. Dùng ảnh khác, hoặc ảnh có nội dung gọn ở nửa trên")
+            bo.needs_replacement([f"{nhan}: nội dung chính của {ma} kéo xuống tới {band[1]:.0%} khung, lấn vào "
+                                  f"vùng chữ (từ {1 - share:.0%} trở xuống) — chữ sẽ đè lên nội dung, nền chữ "
+                                  "thành một dải nhoè. Dùng ảnh khác, hoặc ảnh có nội dung gọn ở nửa trên"],
+                                 share)
         return
     faces = image_rules_dre.face_boxes(goc) if a.get("faces") else None
     box = subject_fit.head_box(faces) if faces else a.get("subject_box")
@@ -334,12 +352,13 @@ def _place_subject(bo: Context, a: dict, ma: str, muc: dict, nhan: str, la_bia: 
     if win is None:
         chu_the = "khuôn mặt" if faces else manifest_values.subject_kind_label(a.get("subject_kind"))
         loai = "bìa" if la_bia else ("slide quote" if share == image_rules_dre.TEXT_SHARE_QUOTE else "slide")
-        bo.loi.append(f"{nhan}: {chu_the} của {ma} không đặt vừa khung 4:5 phía TRÊN vùng chữ của {loai} "
-                      f"({share:.0%} dưới khung) — chữ sẽ đè lên chủ thể. Dùng ảnh khác"
-                      + ("; hoặc đưa ảnh này sang slide `text` (vùng chữ nhỏ hơn)"
-                         if share > image_rules_dre.TEXT_SHARE_BODY else "")
-                      + (f"; ảnh ngang thì \"stack\" với một ảnh ngang khác (cặp gợi ý: "
-                         f"{bo.m.get('stackable_pairs') or 'không có'})" if a.get("landscape") else ""))
+        bo.needs_replacement([f"{nhan}: {chu_the} của {ma} không đặt vừa khung 4:5 phía TRÊN vùng chữ của {loai} "
+                              f"({share:.0%} dưới khung) — chữ sẽ đè lên chủ thể. Dùng ảnh khác"
+                              + ("; hoặc đưa ảnh này sang slide `text` (vùng chữ nhỏ hơn)"
+                                 if share > image_rules_dre.TEXT_SHARE_BODY else "")
+                              + (f"; ảnh ngang thì \"stack\" với một ảnh ngang khác (cặp gợi ý: "
+                                 f"{bo.m.get('stackable_pairs') or 'không có'})" if a.get("landscape") else "")],
+                             share)
         return
     out = bo.wd / state_paths.READY_DIR / f"{ma}{state_paths.SUBJECT_SUFFIX}"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -456,6 +475,7 @@ def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
     # Ghep doc chi khi het anh vua khung 4:5 co chu the (LOW-273) — chi Dre.
     loi += nc.check_stack_last_resort(bo.anh, bo.dung_anh, bo.da_dung, m)
     loi += image_rules_dre.check_founder_balance(bo.anh, [cover] + list(slides))
+    bo.suggest_replacements()            # sau cung: luc da_dung da du ma cua ca spec
     return ra, loi, canh, bo.dung_anh
 
 
