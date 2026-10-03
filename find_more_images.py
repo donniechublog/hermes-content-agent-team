@@ -360,6 +360,10 @@ def in_result(m: dict, moi: list, so_luot: dict, vai_anh: str, unfinished=()) ->
     so, tt = int(m.get("usable_count", 0)), int(m.get("min_images", 5))
     print(f"Slide dựng được: {so} / tối thiểu {tt}"
           + (" — ĐỦ." if so >= tt else f" — còn thiếu {tt - so}."))
+    import submit_common
+    dong_cong = submit_common.gate_ready_summary(m)       # LOW-459: con so cong nop that se nhan
+    if dong_cong:
+        print(dong_cong)
     print(f"Chạy lại: cd {ROOT} && venv/bin/python {vai_anh}_prepare.py {m['draft_id']}  (brief mới, bảng ảnh mới)")
     if so < tt:
         print(f"Đã thử {so_luot['run_count']} lượt (từ khoá: {'; '.join(so_luot['tried_queries']) or '—'}). "

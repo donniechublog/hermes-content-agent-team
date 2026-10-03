@@ -82,6 +82,12 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                  "TIẾNG ANH cụ thể>\"` (hãng, sản phẩm, nhà máy, sự kiện, người trong bài; có URL "
                  "trang/ảnh thì `--url`), tối đa 3 lượt, rồi chạy lại lệnh brief này. Hết 3 lượt "
                  "vẫn thiếu mới kanban_block, kể rõ từ khoá đã thử.")
+    if m["images"]:
+        import submit_common
+        dong_cong = submit_common.gate_ready_summary(m)
+        if dong_cong:
+            L.append(f"Slide dựng được (đếm thô, gồm cả ảnh chỉ ghép): {so_dd} / tối thiểu "
+                     f"{m.get('min_images', 5)}. {dong_cong}")
     if m.get("domains") is not None:
         L.append(f"Ảnh dùng được lấy từ {len(m['domains'])} nguồn: {', '.join(m['domains']) or '—'}"
                  + (" — chỉ MỘT nguồn; bộ ≥4 slide nên có ảnh từ ≥2 nguồn, cân nhắc gộp ý."
