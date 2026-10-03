@@ -23,6 +23,7 @@
   "san": "ready",
   "them": "extra",
   "them_{n}": "extra_{n}",
+  "keyword": "keyword",
   "khai_niem": "concept",
   "thuong_hieu": "brand_match",
   "thuc_the": "entity",

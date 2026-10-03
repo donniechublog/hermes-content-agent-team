@@ -27,6 +27,7 @@ HANDOFF_SUFFIX = ".handoff.md"          # drafts/<draft_id>.handoff.md (or in th
 ORIGINAL_DIR = "original"               # downloaded originals (image key `original_path`)
 READY_DIR = "ready"                     # processed images (image key `ready_path`)
 EXTRA_DIR = "extra"                     # fallback round; find_more_images uses extra_<n>
+KEYWORD_DIR = "keyword"                 # extra_<n>/keyword_<i>: one per keyword searched in parallel (LOW-456)
 CONCEPT_DIR = "concept"
 BRAND_MATCH_DIR = "brand_match"
 ENTITY_DIR = "entity"
@@ -138,6 +139,10 @@ def workdir(state: Path, draft_id: str) -> Path:
 
 def extra_dir(wd: Path, n: int) -> Path:
     return Path(wd) / f"{EXTRA_DIR}_{n}"
+
+
+def keyword_dir(extra: Path, i: int) -> Path:
+    return Path(extra) / f"{KEYWORD_DIR}_{i}"
 
 
 def handoff_file(folder: Path, draft_id: str) -> Path:
