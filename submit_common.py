@@ -525,12 +525,36 @@ def unused_fitting_images(anh: dict, dung: dict, m: dict, text_share: float) -> 
     rules = _vai.rules_module(slug)
     out = []
     for ma, a in anh.items():
-        if ma in dung or not _passes_single_slide_gates(a, slug, text_share):
+        if ma in dung or not a.get("original_path") or not _passes_single_slide_gates(a, slug, text_share):
             continue
         l, _ = rules.check_not_reused(ma, a["original_path"], m.get("draft_id", ""), m.get("link", ""))
         if not l:
             out.append(ma)
     return sorted(out, key=lambda x: bool(anh[x].get("cluttered")))
+
+
+def gate_ready_summary(m: dict) -> str:
+    """Dong cho brief: bao nhieu anh DON qua cong nop cho tung loai slide, kem ma.
+
+    `usable_count` ("Slide dung duoc X / toi thieu Y") dem ca anh chi-ghep va khong xet vung
+    chu theo loai slide, nen noi "du" khi cong nop chi nhan vai tam (do 7 ngay toi 03/10:
+    trung vi 15 "dung duoc", 3 tam qua cong slide than, 2 qua cong quote — LOW-459). Vai
+    tin con so do, nop, bi chan, roi di tim them. Dong nay noi con so cong that se nhan.
+    Vai khong co vung chu theo loai slide (khong TEXT_SHARE_QUOTE) -> rong."""
+    rules = _vai.rules_module(m.get("image_role", "") or "dre")
+    shares = [(nhan, getattr(rules, ten, None)) for nhan, ten in
+              (("thân", "TEXT_SHARE_BODY"), ("quote", "TEXT_SHARE_QUOTE"), ("bìa", "TEXT_SHARE_COVER"))]
+    if any(s is None for _, s in shares):
+        return ""
+    anh = {a["id"]: a for a in m.get("images") or []}
+    phan = []
+    for nhan, share in shares:
+        ma = unused_fitting_images(anh, {}, m, share)
+        phan.append(f"{nhan} {len(ma)}" + (f" ({', '.join(ma[:10])}{', …' if len(ma) > 10 else ''})" if ma else ""))
+    return ("Ảnh ĐƠN qua cổng nộp (chủ thể trên vùng chữ, không trống, chưa lên bài khác): "
+            + " · ".join(phan)
+            + ". Cặp ghép/chart/thẻ logo không tính ở dòng này. Cổng bắt đổi ảnh thì chọn trong "
+            "các mã này TRƯỚC khi đi tìm thêm.")
 
 
 def check_stack_last_resort(anh: dict, dung_anh: list, dung: dict, m: dict) -> list:
