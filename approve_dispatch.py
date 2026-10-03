@@ -51,18 +51,23 @@ def _report_receive_job(token, group, vai, tu_vai, title, tid, ly_do=""):
     # LOW-410: task anh moi tao dang bi CHAN cho engine dem anh (LOW-382) — hua
     # "≤ 1 phut" o day roi mot phut sau topic lai hien "dung (blocked)" la noi sai
     # hai lan lien tiep (bai OpenEvidence 25/09 11:09 -> 11:10).
+    # Ong Chu 03/10/2026: dong "Cho engine dem anh (thuong 5–8 phut) roi moi chot
+    # vai" lap lai o MOI tin cua vai anh ma khong noi them gi — bo han, nhung van
+    # khong hua "≤ 1 phut" cho task dang chan.
     waiting_for_engine = hermes_adapter.status(tid) == "blocked"
     if waiting_for_engine:
-        when = "Chờ engine đếm ảnh (thường 5–8 phút) rồi mới chốt vai"
+        when = ""
     elif truoc:
         when = f"Đang xếp hàng sau {truoc} việc, tới lượt sẽ bắt đầu"
     else:
         when = "Bắt đầu ngay khi dispatcher nhận (≤ 1 phút)"
     ten = _TEN_HIEN.get(vai, vai)
     nguon = f" chuyển từ <b>{_TEN_HIEN.get(tu_vai, tu_vai)}</b>" if tu_vai else ""
-    text = (f"📥 <b>{ten}</b> đã nhận task{nguon}: <i>{html_escape(title[:80])}</i>\n"
+    ordinal = _daily_receive_ordinal(vai, tid) if vai in RECEIVE_ORDINAL_ROLES else None
+    ordinal_label = f" #{ordinal:02d}" if ordinal else ""
+    text = (f"📥 <b>{ten}</b> đã nhận task{ordinal_label}{nguon}: <i>{html_escape(title[:80])}</i>\n"
             + (f"Lý do: {html_escape(ly_do[:160])}\n" if ly_do else "")
-            + when + f" · task {tid}")
+            + (f"{when} · " if when else "") + f"task {tid}")
     call(token, "sendMessage", chat_id=group, message_thread_id=thread,
          text=text, parse_mode="HTML")
     log("route", f"bao {vai} nhan viec tu {tu_vai or 'Ong Chu'}: {tid} (truoc={truoc})")
@@ -265,6 +270,22 @@ def _daily_task_ordinal(rows, ai, tid, completed_at):
         if r["id"] == tid:
             return i
     return len(cung_ngay) + 1        # tid chua nam trong rows (khong nen xay ra)
+
+# Vai anh (Dre/Ethan/Kite) danh so "đã nhận task #NN" theo ngay (Ong Chu 03/10/2026).
+RECEIVE_ORDINAL_ROLES = set(NAME_ROLE_IMAGE)
+
+
+def _daily_receive_ordinal(role_slug, tid):
+    """So thu tu task thu N vai `role_slug` NHAN trong ngay (gio VN), tinh ca `tid`
+    — xep theo created_at (id lam tie-break). None neu khong doc duoc kanban:
+    thieu so con hon noi sai so."""
+    start_of_day = datetime.now(VN).replace(hour=0, minute=0, second=0, microsecond=0)
+    rows = hermes_adapter.job(tu_ts=start_of_day.timestamp(), vai=role_slug)
+    if rows is None:
+        return None
+    ids = [r["id"] for r in sorted(rows, key=lambda r: (r.get("created_at") or 0, r["id"]))]
+    return ids.index(tid) + 1 if tid in ids else len(ids) + 1
+
 
 # Moi bai mot the goc (blackboard.py), Dre/Miles/Ada la con cua no. Ly do va so do
 # o dau blackboard.py. O day chi co ba mieng noi vao luong san:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """LOW-283 (19/09/2026): Vera quet ra qua tran headline thi phan du sang blog.
-Tran la `scan_submit.OVERFLOW["vera"]`: 15 luc LOW-283, 12 tu LOW-419 (25/09/2026).
+Tran la `scan_submit.OVERFLOW["vera"]`: 15 luc LOW-283, 12 tu LOW-419 (25/09/2026), 10 tu 03/10/2026.
 
 Ong Chu chot CHIA THEO THU TU Vera nop: dcgr giu moi muc BAT BUOC + cac tin
 dau cho du tran, phan con lai thanh mot bao cao danh so rieng o topic "vera" ben
@@ -58,11 +58,12 @@ def _with_env(values: dict, fn):
 
 
 # ------------------------------------------------------------ tran dcgr (LOW-419)
-def test_vera_cap_is_12():
+def test_vera_cap_is_10():
     """Ong Chu 25/09/2026: "So luong tin o dcgr cat tin o 12 roi chuyen bot cho
-    blog, thay vi 15 nhu hien tai". Doi so nay la quyet dinh noi dung: di qua
-    ticket + commit, khong tu y."""
-    assert scan_submit.OVERFLOW["vera"] == ("blog", 12)
+    blog, thay vi 15 nhu hien tai"; 03/10/2026: "Vera o tech chi lay toi 10
+    headline moi ngay, con lai pass qua Vera ben blog". Doi so nay la quyet dinh
+    noi dung: di qua ticket + commit, khong tu y."""
+    assert scan_submit.OVERFLOW["vera"] == ("blog", 10)
 
 
 def test_vera_soul_states_code_cap():
