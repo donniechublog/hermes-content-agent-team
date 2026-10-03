@@ -216,11 +216,73 @@ def test_no_has_sidecar_then_silent():
             rt.DRAFTS = cu
 
 
-def test_already_is_kite_then_no_from_transfer_half():
+def _router_ethan(tmp, m, im, **kw):
+    """_router, nhung chan viec khoi chay tien trinh chuyen Ethan va ghi lai da goi chua."""
+    goi = []
+    cu = rt._start_ethan_handoff
+    rt._start_ethan_handoff = lambda d: goi.append(d)
+    try:
+        m, tin = _router(tmp, m, im, **kw)
+    finally:
+        rt._start_ethan_handoff = cu
+    return m, tin, goi
+
+
+def test_kite_no_usable_image_then_auto_to_ethan():
+    """Ong Chu 03/10/2026: Kite khong du hinh thi Ethan, tu dong."""
     with tempfile.TemporaryDirectory() as tmp:
-        m, tin = _router(tmp, {"missing_images": {"count": 0, "min_images": 5}, "title": "x"},
-                         {"image_role": "kite"})
-        assert tin == [] and "kite_task_id" not in m, (m, tin)
+        m, tin, goi = _router_ethan(tmp, {"missing_images": {"count": 0, "min_images": 1}, "title": "x"},
+                                    {"image_role": "kite", "transferred_from": "dre", "kite_task_id": "t_5"})
+        assert goi == ["d1"] and m.get("ethan_handoff") is True, (m, goi)
+        assert _img_on_disk(tmp)["ethan_handoff"] is True
+        assert "kite_task_id" not in m, m
+
+
+def test_kite_to_ethan_only_once():
+    """Chay lai engine (--lam-moi) khong duoc tao Ethan lan hai."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _, _, goi = _router_ethan(tmp, {"missing_images": {"count": 0, "min_images": 1}, "title": "x"},
+                                  {"image_role": "kite", "ethan_handoff": True})
+        assert goi == [], goi
+
+
+def test_kite_enough_image_stays_kite():
+    with tempfile.TemporaryDirectory() as tmp:
+        _, _, goi = _router_ethan(tmp, {"title": "x"}, {"image_role": "kite"})
+        assert goi == [], goi
+
+
+def test_ethan_to_kite_does_not_loop_back_to_ethan():
+    """Ethan -> Kite (luat cu) roi Kite thieu: Ethan da thu, khong quay lai."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _, _, goi = _router_ethan(tmp, {"missing_images": {"count": 0, "min_images": 1}, "title": "x"},
+                                  {"image_role": "kite", "transferred_from": "ethan", "kite_task_id": "t_5"})
+        assert goi == [], goi
+
+
+def test_brand_without_ethan_does_not_hand_off():
+    with tempfile.TemporaryDirectory() as tmp:
+        _, _, goi = _router_ethan(tmp, {"missing_images": {"count": 0, "min_images": 1}, "title": "x"},
+                                  {"image_role": "kite"}, kite_co=False)
+        assert goi == [], goi
+
+
+def test_end_of_chain_ethan_does_not_transfer_back_to_kite():
+    """Dre -> Kite -> Ethan, Ethan cung thieu: het vai, mo chan va bao, KHONG tao Kite."""
+    with tempfile.TemporaryDirectory() as tmp:
+        goi = {}
+        m, tin = _router(tmp, {"missing_images": {"count": 0, "min_images": 1}, "title": "x"},
+                         {"image_role": "ethan", "transferred_from": "kite", "image_task": "t_9",
+                          "blocked_for_engine": True}, kanban=goi)
+        assert "kite_task_id" not in m and goi["unblock"] == ["t_9"], (m, goi)
+        assert tin and tin[0][0] == "ethan", tin
+
+
+def test_create_pair_writes_transferred_from_into_sidecar():
+    import inspect
+
+    import approve_pick as dct
+    assert "transferred_from" in inspect.getsource(dct._crop_sidecar)
 
 
 def test_no_image_which_then_from_transfer_kite():
