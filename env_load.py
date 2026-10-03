@@ -61,13 +61,20 @@ VISION_MODEL = "ag/gemini-3.8-flash"
 # VISION_MODEL = khong co du phong.
 VISION_FALLBACK_MODEL = "ds/deepseek-v4-flash-vision-exp"
 # Model gom tin CUNG SU KIEN o ca lung chung (LLM sau luat code): article_sources va
-# scan_business dung chung mot cho. Chua do lai tren Gemini (bo vang:
-# tests/golden/same_story_golden.json).
+# scan_business dung chung mot cho.
 #
-# 23/09/2026 (Ong Chu): "ko dung v4 pro o moi noi, chi dung flash". Ban pro nay
-# nam trong muc "Disabled models" cua provider DeepSeek tren 9router, cung voi
-# v4-pro-max / v4-pro-none / v4-flash-vision-exp / deepseek-chat / deepseek-reasoner.
-# Hai route DUY NHAT con bat: `ds/deepseek-v4.1-flash` va `ds/deepseek-v4-flash`.
+# Gemini vi DeepSeek khong con route nao song: ca hai connection deepseek tren 9router
+# `isActive=0` (9RH het tien), moi route `ds/...` tra 404 "No active credentials".
+# Model hong thi ca lung chung tinh la CUNG tin va Vera bo buoc chan tin cu quay lai —
+# im lang, chi in ra stderr. Do tren bo vang tests/golden/same_story_golden.json
+# (180 cap, duong `article_sources.same_story_many`):
+#     ag/gemini-3.8-flash      giu 132/142 cap cung tin, nhan nham 1-2/38 cap khac tin
+#     DeepSeek flash (con song) giu 127-128/142, nhan nham 5-6/38
+#     LLM hong -> luat tu       giu 142/142, nhan nham 34/38
+# Cham hon (~6 s moi lan hoi so voi ~1,3 s) nhung van trong SAME_STORY_TIMEOUT ca hai noi.
+#
+# 23/09/2026 (Ong Chu): "ko dung v4 pro o moi noi, chi dung flash" — van giu neu quay lai
+# DeepSeek.
 #
 # BAY da vap mot lan, dung vap lai: co mot luc `GET /v1/models` phoi ra ten tran
 # `DS-v4Flash` (mot muc "custom provider" openai-compatible rieng) va ta tro vao
@@ -81,7 +88,7 @@ VISION_FALLBACK_MODEL = "ds/deepseek-v4-flash-vision-exp"
 # nham la MAT tin — te hon la lot mot tin trung. Hang rao `parse_same_story_groups`
 # (moi tieu de ghep vao nhom phai chung >=1 tu dac trung ngoai watchlist) vi the
 # la thu DUY NHAT con chan gop bua; dung noi long no.
-SAME_STORY_MODEL = "ds/deepseek-v4.1-flash"
+SAME_STORY_MODEL = "ag/gemini-3.8-flash"
 
 # Dich tweet sang tieng Viet (tweet_translate.py). Ong Chu 23/09/2026: *"hieu
 # twitter nhat chac chan la grok, nen hay dung model grok"*.

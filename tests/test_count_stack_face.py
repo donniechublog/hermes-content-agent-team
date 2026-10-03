@@ -115,6 +115,45 @@ def test_count_cap_dark_prefer_no_greedy():
     assert schema.count_image_use_ok(bo, "dre") == 2
 
 
+def _pairs_in_time(bo, seconds=3.0):
+    import threading
+    out = []
+    t = threading.Thread(target=lambda: out.append(schema._count_stackable_pairs_real(bo, "dre")), daemon=True)
+    t.start()
+    t.join(seconds)
+    assert out, f"{len(bo)} tam chi-ghep: dem cap qua {seconds}s (duyet tap con no to)"
+    return out[0]
+
+
+def test_many_stack_only_images_count_fast_low456():
+    """LOW-456 (03/10/2026): bai Tencent co 33 tam chi-ghep — dem cap khong bao gio xong,
+    treo find_more_images toi khi hermes giet o 180 s (va treo dre_prepare/dre_submit bai do)."""
+    assert _pairs_in_time([_low(f"A{i}", 1.78) for i in range(40)]) == 20
+    # tam khong ghep duoc voi tam nao (4:1 + bat ky deu qua ngang) khong duoc lam mat phep cat
+    bo = [_low(f"A{i}", 1.78) for i in range(30)] + [_low(f"X{i}", 4.0) for i in range(4)]
+    assert _pairs_in_time(bo) == 15
+
+
+def test_pair_count_still_exact_against_brute_force():
+    import itertools
+    import random
+    import image_rules_dre as dre
+    rnd = random.Random(456)
+    for _ in range(60):
+        rs = [rnd.choice([1.33, 1.5, 1.78, 2.0, 2.4, 3.0, 4.0]) for _ in range(rnd.randint(2, 9))]
+        n = len(rs)
+        best = 0
+        for k in range(n // 2, 0, -1):
+            for pairs in itertools.combinations(itertools.combinations(range(n), 2), k):
+                used = [x for p in pairs for x in p]
+                if len(set(used)) == 2 * k and all(dre.stack_fit_frame(rs[a], rs[b]) for a, b in pairs):
+                    best = k
+                    break
+            if best:
+                break
+        assert schema._count_stackable_pairs_real([_low(f"A{i}", r) for i, r in enumerate(rs)], "dre") == best, rs
+
+
 # ---------------------------------------------------------------- mat nguoi
 def test_face_no_clear_ai_no_ok_count():
     assert schema.count_image_use_ok([_read("A3", faces=1)], "dre") == 0
