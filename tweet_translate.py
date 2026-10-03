@@ -271,6 +271,22 @@ def translate_prompt(text: str, cut=False) -> str:
     return PROMPT_TRANSLATE + (PROMPT_CUT if cut else "") + "\nTWEET:\n" + text
 
 
+def router_error_detail(e) -> str:
+    """Lý do router trả kèm lỗi HTTP, gọn một dòng. 03/10/2026 mọi `gcli/grok-*`
+    trả 426 mà chỉ thấy mỗi mã — lý do thật ("Grok CLI 0.2.99 is outdated") nằm
+    trong body, phải tự gọi tay mới ra."""
+    try:
+        body = e.read().decode("utf-8", "replace")
+    except Exception:                                        # noqa: BLE001
+        return ""
+    try:
+        body = json.loads(body)["error"]["message"]
+    except Exception:                                        # noqa: BLE001
+        pass
+    body = " ".join(str(body).split())
+    return f": {body[:300]}" if body else ""
+
+
 def translate(text: str, model=None, cut=False, verbose=True) -> str:
     """Nguyên văn tweet -> bản dịch tiếng Việt có sẵn `<hl>`. Hỏng thì thoát,
     KHÔNG trả về chữ tiếng Anh: ảnh "vietsub" mà còn nguyên tiếng Anh nhìn vẫn
@@ -299,7 +315,7 @@ def translate(text: str, model=None, cut=False, verbose=True) -> str:
     except Exception as e:                                   # noqa: BLE001
         ma = getattr(e, "code", "") or ""
         sys.exit(f"Dịch hỏng ({type(e).__name__}{f' {ma}' if ma else ''}) trên model "
-                 f"{model!r}. Tự dịch rồi truyền qua --vi.")
+                 f"{model!r}{router_error_detail(e)}. Tự dịch rồi truyền qua --vi.")
     vi = (vi or "").strip().strip('"')
     if not vi:
         sys.exit(f"Model {model!r} trả về rỗng. Tự dịch rồi truyền qua --vi.")
